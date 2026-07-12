@@ -1,27 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
+import { useFormState, useFormStatus } from "react-dom";
 import { reserveTicket } from "@/app/actions/tickets";
 import { formatDate, formatTime } from "@/lib/format";
 import { priceLabel, type TierOffer } from "@/lib/tickets/pricing";
 
 // Checkout. One form: pick a tier, accept the terms, confirm.
 //
-// It is a client component for exactly one reason — the order summary has to
-// follow the tier you picked. Everything it decides (locked, sold out, price) is
-// computed by lib/tickets/pricing.ts, the SAME module the server runs, so the
-// two cannot drift; and none of it is trusted. The reserve action re-resolves the
-// tier against the event and re-checks the Robux gate on its own, so what a
-// disabled radio really buys you is a person who isn't confused — not security.
+// It is a client component so the order summary can follow the tier you picked,
+// and so a REFUSED reservation says so in place — with your tier still selected —
+// instead of bouncing you through ?error= and starting you over. The action
+// cannot redirect anyway: a Server Action redirect skips the middleware, and on
+// a partner's site that lands the buyer on RNL's routes. See the note in
+// app/actions/tickets.ts.
+//
+// A SUCCESSFUL reservation is not navigated from here. The reserve page redirects
+// to the new ticket on its own — the action revalidates, the page re-renders, and
+// by then the buyer holds a ticket. That is a page-level redirect, so it is a real
+// HTTP 307 and the middleware does run. The `useEffect` below is only a backstop
+// for the case where that re-render somehow does not happen; normally this
+// component is unmounted by the redirect long before the effect could fire.
+//
+// Everything it decides (locked, sold out, price) is computed by
+// lib/tickets/pricing.ts, the SAME module the server runs, so the two cannot
+// drift; and none of it is trusted. The action re-resolves the tier against the
+// event and re-checks the Robux gate on its own, so what a disabled radio really
+// buys you is a person who isn't confused — not security.
 
 const ERRORS: Record<string, string> = {
+  auth: "Your session expired. Sign in again to reserve.",
   terms: "Please accept the ticket terms & conditions to continue.",
   badtier: "That ticket type isn’t available for this show. Pick another.",
   tier_soldout: "That tier sold out while you were deciding. Pick another.",
   payments_off:
     "Paid tickets aren’t switched on yet — that tier can’t be issued.",
+  soldout: "This show just sold out.",
+  past: "This show has already taken place.",
+  unavailable: "This show isn’t available for reservations.",
 };
 
 function LockIcon({ className }: { className?: string }) {
@@ -55,23 +73,22 @@ function Confirm({ disabled }: { disabled: boolean }) {
 
 export function CheckoutForm({
   eventId,
-  slug,
   eventTitle,
   startsAt,
   venue,
   offers,
   terms,
-  error,
 }: {
   eventId: string;
-  slug: string;
   eventTitle: string;
   startsAt: Date | string;
   venue?: string | null;
   offers: TierOffer[];
   terms: string[];
-  error?: string;
 }) {
+  const router = useRouter();
+  const [state, submit] = useFormState(reserveTicket, null);
+
   // Default to the first tier anyone can actually take, so the common case is
   // one click. If every tier is blocked the page never renders — the checkout
   // redirects to the event with a sold-out notice before it gets here.
@@ -82,10 +99,17 @@ export function CheckoutForm({
     offers.find((o) => (o.id ?? "") === selectedId) ?? first ?? null;
   const blocked = !selected || Boolean(selected.blockedReason);
 
+  // Backstop only — see the note at the top. The reserve page's own redirect is
+  // what normally takes them to the ticket, and it unmounts this first.
+  useEffect(() => {
+    if (state?.ok) router.push(`/tickets/${state.code}?issued=1`);
+  }, [state, router]);
+
+  const error = state && !state.ok ? state.error : undefined;
+
   return (
-    <form action={reserveTicket} className="grid gap-8 lg:grid-cols-[1fr_23rem]">
+    <form action={submit} className="grid gap-8 lg:grid-cols-[1fr_23rem]">
       <input type="hidden" name="eventId" value={eventId} />
-      <input type="hidden" name="slug" value={slug} />
 
       {/* ---- Choose ---- */}
       <div className="space-y-8">

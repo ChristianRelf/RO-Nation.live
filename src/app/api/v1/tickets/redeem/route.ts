@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
     ok: true,
     redeemed: true,
     checkedInAt: updated.checkedInAt,
+    // The tier is the ticket's own frozen snapshot — see the note in verify.
+    ticket: { code: ticket.code, tier: ticket.tierName, priceRobux: ticket.priceRobux },
     event: { id: ticket.event.id, title: ticket.event.title },
     user: {
       robloxId: ticket.user.robloxId,

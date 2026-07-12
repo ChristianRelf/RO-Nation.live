@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getUserSession } from "@/lib/session";
@@ -23,23 +22,44 @@ import { effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pricing";
 // (or an invented one) resolves to nothing and the reservation is refused. It
 // never reaches the insert.
 //
-// The redirect targets below are deliberately unqualified ("/tickets",
-// "/events/<slug>"). They need no partner prefix: the browser is already on the
-// partner's host, and the middleware rewrites <slug>.ronation.live/tickets to
-// /p/<slug>/tickets. The same string is correct on both sites.
+// ---- Why nothing here calls redirect() -----------------------------------
 //
-// revalidatePath is the exception, and the one thing that genuinely needs care:
-// it matches on the INTERNAL route, so it must be handed /p/<slug>/… or it
-// silently refreshes nothing at all. See lib/partners/urls.ts.
+// It cannot. A redirect() from a SERVER ACTION does not run the middleware, and
+// the middleware is the only thing that knows <slug>.ronation.live/tickets means
+// /p/<slug>/tickets. So on a partner's site the redirect resolves against RNL's
+// route tree instead: reserving a Sleep Token RO ticket used to land the buyer
+// on RNL's /tickets page — RNL's nav, RNL's footer, still on Sleep Token's
+// domain — and any redirect under /events/<slug> 404'd outright, because RNL's
+// copy of that route scopes to partnerId: null and the partner's show is not
+// RNL's. (Page-level redirects are fine: they are real HTTP 307s, which the
+// browser re-requests and the middleware does see. It is only actions.)
+//
+// So these actions RETURN their outcome, and the client navigates — an ordinary
+// client-side navigation, which does run the middleware. Cancelling and
+// activating navigate nowhere at all: they revalidate, and the page they are on
+// re-renders in place, which is both correct and the better thing to look at.
+//
+// revalidatePath is the mirror image and needs the opposite care: it matches on
+// the INTERNAL route, so it must be handed /p/<slug>/… or it silently refreshes
+// nothing at all. See lib/partners/urls.ts.
 
-type ReserveError =
-  | "unavailable"
-  | "past"
-  | "soldout"
-  | "tier_soldout"
-  | "badtier";
+export type ReserveState =
+  | { ok: true; code: string }
+  | {
+      ok: false;
+      error:
+        | "auth"
+        | "terms"
+        | "badtier"
+        | "payments_off"
+        | "unavailable"
+        | "past"
+        | "soldout"
+        | "tier_soldout";
+    };
 
-type ReserveOutcome = { code: string } | { error: ReserveError };
+const fail = (error: Extract<ReserveState, { ok: false }>["error"]) =>
+  ({ ok: false, error }) as const;
 
 const isCodeCollision = (err: any) =>
   err?.code === "P2002" && err?.meta?.target?.includes?.("code");
@@ -55,21 +75,20 @@ function refreshTicketViews(partnerId: string | null, slug: string) {
   revalidatePath("/tickets");
 }
 
-export async function reserveTicket(formData: FormData) {
+/** useFormState signature: the previous state comes in, the next one goes out. */
+export async function reserveTicket(
+  _prev: ReserveState | null,
+  formData: FormData,
+): Promise<ReserveState> {
   const eventId = String(formData.get("eventId") || "");
-  const slug = String(formData.get("slug") || "");
   const tierId = String(formData.get("tierId") || ""); // "" = the implicit tier
   const acceptedTerms = formData.get("terms") === "on";
 
   const session = await getUserSession();
-  if (!session) {
-    redirect(`/account?returnTo=${encodeURIComponent(`/events/${slug}/reserve`)}`);
-  }
+  if (!session) return fail("auth");
 
   // The "purchase" gate: you must accept the ticket terms & conditions.
-  if (!acceptedTerms) {
-    redirect(`/events/${slug}/reserve?error=terms`);
-  }
+  if (!acceptedTerms) return fail("terms");
 
   // Whose show is this, and what is on sale? Read outside the transaction — it
   // decides the code's prefix, the Robux gate and which routes to revalidate,
@@ -77,9 +96,9 @@ export async function reserveTicket(formData: FormData) {
   // UPDATE for the parts that do.
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { partnerId: true, tiers: true },
+    select: { slug: true, partnerId: true, tiers: true },
   });
-  if (!event) redirect(`/events/${slug}?error=unavailable`);
+  if (!event) return fail("unavailable");
 
   const partnerId = event.partnerId ?? null;
   const partner = partnerBySlug(partnerId);
@@ -90,9 +109,7 @@ export async function reserveTicket(formData: FormData) {
   // which is why nothing below has to trust the form.
   const tiers = effectiveTiers(event.tiers);
   const tier = tiers.find((t) => (t.id ?? "") === tierId);
-  if (!tier) {
-    redirect(`/events/${slug}/reserve?error=badtier`);
-  }
+  if (!tier) return fail("badtier");
 
   if (tier.priceRobux > 0) {
     // ---- The paid-ticket wall -------------------------------------------
@@ -103,7 +120,7 @@ export async function reserveTicket(formData: FormData) {
     // locked. This branch exists because the checkout's lock is *courtesy*: it
     // stops a person, not a forged POST.
     if (!robuxSalesAllowed(partner, env.robuxTickets)) {
-      redirect(`/events/${slug}/reserve?error=payments_off`);
+      return fail("payments_off");
     }
 
     // Refusal 2: reached only by switching ROBUX_TICKETS_ENABLED on. A flag is
@@ -126,7 +143,7 @@ export async function reserveTicket(formData: FormData) {
   // whole thing. It cannot be retried *inside*: in Postgres a failed statement
   // aborts the surrounding transaction, so the second attempt would die on the
   // poisoned transaction rather than on the duplicate code.
-  let outcome: ReserveOutcome | null = null;
+  let outcome: ReserveState | null = null;
   for (let attempt = 0; attempt < 5 && !outcome; attempt++) {
     const code = generateTicketCode(prefix);
     try {
@@ -144,12 +161,8 @@ export async function reserveTicket(formData: FormData) {
         >`SELECT id, capacity, status, "startsAt" FROM events WHERE id = ${eventId} FOR UPDATE`;
 
         const ev = rows[0];
-        if (!ev || ev.status !== "PUBLISHED") {
-          return { error: "unavailable" } as const;
-        }
-        if (isPast(ev.startsAt)) {
-          return { error: "past" } as const;
-        }
+        if (!ev || ev.status !== "PUBLISHED") return fail("unavailable");
+        if (isPast(ev.startsAt)) return fail("past");
 
         // Already holding an active ticket? (Under the lock, so a double-submit
         // resolves to the same ticket rather than a unique-constraint error.)
@@ -157,7 +170,7 @@ export async function reserveTicket(formData: FormData) {
           where: { eventId_userId: { eventId, userId: session.uid } },
         });
         if (existing && existing.status !== "CANCELLED") {
-          return { code: existing.code };
+          return { ok: true, code: existing.code } as const;
         }
 
         // The room's cap (0 = unlimited).
@@ -165,23 +178,15 @@ export async function reserveTicket(formData: FormData) {
           const taken = await tx.ticket.count({
             where: { eventId, status: { not: "CANCELLED" } },
           });
-          if (taken >= ev.capacity) {
-            return { error: "soldout" } as const;
-          }
+          if (taken >= ev.capacity) return fail("soldout");
         }
 
         // The tier's own cap, on top. The implicit tier has no id and no cap.
         if (tier.id && tier.capacity > 0) {
           const takenInTier = await tx.ticket.count({
-            where: {
-              eventId,
-              tierId: tier.id,
-              status: { not: "CANCELLED" },
-            },
+            where: { eventId, tierId: tier.id, status: { not: "CANCELLED" } },
           });
-          if (takenInTier >= tier.capacity) {
-            return { error: "tier_soldout" } as const;
-          }
+          if (takenInTier >= tier.capacity) return fail("tier_soldout");
         }
 
         // What they hold is frozen here, not looked up later: renaming or
@@ -201,19 +206,13 @@ export async function reserveTicket(formData: FormData) {
             where: { id: existing.id },
             data: { status: "RESERVED", ...held },
           });
-          return { code: existing.code };
+          return { ok: true, code: existing.code } as const;
         }
 
         await tx.ticket.create({
-          data: {
-            eventId,
-            userId: session.uid,
-            code,
-            status: "RESERVED",
-            ...held,
-          },
+          data: { eventId, userId: session.uid, code, status: "RESERVED", ...held },
         });
-        return { code };
+        return { ok: true, code } as const;
       });
     } catch (err) {
       if (isCodeCollision(err)) continue;
@@ -222,58 +221,68 @@ export async function reserveTicket(formData: FormData) {
   }
 
   // Five collisions in a 31^6 space is not bad luck, it is a broken generator.
-  // Throw rather than redirect to a code no ticket was ever issued under.
+  // Throw rather than hand back a code no ticket was ever issued under.
   if (!outcome) {
     throw new Error("Could not allocate a unique ticket code after 5 attempts");
   }
 
-  if ("error" in outcome) {
-    // A tier selling out is a checkout problem — send them back to pick another
-    // one. The rest are event-level, so they belong on the event page.
-    if (outcome.error === "tier_soldout") {
-      redirect(`/events/${slug}/reserve?error=tier_soldout`);
-    }
-    redirect(`/events/${slug}?error=${outcome.error}`);
-  }
-
-  refreshTicketViews(partnerId, slug);
-  // Land them ON the ticket, not on a list with a banner over it. The ticket is
-  // the thing they just came here for.
-  redirect(`/tickets/${outcome.code}?issued=1`);
+  if (outcome.ok) refreshTicketViews(partnerId, event.slug);
+  return outcome;
 }
 
+/**
+ * Cancel, and stay put.
+ *
+ * The old version redirected to /tickets. It no longer needs to: revalidating
+ * re-renders the ticket the holder is looking at, now stamped VOID, which both
+ * dodges the action-redirect problem above and shows them the thing they just
+ * did instead of a list they have to go looking for it in.
+ */
 export async function cancelTicket(formData: FormData) {
   const ticketId = String(formData.get("ticketId") || "");
   const session = await getUserSession();
-  if (!session) redirect("/account");
+  if (!session) return;
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
     include: { event: { select: { slug: true, partnerId: true } } },
   });
-  if (ticket && ticket.userId === session.uid) {
-    await prisma.ticket.update({
-      where: { id: ticket.id },
-      data: { status: "CANCELLED" },
-    });
-    refreshTicketViews(ticket.event.partnerId, ticket.event.slug);
-  }
-  redirect("/tickets");
+  if (!ticket || ticket.userId !== session.uid) return;
+
+  await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: { status: "CANCELLED" },
+  });
+
+  const { partnerId, slug } = ticket.event;
+  refreshTicketViews(partnerId, slug);
+  revalidatePath(
+    partnerId
+      ? partnerSiteRoute(partnerId, `/tickets/${ticket.code}`)
+      : `/tickets/${ticket.code}`,
+  );
 }
 
-// Flip a reserved ticket to "activated" — this reveals the real QR on the ticket
-// and drives the confetti moment on the client.
-export async function activateTicket(formData: FormData) {
+/**
+ * Flip a reserved ticket to "activated" — this reveals the real QR on the stub.
+ *
+ * Returns whether it fired, so the client can throw the confetti. It used to say
+ * so with a ?activated=1 redirect, which is the one thing an action must not do.
+ */
+export async function activateTicket(
+  _prev: { activated: boolean } | null,
+  formData: FormData,
+): Promise<{ activated: boolean }> {
   const ticketId = String(formData.get("ticketId") || "");
   const session = await getUserSession();
-  if (!session) redirect("/account?returnTo=/tickets");
+  if (!session) return { activated: false };
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    include: { event: { select: { slug: true, partnerId: true } } },
+    include: { event: { select: { partnerId: true } } },
   });
-  if (!ticket || ticket.userId !== session.uid) redirect("/tickets");
-  if (ticket.status === "CANCELLED") redirect(`/tickets/${ticket.code}`);
+  if (!ticket || ticket.userId !== session.uid) return { activated: false };
+  if (ticket.status === "CANCELLED") return { activated: false };
 
   if (!ticket.activatedAt) {
     await prisma.ticket.update({
@@ -288,5 +297,5 @@ export async function activateTicket(formData: FormData) {
       ? partnerSiteRoute(partnerId, `/tickets/${ticket.code}`)
       : `/tickets/${ticket.code}`,
   );
-  redirect(`/tickets/${ticket.code}?activated=1`);
+  return { activated: true };
 }

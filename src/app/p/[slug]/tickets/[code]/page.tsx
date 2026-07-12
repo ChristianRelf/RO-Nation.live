@@ -15,7 +15,7 @@ export default async function PartnerTicketDetailPage({
   searchParams,
 }: {
   params: { slug: string; code: string };
-  searchParams: { activated?: string; issued?: string };
+  searchParams: { issued?: string };
 }) {
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
@@ -46,7 +46,6 @@ export default async function PartnerTicketDetailPage({
       brandName={brand.name}
       ticketUrl={ticketUrl(ticket.code)}
       justIssued={searchParams.issued === "1"}
-      justActivated={searchParams.activated === "1"}
     />
   );
 }

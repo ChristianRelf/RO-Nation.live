@@ -50,9 +50,10 @@ export function TicketArt({
   const checkedIn = status === "CHECKED_IN";
 
   return (
-    <div
-      className={`group ticket ${cancelled ? "opacity-60 saturate-0" : ""}`}
-    >
+    // Dimmed, but NOT desaturated: `saturate-0` also drains the VOID stamp, and a
+    // grey VOID at 17% over a grey ticket is a stamp you have to hunt for. The
+    // one thing a dead ticket must say clearly is that it is dead.
+    <div className={`group ticket ${cancelled ? "opacity-75" : ""}`}>
       <div className="relative flex flex-col sm:flex-row">
         {/* ---- Body ---- */}
         <div className="ticket-foil relative flex-1 overflow-hidden bg-surface p-6 sm:p-7">
@@ -95,8 +96,12 @@ export function TicketArt({
               ) : null}
             </p>
 
-            {/* The data grid a ticket wears: what you hold, who holds it. */}
-            <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-line pt-5 sm:grid-cols-4">
+            {/* The data grid a ticket wears: what you hold, who holds it.
+                Two columns, not four. A tier is named by whoever set it up —
+                "VIP — Front Barrier" — and four columns across a ticket this
+                wide gave each one about 100px, which turned the commonest value
+                of all into "General Admi…". */}
+            <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5">
               <Field label="Admission" value={tierName} />
               <Field label="Holder" value={holder} />
               <Field
@@ -135,9 +140,18 @@ export function TicketArt({
           ) : (
             <div className="grid h-[132px] w-[132px] place-items-center border border-dashed border-paper-ink/25 px-3 text-center">
               <span className="text-[10px] font-semibold uppercase leading-snug tracking-[0.12em] text-paper-ink/45">
-                Sealed until
-                <br />
-                activated
+                {/* A cancelled ticket has no QR either, and telling its holder it
+                    is "sealed until activated" invites them to go looking for a
+                    button that is not there and would not help. */}
+                {cancelled ? (
+                  "No longer valid"
+                ) : (
+                  <>
+                    Sealed until
+                    <br />
+                    activated
+                  </>
+                )}
               </span>
             </div>
           )}

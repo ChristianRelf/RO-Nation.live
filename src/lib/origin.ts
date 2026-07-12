@@ -8,11 +8,28 @@ import { env } from "./env";
 // redirects have to come back to the one the user started on — sessions are
 // cookies, and cookies are scoped per host.
 
-const isLocalHost = (host: string) =>
-  host.startsWith("localhost") ||
-  host.startsWith("127.0.0.1") ||
-  host.startsWith("[::1]") ||
-  !host.includes(".");
+/**
+ * Note `.localhost` — a partner site in dev is <slug>.localhost:3000, and the
+ * obvious `host.startsWith("localhost")` does NOT match it. Getting this wrong
+ * calls a local partner host remote and builds every URL for it as https://,
+ * which is not a cosmetic slip: it is the wrong ORIGIN, so the Roblox callback
+ * no longer matches the registered redirect_uri, and a Server Action redirect
+ * becomes cross-origin and is dropped on the floor.
+ *
+ * The middleware's own copy of this check has always had the `.localhost` case.
+ * This one had not, which is exactly the sort of thing two copies of a predicate
+ * do to each other.
+ */
+const isLocalHost = (host: string) => {
+  const name = host.replace(/:\d+$/, "").toLowerCase();
+  return (
+    name === "localhost" ||
+    name.endsWith(".localhost") ||
+    name === "127.0.0.1" ||
+    name === "[::1]" ||
+    !name.includes(".") // a bare docker hostname, e.g. `web`
+  );
+};
 
 /**
  * The scheme is not taken from x-forwarded-proto: Next's own server sets that

@@ -418,15 +418,21 @@
     background-position: -60% 0;
   }
 
-  /* Cancelled / checked-in overprint. Rubber-stamped across the face. */
+  /* Cancelled / checked-in overprint. Rubber-stamped across the face.
+   *
+   * Boxed and at 55%, because the earlier hairline outline at 28% — sitting on a
+   * card that was itself dimmed — came out as a smudge you had to already know
+   * was there. A stamp that has to be hunted for is not saying anything. */
   .ticket-stamp {
     font-family: var(--font-display), Impact, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    -webkit-text-stroke: 2px currentColor;
+    letter-spacing: 0.08em;
     color: currentColor;
-    opacity: 0.28;
-    transform: rotate(-11deg);
+    border: 3px solid currentColor;
+    border-radius: 4px;
+    padding: 0.15em 0.4em;
+    opacity: 0.55;
+    transform: rotate(-9deg);
   }
 }
 

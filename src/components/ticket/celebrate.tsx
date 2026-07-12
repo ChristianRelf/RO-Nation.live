@@ -25,7 +25,7 @@ function confettiColors(): readonly string[] {
 }
 
 // Self-contained confetti burst on a full-screen canvas — no dependencies.
-function fireConfetti() {
+export function fireConfetti() {
   if (typeof window === "undefined") return;
   const prefersReduced = window.matchMedia(
     "(prefers-reduced-motion: reduce)",

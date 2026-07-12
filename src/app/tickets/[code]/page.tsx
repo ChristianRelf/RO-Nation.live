@@ -14,7 +14,7 @@ export default async function TicketDetailPage({
   searchParams,
 }: {
   params: { code: string };
-  searchParams: { activated?: string; issued?: string };
+  searchParams: { issued?: string };
 }) {
   const session = await getUserSession();
   if (!session) redirect(`/account?returnTo=/tickets/${params.code}`);
@@ -37,7 +37,6 @@ export default async function TicketDetailPage({
       brandName={brand.name}
       ticketUrl={ticketUrl(ticket.code)}
       justIssued={searchParams.issued === "1"}
-      justActivated={searchParams.activated === "1"}
     />
   );
 }

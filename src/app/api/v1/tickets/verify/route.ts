@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
       code: ticket.code,
       status: ticket.status,
       checkedInAt: ticket.checkedInAt,
+      // What they actually hold, so the door can treat a VIP as a VIP. Read from
+      // the TICKET's own snapshot, not from the tier row it points at: the tier
+      // may since have been renamed, re-priced or deleted, and none of that
+      // changes what this person bought. NULL tier = free general admission.
+      tier: ticket.tierName,
+      priceRobux: ticket.priceRobux,
     },
     event: {
       id: ticket.event.id,

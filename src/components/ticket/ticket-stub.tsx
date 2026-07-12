@@ -114,7 +114,7 @@ export function TicketStub({
           ) : (
             <div className="grid h-[72px] w-[72px] place-items-center border border-dashed border-paper-ink/25 text-center">
               <span className="text-[8px] font-bold uppercase leading-tight tracking-[0.1em] text-paper-ink/45">
-                Sealed
+                {cancelled ? "Void" : "Sealed"}
               </span>
             </div>
           )}

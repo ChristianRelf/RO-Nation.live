@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge, StatCard } from "@/components/admin-ui";
 import { setTicketStatus } from "@/app/actions/admin";
 import { formatDateTime } from "@/lib/format";
+import { formatRobux } from "@/lib/tickets/pricing";
 import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,15 @@ export default async function AttendeesPage({
 
   const active = event.tickets.filter((t) => t.status !== "CANCELLED");
   const checkedIn = event.tickets.filter((t) => t.status === "CHECKED_IN");
+
+  // Live tickets per tier, by the name frozen ON the ticket — so a tier that has
+  // since been renamed or deleted still shows the people who bought it, under
+  // the name they bought it under.
+  const byTier = new Map<string, number>();
+  for (const t of active) {
+    const name = t.tierName ?? "General Admission";
+    byTier.set(name, (byTier.get(name) ?? 0) + 1);
+  }
 
   return (
     <div>
@@ -46,6 +56,19 @@ export default async function AttendeesPage({
         />
       </div>
 
+      {byTier.size > 1 ? (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {[...byTier.entries()].map(([name, n]) => (
+            <span
+              key={name}
+              className="rounded-lg border border-line bg-elev px-3 py-1.5 text-xs text-muted"
+            >
+              {name} <span className="ml-1 font-semibold text-fg">{n}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       {event.tickets.length ? (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
@@ -54,6 +77,7 @@ export default async function AttendeesPage({
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-5 py-3 font-semibold">Attendee</th>
                   <th className="px-5 py-3 font-semibold">Ticket</th>
+                  <th className="px-5 py-3 font-semibold">Admission</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold">Reserved</th>
                   <th className="px-5 py-3 text-right font-semibold">Door</th>
@@ -69,6 +93,12 @@ export default async function AttendeesPage({
                       </p>
                     </td>
                     <td className="px-5 py-4 font-mono text-xs">{t.code}</td>
+                    <td className="px-5 py-4">
+                      <p>{t.tierName ?? "General Admission"}</p>
+                      <p className="text-xs text-faint">
+                        {t.priceRobux > 0 ? formatRobux(t.priceRobux) : "Free"}
+                      </p>
+                    </td>
                     <td className="px-5 py-4">
                       <Badge value={t.status} />
                     </td>

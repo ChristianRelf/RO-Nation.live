@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { activateTicket, cancelTicket } from "@/app/actions/tickets";
 import { formatDateTime, isPast } from "@/lib/format";
 import { ticketCalendarHref } from "@/lib/tickets/ics";
 import { priceLabel } from "@/lib/tickets/pricing";
 import { Celebrate } from "./celebrate";
+import { ActivateButton, CancelButton } from "./ticket-actions";
 import { TicketArt } from "./ticket-art";
 
 // The ticket, open. Shared by RNL's route and every partner's — the two pages
@@ -41,7 +41,6 @@ export function TicketDetail({
   brandName,
   ticketUrl,
   justIssued,
-  justActivated,
 }: {
   ticket: Ticket;
   event: Event;
@@ -50,8 +49,8 @@ export function TicketDetail({
   brandName: string;
   /** The absolute URL the QR encodes — this page, on this host. */
   ticketUrl: string;
+  /** Straight from checkout. Activation throws its own confetti — see ActivateButton. */
   justIssued: boolean;
-  justActivated: boolean;
 }) {
   const cancelled = ticket.status === "CANCELLED";
   const checkedIn = ticket.status === "CHECKED_IN";
@@ -78,7 +77,7 @@ export function TicketDetail({
 
   return (
     <div className="relative">
-      <Celebrate when={justIssued || justActivated} />
+      <Celebrate when={justIssued} />
       <div className="accent-glow pointer-events-none absolute inset-x-0 top-0 h-56" />
 
       <div className="shell relative pt-16 sm:pt-20">
@@ -176,12 +175,7 @@ export function TicketDetail({
                 Activating reveals the QR code on your stub. Do it when
                 you&apos;re heading in — it can&apos;t be undone.
               </p>
-              <form action={activateTicket} className="mt-5">
-                <input type="hidden" name="ticketId" value={ticket.id} />
-                <button className="btn btn-accent w-full text-base sm:w-auto">
-                  Activate ticket 🎉
-                </button>
-              </form>
+              <ActivateButton ticketId={ticket.id} />
             </>
           )}
 
@@ -234,18 +228,7 @@ export function TicketDetail({
             </Link>
           </div>
 
-          {!cancelled && !ended ? (
-            <form action={cancelTicket} className="mt-6 border-t border-line pt-5">
-              <input type="hidden" name="ticketId" value={ticket.id} />
-              <button className="text-sm text-faint transition-colors hover:text-red-400">
-                Cancel this ticket
-              </button>
-              <p className="mt-1.5 text-xs text-faint">
-                Frees your spot for someone else. You can reserve again if
-                there&apos;s room.
-              </p>
-            </form>
-          ) : null}
+          {!cancelled && !ended ? <CancelButton ticketId={ticket.id} /> : null}
         </div>
       </section>
     </div>

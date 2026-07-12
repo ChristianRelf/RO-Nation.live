@@ -34,15 +34,34 @@ export default async function PartnerReservePage({
 
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
-  // Already holding an active ticket? Jump straight to it.
+  // Already holding an active ticket? Go and look at it.
+  //
+  // This redirect is also how a SUCCESSFUL PURCHASE navigates, which is not a
+  // coincidence and is worth knowing before you touch it. The reserve action
+  // revalidates, this page re-renders as part of that, and by then the buyer
+  // holds a ticket — so this fires, and lands them on it. That is exactly what
+  // is wanted, and it is the only navigation that works: a *page* redirect is a
+  // real HTTP 307 that the browser re-requests, so the middleware runs and a
+  // partner's buyer reaches the partner's ticket page. A redirect from the
+  // ACTION would not have (see app/actions/tickets.ts), and a client-side push
+  // cannot either, because this very re-render unmounts the component that would
+  // have to make it.
+  //
+  // Hence ?issued=1 here: it is what throws the confetti and says "Ticket
+  // confirmed". The cost is that someone who types this URL while already
+  // holding a ticket gets congratulated for it. That is a fair trade for the
+  // purchase — the path everybody actually takes — being right, and it needs no
+  // JavaScript to work at all.
   const existing = await prisma.ticket.findUnique({
     where: { eventId_userId: { eventId: event.id, userId: session.uid } },
   });
   if (existing && existing.status !== "CANCELLED") {
-    redirect(`/tickets/${existing.code}`);
+    redirect(`/tickets/${existing.code}?issued=1`);
   }
 
   const offers = await offersForEvent(event);
+  // Nothing left that anybody could take — don't render a checkout whose every
+  // option is dead. Sold out is the event page's news to break.
   if (!anyAvailable(offers)) redirect(`/events/${event.slug}?error=soldout`);
 
   // The terms name the partner as the organiser, not RNL — they run the show,
@@ -80,13 +99,11 @@ export default async function PartnerReservePage({
       <section className="shell py-10">
         <CheckoutForm
           eventId={event.id}
-          slug={event.slug}
           eventTitle={event.title}
           startsAt={event.startsAt}
           venue={event.venue}
           offers={offers}
           terms={terms}
-          error={searchParams.error}
         />
       </section>
     </div>
