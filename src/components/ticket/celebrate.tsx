@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { TicketQR } from "./ticket-qr";
 import { partnerBySlug } from "@/lib/partners/registry";
+
+// The confetti burst, and nothing else.
+//
+// This used to own the QR as well, which forced the whole ticket to be a client
+// component. It doesn't any more: the ticket — and the QR inside it — renders on
+// the server, and this renders nothing at all. It exists purely to fire once,
+// when a ticket is issued or activated.
 
 // RNL's burst: the accent, its lift, bone, and two warm sparks.
 const RNL_CONFETTI = ["#2b6bff", "#7aa2ff", "#ece9e1", "#ffd166", "#ff5d73"];
@@ -108,38 +114,16 @@ function fireConfetti() {
   requestAnimationFrame(tick);
 }
 
-export function TicketReveal({
-  code,
-  justActivated = false,
-}: {
-  code: string;
-  justActivated?: boolean;
-}) {
+/** Fires once when `when` is true. Renders nothing. */
+export function Celebrate({ when }: { when: boolean }) {
   const fired = useRef(false);
   useEffect(() => {
-    if (justActivated && !fired.current) {
+    if (when && !fired.current) {
       fired.current = true;
       const t = setTimeout(fireConfetti, 120);
       return () => clearTimeout(t);
     }
-  }, [justActivated]);
+  }, [when]);
 
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative rounded-2xl bg-elev p-4 ring-1 ring-accent/30 shadow-[0_0_60px_-15px_rgb(var(--accent-rgb)/0.6)]">
-        <TicketQR code={code} size={200} />
-        {/* corner brackets for a "scanner" feel */}
-        <span className="pointer-events-none absolute left-1.5 top-1.5 h-4 w-4 border-l-2 border-t-2 border-accent/60" />
-        <span className="pointer-events-none absolute right-1.5 top-1.5 h-4 w-4 border-r-2 border-t-2 border-accent/60" />
-        <span className="pointer-events-none absolute bottom-1.5 left-1.5 h-4 w-4 border-b-2 border-l-2 border-accent/60" />
-        <span className="pointer-events-none absolute bottom-1.5 right-1.5 h-4 w-4 border-b-2 border-r-2 border-accent/60" />
-      </div>
-      <p className="mt-4 font-mono text-lg font-semibold tracking-[0.25em] text-fg">
-        {code}
-      </p>
-      <p className="mt-1 text-xs text-faint">
-        Show this at the door · verified in-experience
-      </p>
-    </div>
-  );
+  return null;
 }

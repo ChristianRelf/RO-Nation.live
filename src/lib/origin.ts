@@ -1,4 +1,5 @@
 import "server-only";
+import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { env } from "./env";
 
@@ -23,4 +24,28 @@ export function requestOrigin(req: NextRequest) {
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
   if (!host) return env.siteUrl;
   return `${isLocalHost(host) ? "http" : "https"}://${host}`;
+}
+
+/**
+ * The same thing, for a server component, which has no NextRequest to hand.
+ *
+ * Reading headers() opts the route out of static rendering — every page that
+ * calls this is already `force-dynamic`, because a ticket is per-person anyway.
+ */
+export function currentOrigin() {
+  const host = headers().get("x-forwarded-host") || headers().get("host");
+  if (!host) return env.siteUrl;
+  return `${isLocalHost(host) ? "http" : "https"}://${host}`;
+}
+
+/**
+ * The absolute URL a ticket's QR encodes — on the host the holder is actually
+ * on, which is what keeps a Sleep Token RO ticket pointing at Sleep Token RO.
+ *
+ * `<slug>.ronation.live/tickets/ST-XXXXXX` is a real, working URL: the
+ * middleware rewrites it to /p/<slug>/tickets/ST-XXXXXX. Scanning the mark on a
+ * partner's ticket opens the partner's site, in the partner's brand.
+ */
+export function ticketUrl(code: string) {
+  return `${currentOrigin()}/tickets/${code}`;
 }

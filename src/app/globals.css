@@ -253,16 +253,180 @@
     @apply w-full;
   }
 
-  /* Perforated ticket stub edge (left column notches) */
-  .ticket-perf {
-    background-image: radial-gradient(
-      circle at center,
-      var(--bg) 0 5px,
-      transparent 6px
+  /* ---- Tickets --------------------------------------------------------
+   * A ticket is a physical object, so it is built like one: a body and a
+   * tear-off stub, a perforated seam between them, and a punched notch at each
+   * end of that seam.
+   *
+   * The notches are cut with a mask, and that has one consequence that is easy
+   * to get wrong: the shadow MUST be a drop-shadow filter, never a box-shadow.
+   * A box-shadow is the shadow of the element's BOX — it would happily paint
+   * itself straight through the holes the mask just punched. drop-shadow follows
+   * the alpha, so it traces the notches.
+   *
+   * `--stub` is the stub's size along whichever axis the ticket is split on:
+   * its HEIGHT while the ticket is stacked, its WIDTH once it goes side by side.
+   * The seam and the notch positions are both derived from it, so the tear line,
+   * the two punches and the cream panel cannot drift apart from each other.
+   */
+  .ticket {
+    --notch: 11px;
+    --stub: 13.5rem; /* stacked: the stub's height */
+    position: relative;
+    filter: drop-shadow(0 20px 38px rgb(0 0 0 / 0.5));
+    -webkit-mask:
+      radial-gradient(
+          circle var(--notch) at 0 calc(100% - var(--stub)),
+          #0000 97%,
+          #000 100%
+        )
+        left / 51% 100% no-repeat,
+      radial-gradient(
+          circle var(--notch) at 100% calc(100% - var(--stub)),
+          #0000 97%,
+          #000 100%
+        )
+        right / 51% 100% no-repeat;
+    mask:
+      radial-gradient(
+          circle var(--notch) at 0 calc(100% - var(--stub)),
+          #0000 97%,
+          #000 100%
+        )
+        left / 51% 100% no-repeat,
+      radial-gradient(
+          circle var(--notch) at 100% calc(100% - var(--stub)),
+          #0000 97%,
+          #000 100%
+        )
+        right / 51% 100% no-repeat;
+  }
+
+  .ticket-stub-panel {
+    width: 100%;
+    height: var(--stub);
+    /* The tear line. Drawn in the PAGE colour, so it reads as holes punched
+       through the card rather than as a line printed on it. */
+    border-top: 2px dashed var(--bg);
+  }
+
+  @media (min-width: 640px) {
+    .ticket {
+      --stub: 15rem; /* side by side: the stub's width */
+      -webkit-mask:
+        radial-gradient(
+            circle var(--notch) at calc(100% - var(--stub)) 0,
+            #0000 97%,
+            #000 100%
+          )
+          top / 100% 51% no-repeat,
+        radial-gradient(
+            circle var(--notch) at calc(100% - var(--stub)) 100%,
+            #0000 97%,
+            #000 100%
+          )
+          bottom / 100% 51% no-repeat;
+      mask:
+        radial-gradient(
+            circle var(--notch) at calc(100% - var(--stub)) 0,
+            #0000 97%,
+            #000 100%
+          )
+          top / 100% 51% no-repeat,
+        radial-gradient(
+            circle var(--notch) at calc(100% - var(--stub)) 100%,
+            #0000 97%,
+            #000 100%
+          )
+          bottom / 100% 51% no-repeat;
+    }
+
+    .ticket-stub-panel {
+      width: var(--stub);
+      height: auto;
+      border-top: 0;
+      border-left: 2px dashed var(--bg);
+    }
+  }
+
+  /* The compact wallet row. Always side by side, smaller stub, tighter notch. */
+  .ticket-mini {
+    --notch: 8px;
+    --stub: 6.75rem;
+    position: relative;
+    filter: drop-shadow(0 10px 22px rgb(0 0 0 / 0.4));
+    -webkit-mask:
+      radial-gradient(
+          circle var(--notch) at calc(100% - var(--stub)) 0,
+          #0000 97%,
+          #000 100%
+        )
+        top / 100% 51% no-repeat,
+      radial-gradient(
+          circle var(--notch) at calc(100% - var(--stub)) 100%,
+          #0000 97%,
+          #000 100%
+        )
+        bottom / 100% 51% no-repeat;
+    mask:
+      radial-gradient(
+          circle var(--notch) at calc(100% - var(--stub)) 0,
+          #0000 97%,
+          #000 100%
+        )
+        top / 100% 51% no-repeat,
+      radial-gradient(
+          circle var(--notch) at calc(100% - var(--stub)) 100%,
+          #0000 97%,
+          #000 100%
+        )
+        bottom / 100% 51% no-repeat;
+  }
+
+  .ticket-mini-stub {
+    width: var(--stub);
+    border-left: 2px dashed var(--bg);
+  }
+
+  /* Security print: the fine engine-turned linework a real ticket is guilloched
+     with. Bone at 4% over a dark body — it reads as texture, not as pattern. */
+  .ticket-guilloche {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='48'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.6'%3E%3Cpath d='M0 24 Q 15 4 30 24 T 60 24 T 90 24 T 120 24'/%3E%3Cpath d='M0 32 Q 15 12 30 32 T 60 32 T 90 32 T 120 32'/%3E%3Cpath d='M0 16 Q 15 -4 30 16 T 60 16 T 90 16 T 120 16'/%3E%3Cpath d='M0 40 Q 15 20 30 40 T 60 40 T 90 40 T 120 40'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 48px;
+    opacity: 0.05;
+  }
+
+  /* A slow sheen across the card on hover — printed foil catching the light. */
+  .ticket-foil::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      rgb(var(--fg-rgb) / 0.06) 44%,
+      rgb(var(--fg-rgb) / 0.13) 50%,
+      rgb(var(--fg-rgb) / 0.06) 56%,
+      transparent 68%
     );
-    background-size: 14px 22px;
-    background-position: center;
-    background-repeat: repeat-y;
+    background-size: 250% 100%;
+    background-position: 160% 0;
+    transition: background-position 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .group:hover .ticket-foil::after {
+    background-position: -60% 0;
+  }
+
+  /* Cancelled / checked-in overprint. Rubber-stamped across the face. */
+  .ticket-stamp {
+    font-family: var(--font-display), Impact, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    -webkit-text-stroke: 2px currentColor;
+    color: currentColor;
+    opacity: 0.28;
+    transform: rotate(-11deg);
   }
 }
 

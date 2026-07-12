@@ -5,6 +5,9 @@ import { AdminHeader } from "@/components/admin-ui";
 import { EventForm } from "@/components/event-form";
 import { updateEvent } from "@/app/actions/studio";
 import { requireStudioUser } from "@/lib/studio";
+import { env } from "@/lib/env";
+import { robuxSalesAllowed } from "@/lib/tickets/pricing";
+import { tierDraftsFor } from "@/lib/tickets/tiers-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Edit event" };
@@ -33,6 +36,8 @@ export default async function StudioEditEventPage({
         event={event}
         error={searchParams.error}
         cancelHref="/studio/events"
+        tiers={await tierDraftsFor(event.id)}
+        robuxEnabled={robuxSalesAllowed(null, env.robuxTickets)}
       />
     </div>
   );

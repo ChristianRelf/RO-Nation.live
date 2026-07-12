@@ -6,6 +6,7 @@ import { partnerBySlug } from "@/lib/partners/registry";
 import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { StatusBadge } from "@/components/ui";
+import { TierSummary } from "@/components/ticket/tier-summary";
 import {
   dateBlock,
   formatDate,
@@ -13,6 +14,8 @@ import {
   isPast,
   relativeDays,
 } from "@/lib/format";
+import { offersForEvent } from "@/lib/tickets/offers";
+import { anyAvailable } from "@/lib/tickets/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +69,15 @@ export default async function PartnerEventPage({
       })
     : null;
   const hasTicket = Boolean(myTicket && myTicket.status !== "CANCELLED");
+
+  const offers = await offersForEvent(event);
+  const available = anyAvailable(offers);
+  // Nothing on sale, but nothing sold out either — every tier is priced in Robux
+  // and Robux sales are off. That is not "sold out", and saying so would be a lie
+  // to anyone still hoping to get in.
+  const notOnSale =
+    !available && offers.every((o) => o.blockedReason === "locked");
+  const allFree = offers.every((o) => o.priceRobux === 0);
 
   const { day, month } = dateBlock(event.startsAt);
   const error = searchParams.error ? reserveErrors[searchParams.error] : null;
@@ -190,6 +202,8 @@ export default async function PartnerEventPage({
                 <p className="mb-4 text-sm text-muted">Unlimited entry</p>
               )}
 
+              <TierSummary offers={offers} />
+
               {error ? (
                 <p className="mb-4 border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
                   {error}
@@ -218,7 +232,14 @@ export default async function PartnerEventPage({
                     View my ticket
                   </Link>
                 </div>
-              ) : soldOut ? (
+              ) : notOnSale ? (
+                <button
+                  disabled
+                  className="btn w-full cursor-not-allowed border border-line text-muted"
+                >
+                  Not on sale yet
+                </button>
+              ) : !available ? (
                 <button
                   disabled
                   className="btn w-full cursor-not-allowed border border-line text-muted"
@@ -230,7 +251,7 @@ export default async function PartnerEventPage({
                   href={`/events/${event.slug}/reserve`}
                   className="btn btn-accent w-full text-base"
                 >
-                  Reserve free ticket
+                  {allFree ? "Reserve free ticket" : "Get tickets"}
                 </Link>
               ) : (
                 <Link
@@ -244,7 +265,8 @@ export default async function PartnerEventPage({
               )}
 
               <p className="mt-4 text-center text-xs text-faint">
-                Free entry · verified in-experience at the door
+                {allFree ? "Free entry · verified" : "Verified"} in-experience at
+                the door
               </p>
             </div>
           </div>

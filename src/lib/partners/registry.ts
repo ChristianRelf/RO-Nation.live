@@ -36,6 +36,21 @@ export type Partner = {
   /** Which of the shared features this partner gets. A missing one must 404, not just hide its nav item. */
   features: readonly PartnerFeature[];
   /**
+   * May this partner price tickets in Robux?
+   *
+   * This is the SECOND key, not the switch. Paid ticketing is off globally
+   * (ROBUX_TICKETS_ENABLED, default false) because Robux cannot be charged from
+   * a website at all — a real payment happens inside the Roblox experience, via
+   * a Developer Product and a ProcessReceipt handler that does not exist yet.
+   * Until it does, a paid ticket could be sold and never honoured.
+   *
+   * So this flag on its own sells nothing. It records which partners have agreed
+   * to take money, so that the day the master switch flips, it flips only for
+   * them — and not for every partner who happened to be in this file. See
+   * robuxSalesAllowed() in lib/tickets/pricing.ts, which needs both.
+   */
+  robuxTickets?: boolean;
+  /**
    * The partner's public Roblox group, linked from their site. Presentation
    * only — it grants NOTHING.
    *
@@ -78,6 +93,11 @@ export const PARTNERS: readonly Partner[] = [
       "Sleep Token RO is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
     ticketPrefix: "ST",
     features: ["events"],
+    // Sleep Token RO want paid VIP tiers alongside free general admission. This
+    // says they are allowed to price them; it does not put any on sale. The
+    // master switch is off, so their paid tiers render locked and the reserve
+    // action refuses them. Nothing is charged to anybody today.
+    robuxTickets: true,
     themeColor: "#0a0908",
     // Bone and dim gold — the brand's own accent, matched to the palette below.
     confetti: ["#b09254", "#d8c9a8", "#8e7742", "#ece9e1"],

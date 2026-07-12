@@ -72,12 +72,71 @@ const stroEvents = [
  *
  * Find it at https://www.roblox.com/users/<id>/profile — the number in the URL.
  */
+/**
+ * Ticket tiers for the opening night.
+ *
+ * This is the shape the whole paid-ticket option exists for: a free general
+ * admission that anybody can take, sitting next to a Robux-priced VIP tier that
+ * NOBODY can take — because ROBUX_TICKETS_ENABLED is off. Reserve a ticket for
+ * this show and you will see the VIP tier rendered, priced, and locked, with the
+ * reserve action refusing it independently of the UI.
+ *
+ * The other show is left with no tiers at all, on purpose: that is the implicit
+ * free admission, and it is what every event looked like before tiers existed.
+ * Both paths are seeded so both stay exercised.
+ */
+const stroTiers: Record<
+  string,
+  Array<{
+    name: string;
+    description: string;
+    perks: string[];
+    priceRobux: number;
+    capacity: number;
+  }>
+> = {
+  "stro-the-first-rite": [
+    {
+      name: "General Admission",
+      description: "Standing, main floor. Free, as every RNL show has been.",
+      perks: ["Entry when doors open", "Main floor and balcony"],
+      priceRobux: 0,
+      capacity: 0, // uncapped — the room's own 300 still applies
+    },
+    {
+      name: "VIP — Front Barrier",
+      description: "The barrier, an hour early, and a room to wait in.",
+      perks: [
+        "Early entry, one hour before doors",
+        "Reserved spot on the front barrier",
+        "Access to the VIP room between sets",
+      ],
+      priceRobux: 250,
+      capacity: 40,
+    },
+  ],
+};
+
 async function seedPartner() {
   for (const e of stroEvents) {
-    await prisma.event.upsert({
+    const event = await prisma.event.upsert({
       where: { slug: e.slug },
       update: {},
       create: e,
+    });
+
+    const tiers = stroTiers[e.slug];
+    if (!tiers) continue;
+
+    // Only on a show that has none, so re-running the seed never duplicates a
+    // tier or resets one somebody has edited in the portal.
+    const already = await prisma.ticketTier.count({
+      where: { eventId: event.id },
+    });
+    if (already > 0) continue;
+
+    await prisma.ticketTier.createMany({
+      data: tiers.map((t, i) => ({ ...t, eventId: event.id, sortOrder: i })),
     });
   }
 

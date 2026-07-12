@@ -14,6 +14,7 @@ import {
   s,
   uniqueSlug,
 } from "@/lib/content";
+import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 
 // Event + blog CRUD for Roblox group members ranked 30+. Every action re-checks
 // the rank server-side — the UI hiding a button is not a permission.
@@ -35,14 +36,17 @@ export async function createEvent(formData: FormData) {
   await requireStudioUser();
 
   const data = readEventForm(formData);
+  const tiers = readTiersForm(formData);
   if (!data.title || !data.startsAt || !data.description) {
     redirect("/studio/events/new?error=required");
   }
+  if (tiers === null) redirect("/studio/events/new?error=tiers");
 
   const slug = await uniqueSlug(data.title, "event");
-  await prisma.event.create({
+  const event = await prisma.event.create({
     data: { ...data, startsAt: data.startsAt!, slug },
   });
+  await syncEventTiers(event.id, tiers);
 
   refreshEvents();
   redirect("/studio/events");
@@ -61,14 +65,20 @@ export async function updateEvent(formData: FormData) {
 
   const id = s(formData, "id");
   const data = readEventForm(formData);
+  const tiers = readTiersForm(formData);
   if (!id || !data.title || !data.startsAt || !data.description) {
     redirect(`/studio/events/${id}/edit?error=required`);
   }
+  if (tiers === null) redirect(`/studio/events/${id}/edit?error=tiers`);
 
-  await prisma.event.updateMany({
+  const { count } = await prisma.event.updateMany({
     where: { id, partnerId: null },
     data: { ...data, startsAt: data.startsAt! },
   });
+  // Gated on the same check the event write just made: the tier sync matches on
+  // eventId alone, so without this a studio user could rewrite a partner's tiers
+  // by pasting their event id — the exact hole `partnerId: null` above closes.
+  if (count > 0) await syncEventTiers(id, tiers);
 
   refreshEvents();
   redirect("/studio/events");

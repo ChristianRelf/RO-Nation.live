@@ -6,6 +6,8 @@ import {
 import { partnerPortalPath } from "@/lib/partners/urls";
 import { createPartnerEvent } from "@/app/actions/partner-events";
 import { EventForm } from "@/components/event-form";
+import { env } from "@/lib/env";
+import { robuxSalesAllowed } from "@/lib/tickets/pricing";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "New show" };
@@ -41,6 +43,7 @@ export default async function NewPartnerShowPage({
         error={searchParams.error}
         cancelHref={base}
         scope={partner.slug}
+        robuxEnabled={robuxSalesAllowed(partner, env.robuxTickets)}
       />
     </div>
   );

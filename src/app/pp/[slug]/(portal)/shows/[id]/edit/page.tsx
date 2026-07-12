@@ -12,6 +12,9 @@ import {
 } from "@/app/actions/partner-events";
 import { EventForm } from "@/components/event-form";
 import { ConfirmButton } from "@/components/confirm-button";
+import { env } from "@/lib/env";
+import { robuxSalesAllowed } from "@/lib/tickets/pricing";
+import { tierDraftsFor } from "@/lib/tickets/tiers-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Edit show" };
@@ -65,6 +68,8 @@ export default async function EditPartnerShowPage({
         error={searchParams.error}
         cancelHref={base}
         scope={partner.slug}
+        tiers={await tierDraftsFor(event.id)}
+        robuxEnabled={robuxSalesAllowed(partner, env.robuxTickets)}
       />
     </div>
   );

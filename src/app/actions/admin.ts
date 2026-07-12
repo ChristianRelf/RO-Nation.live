@@ -11,6 +11,7 @@ import {
   clearAdminSession,
 } from "@/lib/session";
 import { readEventForm, s, uniqueSlug } from "@/lib/content";
+import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 
 // ---- helpers -----------------------------------------------------
 async function assertAdmin() {
@@ -39,13 +40,18 @@ export async function adminLogout() {
 export async function createEvent(formData: FormData) {
   await assertAdmin();
   const data = readEventForm(formData);
+  const tiers = readTiersForm(formData);
   if (!data.title || !data.startsAt || !data.description) {
     redirect("/admin/events/new?error=required");
   }
+  if (tiers === null) redirect("/admin/events/new?error=tiers");
+
   const slug = await uniqueSlug(data.title, "event");
-  await prisma.event.create({
+  const event = await prisma.event.create({
     data: { ...data, startsAt: data.startsAt!, slug },
   });
+  await syncEventTiers(event.id, tiers);
+
   revalidatePath("/admin/events");
   revalidatePath("/events");
   revalidatePath("/");
@@ -59,13 +65,22 @@ export async function updateEvent(formData: FormData) {
   await assertAdmin();
   const id = s(formData, "id");
   const data = readEventForm(formData);
+  const tiers = readTiersForm(formData);
   if (!id || !data.title || !data.startsAt || !data.description) {
     redirect(`/admin/events/${id}/edit?error=required`);
   }
-  await prisma.event.updateMany({
+  if (tiers === null) redirect(`/admin/events/${id}/edit?error=tiers`);
+
+  const { count } = await prisma.event.updateMany({
     where: { id, partnerId: null },
     data: { ...data, startsAt: data.startsAt! },
   });
+  // Zero rows means the id was not RNL's to edit. The tier sync is NOT scoped by
+  // partner on its own — it matches on eventId — so it has to be gated on the
+  // same check the event write just made, or a partner's tiers could be rewritten
+  // through RNL's form by pasting their event id.
+  if (count > 0) await syncEventTiers(id, tiers);
+
   revalidatePath("/admin/events");
   revalidatePath("/events");
   revalidatePath("/");

@@ -1,4 +1,5 @@
 import type { Event } from "@prisma/client";
+import { TierEditor, type TierDraft } from "./tier-editor";
 
 // Format a Date for a <input type="datetime-local">. Uses the server's local
 // time; set the container TZ env var if you want a specific zone.
@@ -21,6 +22,8 @@ export function EventForm({
   error,
   cancelHref = "/admin/events",
   scope,
+  tiers = [],
+  robuxEnabled = false,
 }: {
   action: (formData: FormData) => void;
   event?: Event;
@@ -36,6 +39,10 @@ export function EventForm({
    * app/actions/partner-events.ts.
    */
   scope?: string;
+  /** The event's existing tiers. Empty = a single free General Admission. */
+  tiers?: TierDraft[];
+  /** Whether a priced tier could actually be SOLD by this org today. It can't. */
+  robuxEnabled?: boolean;
 }) {
   return (
     <form action={action} className="space-y-6">
@@ -162,6 +169,8 @@ export function EventForm({
           </div>
         </div>
       </div>
+
+      <TierEditor initial={tiers} robuxEnabled={robuxEnabled} />
 
       <div className="card space-y-5 p-6">
         <h3 className="font-display text-lg">Artwork &amp; visibility</h3>

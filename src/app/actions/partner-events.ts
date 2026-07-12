@@ -9,6 +9,7 @@ import {
   requirePartnerManager,
 } from "@/lib/partners/guard";
 import { partnerPortalPath, partnerSiteRoute } from "@/lib/partners/urls";
+import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 
 // A partner's own shows.
 //
@@ -41,14 +42,16 @@ export async function createPartnerEvent(formData: FormData) {
   assertPartnerFeature(partner, "events");
 
   const data = readEventForm(formData);
+  const tiers = readTiersForm(formData);
   const base = partnerPortalPath(partner.slug, "/shows");
 
   if (!data.title || !data.startsAt || !data.description) {
     redirect(`${base}/new?error=required`);
   }
+  if (tiers === null) redirect(`${base}/new?error=tiers`);
 
   const slug = await uniqueSlug(data.title, "event");
-  await prisma.event.create({
+  const event = await prisma.event.create({
     data: {
       ...data,
       startsAt: data.startsAt!,
@@ -58,6 +61,7 @@ export async function createPartnerEvent(formData: FormData) {
       partnerId: partner.slug,
     },
   });
+  await syncEventTiers(event.id, tiers);
 
   refresh(partner.slug);
   redirect(base);
@@ -70,18 +74,24 @@ export async function updatePartnerEvent(formData: FormData) {
 
   const id = s(formData, "id");
   const data = readEventForm(formData);
+  const tiers = readTiersForm(formData);
   const base = partnerPortalPath(partner.slug, "/shows");
 
   if (!id || !data.title || !data.startsAt || !data.description) {
     redirect(`${base}/${id}/edit?error=required`);
   }
+  if (tiers === null) redirect(`${base}/${id}/edit?error=tiers`);
 
   // updateMany, matched on the partner too: an id belonging to RNL or to another
   // partner matches zero rows rather than being quietly overwritten.
-  await prisma.event.updateMany({
+  const { count } = await prisma.event.updateMany({
     where: { id, partnerId: partner.slug },
     data: { ...data, startsAt: data.startsAt! },
   });
+  // And the tiers go through the same gate. syncEventTiers matches on eventId
+  // alone, so gating it on the row the event write actually matched is what stops
+  // one partner reaching another's tiers by pasting their event id.
+  if (count > 0) await syncEventTiers(id, tiers);
 
   refresh(partner.slug);
   redirect(base);

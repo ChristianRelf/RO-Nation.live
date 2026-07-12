@@ -68,10 +68,52 @@ model Event {
   partnerId String?
 
   tickets Ticket[]
+  tiers   TicketTier[]
 
   @@index([status, startsAt])
   @@index([partnerId, status, startsAt])
   @@map("events")
+}
+
+// ------------------------------------------------------------------
+// What you can actually get for an event: General Admission, VIP, and so on.
+//
+// An event with NO tiers is not broken — it is read as a single free general
+// admission, which is what every event was before this table existed. See
+// `effectiveTiers` in lib/tickets/pricing.ts: that fallback is what let this
+// ship without backfilling a tier row onto every past event.
+//
+// Prices are in Robux, and ONLY in Robux. There is no second currency and no
+// `currency` column to get wrong — a Roblox event sells to Roblox players. A
+// tier priced above zero cannot actually be issued yet: paid ticketing is behind
+// the kill switch in lib/tickets/pricing.ts, and both the checkout page and the
+// reserve action refuse independently while it is off.
+// ------------------------------------------------------------------
+model TicketTier {
+  id          String  @id @default(cuid())
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String
+  name        String // "General Admission", "VIP — Front Barrier"
+  description String?
+  /// One perk per line, listed on the tier card at checkout.
+  perks       String[] @default([])
+
+  /// 0 = free. Anything above 0 needs Robux payments switched on to be sold.
+  priceRobux Int @default(0)
+
+  /// A cap for THIS tier. 0 = uncapped, though the event's own capacity still
+  /// applies on top — a tier can never oversell the room.
+  capacity Int @default(0)
+
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tickets Ticket[]
+
+  @@index([eventId, sortOrder])
+  @@map("ticket_tiers")
 }
 
 // ------------------------------------------------------------------
@@ -95,6 +137,21 @@ model Ticket {
   checkedInAt     DateTime?
   termsAcceptedAt DateTime? // when the holder accepted the ticket T&Cs at checkout
   activatedAt     DateTime? // when the holder "activated" the ticket (reveals QR)
+
+  // Which tier they hold. SetNull, not Cascade: deleting a tier must not delete
+  // the tickets people are already holding to a show that is still happening.
+  // They keep their seat — the snapshot below is what still names it.
+  tier   TicketTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  tierId String?
+
+  // Frozen at issue, and deliberately duplicated from the tier.
+  //
+  // Renaming "VIP" to "VIP — Front Barrier", re-pricing it, or deleting it
+  // outright must not rewrite a ticket somebody already holds: what they bought
+  // is what their ticket says, forever. Same reasoning as the denormalised
+  // username on SurveyResponse. NULL tierName = the implicit free admission.
+  tierName   String?
+  priceRobux Int     @default(0)
 
   @@unique([eventId, userId]) // one ticket per person per event
   @@index([eventId])

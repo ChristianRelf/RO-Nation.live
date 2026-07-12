@@ -29,6 +29,22 @@ export const env = {
   gameApiKey: process.env.GAME_API_KEY || "",
   allowDevLogin: process.env.ALLOW_DEV_LOGIN === "true",
 
+  // ---- Paid ticketing (Robux) --------------------------------------
+  // The master switch for selling tickets for Robux. OFF, and it must stay off
+  // until the in-experience purchase pipeline exists.
+  //
+  // Robux cannot be charged from a website. A real payment is a Developer
+  // Product prompted inside the Roblox experience, confirmed by a ProcessReceipt
+  // handler on the game server calling back here. None of that is built. Ticket
+  // *tiers* can already carry a Robux price — that is the option, and partners
+  // can configure it today — but with this false, a priced tier renders locked at
+  // checkout and app/actions/tickets.ts refuses to issue one. Both checks are
+  // independent on purpose: the UI one is courtesy, the action one is the wall.
+  //
+  // Opt-in is deliberately "true" and nothing else, so an empty or missing value
+  // can never read as on.
+  robuxTickets: process.env.ROBUX_TICKETS_ENABLED === "true",
+
   // ---- Studio (/studio) -------------------------------------------
   // Members of this Roblox group at this rank or above can create and edit
   // events and blog posts on the main site, by signing in with Roblox.

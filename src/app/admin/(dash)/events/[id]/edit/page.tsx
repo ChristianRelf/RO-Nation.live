@@ -4,6 +4,9 @@ import { AdminHeader } from "@/components/admin-ui";
 import { EventForm } from "@/components/event-form";
 import { updateEvent } from "@/app/actions/admin";
 import { requireAdmin } from "@/lib/session";
+import { env } from "@/lib/env";
+import { robuxSalesAllowed } from "@/lib/tickets/pricing";
+import { tierDraftsFor } from "@/lib/tickets/tiers-form";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +31,13 @@ export default async function EditEventPage({
         subtitle={event.title}
         action={{ label: "View attendees", href: `/admin/events/${event.id}/attendees` }}
       />
-      <EventForm action={updateEvent} event={event} error={searchParams.error} />
+      <EventForm
+        action={updateEvent}
+        event={event}
+        error={searchParams.error}
+        tiers={await tierDraftsFor(event.id)}
+        robuxEnabled={robuxSalesAllowed(null, env.robuxTickets)}
+      />
     </div>
   );
 }
