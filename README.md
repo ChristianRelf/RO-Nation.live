@@ -243,6 +243,58 @@ prisma/                      # schema + seed
 
 ---
 
+## Applying a destructive schema change
+
+The container runs `prisma db push` on boot, without `--accept-data-loss`. That
+flag is left off on purpose: in an entrypoint it would give **every** future
+deploy standing permission to drop a column or a table in production, silently,
+because some schema edit happened to imply one.
+
+So when Prisma refuses a change, the container stops and prints why. That is the
+system working. Do this:
+
+1. **Read the warning.** It names the exact change it won't make on its own.
+
+2. **Prove it's safe against the real data.** Don't take the schema's word for
+   it — ask the database. For a new unique constraint, look for rows that would
+   collide:
+
+   ```bash
+   docker compose exec db psql -U ronation -d ronation \
+     -c 'SELECT "partnerId", kind, "robloxId", count(*)
+           FROM roster_entries GROUP BY 1,2,3 HAVING count(*) > 1;'
+   ```
+
+   Zero rows means nothing collides and the constraint is safe to add.
+
+3. **Apply it once, by hand:**
+
+   ```bash
+   docker compose run --rm web npx prisma db push --accept-data-loss
+   ```
+
+4. **Bring the app back up.** `db push` is now a no-op for that change, so the
+   entrypoint sails past it on every subsequent boot.
+
+Never put `--accept-data-loss` into `docker-entrypoint.sh` to make a deploy go
+green. The one time it silently drops the tickets table, it will be at 2am on a
+show night.
+
+### The partner-scoping migration (first deploy after partners landed)
+
+This one warns about a unique constraint on
+`roster_entries(partnerId, kind, robloxId)`. It is safe, and here is the actual
+reason rather than a shrug: the previous schema already enforced
+`unique(kind, robloxId)`, so Postgres has been rejecting duplicate pairs all
+along. Every existing row backfills to `partnerId = 'shasha'` (the column
+default), so the new triple is unique by construction. Prisma simply can't
+*prove* that, so it asks.
+
+Run the check in step 2 anyway — it costs nothing and confirms the reasoning
+against your data rather than mine — then apply step 3.
+
+---
+
 ## Notes
 
 - Times entered in the admin use the **server's timezone**. Set `TZ` in `.env`
