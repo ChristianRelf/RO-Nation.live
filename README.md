@@ -7,6 +7,10 @@ an API, post careers, take applications, and run it all from an admin dashboard.
 Built with **Next.js (App Router) · TypeScript · Tailwind · Prisma · PostgreSQL**,
 and packaged to run on any VPS with **Docker Compose**.
 
+> **Setting this up for the first time? Follow [STARTUP.md](STARTUP.md)** — a
+> step-by-step guide from a fresh clone to a live site, including the SHASHA
+> staff portal and troubleshooting. The rest of this README is reference.
+
 ---
 
 ## Features
@@ -16,6 +20,7 @@ and packaged to run on any VPS with **Docker Compose**.
 - **In-game verification API** — your Roblox experience checks & redeems tickets over HTTP with a shared key.
 - **Careers** — post roles, collect applications, track status (New → Reviewing → Accepted/Rejected).
 - **Admin dashboard** — password-protected: create/edit events & careers, view attendees, check people in, review applications.
+- **SHASHA staff portal** — `portal.ronation.live/shasha`: Discord-gated VIP list & blacklist, searchable, with roles/reasons and a full change history.
 - **Marketing pages** — Home, About (with a ticketing explainer), Contact + FAQ.
 - **Design** — dark, Live-Nation-inspired: big condensed type, event ticker, ticket-stub cards. No AI-template smell.
 
