@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { partnerBySlug } from "@/lib/partners/registry";
-import { getFeaturedEvent, getUpcomingEvents, type EventWithCount } from "@/lib/queries";
+import {
+  getFeaturedEvent,
+  getPastEvents,
+  getUpcomingEvents,
+  type EventWithCount,
+} from "@/lib/queries";
 import { dateBlock, formatDate, formatTime, relativeDays } from "@/lib/format";
 import { StatusBadge } from "@/components/ui";
 
@@ -27,12 +32,14 @@ export default async function PartnerHome({
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
 
-  const [featured, upcoming] = await Promise.all([
+  const [featured, upcoming, past] = await Promise.all([
     getFeaturedEvent(partner.slug),
     getUpcomingEvents(partner.slug, 6),
+    getPastEvents(partner.slug, 4),
   ]);
 
   const rest = upcoming.filter((e) => e.id !== featured?.id);
+  const attended = past.reduce((n, e) => n + e.ticketsCount, 0);
 
   return (
     <div>
@@ -135,6 +142,58 @@ export default async function PartnerHome({
         </section>
       ) : null}
 
+      {/* ---- Previously ---------------------------------------------- */}
+      {/* The archive. Numbers, not photographs: there is no key art or show
+          photography yet, and a grid of grey rectangles pretending to be a
+          gallery reads worse than an honest record of who turned up. When the
+          shots exist, they drop into these cards above the date line. */}
+      {past.length ? (
+        <section className="border-y border-line bg-elev">
+          <div className="shell py-20">
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="kicker text-accent">Previously</p>
+                <h2 className="display mt-3 text-4xl sm:text-5xl">
+                  Shows we&apos;ve staged
+                </h2>
+              </div>
+              {attended > 0 ? (
+                <p className="text-sm text-muted">
+                  <span className="tnum font-semibold text-fg">{attended}</span>{" "}
+                  tickets honoured at the door
+                </p>
+              ) : null}
+            </div>
+
+            <ul className="grid gap-px border border-line bg-line sm:grid-cols-2">
+              {past.map((event) => (
+                <li key={event.id} className="bg-bg p-8">
+                  <p className="tnum text-xs font-semibold tracking-kicker text-faint">
+                    {formatDate(event.startsAt)}
+                  </p>
+                  <h3 className="display mt-3 text-2xl">{event.title}</h3>
+                  {event.tagline ? (
+                    <p className="mt-2 text-sm text-muted">{event.tagline}</p>
+                  ) : null}
+                  <p className="mt-5 border-t border-line pt-4 text-sm text-faint">
+                    {event.venue ?? "Venue TBA"}
+                    {event.ticketsCount > 0 ? (
+                      <>
+                        {" · "}
+                        <span className="tnum text-muted">
+                          {event.ticketsCount}
+                        </span>{" "}
+                        in the room
+                      </>
+                    ) : null}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
       {/* ---- What this is -------------------------------------------- */}
       <section className="shell pb-24">
         <div className="panel-paper p-10 sm:p-14">
@@ -155,9 +214,66 @@ export default async function PartnerHome({
           </p>
         </div>
       </section>
+
+      {/* ---- Questions ------------------------------------------------ */}
+      <section className="shell pb-24">
+        <div className="mb-8 border-t border-line pt-10">
+          <p className="kicker text-accent">Questions</p>
+          <h2 className="display mt-3 text-4xl sm:text-5xl">Before you come</h2>
+        </div>
+
+        <div className="max-w-3xl space-y-3">
+          {FAQS.map((f) => (
+            <details
+              key={f.q}
+              className="card group p-0 [&_summary::-webkit-details-marker]:hidden"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold text-fg">
+                {f.q}
+                <span className="text-accent transition-transform group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <p className="px-5 pb-5 leading-relaxed text-muted">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
+
+/**
+ * The questions the door actually gets asked.
+ *
+ * Two of these are load-bearing rather than decorative. The VIP answer must not
+ * imply anything is on sale — paid tiers render locked while ROBUX_TICKETS_ENABLED
+ * is off, and a page that promises otherwise sells a ticket the site cannot
+ * honour. The last answer restates the disclaimer in the visitor's own words;
+ * the footer carries the formal one, and neither is a substitute for the other.
+ */
+const FAQS = [
+  {
+    q: "What does a ticket cost?",
+    a: "Nothing. Every ticket you can reserve today is free — one per Roblox account, tied to that account, and checked at the door.",
+  },
+  {
+    q: "How do I get in on the night?",
+    a: "Reserve a ticket, then open it from My tickets when doors open. It carries a code beginning ST-, and the crew redeems it as you come through — no code, no entry, so reserve before you travel.",
+  },
+  {
+    q: "Some shows list a VIP tier. Can I buy one?",
+    a: "Not yet. VIP tiers are designed and priced, but paid ticketing is switched off across the platform, so they render locked and cannot be reserved. Nothing is charged to anybody today.",
+  },
+  {
+    q: "The show is sold out. Will more tickets appear?",
+    a: "The cap is the room, so a sold-out show usually stays sold out. Tickets do come back when people release them, and the next show is normally announced within a few weeks.",
+  },
+  {
+    q: "Are you the band?",
+    a: "No — and we don't pretend to be. This is a fan-run Roblox event series, produced with RO. Nation LIVE. It isn't affiliated with, endorsed by, or connected to Sleep Token, and no official music, artwork or branding is used.",
+  },
+];
 
 function FeaturedShow({ event }: { event: EventWithCount }) {
   const { day, month } = dateBlock(event.startsAt);

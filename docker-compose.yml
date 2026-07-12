@@ -37,6 +37,13 @@ services:
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       DISCORD_MANAGER_IDS: ${DISCORD_MANAGER_IDS:-}
       DISCORD_STAFF_IDS: ${DISCORD_STAFF_IDS:-}
+      # Read by prisma/seed.ts, which the entrypoint runs on every boot. The
+      # seed is the ONLY thing that creates the PartnerMember row granting
+      # access to portal.ronation.live/sleeptokenro — so without these two here,
+      # the variables sit in .env, never reach the container, and the portal is
+      # unreachable for everybody. The seed's own upsert is idempotent.
+      STRO_OWNER_ROBLOX_ID: ${STRO_OWNER_ROBLOX_ID:-}
+      STRO_OWNER_NAME: ${STRO_OWNER_NAME:-}
       TZ: ${TZ:-UTC}
     # Bound to loopback: the public entrypoint is Caddy on 443. Publishing this
     # on 0.0.0.0 would let anyone reach the app over plain HTTP, bypassing TLS.
@@ -66,6 +73,9 @@ services:
       SITE_HOST: ${SITE_HOST:-ronation.live}
       PORTAL_HOST: ${PORTAL_HOST:-portal.ronation.live}
       SURVEY_HOST: ${SURVEY_HOST:-survey.ronation.live}
+      # The Caddyfile reads this on its address line. It has a default there, so
+      # the omission was invisible — but STRO_HOST in .env was being ignored.
+      STRO_HOST: ${STRO_HOST:-sleeptokenro.ronation.live}
       ACME_EMAIL: ${ACME_EMAIL:-admin@ronation.live}
     ports:
       - "80:80"
