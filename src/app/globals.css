@@ -2,8 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The RNL theme, and the shape every other brand is poured into.
+ *
+ * A brand file (src/styles/brands/<slug>.css) sets ONLY what is in the two
+ * "a brand sets" blocks below, under a :root[data-brand="<slug>"] selector.
+ * Everything in the derived block is computed from those, so a brand cannot
+ * desync a colour from its own channels — the failure mode this structure
+ * exists to make impossible.
+ */
 :root {
-  /* RGB channels — consumed by Tailwind via rgb(var(--x) / <alpha-value>). */
+  /* ---- Channels — a brand sets these ------------------------------------
+     RGB triples, so Tailwind can apply its own alpha:
+     rgb(var(--x) / <alpha-value>). */
   --bg-rgb: 10 10 10;
   --elev-rgb: 15 15 15;
   --surface-rgb: 19 19 19;
@@ -11,20 +21,50 @@
   --muted-rgb: 142 138 128; /* warm grey */
   --faint-rgb: 99 96 88;
   --accent-rgb: 43 107 255; /* electric blue */
+  --accent-hi-rgb: 122 162 255; /* the accent, lifted — the ticket mark's gradient runs accent → accent-hi */
   --paper-rgb: 235 230 214; /* cream — inverted panels */
 
-  /* Convenience full-color vars for raw CSS in this file. */
-  --bg: rgb(10 10 10);
-  --elev: rgb(15 15 15);
-  --surface: rgb(19 19 19);
-  --line: rgb(255 255 255 / 0.1);
-  --fg: rgb(236 233 225);
-  --muted: rgb(142 138 128);
-  --faint: rgb(99 96 88);
-  --accent: rgb(43 107 255);
-  --accent-soft: rgb(43 107 255 / 0.12);
-  --paper: rgb(235 230 214);
+  /* Ink that sits ON a filled ground. Not decoration — contrast. RNL's accent
+     is dark, so its ink is white; a brand with a light accent (gold, bone)
+     MUST flip these, or every primary button on their site is unreadable. */
+  --accent-ink-rgb: 255 255 255;
+  --paper-ink-rgb: 15 15 15;
+
+  /* Hairlines. Split into a channel + alphas so a brand can tint its rules
+     (bone rather than white) without restating every alpha that uses them. */
+  --line-rgb: 255 255 255;
+  --line-alpha: 0.1;
+  --line-strong-alpha: 0.22;
+
+  /* ---- Shape + texture — a brand overrides these to opt out -------------
+     The RNL identity is as much the grain, the noise and the 3px corner as it
+     is the blue. A brand turns any of it off here, so the shared components
+     keep working unchanged. */
   --radius: 3px;
+  --card-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  --paper-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  --grain-fine-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-fine-opacity: 0.06;
+  --grain-coarse-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-coarse-opacity: 0.11;
+
+  /* ---- Derived — a brand file NEVER touches these ------------------------
+     Full colours for raw CSS in this file (and for Tailwind's `line` /
+     `accent-soft`, which carry a baked-in alpha). */
+  --bg: rgb(var(--bg-rgb));
+  --elev: rgb(var(--elev-rgb));
+  --surface: rgb(var(--surface-rgb));
+  --fg: rgb(var(--fg-rgb));
+  --muted: rgb(var(--muted-rgb));
+  --faint: rgb(var(--faint-rgb));
+  --accent: rgb(var(--accent-rgb));
+  --accent-hi: rgb(var(--accent-hi-rgb));
+  --accent-ink: rgb(var(--accent-ink-rgb));
+  --accent-soft: rgb(var(--accent-rgb) / 0.12);
+  --paper: rgb(var(--paper-rgb));
+  --paper-ink: rgb(var(--paper-ink-rgb));
+  --line: rgb(var(--line-rgb) / var(--line-alpha));
+  --line-strong: rgb(var(--line-rgb) / var(--line-strong-alpha));
 }
 
 @layer base {
@@ -49,7 +89,7 @@
 
   ::selection {
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
   }
 
   :focus-visible {
@@ -77,11 +117,11 @@
     background: var(--bg);
   }
   ::-webkit-scrollbar-thumb {
-    background: #242424;
+    background: rgb(var(--fg-rgb) / 0.14);
     border: 3px solid var(--bg);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #333;
+    background: rgb(var(--fg-rgb) / 0.22);
   }
 
   /* Respect users who ask for less motion — neutralise transitions, scroll
@@ -135,27 +175,29 @@
   }
   .btn-accent {
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
     box-shadow: 0 8px 20px -10px rgb(var(--accent-rgb) / 0.75);
   }
+  /* Hover inverts to the foreground colour, so the ink is the background by
+     construction — no separate token needed, and it can never be wrong. */
   .btn-accent:hover {
     background: var(--fg);
-    color: #0a0a0a;
+    color: var(--bg);
     box-shadow: 0 10px 24px -10px rgb(0 0 0 / 0.55);
   }
   .btn-ghost {
     @apply border text-fg;
-    border-color: rgb(255 255 255 / 0.22);
+    border-color: var(--line-strong);
   }
   .btn-ghost:hover {
     background: var(--fg);
-    color: #0a0a0a;
+    color: var(--bg);
     border-color: var(--fg);
   }
 
   .card {
     background-color: var(--surface);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+    background-image: var(--card-texture);
     background-size: 200px 200px;
     background-blend-mode: soft-light;
     border: 1px solid var(--line);
@@ -183,10 +225,10 @@
     position: relative;
     overflow: hidden;
     background-color: var(--paper);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+    background-image: var(--paper-texture);
     background-size: 220px 220px;
     background-blend-mode: soft-light;
-    color: #0f0f0f;
+    color: var(--paper-ink);
     border-radius: var(--radius);
   }
 
@@ -196,7 +238,7 @@
            font-bold uppercase tracking-[0.13em];
     border-radius: var(--radius);
     border-color: var(--line);
-    background: rgb(255 255 255 / 0.025);
+    background: rgb(var(--fg-rgb) / 0.025);
     color: var(--muted);
   }
 
@@ -229,15 +271,17 @@
     text-wrap: balance;
   }
 
-  /* Fine film grain layered over everything (incl. cards + paper panels) */
+  /* Fine film grain layered over everything (incl. cards + paper panels).
+     `.grain` stays on <body> unconditionally — a brand opts out by zeroing the
+     tokens, so no component has to know which brand it is rendering under. */
   .grain::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: 60;
     pointer-events: none;
-    opacity: 0.06;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: var(--grain-fine-opacity);
+    background-image: var(--grain-fine-image);
   }
 
   /* Coarser grunge sitting behind page content for a gritty, tactile base */
@@ -247,8 +291,8 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    opacity: 0.11;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: var(--grain-coarse-opacity);
+    background-image: var(--grain-coarse-image);
     background-size: 320px 320px;
   }
 

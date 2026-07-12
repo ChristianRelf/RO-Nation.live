@@ -54,7 +54,7 @@ export default async function AccountPage({
             {session ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-xl border border-line bg-bg p-4">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-accent font-bold text-white">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-accent font-bold text-accent-ink">
                     {session.displayName.charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">

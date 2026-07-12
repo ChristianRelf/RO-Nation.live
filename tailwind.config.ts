@@ -8,16 +8,26 @@ const config: Config = {
         bg: "rgb(var(--bg-rgb) / <alpha-value>)",
         elev: "rgb(var(--elev-rgb) / <alpha-value>)",
         surface: "rgb(var(--surface-rgb) / <alpha-value>)",
-        line: "var(--line)",
+        line: {
+          DEFAULT: "var(--line)",
+          strong: "var(--line-strong)",
+        },
         fg: "rgb(var(--fg-rgb) / <alpha-value>)",
         muted: "rgb(var(--muted-rgb) / <alpha-value>)",
         faint: "rgb(var(--faint-rgb) / <alpha-value>)",
+        // `ink` is the readable colour ON that ground. Anything drawn on
+        // bg-accent must be text-accent-ink, never text-white — a brand with a
+        // light accent flips it to near-black. Same for paper.
         accent: {
           DEFAULT: "rgb(var(--accent-rgb) / <alpha-value>)",
           soft: "var(--accent-soft)",
-          ink: "#ffffff",
+          hi: "rgb(var(--accent-hi-rgb) / <alpha-value>)",
+          ink: "rgb(var(--accent-ink-rgb) / <alpha-value>)",
         },
-        paper: "rgb(var(--paper-rgb) / <alpha-value>)",
+        paper: {
+          DEFAULT: "rgb(var(--paper-rgb) / <alpha-value>)",
+          ink: "rgb(var(--paper-ink-rgb) / <alpha-value>)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
@@ -31,12 +41,18 @@ const config: Config = {
         shell: "1240px",
       },
       borderRadius: {
-        card: "18px",
+        // The brand's corner. RNL is 3px; a partner can go sharp (0) or soft.
+        brand: "var(--radius)",
       },
       keyframes: {
+        // Slide a strip left by exactly its own width. Its identical twin sits
+        // immediately to its right, so at the end of the cycle the twin is
+        // pixel-for-pixel where the first strip started and the loop restarts
+        // invisibly. (At -50% the pair only spanned 1.5 strip widths, which left
+        // a blank band on screen whenever the strips were narrow.)
         marquee: {
           "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(-100%)" },
         },
         "fade-up": {
           "0%": { opacity: "0", transform: "translateY(14px)" },

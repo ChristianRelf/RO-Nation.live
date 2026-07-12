@@ -37,7 +37,7 @@ function isReserved(r: number, c: number) {
   return false;
 }
 
-function Eye({ x, y }: { x: number; y: number }) {
+function Eye({ x, y, grad }: { x: number; y: number; grad: string }) {
   // x,y are module coordinates of the eye's top-left; each eye is 7x7 modules.
   return (
     <g transform={`translate(${x} ${y})`}>
@@ -48,10 +48,10 @@ function Eye({ x, y }: { x: number; y: number }) {
         height={6}
         rx={2}
         fill="none"
-        stroke="url(#tq-grad)"
+        stroke={grad}
         strokeWidth={1}
       />
-      <rect x={2} y={2} width={3} height={3} rx={1} fill="url(#tq-grad)" />
+      <rect x={2} y={2} width={3} height={3} rx={1} fill={grad} />
     </g>
   );
 }
@@ -60,11 +60,23 @@ export function TicketQR({
   code,
   size = 176,
   className,
+  // The two letters punched into the centre badge. A partner's ticket carries
+  // their mark, not RNL's.
+  mark = "RO",
 }: {
   code: string;
   size?: number;
   className?: string;
+  mark?: string;
 }) {
+  // An SVG id is global to the document, so several tickets on one page (which
+  // is exactly what the wallet renders) would all point at the first mark's
+  // gradient. Derive the id from the code and they stay distinct. The usual
+  // answer is useId(), but this component also renders inside TicketStub, which
+  // is a server component — no hooks available there.
+  const gradId = `tq-${code.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const grad = `url(#${gradId})`;
+
   const cells = bits(code, GRID * GRID);
   const dots: JSX.Element[] = [];
   for (let r = 0; r < GRID; r++) {
@@ -72,13 +84,7 @@ export function TicketQR({
       if (isReserved(r, c)) continue;
       if (!cells[r * GRID + c]) continue;
       dots.push(
-        <circle
-          key={`${r}-${c}`}
-          cx={c + 0.5}
-          cy={r + 0.5}
-          r={0.42}
-          fill="url(#tq-grad)"
-        />,
+        <circle key={`${r}-${c}`} cx={c + 0.5} cy={r + 0.5} r={0.42} fill={grad} />,
       );
     }
   }
@@ -96,9 +102,11 @@ export function TicketQR({
       shapeRendering="geometricPrecision"
     >
       <defs>
-        <linearGradient id="tq-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#2b6bff" />
-          <stop offset="100%" stopColor="#7aa2ff" />
+        {/* var() only resolves in a CSS declaration, so the stops are set via
+            `style`, not the SVG presentation attribute. */}
+        <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" style={{ stopColor: "var(--accent)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--accent-hi)" }} />
         </linearGradient>
       </defs>
 
@@ -109,14 +117,14 @@ export function TicketQR({
         width={GRID + 2}
         height={GRID + 2}
         rx={2.5}
-        fill="#0b0b0f"
+        style={{ fill: "var(--elev)" }}
       />
 
       {dots}
 
-      <Eye x={0} y={0} />
-      <Eye x={GRID - 7} y={0} />
-      <Eye x={0} y={GRID - 7} />
+      <Eye x={0} y={0} grad={grad} />
+      <Eye x={GRID - 7} y={0} grad={grad} />
+      <Eye x={0} y={GRID - 7} grad={grad} />
 
       {/* centre logo badge */}
       <g transform={`translate(${mid + 0.5} ${mid + 0.5})`}>
@@ -126,8 +134,8 @@ export function TicketQR({
           width={8.8}
           height={8.8}
           rx={2.5}
-          fill="#0b0b0f"
-          stroke="url(#tq-grad)"
+          style={{ fill: "var(--elev)" }}
+          stroke={grad}
           strokeWidth={0.7}
         />
         <text
@@ -138,9 +146,9 @@ export function TicketQR({
           fontSize={3.6}
           fontWeight={800}
           fontFamily="system-ui, sans-serif"
-          fill="url(#tq-grad)"
+          fill={grad}
         >
-          RO
+          {mark}
         </text>
       </g>
     </svg>

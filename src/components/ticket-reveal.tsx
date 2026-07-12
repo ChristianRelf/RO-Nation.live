@@ -2,6 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { TicketQR } from "./ticket-qr";
+import { partnerBySlug } from "@/lib/partners/registry";
+
+// RNL's burst: the accent, its lift, bone, and two warm sparks.
+const RNL_CONFETTI = ["#2b6bff", "#7aa2ff", "#ece9e1", "#ffd166", "#ff5d73"];
+
+/**
+ * Confetti is painted to a <canvas>, which cannot read a CSS variable — so
+ * unlike everything else on the page, these colours have to be literal. They
+ * come from the partner preset, found via the `data-brand` the root layout put
+ * on <html>.
+ */
+function confettiColors(): readonly string[] {
+  const slug = document.documentElement.dataset.brand || null;
+  return partnerBySlug(slug)?.confetti ?? RNL_CONFETTI;
+}
 
 // Self-contained confetti burst on a full-screen canvas — no dependencies.
 function fireConfetti() {
@@ -30,7 +45,7 @@ function fireConfetti() {
   resize();
   window.addEventListener("resize", resize);
 
-  const colors = ["#2b6bff", "#7aa2ff", "#ece9e1", "#ffd166", "#ff5d73"];
+  const colors = confettiColors();
   const W = () => window.innerWidth;
   const H = () => window.innerHeight;
 
@@ -111,7 +126,7 @@ export function TicketReveal({
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative rounded-2xl bg-[#0b0b0f] p-4 ring-1 ring-accent/30 shadow-[0_0_60px_-15px_rgba(43,107,255,0.6)]">
+      <div className="relative rounded-2xl bg-elev p-4 ring-1 ring-accent/30 shadow-[0_0_60px_-15px_rgb(var(--accent-rgb)/0.6)]">
         <TicketQR code={code} size={200} />
         {/* corner brackets for a "scanner" feel */}
         <span className="pointer-events-none absolute left-1.5 top-1.5 h-4 w-4 border-l-2 border-t-2 border-accent/60" />

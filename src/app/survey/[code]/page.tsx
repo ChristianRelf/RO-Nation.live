@@ -215,7 +215,7 @@ function Question({
             {q.options.map((opt) => (
               <label
                 key={opt}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-bg px-4 py-3 text-sm transition-colors hover:border-white/20"
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-bg px-4 py-3 text-sm transition-colors hover:border-line-strong"
               >
                 <input
                   type="radio"
@@ -235,7 +235,7 @@ function Question({
             {q.options.map((opt) => (
               <label
                 key={opt}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-bg px-4 py-3 text-sm transition-colors hover:border-white/20"
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-bg px-4 py-3 text-sm transition-colors hover:border-line-strong"
               >
                 <input
                   type="checkbox"
@@ -254,7 +254,7 @@ function Question({
             {[1, 2, 3, 4, 5].map((n) => (
               <label
                 key={n}
-                className="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-line bg-bg px-4 py-3 text-sm transition-colors hover:border-white/20 has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent"
+                className="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-line bg-bg px-4 py-3 text-sm transition-colors hover:border-line-strong has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent"
               >
                 <input
                   type="radio"
@@ -274,7 +274,7 @@ function Question({
             {["YES", "NO"].map((v) => (
               <label
                 key={v}
-                className="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-line bg-bg px-4 py-3 text-sm font-semibold transition-colors hover:border-white/20 has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent"
+                className="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-line bg-bg px-4 py-3 text-sm font-semibold transition-colors hover:border-line-strong has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent"
               >
                 <input
                   type="radio"

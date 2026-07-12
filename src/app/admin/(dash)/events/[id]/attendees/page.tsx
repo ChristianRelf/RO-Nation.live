@@ -61,7 +61,7 @@ export default async function AttendeesPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {event.tickets.map((t) => (
-                  <tr key={t.id} className="hover:bg-white/[0.02]">
+                  <tr key={t.id} className="hover:bg-fg/[0.02]">
                     <td className="px-5 py-4">
                       <p className="font-medium">{t.user.displayName}</p>
                       <p className="text-xs text-muted">
@@ -161,7 +161,7 @@ function StatusForm({
 }) {
   const cls =
     variant === "accent"
-      ? "rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+      ? "rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-ink hover:opacity-90"
       : variant === "danger"
         ? "rounded-lg border border-line px-3 py-1.5 text-xs text-faint hover:border-red-500/40 hover:text-red-400"
         : "rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-fg";

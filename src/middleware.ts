@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SURVEY_CODE_RE } from "@/lib/utils";
+import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
 
 // Host routing.
 //
-//   ronation.live/…                     → the public site
-//   portal.ronation.live/shasha         → the SHASHA staff portal
+//   ronation.live/…                       → the public site
+//   portal.ronation.live/shasha           → the SHASHA staff portal
+//   portal.ronation.live/<slug>           → a partner's portal      → /pp/<slug>
 //   survey.ronation.live/ABCDE-FGHJKMN-PQR → a survey
+//   <slug>.ronation.live/…                → a partner's site        → /p/<slug>/…
 //
 // Everything is derived from the request host rather than an env var, because
 // Next inlines env into the edge bundle at build time — and the Docker image is
 // built without runtime config. Host-derived means it is simply always right.
+//
+// Partner sites are *rewritten* to an internal /p/<slug> prefix, not redirected,
+// so the pretty URL survives — the same trick the survey host already uses for
+// /<CODE>. They are not served from a bare /<slug>, because that would reserve
+// the whole top-level namespace against every future RNL route.
 
 /** Paths the portal host may serve. */
 const PORTAL_PATHS = ["/shasha", "/legal", "/api/auth/discord", "/api/health"];
@@ -25,6 +33,22 @@ const SURVEY_PATHS = [
   "/api/auth/roblox",
   "/api/auth/logout",
   "/api/health",
+];
+
+/**
+ * Paths a partner host serves as-is, without the /p/<slug> rewrite.
+ *
+ * Roblox sign-in must run on the partner's own host: the session cookie is
+ * scoped to the host it was set on, so the OAuth round trip has to start and
+ * end here — the survey host already works this way. /api/v1 is authenticated
+ * by key and scoped by that key, not by the host it was called on.
+ */
+const PARTNER_PATHS = [
+  "/legal",
+  "/api/auth/roblox",
+  "/api/auth/logout",
+  "/api/health",
+  "/api/v1",
 ];
 
 const isLocalHost = (host: string) =>
@@ -53,22 +77,45 @@ function surveyCodeFrom(pathname: string) {
   return SURVEY_CODE_RE.test(code) ? code.toUpperCase() : null;
 }
 
+/** The internal prefixes: /p/<slug>/… (partner site), /pp/<slug>/… (its portal). */
+const INTERNAL_BRAND_RE = /^\/(?:p|pp)\/([a-z0-9-]+)(?=\/|$)/;
+
+function areaFor(path: string) {
+  if (path.startsWith("/p/")) return "partner";
+  if (path.startsWith("/pp/")) return "partner-portal";
+  if (path.startsWith("/shasha")) return "portal";
+  if (path.startsWith("/survey")) return "survey";
+  return "site";
+}
+
 /**
- * Continue, tagging the request with the area it belongs to. The root layout
- * reads this to drop the marketing header/footer on portal and survey pages, so
- * those areas get their own chrome without a second root layout.
+ * The brand a request renders in, derived from the *internal* path — which only
+ * this file can produce. Never from anything the client sent.
+ */
+function brandFor(path: string) {
+  const m = INTERNAL_BRAND_RE.exec(path);
+  return m ? (partnerBySlug(m[1])?.slug ?? "") : "";
+}
+
+/**
+ * Continue, tagging the request with the area it belongs to and the brand it
+ * renders in. The root layout reads both: the area to drop the marketing
+ * header/footer, the brand to set data-brand on <html>.
+ *
+ * SECURITY: the header bag starts as a copy of the client's, so both headers
+ * MUST be set on every path through here — including to "". Otherwise
+ * `curl -H 'x-ron-brand: sleeptokenro' https://ronation.live/` would reach the
+ * layout with a brand it has no claim to. x-ron-brand is presentation only:
+ * nothing derives authorization from it (that comes from the partner guard,
+ * which re-reads membership from the database). Caddy strips both on the way in
+ * as well — belt and braces.
  */
 function proceed(req: NextRequest, url?: URL) {
   const headers = new Headers(req.headers);
   const path = url?.pathname ?? req.nextUrl.pathname;
-  headers.set(
-    "x-ron-area",
-    path.startsWith("/shasha")
-      ? "portal"
-      : path.startsWith("/survey")
-        ? "survey"
-        : "site",
-  );
+
+  headers.set("x-ron-area", areaFor(path));
+  headers.set("x-ron-brand", brandFor(path));
 
   return url
     ? NextResponse.rewrite(url, { request: { headers } })
@@ -78,6 +125,22 @@ function proceed(req: NextRequest, url?: URL) {
 export function middleware(req: NextRequest) {
   const host = (req.headers.get("host") || "").split(":")[0].toLowerCase();
   const { pathname, search } = req.nextUrl;
+
+  // ---- <slug>.ronation.live — a partner site ------------------------
+  // Checked before the local-host branch, so <slug>.localhost exercises the real
+  // partner routing in dev. Returns null for every host that isn't a registered,
+  // active partner, so this whole branch is dead until one is.
+  const partner = partnerByHost(host);
+  if (partner) {
+    if (matches(pathname, PARTNER_PATHS)) return proceed(req);
+
+    // Everything else is theirs. An unknown path rewrites to /p/<slug>/<junk>,
+    // which 404s into *their* not-found — in their brand, rather than bouncing
+    // the visitor to RNL.
+    const url = req.nextUrl.clone();
+    url.pathname = `/p/${partner.slug}${pathname === "/" ? "" : pathname}`;
+    return proceed(req, url);
+  }
 
   // ---- Local dev: one origin serves everything --------------------
   if (!host || isLocalHost(host)) {
@@ -110,6 +173,15 @@ export function middleware(req: NextRequest) {
 
   // ---- portal.ronation.live ---------------------------------------
   if (isPortalHost(host)) {
+    // portal.ronation.live/<slug>/… → the partner's own portal.
+    const seg = pathname.split("/")[1] ?? "";
+    const portalPartner = partnerBySlug(seg);
+    if (portalPartner) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/pp/${portalPartner.slug}${pathname.slice(seg.length + 1)}`;
+      return proceed(req, url);
+    }
+
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/shasha", req.nextUrl.origin));
     }
@@ -126,6 +198,30 @@ export function middleware(req: NextRequest) {
   if (pathname === "/shasha" || pathname.startsWith("/shasha/")) {
     return NextResponse.redirect(
       new URL(`${pathname}${search}`, `https://${subdomainFor("portal", host)}`),
+    );
+  }
+
+  // The internal prefixes are not public URLs. If one leaks — a copied link, a
+  // stale revalidatePath — bounce it to where that page actually lives.
+  const site = /^\/p\/([a-z0-9-]+)(\/.*)?$/.exec(pathname);
+  if (site) {
+    const target = partnerBySlug(site[1]);
+    if (target) {
+      return NextResponse.redirect(
+        new URL(
+          `${site[2] ?? "/"}${search}`,
+          `https://${subdomainFor(target.slug, host)}`,
+        ),
+      );
+    }
+  }
+  const portal = /^\/pp(\/.*)?$/.exec(pathname);
+  if (portal) {
+    return NextResponse.redirect(
+      new URL(
+        `${portal[1] ?? "/"}${search}`,
+        `https://${subdomainFor("portal", host)}`,
+      ),
     );
   }
 

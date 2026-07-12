@@ -40,7 +40,7 @@ export default async function StudioEventsPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {events.map((e) => (
-                  <tr key={e.id} className="hover:bg-white/[0.02]">
+                  <tr key={e.id} className="hover:bg-fg/[0.02]">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{e.title}</span>

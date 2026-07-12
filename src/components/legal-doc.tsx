@@ -61,7 +61,7 @@ export function LegalDoc({
                   "rounded-[3px] border px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors",
                   active
                     ? "border-accent/40 bg-accent-soft text-accent"
-                    : "border-line text-muted hover:border-white/20 hover:text-fg",
+                    : "border-line text-muted hover:border-line-strong hover:text-fg",
                 )}
               >
                 {l.label}

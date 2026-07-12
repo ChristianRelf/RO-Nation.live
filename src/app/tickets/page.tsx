@@ -48,7 +48,7 @@ export default async function TicketsPage({
       {searchParams.new ? (
         <div className="shell mt-8">
           <div className="flex flex-wrap items-center gap-3 rounded-[3px] border border-accent/40 bg-accent-soft px-5 py-4">
-            <span className="rounded-[3px] bg-accent px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white">
+            <span className="rounded-[3px] bg-accent px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-accent-ink">
               Confirmed
             </span>
             <p className="text-sm text-fg">

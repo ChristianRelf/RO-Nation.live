@@ -45,11 +45,11 @@ export function StatCard({
 }
 
 const badgeStyles: Record<string, string> = {
-  DRAFT: "bg-white/5 text-faint border-line",
+  DRAFT: "bg-fg/5 text-faint border-line",
   PUBLISHED: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30",
-  ARCHIVED: "bg-white/5 text-faint border-line",
+  ARCHIVED: "bg-fg/5 text-faint border-line",
   OPEN: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30",
-  CLOSED: "bg-white/5 text-faint border-line",
+  CLOSED: "bg-fg/5 text-faint border-line",
   NEW: "bg-accent-soft text-accent border-accent/30",
   REVIEWING: "bg-amber-400/10 text-amber-300 border-amber-400/30",
   ACCEPTED: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30",

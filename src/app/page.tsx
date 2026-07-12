@@ -81,7 +81,7 @@ export default async function HomePage() {
                 <br />
                 built to
                 <br />
-                <span className="mt-1 inline-block bg-accent px-2.5 text-white">
+                <span className="mt-1 inline-block bg-accent px-2.5 text-accent-ink">
                   sell out.
                 </span>
               </h1>
@@ -120,7 +120,7 @@ export default async function HomePage() {
                     className="h-full w-full object-cover grayscale-[0.2] transition-all duration-700 group-hover:scale-[1.03] group-hover:grayscale-0"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/20 to-transparent" />
-                  <div className="absolute left-0 top-0 border-b border-r border-white/15 bg-bg/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
+                  <div className="absolute left-0 top-0 border-b border-r border-fg/15 bg-bg/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
                     Next show
                   </div>
                   <div className="absolute inset-x-4 bottom-4">
@@ -244,7 +244,7 @@ export default async function HomePage() {
               </p>
               <Link
                 href="/careers"
-                className="mt-7 inline-flex items-center gap-2 rounded-[3px] bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.09em] text-paper transition-colors hover:bg-accent hover:text-white"
+                className="mt-7 inline-flex items-center gap-2 rounded-[3px] bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.09em] text-paper transition-colors hover:bg-accent hover:text-accent-ink"
               >
                 See open roles{careers.length ? ` — ${careers.length}` : ""}
               </Link>

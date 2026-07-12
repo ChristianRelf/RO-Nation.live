@@ -207,7 +207,7 @@ function AccountMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="flex items-center gap-2 rounded-full border border-line py-1 pl-1 pr-3 transition-colors hover:border-white/20"
+        className="flex items-center gap-2 rounded-full border border-line py-1 pl-1 pr-3 transition-colors hover:border-line-strong"
       >
         <Avatar account={account} />
         <span className="max-w-[110px] truncate text-sm font-medium">
@@ -267,7 +267,7 @@ function Avatar({ account }: { account: NonNullable<Account> }) {
     );
   }
   return (
-    <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-xs font-bold text-white">
+    <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-xs font-bold text-accent-ink">
       {account.displayName.charAt(0).toUpperCase()}
     </span>
   );

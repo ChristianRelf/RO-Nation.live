@@ -54,7 +54,7 @@ export function EventCard({
         <div className="absolute inset-0 bg-gradient-to-t from-bg/90 via-transparent to-transparent" />
 
         {/* date block */}
-        <div className="absolute left-0 top-0 flex flex-col items-center border-b border-r border-white/15 bg-bg/85 px-3.5 py-2 leading-none">
+        <div className="absolute left-0 top-0 flex flex-col items-center border-b border-r border-fg/15 bg-bg/85 px-3.5 py-2 leading-none">
           <span className="font-display text-2xl text-fg">{day}</span>
           <span className="mt-1 text-[9px] font-bold tracking-[0.2em] text-accent">
             {month}

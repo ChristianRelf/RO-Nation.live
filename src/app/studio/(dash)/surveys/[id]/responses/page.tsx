@@ -208,7 +208,7 @@ function QuestionSummary({
                   {b.count} · {pct}%
                 </span>
               </div>
-              <div className="h-2 w-full bg-white/[0.04]">
+              <div className="h-2 w-full bg-fg/[0.04]">
                 <div
                   className="h-2 bg-accent"
                   style={{ width: `${(b.count / max) * 100}%` }}

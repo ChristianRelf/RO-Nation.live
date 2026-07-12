@@ -37,7 +37,7 @@ export default async function CareersPage() {
               <Reveal key={c.id} delay={i * 50}>
                 <Link
                   href={`/careers/${c.slug}`}
-                  className="group card flex flex-col gap-5 p-6 transition-all hover:border-white/20 sm:flex-row sm:items-center sm:justify-between"
+                  className="group card flex flex-col gap-5 p-6 transition-all hover:border-line-strong sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="max-w-2xl">
                     <div className="flex flex-wrap items-center gap-2">

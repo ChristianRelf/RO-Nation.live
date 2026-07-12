@@ -36,7 +36,7 @@ export default async function StudioBlogPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {posts.map((p) => (
-                  <tr key={p.id} className="hover:bg-white/[0.02]">
+                  <tr key={p.id} className="hover:bg-fg/[0.02]">
                     <td className="px-5 py-4">
                       <span className="font-medium">{p.title}</span>
                       <span className="block text-xs text-muted">

@@ -57,9 +57,9 @@ const statusStyles: Record<string, string> = {
   live: "border-red-500/30 bg-red-500/10 text-red-400",
   upcoming: "border-accent/30 bg-accent-soft text-accent",
   soon: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  past: "border-line bg-white/5 text-faint",
+  past: "border-line bg-fg/5 text-faint",
   open: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  closed: "border-line bg-white/5 text-faint",
+  closed: "border-line bg-fg/5 text-faint",
   soldout: "border-red-500/30 bg-red-500/10 text-red-400",
 };
 
@@ -73,7 +73,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]",
+        "inline-flex items-center gap-1.5 rounded-brand border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]",
         statusStyles[status] ?? statusStyles.past,
       )}
     >

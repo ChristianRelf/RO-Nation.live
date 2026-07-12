@@ -37,7 +37,7 @@ export default async function AdminCareersPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {careers.map((c) => (
-                  <tr key={c.id} className="hover:bg-white/[0.02]">
+                  <tr key={c.id} className="hover:bg-fg/[0.02]">
                     <td className="px-5 py-4">
                       <p className="font-medium">{c.title}</p>
                       <p className="text-xs text-muted">{c.commitment}</p>
