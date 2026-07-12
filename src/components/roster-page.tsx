@@ -1,5 +1,5 @@
 import type { RosterKind } from "@prisma/client";
-import { getPortalUser } from "@/lib/shasha";
+import type { RosterScope } from "@/lib/portal-scope";
 import { countRoster, findRoster } from "@/lib/roster";
 import { RosterAddForm } from "@/components/roster-add-form";
 import { RosterList } from "@/components/roster-list";
@@ -23,22 +23,30 @@ const MESSAGES: Record<string, { tone: "ok" | "bad"; text: string }> = {
 
 /**
  * The VIP list and the blacklist are the same tool pointed at a different
- * `kind`, so they share one page and differ only in copy.
+ * `kind` — and SHASHA and a partner's portal are the same tool pointed at a
+ * different `scope`. So all of those pages are this one component, differing
+ * only in copy.
+ *
+ * `canWrite` is passed in rather than read here. The guard that decides it has
+ * to run on the page itself (see the note on requirePartnerUser), and handing
+ * the answer down means there are not two places that could come to different
+ * conclusions about it.
  */
 export async function RosterPage({
+  scope,
   kind,
+  canWrite,
   searchParams,
 }: {
+  scope: RosterScope;
   kind: RosterKind;
+  canWrite: boolean;
   searchParams: RosterSearchParams;
 }) {
-  const user = await getPortalUser();
-  const canWrite = Boolean(user?.canWrite);
-
   const query = searchParams.q?.trim() || "";
   const [entries, total] = await Promise.all([
-    findRoster(kind, query),
-    countRoster(kind),
+    findRoster(scope.id, kind, query),
+    countRoster(scope.id, kind),
   ]);
 
   const isVip = kind === "VIP";
@@ -56,8 +64,8 @@ export async function RosterPage({
           </h1>
           <p className="mt-2 text-sm text-muted">
             {isVip
-              ? "Players with VIP access to RO. Nation LIVE events."
-              : "Players barred from RO. Nation LIVE events."}
+              ? `Players with VIP access to ${scope.name} events.`
+              : `Players barred from ${scope.name} events.`}
           </p>
         </div>
         <p className="tnum shrink-0 text-sm text-faint">
@@ -88,19 +96,24 @@ export async function RosterPage({
                 : "Search the blacklist — username, ID, tag or reason…"
             }
           />
-          <RosterList entries={entries} canWrite={canWrite} query={query} />
+          <RosterList
+            scope={scope.id}
+            entries={entries}
+            canWrite={canWrite}
+            query={query}
+          />
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
           {canWrite ? (
-            <RosterAddForm kind={kind} />
+            <RosterAddForm scope={scope.id} kind={kind} />
           ) : (
             <div className="card p-6">
               <h2 className="font-display text-xl uppercase">Read only</h2>
               <p className="mt-2 text-sm text-muted">
                 You can search this list, but only management can add or remove
-                people. Access follows your rank in the Roblox group — if that
-                looks wrong, ask management about your rank.
+                people. If that looks wrong, ask {scope.name} management about
+                your access.
               </p>
             </div>
           )}

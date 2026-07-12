@@ -15,8 +15,9 @@ export const metadata: Metadata = {
 
 export default async function EventsPage() {
   const [upcoming, past] = await Promise.all([
-    getUpcomingEvents(),
-    getPastEvents(9),
+    // null = RNL's own events. A partner's live on their own site.
+    getUpcomingEvents(null),
+    getPastEvents(null, 9),
   ]);
 
   return (

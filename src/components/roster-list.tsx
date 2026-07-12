@@ -5,10 +5,13 @@ import { robloxProfileUrl } from "@/lib/roblox-users";
 import { formatDateTime } from "@/lib/format";
 
 export function RosterList({
+  scope,
   entries,
   canWrite,
   query,
 }: {
+  /** Which org's list this is — travels with each write. See lib/portal-scope.ts. */
+  scope: string;
   entries: RosterEntry[];
   canWrite: boolean;
   query?: string;
@@ -93,6 +96,7 @@ export function RosterList({
             {canWrite ? (
               <div className="flex shrink-0 items-center gap-2">
                 <form action={removeRosterEntry}>
+                  <input type="hidden" name="scope" value={scope} />
                   <input type="hidden" name="id" value={entry.id} />
                   <ConfirmButton
                     message={`Remove ${entry.robloxUsername} from this list?`}
@@ -113,6 +117,7 @@ export function RosterList({
               </summary>
 
               <form action={updateRosterEntry} className="mt-4 space-y-3">
+                <input type="hidden" name="scope" value={scope} />
                 <input type="hidden" name="id" value={entry.id} />
 
                 <div>

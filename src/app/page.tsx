@@ -40,8 +40,9 @@ const pillars = [
 
 export default async function HomePage() {
   const [featured, upcoming, careers] = await Promise.all([
-    getFeaturedEvent(),
-    getUpcomingEvents(7),
+    // null = RNL's own events. A partner's never appear on this site.
+    getFeaturedEvent(null),
+    getUpcomingEvents(null, 7),
     getOpenCareers(),
   ]);
 

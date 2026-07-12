@@ -26,7 +26,7 @@ export default async function ReservePage({
   params: { slug: string };
   searchParams: { error?: string };
 }) {
-  const event = await getEventBySlug(params.slug);
+  const event = await getEventBySlug(null, params.slug);
   if (!event) notFound();
 
   const session = await getUserSession();

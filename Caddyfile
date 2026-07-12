@@ -20,7 +20,15 @@
 # once its DNS record already resolves to this server. Caddy asks Let's Encrypt
 # for a certificate the moment you reload it, and a failed issuance still counts
 # against the 5-per-domain-per-week limit.
-{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live} {
+#
+# Partner hosts live at the end of the line, one per partner:
+#   sleeptokenro.ronation.live   → Sleep Token RO   (registry slug "sleeptokenro")
+#
+# The slug in lib/partners/registry.ts and the first label here MUST match — the
+# app resolves the brand from the Host header alone, so a name that is live in
+# DNS but absent from the registry serves RNL's site on the partner's domain,
+# and a slug in the registry with no host here is simply unreachable.
+{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live}, {$STRO_HOST:sleeptokenro.ronation.live} {
 	encode zstd gzip
 
 	# These are set by the app's middleware, from the Host header, and read by the

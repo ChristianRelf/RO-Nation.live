@@ -15,7 +15,10 @@ export default async function EditEventPage({
   searchParams: { error?: string };
 }) {
   await requireAdmin();
-  const event = await prisma.event.findUnique({ where: { id: params.id } });
+  // RNL's own events only — see the matching guard in actions/admin.ts.
+  const event = await prisma.event.findFirst({
+    where: { id: params.id, partnerId: null },
+  });
   if (!event) notFound();
 
   return (

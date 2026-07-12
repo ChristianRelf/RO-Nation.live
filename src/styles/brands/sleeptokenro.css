@@ -1,0 +1,50 @@
+/* Sleep Token RO.
+ *
+ * Warm near-black, bone type, dim ritual gold. Sharp corners, heavier grain,
+ * no bloom — where RNL is a loud poster (electric blue, Anton, 3px radius),
+ * this is a candlelit one.
+ *
+ * Original work: an atmosphere, not a copy. Nothing here reproduces the band's
+ * design, marks or artwork, and nothing should be added that does. The site is
+ * an unofficial fan event series and has to remain visibly its own thing — see
+ * the `disclaimer` on this partner in lib/partners/registry.ts.
+ *
+ * Sets ONLY channels and shape/texture tokens; every derived colour is computed
+ * from these in globals.css. Do not declare --accent, --line, --paper etc. here
+ * — that is the one rule that keeps a brand from desyncing a colour from its
+ * own channels.
+ */
+:root[data-brand="sleeptokenro"] {
+  /* ---- Channels ---------------------------------------------------- */
+  --bg-rgb: 10 9 8; /* warm black, a touch of umber */
+  --elev-rgb: 16 14 12;
+  --surface-rgb: 21 19 16;
+  --fg-rgb: 236 233 225; /* bone */
+  --muted-rgb: 150 142 128;
+  --faint-rgb: 104 97 86;
+
+  --accent-rgb: 176 146 84; /* dim gold — leaf, not neon */
+  --accent-hi-rgb: 216 201 168; /* the gold, lifted toward bone */
+
+  /* The accent is LIGHT. Ink drawn on it must go dark, or every primary button
+     on this site is bone-on-bone. globals.css warns about exactly this. */
+  --accent-ink-rgb: 18 15 11;
+
+  --paper-rgb: 226 220 206; /* aged bone — inverted panels */
+  --paper-ink-rgb: 18 15 11;
+
+  /* Hairlines tinted bone rather than white, so rules sit in the warm palette
+     instead of cutting through it. */
+  --line-rgb: 226 220 206;
+  --line-alpha: 0.09;
+  --line-strong-alpha: 0.2;
+
+  /* ---- Shape + texture --------------------------------------------- */
+  /* Squared off. RNL's 3px is a poster corner; this brand has none. */
+  --radius: 0px;
+
+  /* Grain pushed harder than RNL's — the murk is the identity here, so it wants
+     to be felt rather than merely present. */
+  --grain-fine-opacity: 0.08;
+  --grain-coarse-opacity: 0.16;
+}

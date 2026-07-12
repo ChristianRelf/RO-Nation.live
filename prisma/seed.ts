@@ -1,4 +1,9 @@
-import { PrismaClient, EventStatus, JobStatus } from "@prisma/client";
+import {
+  PrismaClient,
+  EventStatus,
+  JobStatus,
+  PartnerRole,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -10,6 +15,102 @@ const at = (offsetDays: number, hour = 19) => {
   d.setHours(hour, 0, 0, 0);
   return d;
 };
+
+// ------------------------------------------------------------------
+// Sleep Token RO — RNL's first partner.
+//
+// The partner itself is not seeded: it lives in code, in
+// src/lib/partners/registry.ts. What the database holds is the two things that
+// vary per request — who may use their portal, and what shows they're putting
+// on.
+// ------------------------------------------------------------------
+const STRO = "sleeptokenro";
+
+const stroEvents = [
+  {
+    slug: "stro-the-first-rite",
+    title: "THE FIRST RITE",
+    tagline: "The opening night — one stage, one set, no encore",
+    category: "Tribute Show",
+    venue: "The Hollow — Main Stage",
+    description:
+      "The first one. A full tribute set staged inside Roblox, built from the ground up by the Sleep Token RO crew — lighting, staging, the lot. Doors open an hour early: come in, walk the grounds, find your spot on the floor before it fills.\n\nFree entry. One ticket per account, verified at the door.",
+    capacity: 300,
+    featured: true,
+    status: EventStatus.PUBLISHED,
+    startsAt: at(21),
+    doorsAt: at(21, 18),
+    partnerId: STRO,
+  },
+  {
+    slug: "stro-vessels-night",
+    title: "VESSELS NIGHT",
+    tagline: "An acoustic, low-light second show",
+    category: "Tribute Show",
+    venue: "The Hollow — Side Room",
+    description:
+      "Stripped back and close. A smaller room, a quieter set, and a hard cap on the floor so it stays that way.\n\nFree entry. One ticket per account, verified at the door.",
+    capacity: 120,
+    status: EventStatus.PUBLISHED,
+    startsAt: at(45),
+    doorsAt: at(45, 19),
+    partnerId: STRO,
+  },
+];
+
+/**
+ * The partner's portal crew.
+ *
+ * A slug in the registry grants nobody anything — a PartnerMember row IS the
+ * grant (see lib/partners/guard.ts), so without at least one OWNER here, nobody
+ * can sign in to portal.ronation.live/sleeptokenro at all.
+ *
+ * The Roblox id has to be real, and only you know it, so it comes from the
+ * environment rather than being invented here:
+ *
+ *   STRO_OWNER_ROBLOX_ID=123456789 STRO_OWNER_NAME=SomeUser npm run seed
+ *
+ * Find it at https://www.roblox.com/users/<id>/profile — the number in the URL.
+ */
+async function seedPartner() {
+  for (const e of stroEvents) {
+    await prisma.event.upsert({
+      where: { slug: e.slug },
+      update: {},
+      create: e,
+    });
+  }
+
+  const ownerId = process.env.STRO_OWNER_ROBLOX_ID?.trim();
+  const ownerName = process.env.STRO_OWNER_NAME?.trim() || "Sleep Token RO";
+
+  if (!ownerId) {
+    console.warn(
+      `[seed] ${stroEvents.length} Sleep Token RO shows created, but NO portal owner.\n` +
+        `[seed] Nobody can sign in to portal.ronation.live/${STRO} until one exists.\n` +
+        `[seed] Re-run with: STRO_OWNER_ROBLOX_ID=<roblox-user-id> STRO_OWNER_NAME=<username> npm run seed`,
+    );
+    return;
+  }
+
+  await prisma.partnerMember.upsert({
+    where: { partnerId_robloxId: { partnerId: STRO, robloxId: ownerId } },
+    update: { role: PartnerRole.OWNER },
+    create: {
+      partnerId: STRO,
+      robloxId: ownerId,
+      robloxUsername: ownerName,
+      displayName: ownerName,
+      role: PartnerRole.OWNER,
+      addedById: "seed",
+      addedByName: "RO. Nation LIVE",
+    },
+  });
+
+  console.log(
+    `[seed] Sleep Token RO: ${stroEvents.length} shows, owner ${ownerName} (${ownerId}).`,
+  );
+}
 
 const events = [
   {
@@ -154,9 +255,14 @@ const careers = [
 ];
 
 async function main() {
-  const existing = await prisma.event.count();
+  // The partner seed runs unconditionally. It is all upserts, so it is safe to
+  // re-run — and it must NOT sit behind the "already seeded" guard below, or it
+  // would never run at all on the live database, which already has events.
+  await seedPartner();
+
+  const existing = await prisma.event.count({ where: { partnerId: null } });
   if (existing > 0) {
-    console.log(`[seed] ${existing} events already present — skipping seed.`);
+    console.log(`[seed] ${existing} RNL events already present — skipping demo seed.`);
     return;
   }
 

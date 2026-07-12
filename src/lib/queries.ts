@@ -4,6 +4,17 @@ import { prisma } from "./db";
 
 export type EventWithCount = Event & { ticketsCount: number };
 
+/**
+ * Whose events to look at: a partner slug, or null for RO. Nation LIVE's own.
+ *
+ * Every query below takes this as its FIRST argument, and none of them defaults
+ * it. An unscoped event query is not one that fails — it is one that puts a
+ * partner's shows on RNL's homepage and RNL's shows on the partner's, and looks
+ * perfectly healthy doing it. Making the scope impossible to omit is what keeps
+ * that from happening the next time somebody adds a query to this file.
+ */
+export type EventScope = string | null;
+
 /** Attach a live (non-cancelled) ticket count to each event in one query. */
 export async function withTicketCounts(
   events: Event[],
@@ -19,27 +30,38 @@ export async function withTicketCounts(
   return events.map((e) => ({ ...e, ticketsCount: map.get(e.id) ?? 0 }));
 }
 
-export async function getUpcomingEvents(limit?: number) {
+export async function getUpcomingEvents(scope: EventScope, limit?: number) {
   const events = await prisma.event.findMany({
-    where: { status: "PUBLISHED", startsAt: { gte: new Date() } },
+    where: {
+      partnerId: scope,
+      status: "PUBLISHED",
+      startsAt: { gte: new Date() },
+    },
     orderBy: { startsAt: "asc" },
     take: limit,
   });
   return withTicketCounts(events);
 }
 
-export async function getPastEvents(limit?: number) {
+export async function getPastEvents(scope: EventScope, limit?: number) {
   const events = await prisma.event.findMany({
-    where: { status: "PUBLISHED", startsAt: { lt: new Date() } },
+    where: {
+      partnerId: scope,
+      status: "PUBLISHED",
+      startsAt: { lt: new Date() },
+    },
     orderBy: { startsAt: "desc" },
     take: limit,
   });
   return withTicketCounts(events);
 }
 
-export async function getFeaturedEvent(): Promise<EventWithCount | null> {
+export async function getFeaturedEvent(
+  scope: EventScope,
+): Promise<EventWithCount | null> {
   const featured = await prisma.event.findFirst({
     where: {
+      partnerId: scope,
       status: "PUBLISHED",
       featured: true,
       startsAt: { gte: new Date() },
@@ -49,7 +71,11 @@ export async function getFeaturedEvent(): Promise<EventWithCount | null> {
   const chosen =
     featured ??
     (await prisma.event.findFirst({
-      where: { status: "PUBLISHED", startsAt: { gte: new Date() } },
+      where: {
+        partnerId: scope,
+        status: "PUBLISHED",
+        startsAt: { gte: new Date() },
+      },
       orderBy: { startsAt: "asc" },
     }));
   if (!chosen) return null;
@@ -57,9 +83,17 @@ export async function getFeaturedEvent(): Promise<EventWithCount | null> {
   return withCount;
 }
 
-export async function getEventBySlug(slug: string) {
+/**
+ * Slugs are globally unique, so this *could* find the event without the scope —
+ * which is precisely the trap. Fetch by slug, then reject anything belonging to
+ * another org. Without that second check,
+ * sleeptokenro.ronation.live/events/<an-rnl-slug> renders an RNL show in Sleep
+ * Token RO's brand, with a working reserve button under it.
+ */
+export async function getEventBySlug(scope: EventScope, slug: string) {
   const event = await prisma.event.findUnique({ where: { slug } });
   if (!event || event.status === "ARCHIVED") return null;
+  if ((event.partnerId ?? null) !== scope) return null;
   const [withCount] = await withTicketCounts([event]);
   return withCount;
 }

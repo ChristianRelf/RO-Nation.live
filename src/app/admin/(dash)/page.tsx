@@ -18,15 +18,20 @@ export default async function AdminOverview() {
     nextEvents,
     recentApps,
   ] = await Promise.all([
+    // Every count here is RNL's own (partnerId: null), so the dashboard stays
+    // internally consistent — a ticket total that included a partner's shows
+    // would not reconcile against the event counts beside it.
     prisma.event.count({
-      where: { status: "PUBLISHED", startsAt: { gte: now } },
+      where: { partnerId: null, status: "PUBLISHED", startsAt: { gte: now } },
     }),
-    prisma.event.count({ where: { status: "PUBLISHED" } }),
-    prisma.ticket.count({ where: { status: { not: "CANCELLED" } } }),
+    prisma.event.count({ where: { partnerId: null, status: "PUBLISHED" } }),
+    prisma.ticket.count({
+      where: { status: { not: "CANCELLED" }, event: { partnerId: null } },
+    }),
     prisma.career.count({ where: { status: "OPEN" } }),
     prisma.application.count({ where: { status: "NEW" } }),
     prisma.event.findMany({
-      where: { status: "PUBLISHED", startsAt: { gte: now } },
+      where: { partnerId: null, status: "PUBLISHED", startsAt: { gte: now } },
       orderBy: { startsAt: "asc" },
       take: 5,
       include: {

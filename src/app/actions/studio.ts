@@ -48,6 +48,14 @@ export async function createEvent(formData: FormData) {
   redirect("/studio/events");
 }
 
+// The Studio manages RNL's OWN events. Both writes below match on
+// `partnerId: null` as well as the id, and use the *Many form so that a miss
+// affects zero rows instead of throwing.
+//
+// Rank in RNL's group is what gets you in here, and it says nothing about a
+// partner's shows — without this, a studio user could edit or delete a Sleep
+// Token RO show by pasting its id into the URL. Same reasoning as the roster
+// actions: passing the guard is not the same as being allowed to touch the row.
 export async function updateEvent(formData: FormData) {
   await requireStudioUser();
 
@@ -57,8 +65,8 @@ export async function updateEvent(formData: FormData) {
     redirect(`/studio/events/${id}/edit?error=required`);
   }
 
-  await prisma.event.update({
-    where: { id },
+  await prisma.event.updateMany({
+    where: { id, partnerId: null },
     data: { ...data, startsAt: data.startsAt! },
   });
 
@@ -70,7 +78,7 @@ export async function deleteEvent(formData: FormData) {
   await requireStudioUser();
 
   const id = s(formData, "id");
-  if (id) await prisma.event.delete({ where: { id } });
+  if (id) await prisma.event.deleteMany({ where: { id, partnerId: null } });
 
   refreshEvents();
   redirect("/studio/events");

@@ -10,7 +10,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminEventsPage() {
   await requireAdmin();
+  // RNL's own events only — a partner's are managed from their portal. See the
+  // note on Event.partnerId in the schema.
   const events = await prisma.event.findMany({
+    where: { partnerId: null },
     orderBy: { startsAt: "desc" },
     include: {
       _count: { select: { tickets: true } },

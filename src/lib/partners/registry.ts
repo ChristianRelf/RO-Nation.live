@@ -15,13 +15,37 @@
 export type PartnerFeature = "events" | "blog" | "careers" | "surveys";
 
 export type Partner = {
-  /** The subdomain, the DB `Partner.slug`, and the `data-brand` value — one string, three jobs. */
+  /** The subdomain, the `partnerId` scope column, and the `data-brand` value — one string, three jobs. */
   slug: string;
   name: string;
+  /** Shown where `name` is too long to sit on one line — nav, footer, ticket stubs. */
+  shortName: string;
+  tagline: string;
+  description: string;
+  /**
+   * The small-print line under the partner's footer, above the RNL credit.
+   *
+   * A partner that runs tribute or fan events for a real-world act MUST carry
+   * one. These sites live on an RNL subdomain with RNL's name in the footer, so
+   * an ambiguous one is RNL's problem as much as the partner's: say plainly
+   * that this is a Roblox event series and that the act is not involved.
+   */
+  disclaimer?: string;
   /** Ticket codes read `ST-XXXXXX`. Keep it short and unmistakable. */
   ticketPrefix: string;
   /** Which of the shared features this partner gets. A missing one must 404, not just hide its nav item. */
   features: readonly PartnerFeature[];
+  /**
+   * The partner's public Roblox group, linked from their site. Presentation
+   * only — it grants NOTHING.
+   *
+   * Portal access is the PartnerMember rows RNL grants, and deliberately not a
+   * rank in here: SHASHA can say "the group IS the allowlist" because RNL owns
+   * that group, but RNL does not own this one. Ranking off it would hand a
+   * partner the power to grant access to RNL's infrastructure by promoting
+   * someone in a group RNL cannot see or control.
+   */
+  robloxGroupUrl?: string;
   /** The browser chrome colour. The one colour TS has to know — it duplicates --bg, which is unavoidable: `viewport` is a JS export. */
   themeColor: string;
   /** Confetti is drawn to a <canvas>, so it can't read a CSS variable. It is the one visual value that genuinely belongs here. */
@@ -30,16 +54,36 @@ export type Partner = {
 };
 
 /**
- * Registered partners. Empty until a partner actually ships — every partner
- * code path is dead while this list is, which is what makes Phase 1 safe to
- * merge on its own.
+ * Registered partners.
  *
- * Adding one here does NOT create it: it also needs a DB row, a brand
- * stylesheet at src/styles/brands/<slug>.css, an entry in fonts.ts, and a host
- * in the Caddyfile (added only once DNS resolves — Caddy asks Let's Encrypt for
- * a certificate the moment you reload it).
+ * Adding one here does NOT finish the job: it also needs PartnerMember rows (so
+ * somebody can actually sign in to its portal), a brand stylesheet at
+ * src/styles/brands/<slug>.css, an entry in fonts.ts, and a host in the
+ * Caddyfile (added only once DNS resolves — Caddy asks Let's Encrypt for a
+ * certificate the moment you reload it).
  */
-export const PARTNERS: readonly Partner[] = [];
+export const PARTNERS: readonly Partner[] = [
+  {
+    slug: "sleeptokenro",
+    name: "Sleep Token RO",
+    shortName: "STRO",
+    tagline: "Roblox tribute shows",
+    description:
+      "Sleep Token RO stages tribute shows inside Roblox — full production, live crowd, free tickets. A fan project, built by fans, produced with RO. Nation LIVE.",
+    // This one is not optional. The name references a real band who have nothing
+    // to do with this, the site sits on an RNL subdomain, and RNL's name is in
+    // the footer — so the page has to say what it is, in plain words, without
+    // being hunted for.
+    disclaimer:
+      "Sleep Token RO is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
+    ticketPrefix: "ST",
+    features: ["events"],
+    themeColor: "#0a0908",
+    // Bone and dim gold — the brand's own accent, matched to the palette below.
+    confetti: ["#b09254", "#d8c9a8", "#8e7742", "#ece9e1"],
+    active: true,
+  },
+];
 
 /**
  * Names a partner slug may never take.

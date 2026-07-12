@@ -12,8 +12,9 @@ export default async function StudioOverviewPage() {
 
   const [events, published, posts, drafts, surveys, responses] =
     await Promise.all([
-      prisma.event.count(),
-      prisma.event.count({ where: { status: "PUBLISHED" } }),
+      // RNL's own — a partner's events are counted in their portal, not here.
+      prisma.event.count({ where: { partnerId: null } }),
+      prisma.event.count({ where: { partnerId: null, status: "PUBLISHED" } }),
       prisma.post.count(),
       prisma.post.count({ where: { status: "DRAFT" } }),
       prisma.survey.count({ where: { status: "OPEN" } }),

@@ -1,5 +1,6 @@
 import "server-only";
 import { env } from "./env";
+import { partnerBySlug } from "./partners/registry";
 
 // Minimal Roblox OAuth 2.0 (OpenID Connect) helper using the Authorization
 // Code flow with PKCE. Endpoints are configurable via env (see .env.example).
@@ -29,9 +30,23 @@ export function redirectUri() {
  * serves /shasha and bounces everything else to the main site, so sending a
  * failed SHASHA sign-in to /account would dump them on ronation.live with no
  * explanation of what went wrong.
+ *
+ * A partner adds a third case. On the portal host, a failed sign-in headed for
+ * /sleeptokenro/vip belongs at /sleeptokenro/login — /account is not served
+ * there either, so the default would strand them exactly the same way.
+ *
+ * The partner-site host is not a case: its paths are /events, /tickets and
+ * /account, none of which can collide with a slug (the registry RESERVEs those
+ * names), so a failure there falls through to /account — which on that host is
+ * the partner's own sign-in page.
  */
 export function failPath(returnTo: string) {
-  return returnTo.startsWith("/shasha") ? "/shasha/login" : "/account";
+  if (returnTo.startsWith("/shasha")) return "/shasha/login";
+
+  const slug = returnTo.split("/")[1] ?? "";
+  if (partnerBySlug(slug)) return `/${slug}/login`;
+
+  return "/account";
 }
 
 function base64url(bytes: Uint8Array) {

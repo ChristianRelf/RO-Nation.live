@@ -12,14 +12,22 @@ export function slugify(input: string) {
     .slice(0, 60);
 }
 
-/** RN-XXXXXX ticket code using unambiguous characters. */
-export function generateTicketCode() {
+/**
+ * PREFIX-XXXXXX ticket code, using unambiguous characters.
+ *
+ * The prefix is the brand that issued it — "RN" for RO. Nation LIVE, or the
+ * partner's `ticketPrefix` from the registry ("ST-4K9QW2"). It is decoration,
+ * not identity: codes are unique across the whole `tickets` table regardless of
+ * prefix, so nothing looks a ticket up by parsing one. It just means a holder
+ * (and a door steward) can see at a glance whose show it is for.
+ */
+export function generateTicketCode(prefix = "RN") {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let out = "";
   const bytes = new Uint8Array(6);
   crypto.getRandomValues(bytes);
   for (let i = 0; i < 6; i++) out += alphabet[bytes[i] % alphabet.length];
-  return `RN-${out}`;
+  return `${prefix}-${out}`;
 }
 
 /**

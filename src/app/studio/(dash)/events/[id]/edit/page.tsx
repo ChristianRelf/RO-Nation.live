@@ -17,7 +17,12 @@ export default async function StudioEditEventPage({
   searchParams: { error?: string };
 }) {
   await requireStudioUser();
-  const event = await prisma.event.findUnique({ where: { id: params.id } });
+  // RNL's own events only. A partner's event id resolves to null here, so the
+  // form never renders for one — matching the write guard in actions/studio.ts,
+  // which would refuse it anyway.
+  const event = await prisma.event.findFirst({
+    where: { id: params.id, partnerId: null },
+  });
   if (!event) notFound();
 
   return (

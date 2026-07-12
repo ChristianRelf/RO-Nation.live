@@ -56,6 +56,10 @@ const SURVEY_PATHS = [
 const PARTNER_PATHS = [
   "/legal",
   "/api/auth/roblox",
+  // The dev mock login, so <slug>.localhost can be signed into without real
+  // Roblox credentials. It is inert in production — devLoginEnabled is false the
+  // moment ROBLOX_CLIENT_ID is set. See lib/env.ts.
+  "/api/auth/dev",
   "/api/auth/logout",
   "/api/health",
   "/api/v1",
@@ -132,6 +136,24 @@ function proceed(req: NextRequest, url?: URL) {
     : NextResponse.next({ request: { headers } });
 }
 
+/**
+ * portal.<host>/<slug>/… → /pp/<slug>/…, when <slug> names a live partner.
+ * Returns null when it does not, so the caller can carry on.
+ *
+ * Shared by the portal-host branch and the local-dev one, which both need the
+ * identical rewrite — see the note in the local-dev branch for why they can't
+ * simply be the same branch.
+ */
+function partnerPortalRewrite(req: NextRequest, pathname: string) {
+  const seg = pathname.split("/")[1] ?? "";
+  const partner = partnerBySlug(seg);
+  if (!partner) return null;
+
+  const url = req.nextUrl.clone();
+  url.pathname = `/pp/${partner.slug}${pathname.slice(seg.length + 1)}`;
+  return proceed(req, url);
+}
+
 export function middleware(req: NextRequest) {
   const host = (req.headers.get("host") || "").split(":")[0].toLowerCase();
   const { pathname, search } = req.nextUrl;
@@ -153,7 +175,23 @@ export function middleware(req: NextRequest) {
   }
 
   // ---- Local dev: one origin serves everything --------------------
+  //
+  // This branch has to come before the portal/survey ones, because it also
+  // catches `portal.localhost` and `survey.localhost` (both end in .localhost)
+  // — and those branches redirect to `https://<main-site-host>`, a hard-coded
+  // scheme that would bounce a local request to https://localhost and fail.
+  //
+  // But a partner's portal is reachable ONLY by rewrite: unlike /shasha, there
+  // is no top-level /<slug> route to fall back on. So without the rewrite here,
+  // the guard redirects a signed-out dev to /sleeptokenro/login and that 404s —
+  // the portal simply cannot be opened locally. Do the same rewrite the portal
+  // branch does, minus the https redirects.
   if (!host || isLocalHost(host)) {
+    if (isPortalHost(host)) {
+      const rewritten = partnerPortalRewrite(req, pathname);
+      if (rewritten) return rewritten;
+    }
+
     const code = surveyCodeFrom(pathname);
     if (code) {
       const url = req.nextUrl.clone();
@@ -184,13 +222,8 @@ export function middleware(req: NextRequest) {
   // ---- portal.ronation.live ---------------------------------------
   if (isPortalHost(host)) {
     // portal.ronation.live/<slug>/… → the partner's own portal.
-    const seg = pathname.split("/")[1] ?? "";
-    const portalPartner = partnerBySlug(seg);
-    if (portalPartner) {
-      const url = req.nextUrl.clone();
-      url.pathname = `/pp/${portalPartner.slug}${pathname.slice(seg.length + 1)}`;
-      return proceed(req, url);
-    }
+    const rewritten = partnerPortalRewrite(req, pathname);
+    if (rewritten) return rewritten;
 
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/shasha", req.nextUrl.origin));

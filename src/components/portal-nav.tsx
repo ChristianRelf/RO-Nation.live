@@ -4,28 +4,57 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { label: "Overview", href: "/shasha" },
-  { label: "VIP list", href: "/shasha/vip" },
-  { label: "Blacklist", href: "/shasha/blacklist" },
-  { label: "History", href: "/shasha/audit" },
-];
-
+/**
+ * The portal header, shared by SHASHA and every partner portal.
+ *
+ * Every link is built from `basePath`, so the same nav serves /shasha and
+ * /sleeptokenro without knowing which it is. Note these are the PUBLIC paths on
+ * the portal host, not the internal /pp/<slug> routes Next actually renders —
+ * see lib/partners/urls.ts.
+ */
 export function PortalNav({
+  brand,
+  basePath,
+  showsLink = false,
   user,
 }: {
-  // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
-  // profile had, which can be nothing. Discord always handed us a default one.
-  user: { displayName: string; avatarUrl?: string; role: "manager" | "staff" };
+  /** Wordmark in the top-left — "SHASHA", "Sleep Token RO". */
+  brand: string;
+  /** "/shasha" or "/<partner-slug>". */
+  basePath: string;
+  /**
+   * Partners manage their own line-up from here; SHASHA does not. RNL's events
+   * are the Studio's job, and SHASHA has no /shows route to point at — so this
+   * is off unless a partner turns it on.
+   */
+  showsLink?: boolean;
+  user: {
+    displayName: string;
+    // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
+    // profile had, which can be nothing. Discord always handed us a default one.
+    avatarUrl?: string;
+    /** Shown under the name — "Management", "Read only", "Owner". */
+    roleLabel: string;
+    /** Drives the accent treatment on that label. */
+    canWrite: boolean;
+  };
 }) {
   const pathname = usePathname();
+
+  const links = [
+    { label: "Overview", href: basePath },
+    ...(showsLink ? [{ label: "Shows", href: `${basePath}/shows` }] : []),
+    { label: "VIP list", href: `${basePath}/vip` },
+    { label: "Blacklist", href: `${basePath}/blacklist` },
+    { label: "History", href: `${basePath}/audit` },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-bg/85 backdrop-blur">
       <div className="shell flex h-16 items-center justify-between gap-6">
         <div className="flex items-center gap-6">
-          <Link href="/shasha" className="flex items-baseline gap-2">
-            <span className="display text-2xl tracking-tight">SHASHA</span>
+          <Link href={basePath} className="flex items-baseline gap-2">
+            <span className="display text-2xl tracking-tight">{brand}</span>
             <span className="hidden text-[10px] font-bold uppercase tracking-kicker text-accent sm:inline">
               Portal
             </span>
@@ -33,9 +62,11 @@ export function PortalNav({
 
           <nav className="flex items-center gap-1">
             {links.map((l) => {
+              // The overview matches exactly; the rest match by prefix. Without
+              // that special case, "/sleeptokenro" would light up on every page.
               const active =
-                l.href === "/shasha"
-                  ? pathname === "/shasha"
+                l.href === basePath
+                  ? pathname === basePath
                   : pathname.startsWith(l.href);
               return (
                 <Link
@@ -43,9 +74,7 @@ export function PortalNav({
                   href={l.href}
                   className={cn(
                     "shrink-0 px-3 py-2 text-sm font-medium transition-colors",
-                    active
-                      ? "text-fg"
-                      : "text-muted hover:text-fg",
+                    active ? "text-fg" : "text-muted hover:text-fg",
                   )}
                 >
                   {l.label}
@@ -66,10 +95,10 @@ export function PortalNav({
             <p
               className={cn(
                 "text-[10px] font-bold uppercase tracking-kicker",
-                user.role === "manager" ? "text-accent" : "text-faint",
+                user.canWrite ? "text-accent" : "text-faint",
               )}
             >
-              {user.role === "manager" ? "Management" : "Read only"}
+              {user.roleLabel}
             </p>
           </div>
           {user.avatarUrl ? (
@@ -87,7 +116,7 @@ export function PortalNav({
             </span>
           )}
           <a
-            href="/api/auth/logout?returnTo=/shasha/login"
+            href={`/api/auth/logout?returnTo=${encodeURIComponent(`${basePath}/login`)}`}
             className="text-sm text-muted transition-colors hover:text-red-400"
           >
             Sign out

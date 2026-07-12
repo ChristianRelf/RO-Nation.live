@@ -52,6 +52,9 @@ export async function createEvent(formData: FormData) {
   redirect("/admin/events");
 }
 
+// Scoped to RNL's own events (partnerId: null), like the Studio's — see the note
+// there. The *Many form means an id belonging to a partner matches zero rows
+// rather than throwing.
 export async function updateEvent(formData: FormData) {
   await assertAdmin();
   const id = s(formData, "id");
@@ -59,8 +62,8 @@ export async function updateEvent(formData: FormData) {
   if (!id || !data.title || !data.startsAt || !data.description) {
     redirect(`/admin/events/${id}/edit?error=required`);
   }
-  await prisma.event.update({
-    where: { id },
+  await prisma.event.updateMany({
+    where: { id, partnerId: null },
     data: { ...data, startsAt: data.startsAt! },
   });
   revalidatePath("/admin/events");
@@ -72,7 +75,7 @@ export async function updateEvent(formData: FormData) {
 export async function deleteEvent(formData: FormData) {
   await assertAdmin();
   const id = s(formData, "id");
-  if (id) await prisma.event.delete({ where: { id } });
+  if (id) await prisma.event.deleteMany({ where: { id, partnerId: null } });
   revalidatePath("/admin/events");
   revalidatePath("/events");
   redirect("/admin/events");

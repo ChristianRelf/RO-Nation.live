@@ -6,6 +6,24 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
 import { generateTicketCode } from "@/lib/utils";
 import { isPast } from "@/lib/format";
+import { partnerBySlug } from "@/lib/partners/registry";
+import { partnerSiteRoute } from "@/lib/partners/urls";
+
+// Ticketing, for RNL's events and every partner's.
+//
+// The partner is read from the EVENT, never from the form body. An event knows
+// whose show it is, and that cannot be forged by posting a different hidden
+// field — so there is nothing extra to validate here: reserving for a Sleep
+// Token RO show yields a Sleep Token RO ticket because the event says so.
+//
+// The redirect targets below are deliberately unqualified ("/tickets",
+// "/events/<slug>"). They need no partner prefix: the browser is already on the
+// partner's host, and the middleware rewrites <slug>.ronation.live/tickets to
+// /p/<slug>/tickets. The same string is correct on both sites.
+//
+// revalidatePath is the exception, and the one thing that genuinely needs care:
+// it matches on the INTERNAL route, so it must be handed /p/<slug>/… or it
+// silently refreshes nothing at all. See lib/partners/urls.ts.
 
 type ReserveOutcome =
   | { code: string }
@@ -13,6 +31,17 @@ type ReserveOutcome =
 
 const isCodeCollision = (err: any) =>
   err?.code === "P2002" && err?.meta?.target?.includes?.("code");
+
+/** Refresh the event page and the ticket wallet, on whichever site they live. */
+function refreshTicketViews(partnerId: string | null, slug: string) {
+  if (partnerId) {
+    revalidatePath(partnerSiteRoute(partnerId, `/events/${slug}`));
+    revalidatePath(partnerSiteRoute(partnerId, "/tickets"));
+    return;
+  }
+  revalidatePath(`/events/${slug}`);
+  revalidatePath("/tickets");
+}
 
 export async function reserveTicket(formData: FormData) {
   const eventId = String(formData.get("eventId") || "");
@@ -29,13 +58,25 @@ export async function reserveTicket(formData: FormData) {
     redirect(`/events/${slug}/reserve?error=terms`);
   }
 
+  // Whose show is this? Read outside the transaction — it decides the code's
+  // prefix and which routes to revalidate, neither of which needs the lock. The
+  // transaction re-reads the event under FOR UPDATE for the parts that do.
+  const owner = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { partnerId: true },
+  });
+  const partnerId = owner?.partnerId ?? null;
+  const prefix = partnerId
+    ? (partnerBySlug(partnerId)?.ticketPrefix ?? "RN")
+    : "RN";
+
   // The code is minted outside the transaction, and a collision retries the
   // whole thing. It cannot be retried *inside*: in Postgres a failed statement
   // aborts the surrounding transaction, so the second attempt would die on the
   // poisoned transaction rather than on the duplicate code.
   let outcome: ReserveOutcome | null = null;
   for (let attempt = 0; attempt < 5 && !outcome; attempt++) {
-    const code = generateTicketCode();
+    const code = generateTicketCode(prefix);
     try {
       outcome = await prisma.$transaction(async (tx) => {
         // Take a write lock on the event row and hold it to commit. Everyone
@@ -110,8 +151,7 @@ export async function reserveTicket(formData: FormData) {
     redirect(`/events/${slug}?error=${outcome.error}`);
   }
 
-  revalidatePath(`/events/${slug}`);
-  revalidatePath("/tickets");
+  refreshTicketViews(partnerId, slug);
   redirect(`/tickets?new=${outcome.code}`);
 }
 
@@ -120,14 +160,17 @@ export async function cancelTicket(formData: FormData) {
   const session = await getUserSession();
   if (!session) redirect("/account");
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { event: { select: { slug: true, partnerId: true } } },
+  });
   if (ticket && ticket.userId === session.uid) {
     await prisma.ticket.update({
       where: { id: ticket.id },
       data: { status: "CANCELLED" },
     });
+    refreshTicketViews(ticket.event.partnerId, ticket.event.slug);
   }
-  revalidatePath("/tickets");
   redirect("/tickets");
 }
 
@@ -140,7 +183,7 @@ export async function activateTicket(formData: FormData) {
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    include: { event: true },
+    include: { event: { select: { slug: true, partnerId: true } } },
   });
   if (!ticket || ticket.userId !== session.uid) redirect("/tickets");
   if (ticket.status === "CANCELLED") redirect(`/tickets/${ticket.code}`);
@@ -152,6 +195,11 @@ export async function activateTicket(formData: FormData) {
     });
   }
 
-  revalidatePath(`/tickets/${ticket.code}`);
+  const { partnerId } = ticket.event;
+  revalidatePath(
+    partnerId
+      ? partnerSiteRoute(partnerId, `/tickets/${ticket.code}`)
+      : `/tickets/${ticket.code}`,
+  );
   redirect(`/tickets/${ticket.code}?activated=1`);
 }

@@ -20,16 +20,27 @@ export function EventForm({
   event,
   error,
   cancelHref = "/admin/events",
+  scope,
 }: {
   action: (formData: FormData) => void;
   event?: Event;
   error?: string;
-  /** Where "Cancel" goes — the admin dashboard and the Studio share this form. */
+  /** Where "Cancel" goes — the admin dashboard, the Studio and a partner portal share this form. */
   cancelHref?: string;
+  /**
+   * The partner whose show this is, when the form is used in a partner portal.
+   * Omitted by RNL's own tools, whose actions don't read it.
+   *
+   * Safe to carry in the body: the action does not trust it for authorization —
+   * it re-reads the caller's grant on that partner from the database. See
+   * app/actions/partner-events.ts.
+   */
+  scope?: string;
 }) {
   return (
     <form action={action} className="space-y-6">
       {event ? <input type="hidden" name="id" value={event.id} /> : null}
+      {scope ? <input type="hidden" name="scope" value={scope} /> : null}
 
       {error === "required" ? (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">

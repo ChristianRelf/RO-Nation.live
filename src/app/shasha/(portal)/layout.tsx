@@ -23,10 +23,13 @@ export default async function PortalLayout({
     // pages rather than floating under the content.
     <div className="flex min-h-dvh flex-col">
       <PortalNav
+        brand="SHASHA"
+        basePath="/shasha"
         user={{
           displayName: user.displayName,
           avatarUrl: user.avatarUrl,
-          role: user.role,
+          roleLabel: user.canWrite ? "Management" : "Read only",
+          canWrite: user.canWrite,
         }}
       />
       <main className="shell flex-1 py-10">{children}</main>

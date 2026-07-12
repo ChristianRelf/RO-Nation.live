@@ -11,8 +11,18 @@ import { cn } from "@/lib/utils";
  * Add-to-list form. The Roblox user is picked from a live lookup rather than
  * typed free-hand, so an entry can't end up pinned to a misspelled name — the
  * server re-resolves the id on submit regardless.
+ *
+ * `scope` says which org's list this is (see lib/portal-scope.ts). It travels as
+ * a hidden field, which is safe: the action does not trust it for authorization,
+ * it re-runs that org's guard against the caller's session.
  */
-export function RosterAddForm({ kind }: { kind: RosterKind }) {
+export function RosterAddForm({
+  scope,
+  kind,
+}: {
+  scope: string;
+  kind: RosterKind;
+}) {
   const isVip = kind === "VIP";
   const [picked, setPicked] = useState<RobloxProfile | null>(null);
   const [tags, setTags] = useState<string[]>([]);
@@ -32,6 +42,7 @@ export function RosterAddForm({ kind }: { kind: RosterKind }) {
         }, 0);
       }}
     >
+      <input type="hidden" name="scope" value={scope} />
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="robloxId" value={picked?.robloxId ?? ""} />
       <input type="hidden" name="tags" value={tags.join(",")} />
@@ -50,7 +61,7 @@ export function RosterAddForm({ kind }: { kind: RosterKind }) {
           {picked ? (
             <PickedUser profile={picked} onClear={() => setPicked(null)} />
           ) : (
-            <RobloxPicker onPick={setPicked} />
+            <RobloxPicker scope={scope} onPick={setPicked} />
           )}
         </Field>
 
@@ -112,7 +123,13 @@ function SubmitButton({
 }
 
 // ---- Roblox typeahead --------------------------------------------
-function RobloxPicker({ onPick }: { onPick: (p: RobloxProfile) => void }) {
+function RobloxPicker({
+  scope,
+  onPick,
+}: {
+  scope: string;
+  onPick: (p: RobloxProfile) => void;
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RobloxProfile[]>([]);
   const [searched, setSearched] = useState(false);
@@ -133,7 +150,7 @@ function RobloxPicker({ onPick }: { onPick: (p: RobloxProfile) => void }) {
     const ticket = ++latest.current;
     setPending(true);
     try {
-      const found = await searchRoblox(trimmed);
+      const found = await searchRoblox(scope, trimmed);
       // Ignore a slow response that a newer keystroke has already superseded.
       if (ticket !== latest.current) return;
       setResults(found);

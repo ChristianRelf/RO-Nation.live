@@ -14,16 +14,16 @@ datasource db {
 // People who sign in with Roblox to reserve tickets.
 // ------------------------------------------------------------------
 model User {
-  id           String   @id @default(cuid())
-  robloxId     String   @unique
-  username     String
-  displayName  String
-  avatarUrl    String?
-  profileUrl   String?
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  robloxId    String   @unique
+  username    String
+  displayName String
+  avatarUrl   String?
+  profileUrl  String?
+  createdAt   DateTime @default(now())
 
-  tickets      Ticket[]
-  applications Application[]
+  tickets         Ticket[]
+  applications    Application[]
   surveyResponses SurveyResponse[]
 
   @@map("users")
@@ -43,10 +43,10 @@ model Event {
   slug         String      @unique
   title        String
   tagline      String?
-  description   String      @db.Text
+  description  String      @db.Text
   category     String      @default("Live Show")
-  venue        String?     // in-experience location / stage name
-  placeUrl     String?     // Roblox experience link
+  venue        String? // in-experience location / stage name
+  placeUrl     String? // Roblox experience link
   thumbnailUrl String?
   startsAt     DateTime
   endsAt       DateTime?
@@ -57,9 +57,20 @@ model Event {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  tickets      Ticket[]
+  // The partner whose show this is — a slug from lib/partners/registry.ts.
+  // NULL means it is RO. Nation LIVE's own event. See the note on partnerId in
+  // RosterEntry for why this is a plain column and not a foreign key.
+  //
+  // Every query that lists events MUST filter on this. An event with no filter
+  // leaks a partner's draft line-up onto the RNL site, and — worse — puts RNL's
+  // events on the partner's. lib/queries.ts takes the scope as a required
+  // argument for exactly that reason: there is no "forgot to pass it" default.
+  partnerId String?
+
+  tickets Ticket[]
 
   @@index([status, startsAt])
+  @@index([partnerId, status, startsAt])
   @@map("events")
 }
 
@@ -73,17 +84,17 @@ enum TicketStatus {
 }
 
 model Ticket {
-  id          String       @id @default(cuid())
-  code        String       @unique // human-readable, e.g. RN-7F3A9C
-  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId     String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
+  id              String       @id @default(cuid())
+  code            String       @unique // human-readable, e.g. RN-7F3A9C
+  event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId         String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
   status          TicketStatus @default(RESERVED)
   createdAt       DateTime     @default(now())
   checkedInAt     DateTime?
-  termsAcceptedAt DateTime?    // when the holder accepted the ticket T&Cs at checkout
-  activatedAt     DateTime?    // when the holder "activated" the ticket (reveals QR)
+  termsAcceptedAt DateTime? // when the holder accepted the ticket T&Cs at checkout
+  activatedAt     DateTime? // when the holder "activated" the ticket (reveals QR)
 
   @@unique([eventId, userId]) // one ticket per person per event
   @@index([eventId])
@@ -100,20 +111,20 @@ enum JobStatus {
 }
 
 model Career {
-  id            String    @id @default(cuid())
-  slug          String    @unique
-  title         String
-  department    String    @default("Events")
-  commitment    String    @default("Volunteer") // Volunteer / Paid / Trial
-  location      String    @default("Remote — Roblox")
-  summary       String
-  description    String    @db.Text
-  requirements  String    @db.Text // one requirement per line
-  status        JobStatus @default(DRAFT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  title        String
+  department   String    @default("Events")
+  commitment   String    @default("Volunteer") // Volunteer / Paid / Trial
+  location     String    @default("Remote — Roblox")
+  summary      String
+  description  String    @db.Text
+  requirements String    @db.Text // one requirement per line
+  status       JobStatus @default(DRAFT)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  applications  Application[]
+  applications Application[]
 
   @@index([status])
   @@map("careers")
@@ -233,9 +244,14 @@ model SurveyAnswer {
 }
 
 // ------------------------------------------------------------------
-// SHASHA portal (portal.ronation.live/shasha) — VIP list & blacklist.
+// Roster portals — VIP list & blacklist.
+//
+//   portal.ronation.live/shasha  → RNL's own lists      (partnerId "shasha")
+//   portal.ronation.live/<slug>  → a partner's lists    (partnerId <slug>)
+//
 // Both lists hold the same shape, keyed on a Roblox player, so they share
-// one model discriminated by `kind`.
+// one model discriminated by `kind` — and every partner's copy of both lists
+// shares it too, discriminated by `partnerId`.
 // ------------------------------------------------------------------
 enum RosterKind {
   VIP
@@ -243,7 +259,23 @@ enum RosterKind {
 }
 
 model RosterEntry {
-  id             String     @id @default(cuid())
+  id String @id @default(cuid())
+
+  // Which organisation's list this row belongs to.
+  //
+  // This is a plain scope column, NOT a foreign key, because there is no Partner
+  // table to point at: the partner list lives in code (lib/partners/registry.ts)
+  // so that middleware — which runs on the edge, where Prisma cannot — can
+  // resolve a brand from the Host header alone. The registry is the partner
+  // table; this column references a slug in it.
+  //
+  // "shasha" is RNL's own list, and it is safe as a sentinel precisely because
+  // the registry's RESERVED set already forbids any partner from taking that
+  // slug. It is also the default, which is what backfills the existing SHASHA
+  // rows on the migration that added this column — they predate partners, and
+  // they are all SHASHA's.
+  partnerId String @default("shasha")
+
   kind           RosterKind
   robloxId       String // canonical Roblox user id — resolved server-side
   robloxUsername String
@@ -262,8 +294,13 @@ model RosterEntry {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  @@unique([kind, robloxId]) // one entry per person per list
-  @@index([kind, createdAt])
+  // One entry per person per list PER ORG. Scoping the unique key is what lets
+  // two partners hold the same player on their blacklists independently — and
+  // it is a NOT NULL column, so Postgres treats the tuples as comparable. (A
+  // nullable partnerId would have silently allowed duplicate RNL rows, since
+  // NULLs are never equal to each other in a unique index.)
+  @@unique([partnerId, kind, robloxId])
+  @@index([partnerId, kind, createdAt])
   @@index([robloxUsername])
   @@map("roster_entries")
 }
@@ -278,6 +315,8 @@ enum RosterAction {
 
 model RosterAudit {
   id             String       @id @default(cuid())
+  /// The org whose history this is — see RosterEntry.partnerId.
+  partnerId      String       @default("shasha")
   action         RosterAction
   kind           RosterKind
   robloxId       String
@@ -287,8 +326,53 @@ model RosterAudit {
   summary        String       @db.Text
   createdAt      DateTime     @default(now())
 
-  @@index([createdAt])
+  @@index([partnerId, createdAt])
   @@map("roster_audit")
+}
+
+// ------------------------------------------------------------------
+// Who may use a partner's portal (portal.ronation.live/<slug>).
+//
+// SHASHA answers this from Roblox group rank — "the group IS the allowlist" —
+// and that is the right shape when the org and the group are the same thing.
+// A partner is a *different* organisation, so RNL cannot rank them in its own
+// group, and a partner cannot be trusted to hand out access to RNL's
+// infrastructure by promoting people in a group RNL does not control.
+//
+// So membership is explicit rows, granted by RNL. A partner slug in the
+// registry grants nobody anything (the registry says so itself); THIS table is
+// the grant. Revoking is deleting a row.
+//
+// A partner MAY additionally point at a Roblox group of their own — see
+// `Partner.robloxGroupId` in the registry — in which case rank in that group
+// tops up the roles below. The rows here always win; they are the floor.
+// ------------------------------------------------------------------
+enum PartnerRole {
+  /// Read the lists. Change nothing.
+  STAFF
+  /// Add, edit and remove people on the lists.
+  MANAGER
+  /// A manager who can also grant and revoke other members.
+  OWNER
+}
+
+model PartnerMember {
+  id             String      @id @default(cuid())
+  /// A slug from lib/partners/registry.ts. Plain column, not an FK — see RosterEntry.partnerId.
+  partnerId      String
+  robloxId       String // canonical Roblox user id — resolved server-side
+  robloxUsername String
+  displayName    String
+  avatarUrl      String?
+  role           PartnerRole @default(STAFF)
+  addedById      String // the RNL admin or partner owner who granted this
+  addedByName    String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([partnerId, robloxId]) // one grant per person per partner
+  @@index([partnerId, role])
+  @@map("partner_members")
 }
 
 // ------------------------------------------------------------------

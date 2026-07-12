@@ -1,4 +1,9 @@
-import { Anton, Archivo, JetBrains_Mono } from "next/font/google";
+import {
+  Anton,
+  Archivo,
+  Cormorant_Garamond,
+  JetBrains_Mono,
+} from "next/font/google";
 
 // Every brand's faces, and the class string that activates one.
 //
@@ -42,20 +47,26 @@ const jetbrains = JetBrains_Mono({
 
 const RNL_FONTS = `${archivo.variable} ${anton.variable} ${jetbrains.variable}`;
 
+// Sleep Token RO's display face. A high-contrast, light-weight garamond —
+// against RNL's Anton it reads as the opposite instinct entirely, which is the
+// point: a partner should not look like RNL wearing a different colour.
+//
+// preload: false is required, not stylistic — see the note above.
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400"],
+  variable: "--font-display",
+  display: "swap",
+  preload: false,
+});
+
 /**
  * Partner font stacks, by slug. Each must supply all three variables — a brand
  * that omits --font-display would fall back to Impact, not to Anton.
- *
- * e.g.
- *   const cormorant = Cormorant_Garamond({
- *     subsets: ["latin"], weight: "300", variable: "--font-display",
- *     display: "swap", preload: false,   // ← required; see above
- *   });
- *   const BRAND_FONTS = {
- *     sleeptokenro: `${archivo.variable} ${cormorant.variable} ${jetbrains.variable}`,
- *   };
  */
-const BRAND_FONTS: Record<string, string> = {};
+const BRAND_FONTS: Record<string, string> = {
+  sleeptokenro: `${archivo.variable} ${cormorant.variable} ${jetbrains.variable}`,
+};
 
 export function fontClassFor(slug: string | null | undefined) {
   return (slug && BRAND_FONTS[slug]) || RNL_FONTS;

@@ -21,7 +21,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const event = await getEventBySlug(params.slug);
+  const event = await getEventBySlug(null, params.slug);
   if (!event) return { title: "Event not found" };
   return {
     title: event.title,
@@ -42,7 +42,7 @@ export default async function EventPage({
   params: { slug: string };
   searchParams: { error?: string };
 }) {
-  const event = await getEventBySlug(params.slug);
+  const event = await getEventBySlug(null, params.slug);
   if (!event) notFound();
 
   const session = await getUserSession();
