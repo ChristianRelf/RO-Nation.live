@@ -2,12 +2,27 @@ import Link from "next/link";
 import { Kicker } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-// Shared layout for the three legal documents so they stay visually consistent
-// and DRY. Each legal page just supplies a `sections` array.
+// Shared layout for the legal documents so they stay visually consistent and
+// DRY. Each legal page just supplies a `sections` array.
 const legalNav = [
   { label: "Privacy Policy", href: "/legal/privacy" },
   { label: "Terms of Service", href: "/legal/terms" },
   { label: "Code of Conduct", href: "/legal/code-of-conduct" },
+];
+
+// The Roblox and Discord OAuth integrations have their own pair of documents —
+// these are the URLs handed to Roblox and Discord when registering the apps, so
+// they cross-link to each other rather than to the site-wide docs.
+export const robloxNav = [
+  { label: "Roblox — Privacy", href: "/legal/roblox/privacy" },
+  { label: "Roblox — Terms", href: "/legal/roblox/terms" },
+  { label: "Site policies", href: "/legal/privacy" },
+];
+
+export const discordNav = [
+  { label: "Discord — Privacy", href: "/legal/discord/privacy" },
+  { label: "Discord — Terms", href: "/legal/discord/terms" },
+  { label: "Site policies", href: "/legal/privacy" },
 ];
 
 export function LegalDoc({
@@ -16,12 +31,14 @@ export function LegalDoc({
   intro,
   sections,
   currentHref,
+  nav = legalNav,
 }: {
   title: string;
   updated: string;
   intro?: string;
   sections: { heading: string; body: string[] }[];
   currentHref: string;
+  nav?: { label: string; href: string }[];
 }) {
   return (
     <div className="relative">
@@ -31,9 +48,9 @@ export function LegalDoc({
         <h1 className="display mt-5 text-4xl sm:text-5xl md:text-6xl">{title}</h1>
         <p className="mt-4 text-sm text-faint">Last updated {updated}</p>
 
-        {/* Sub-nav between the three documents */}
+        {/* Sub-nav between the related documents */}
         <nav className="mt-8 flex flex-wrap gap-2">
-          {legalNav.map((l) => {
+          {nav.map((l) => {
             const active = l.href === currentHref;
             return (
               <Link

@@ -16,6 +16,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/legal/privacy",
     "/legal/terms",
     "/legal/code-of-conduct",
+    "/legal/roblox/privacy",
+    "/legal/roblox/terms",
+    "/legal/discord/privacy",
+    "/legal/discord/terms",
   ];
   const now = new Date();
   return routes.map((path) => ({

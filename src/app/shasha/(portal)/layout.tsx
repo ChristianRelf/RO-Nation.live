@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getPortalUser } from "@/lib/session";
 import { PortalNav } from "@/components/portal-nav";
+import { PortalFooter } from "@/components/portal-footer";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -18,7 +19,9 @@ export default async function PortalLayout({
   if (!user) redirect("/shasha/login");
 
   return (
-    <div className="min-h-dvh">
+    // Column layout so the footer sits at the bottom of the viewport on short
+    // pages rather than floating under the content.
+    <div className="flex min-h-dvh flex-col">
       <PortalNav
         user={{
           displayName: user.displayName,
@@ -26,7 +29,8 @@ export default async function PortalLayout({
           role: user.role,
         }}
       />
-      <main className="shell py-10">{children}</main>
+      <main className="shell flex-1 py-10">{children}</main>
+      <PortalFooter />
     </div>
   );
 }

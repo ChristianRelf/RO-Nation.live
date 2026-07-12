@@ -10,8 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
 // Next inlines env into the edge bundle at build time — and the Docker image is
 // built without runtime config. Host-derived means it is simply always right.
 
-/** Paths the portal host is allowed to serve. */
-const PORTAL_PATHS = ["/shasha", "/api/auth/discord", "/api/health"];
+/**
+ * Paths the portal host is allowed to serve.
+ *
+ * `/legal` is here because the Roblox and Discord OAuth apps are registered with
+ * policy URLs on this hostname (portal.ronation.live/legal/discord/privacy and
+ * friends). Those URLs are reviewed by Discord and Roblox and must not redirect
+ * away. They stay reachable on the main site too — same pages, both hosts.
+ */
+const PORTAL_PATHS = ["/shasha", "/legal", "/api/auth/discord", "/api/health"];
 
 const isLocalHost = (host: string) =>
   host === "localhost" ||
