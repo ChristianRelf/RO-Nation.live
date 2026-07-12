@@ -270,11 +270,19 @@ system working. Do this:
 3. **Apply it once, by hand:**
 
    ```bash
-   docker compose run --rm web npx prisma db push --accept-data-loss
+   docker compose run --rm --entrypoint npx web \
+     prisma db push --accept-data-loss
    ```
 
+   `--entrypoint` is not optional. `docker-entrypoint.sh` is the image's
+   ENTRYPOINT, and `docker compose run web <cmd>` overrides the *command*, not
+   the entrypoint — so without it your `npx …` arrives as arguments to the
+   entrypoint script, which ignores them, runs the normal boot sequence, and
+   fails on the very error you are trying to fix.
+
 4. **Bring the app back up.** `db push` is now a no-op for that change, so the
-   entrypoint sails past it on every subsequent boot.
+   entrypoint sails past it on every subsequent boot. (If `web` is already in a
+   `restart: unless-stopped` loop, it will recover on its own.)
 
 Never put `--accept-data-loss` into `docker-entrypoint.sh` to make a deploy go
 green. The one time it silently drops the tickets table, it will be at 2am on a
@@ -300,4 +308,3 @@ against your data rather than mine — then apply step 3.
 - Times entered in the admin use the **server's timezone**. Set `TZ` in `.env`
   (e.g. `TZ="Europe/London"`) so dates display as you expect.
 - This site is not affiliated with or endorsed by Roblox Corporation.
-```

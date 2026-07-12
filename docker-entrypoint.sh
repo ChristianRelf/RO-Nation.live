@@ -39,7 +39,12 @@ if ! npx prisma db push --skip-generate; then
   echo "  If the warning is about adding a constraint, verify there are no"
   echo "  conflicting rows and then apply it once, by hand:"
   echo ""
-  echo "    docker compose run --rm web npx prisma db push --accept-data-loss"
+  echo "    docker compose run --rm --entrypoint npx web \\"
+  echo "      prisma db push --accept-data-loss"
+  echo ""
+  echo "  (--entrypoint is required: this script IS the image's entrypoint, so"
+  echo "   without it your command arrives as arguments to this script, which"
+  echo "   ignores them and simply fails here again.)"
   echo ""
   exit 1
 fi
