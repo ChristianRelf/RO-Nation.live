@@ -66,26 +66,29 @@ page shows a **dev login** so you can test the whole ticketing flow locally.
    # add ROBLOX_CLIENT_ID / ROBLOX_CLIENT_SECRET when ready (see below)
    ```
 
-3. Build and run:
+3. Set your hostnames — a bundled **Caddy** container terminates TLS and gets
+   Let's Encrypt certificates for them automatically (no certbot, no cron):
+
+   ```env
+   SITE_HOST="ronation.live"
+   PORTAL_HOST="portal.ronation.live"
+   ACME_EMAIL="you@example.com"
+   ```
+
+   Both names must already resolve to the server, and ports **80** and **443**
+   must be open and not already taken by a system nginx/Apache.
+
+4. Build and run:
 
    ```bash
    docker compose up -d --build
+   docker compose logs -f caddy   # "certificate obtained successfully"
    ```
 
    On first boot the web container creates the database schema and seeds demo
-   content automatically. The app listens on port **3000** (change with
-   `WEB_PORT`).
-
-4. Put it behind HTTPS. Point a reverse proxy (Caddy, Nginx, or Traefik) at
-   `http://127.0.0.1:3000`. Roblox OAuth **requires HTTPS** on your public URL.
-
-   Minimal **Caddy** example:
-
-   ```
-   your-domain.com {
-       reverse_proxy 127.0.0.1:3000
-   }
-   ```
+   content automatically. The app itself is bound to `127.0.0.1:3000` (change with
+   `WEB_PORT`) — the public entrypoint is Caddy on 443. Certificates live in the
+   `caddy-data` volume; don't delete it, or you'll re-issue into a rate limit.
 
 Useful commands:
 

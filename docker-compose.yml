@@ -36,8 +36,10 @@ services:
       DISCORD_MANAGER_IDS: ${DISCORD_MANAGER_IDS:-}
       DISCORD_STAFF_IDS: ${DISCORD_STAFF_IDS:-}
       TZ: ${TZ:-UTC}
+    # Bound to loopback: the public entrypoint is Caddy on 443. Publishing this
+    # on 0.0.0.0 would let anyone reach the app over plain HTTP, bypassing TLS.
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
     healthcheck:
       test:
         [
@@ -51,5 +53,27 @@ services:
       retries: 5
       start_period: 40s
 
+  # TLS terminator. Gets and renews Let's Encrypt certificates automatically for
+  # both hostnames, and redirects http → https. See ./Caddyfile.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      SITE_HOST: ${SITE_HOST:-ronation.live}
+      PORTAL_HOST: ${PORTAL_HOST:-portal.ronation.live}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@ronation.live}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data # issued certificates — must persist across redeploys
+      - caddy-config:/config
+
 volumes:
   db-data:
+  caddy-data:
+  caddy-config:

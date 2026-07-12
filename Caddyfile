@@ -1,0 +1,31 @@
+# Automatic HTTPS for RO. Nation LIVE.
+#
+# Caddy obtains and renews Let's Encrypt certificates by itself — there is no
+# certbot, no cron job, and no renewal hook to maintain. It also redirects all
+# HTTP traffic to HTTPS automatically.
+#
+# Certificates are stored in the `caddy-data` Docker volume, so they survive
+# restarts and redeploys. Don't delete that volume casually: re-issuing counts
+# against Let's Encrypt's rate limits (5 certs per domain per week).
+#
+# For this to work: ports 80 and 443 must be open on the server, and both names
+# below must already resolve to it.
+{
+	# Let's Encrypt emails this address before a cert expires. Renewal is
+	# automatic either way — set ACME_EMAIL in .env to get the warnings.
+	email {$ACME_EMAIL:admin@ronation.live}
+}
+
+{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live} {
+	encode zstd gzip
+
+	# One upstream serves both names: the app reads the Host header to decide
+	# whether you get the public site or the SHASHA portal, and Caddy passes the
+	# original Host through untouched. `web` is the service name on the Docker
+	# network — not localhost, which inside this container would be Caddy itself.
+	reverse_proxy web:3000
+
+	log {
+		output stdout
+	}
+}

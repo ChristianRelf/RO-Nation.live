@@ -54,6 +54,11 @@ docker compose up -d db
 This runs Postgres in the background on port **5433** (matching `DATABASE_URL` in
 `.env`). It keeps its data in a Docker volume, so it survives restarts.
 
+> Start `db` specifically, not the whole stack. `docker compose up -d` on its own
+> would also start Caddy, which exists to fetch real HTTPS certificates for
+> `ronation.live` — pointless on your laptop, since that name doesn't resolve to
+> it. Locally you run the app with `npm run dev` over plain http instead.
+
 ### 4. Create the tables + demo content
 
 ```bash
@@ -252,22 +257,51 @@ you're running an old `docker-compose.override.yml` and **Postgres is open to th
 internet** — published Docker ports bypass `ufw`. Pull the latest code and run
 `docker compose up -d` to rebind it, then set a real `POSTGRES_PASSWORD` in `.env`.
 
-### 6. Put HTTPS in front of it
+### 6. HTTPS — it's already done
 
-The app listens on port 3000. Terminate TLS with a reverse proxy and make sure
-the certificate covers **both** hostnames. With Caddy, this whole step is:
+There's a **Caddy** container in `docker-compose.yml`. It gets Let's Encrypt
+certificates for both hostnames on first boot, renews them on its own, and
+redirects `http://` to `https://`. No certbot, no cron job, no renewal script.
 
-```caddyfile
-ronation.live, portal.ronation.live {
-    reverse_proxy localhost:3000
-}
+You only need three things to be true:
+
+**a. Both names point at this server.** You've done this — verify with
+`dig +short ronation.live` and `dig +short portal.ronation.live`; both should
+print the server's IP.
+
+**b. Ports 80 and 443 are open and free.** Certificate issuance uses port 80, so
+it can't be blocked or already taken:
+
+```bash
+sudo ss -tlnp | grep -E ':80 |:443 '   # must be empty (or already caddy)
+sudo ufw allow 80,443/tcp              # if ufw is on
 ```
 
-With nginx + certbot, proxy both server names to `localhost:3000` and issue the
-cert with `-d ronation.live -d portal.ronation.live`.
+If nginx or Apache is already sitting on port 80, Caddy can't start — stop it
+first (`sudo systemctl disable --now nginx`).
 
-> The portal must be served over **https**. Discord requires the redirect URL to
-> match the one you registered exactly, and that one is https.
+**c. Your hostnames are in `.env`:**
+
+```env
+SITE_HOST="ronation.live"
+PORTAL_HOST="portal.ronation.live"
+ACME_EMAIL="you@example.com"     # where expiry warnings go
+```
+
+Then bring it up and watch the certificates get issued:
+
+```bash
+docker compose up -d --build
+docker compose logs -f caddy     # look for "certificate obtained successfully"
+```
+
+First issuance takes a few seconds per hostname. If it fails, Caddy retries with
+a backoff — read the log, fix the cause (almost always DNS or a blocked port 80),
+and it'll pick itself up.
+
+> **Don't wipe the `caddy-data` volume.** Your certificates live there. Let's
+> Encrypt rate-limits issuance to 5 per domain per week, so repeatedly destroying
+> it will lock you out of new certs for days.
 
 ### 7. Register the real redirect URLs
 
@@ -278,7 +312,8 @@ Do the same for Roblox: its redirect is
 
 ### 8. Smoke test
 
-- <https://ronation.live> loads
+- <https://ronation.live> loads, with a valid padlock
+- `http://ronation.live` redirects itself to https
 - <https://ronation.live/admin> logs in
 - <https://portal.ronation.live> lands you on `/shasha`, and Discord sign-in works
 - <https://ronation.live/shasha> bounces you to the portal
@@ -327,6 +362,25 @@ Nothing listens on 5432; the database publishes on **5433**. Either:
   ```env
   DATABASE_URL="postgresql://ronation:ronation@localhost:5433/ronation?schema=public"
   ```
+
+**Caddy won't start: "address already in use"**
+Something else owns port 80 or 443 — usually a system nginx or Apache. Find it
+with `sudo ss -tlnp | grep -E ':80 |:443 '` and stop it
+(`sudo systemctl disable --now nginx`), then `docker compose up -d`.
+
+**No certificate / browser warns the site is insecure**
+Read `docker compose logs caddy`. The usual causes, in order of likelihood:
+
+- DNS doesn't point here yet (`dig +short ronation.live` — is that this server?)
+- Port 80 is blocked upstream (cloud firewall, `ufw`), so the ACME challenge
+  can't complete. Certificate issuance needs **80**, not just 443.
+- You're hitting the server by IP rather than by hostname — certificates are
+  issued per name, so use the domain.
+
+**Certificates stopped renewing / rate-limit errors**
+Renewal is automatic at ~30 days remaining. If you see "too many certificates
+already issued", you've re-issued more than 5 times in a week — most often by
+deleting the `caddy-data` volume. Wait it out; the existing cert keeps working.
 
 **Portal says "That Discord account isn't on the SHASHA access list"**
 The Discord ID you signed in with isn't in `DISCORD_MANAGER_IDS` or
