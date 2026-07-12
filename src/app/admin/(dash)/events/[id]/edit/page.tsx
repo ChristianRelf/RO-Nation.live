@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { AdminHeader } from "@/components/admin-ui";
 import { EventForm } from "@/components/event-form";
 import { updateEvent } from "@/app/actions/admin";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function EditEventPage({
   params: { id: string };
   searchParams: { error?: string };
 }) {
+  await requireAdmin();
   const event = await prisma.event.findUnique({ where: { id: params.id } });
   if (!event) notFound();
 

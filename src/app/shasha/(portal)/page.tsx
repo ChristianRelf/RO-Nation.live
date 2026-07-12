@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { countRoster, findRoster } from "@/lib/roster";
-import { getPortalUser } from "@/lib/session";
+import { requirePortalUser } from "@/lib/session";
 import { formatDateTime } from "@/lib/format";
 import { RosterSearch } from "@/components/roster-search";
 import { RosterList } from "@/components/roster-list";
@@ -13,8 +13,8 @@ export default async function PortalOverviewPage({
 }: {
   searchParams: { q?: string; error?: string };
 }) {
-  const user = await getPortalUser();
-  const canWrite = Boolean(user?.canWrite);
+  const user = await requirePortalUser();
+  const canWrite = user.canWrite;
   const query = searchParams.q?.trim() || "";
 
   const [vipCount, blacklistCount, vipHits, blacklistHits, recent] =
@@ -33,7 +33,7 @@ export default async function PortalOverviewPage({
     <div>
       <div className="mb-8 border-b border-line pb-6">
         <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
-          Signed in as {user?.displayName}
+          Signed in as {user.displayName}
         </p>
         <h1 className="display mt-3 text-5xl">Who are you looking for?</h1>
         <p className="mt-2 text-sm text-muted">

@@ -119,6 +119,34 @@ model Career {
 }
 
 // ------------------------------------------------------------------
+// Blog posts. Written in the Studio by group members ranked 30+ — see
+// src/lib/studio.ts. Authorship is recorded from their Roblox account.
+// ------------------------------------------------------------------
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Post {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  title          String
+  excerpt        String?
+  coverUrl       String?
+  body           String     @db.Text
+  status         PostStatus @default(DRAFT)
+  publishedAt    DateTime? // set the first time it goes PUBLISHED
+  authorRobloxId String?
+  authorName     String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([status, publishedAt])
+  @@map("posts")
+}
+
+// ------------------------------------------------------------------
 // SHASHA portal (portal.ronation.live/shasha) — VIP list & blacklist.
 // Both lists hold the same shape, keyed on a Roblox player, so they share
 // one model discriminated by `kind`.

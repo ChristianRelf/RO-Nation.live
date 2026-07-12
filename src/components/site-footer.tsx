@@ -8,6 +8,7 @@ const columns = [
     links: [
       { label: "Upcoming events", href: "/events" },
       { label: "My tickets", href: "/tickets" },
+      { label: "Blog", href: "/blog" },
       { label: "How ticketing works", href: "/about#ticketing" },
       { label: "FAQ", href: "/faq" },
     ],

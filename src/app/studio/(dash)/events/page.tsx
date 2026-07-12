@@ -1,34 +1,34 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
-import { deleteEvent } from "@/app/actions/admin";
+import { deleteEvent } from "@/app/actions/studio";
 import { formatDateTime, isPast } from "@/lib/format";
-import { requireAdmin } from "@/lib/session";
+import { requireStudioUser } from "@/lib/studio";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Events" };
 
-export default async function AdminEventsPage() {
-  await requireAdmin();
+export default async function StudioEventsPage() {
+  await requireStudioUser();
   const events = await prisma.event.findMany({
     orderBy: { startsAt: "desc" },
-    include: {
-      _count: { select: { tickets: true } },
-    },
+    include: { _count: { select: { tickets: true } } },
   });
 
   return (
     <div>
       <AdminHeader
         title="Events"
-        subtitle="Create, edit and publish events. Draft events stay hidden from the public site."
-        action={{ label: "+ New event", href: "/admin/events/new" }}
+        subtitle="Draft events stay hidden. Published events appear on the site and open for tickets."
+        action={{ label: "+ New event", href: "/studio/events/new" }}
       />
 
       {events.length ? (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-5 py-3 font-semibold">Event</th>
@@ -60,25 +60,14 @@ export default async function AdminEventsPage() {
                     <td className="px-5 py-4">
                       <Badge value={e.status} />
                     </td>
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/admin/events/${e.id}/attendees`}
-                        className="text-accent hover:underline"
-                      >
-                        {e._count.tickets}
-                        {e.capacity > 0 ? `/${e.capacity}` : ""}
-                      </Link>
+                    <td className="tnum px-5 py-4">
+                      {e._count.tickets}
+                      {e.capacity > 0 ? `/${e.capacity}` : ""}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-3">
                         <Link
-                          href={`/admin/events/${e.id}/attendees`}
-                          className="text-muted hover:text-fg"
-                        >
-                          Attendees
-                        </Link>
-                        <Link
-                          href={`/admin/events/${e.id}/edit`}
+                          href={`/studio/events/${e.id}/edit`}
                           className="text-muted hover:text-fg"
                         >
                           Edit
@@ -103,8 +92,8 @@ export default async function AdminEventsPage() {
       ) : (
         <div className="card grid place-items-center px-6 py-20 text-center">
           <p className="font-display text-2xl">No events yet</p>
-          <Link href="/admin/events/new" className="btn btn-accent mt-5">
-            Create your first event
+          <Link href="/studio/events/new" className="btn btn-accent mt-5">
+            Create the first one
           </Link>
         </div>
       )}

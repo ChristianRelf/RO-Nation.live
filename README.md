@@ -20,6 +20,8 @@ and packaged to run on any VPS with **Docker Compose**.
 - **In-game verification API** — your Roblox experience checks & redeems tickets over HTTP with a shared key.
 - **Careers** — post roles, collect applications, track status (New → Reviewing → Accepted/Rejected).
 - **Admin dashboard** — password-protected: create/edit events & careers, view attendees, check people in, review applications.
+- **Studio** — `/studio`: Roblox group members ranked 30+ can create/publish events and write the blog. Access follows the group ranks — promote someone and they're in.
+- **Blog** — public posts at `/blog`, written in the Studio. Drafts stay hidden.
 - **SHASHA staff portal** — `portal.ronation.live/shasha`: Discord-gated VIP list & blacklist, searchable, with roles/reasons and a full change history.
 - **Marketing pages** — Home, About (with a ticketing explainer), Contact + FAQ.
 - **Design** — dark, Live-Nation-inspired: big condensed type, event ticker, ticket-stub cards. No AI-template smell.

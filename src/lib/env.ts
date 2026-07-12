@@ -24,6 +24,14 @@ export const env = {
   gameApiKey: process.env.GAME_API_KEY || "",
   allowDevLogin: process.env.ALLOW_DEV_LOGIN === "true",
 
+  // ---- Studio (/studio) -------------------------------------------
+  // Members of this Roblox group at this rank or above can create and edit
+  // events and blog posts on the main site, by signing in with Roblox.
+  studio: {
+    groupId: process.env.STUDIO_GROUP_ID || "34669403",
+    minRank: Number(process.env.STUDIO_MIN_RANK ?? 30),
+  },
+
   // ---- SHASHA portal (portal.ronation.live/shasha) ----------------
   portal: {
     // Fallback origin only. Deliberately NOT a NEXT_PUBLIC_ var: those are

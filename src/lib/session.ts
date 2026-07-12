@@ -1,6 +1,7 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { env, portalRole } from "./env";
 
 const secret = new TextEncoder().encode(env.authSecret);
@@ -149,4 +150,26 @@ export async function getPortalUser(): Promise<PortalUser | null> {
 
 export function clearPortalSession() {
   cookies().set(PORTAL_COOKIE, "", { ...cookieBase, maxAge: 0 });
+}
+
+// ---- Page guards --------------------------------------------------
+//
+// Every guarded PAGE must call one of these itself, before it reads any data —
+// a guard in the layout alone is not enough.
+//
+// In the App Router, page segments render in parallel with their layout and are
+// serialised into the RSC payload independently. If the layout redirects, that
+// payload is still attached to the redirect response — so an unauthorised client
+// receives the page's data (draft events, blacklist entries) in the body of the
+// 307 it was bounced with. Redirecting from inside the page aborts that page's
+// own render, which is what actually withholds the data.
+
+export async function requireAdmin() {
+  if (!(await isAdmin())) redirect("/admin/login");
+}
+
+export async function requirePortalUser(): Promise<PortalUser> {
+  const user = await getPortalUser();
+  if (!user) redirect("/shasha/login");
+  return user;
 }

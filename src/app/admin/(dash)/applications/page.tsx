@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { setApplicationStatus } from "@/app/actions/admin";
 import { formatDateTime } from "@/lib/format";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function ApplicationsPage({
 }: {
   searchParams: { career?: string; status?: string };
 }) {
+  await requireAdmin();
   const where = {
     ...(searchParams.career ? { careerId: searchParams.career } : {}),
     ...(searchParams.status &&

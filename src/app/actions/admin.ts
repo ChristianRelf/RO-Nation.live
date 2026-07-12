@@ -2,12 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  EventStatus,
-  JobStatus,
-  ApplicationStatus,
-  TicketStatus,
-} from "@prisma/client";
+import { JobStatus, ApplicationStatus, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import {
@@ -15,40 +10,11 @@ import {
   setAdminSession,
   clearAdminSession,
 } from "@/lib/session";
-import { slugify } from "@/lib/utils";
+import { readEventForm, s, uniqueSlug } from "@/lib/content";
 
 // ---- helpers -----------------------------------------------------
 async function assertAdmin() {
   if (!(await isAdmin())) redirect("/admin/login");
-}
-
-function s(form: FormData, key: string) {
-  return String(form.get(key) ?? "").trim();
-}
-
-function parseDate(v: string): Date | null {
-  if (!v) return null;
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-async function uniqueSlug(
-  base: string,
-  model: "event" | "career",
-  ignoreId?: string,
-) {
-  const root = slugify(base) || model;
-  let slug = root;
-  let n = 1;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const found =
-      model === "event"
-        ? await prisma.event.findUnique({ where: { slug } })
-        : await prisma.career.findUnique({ where: { slug } });
-    if (!found || found.id === ignoreId) return slug;
-    slug = `${root}-${++n}`;
-  }
 }
 
 // ---- auth --------------------------------------------------------
@@ -70,28 +36,9 @@ export async function adminLogout() {
 }
 
 // ---- events ------------------------------------------------------
-function readEvent(form: FormData) {
-  const startsAt = parseDate(s(form, "startsAt"));
-  return {
-    title: s(form, "title"),
-    tagline: s(form, "tagline") || null,
-    category: s(form, "category") || "Live Show",
-    venue: s(form, "venue") || null,
-    placeUrl: s(form, "placeUrl") || null,
-    thumbnailUrl: s(form, "thumbnailUrl") || null,
-    description: s(form, "description"),
-    startsAt,
-    doorsAt: parseDate(s(form, "doorsAt")),
-    endsAt: parseDate(s(form, "endsAt")),
-    capacity: Math.max(0, parseInt(s(form, "capacity") || "0", 10) || 0),
-    status: (s(form, "status") as EventStatus) || EventStatus.DRAFT,
-    featured: form.get("featured") === "on",
-  };
-}
-
 export async function createEvent(formData: FormData) {
   await assertAdmin();
-  const data = readEvent(formData);
+  const data = readEventForm(formData);
   if (!data.title || !data.startsAt || !data.description) {
     redirect("/admin/events/new?error=required");
   }
@@ -108,7 +55,7 @@ export async function createEvent(formData: FormData) {
 export async function updateEvent(formData: FormData) {
   await assertAdmin();
   const id = s(formData, "id");
-  const data = readEvent(formData);
+  const data = readEventForm(formData);
   if (!id || !data.title || !data.startsAt || !data.description) {
     redirect(`/admin/events/${id}/edit?error=required`);
   }

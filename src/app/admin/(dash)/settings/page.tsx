@@ -1,5 +1,6 @@
 import { AdminHeader } from "@/components/admin-ui";
 import { env, robloxConfigured, devLoginEnabled } from "@/lib/env";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,8 @@ game.Players.PlayerAdded:Connect(function(player)
 	end
 end)`;
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requireAdmin();
   const base = env.siteUrl;
   const script = luau.replace("%SITE%", base);
 

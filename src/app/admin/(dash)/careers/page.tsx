@@ -3,10 +3,12 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteCareer } from "@/app/actions/admin";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCareersPage() {
+  await requireAdmin();
   const careers = await prisma.career.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { applications: true } } },

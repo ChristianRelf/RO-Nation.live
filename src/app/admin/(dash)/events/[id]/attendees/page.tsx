@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge, StatCard } from "@/components/admin-ui";
 import { setTicketStatus } from "@/app/actions/admin";
 import { formatDateTime } from "@/lib/format";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function AttendeesPage({
 }: {
   params: { id: string };
 }) {
+  await requireAdmin();
   const event = await prisma.event.findUnique({
     where: { id: params.id },
     include: {

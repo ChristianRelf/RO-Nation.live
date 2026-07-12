@@ -7,12 +7,14 @@ There are two things in this repo, and they run from **one app, one container**:
 - the **public site** — `ronation.live` (events, careers, tickets)
 - the **SHASHA staff portal** — `portal.ronation.live/shasha` (VIP list, blacklist)
 
-| Part                    | Where              | Who gets in                             |
-| ----------------------- | ------------------ | --------------------------------------- |
-| Public site             | `/`                | Anyone                                  |
-| Ticketing / account     | `/tickets`         | Anyone, signs in with **Roblox**        |
-| Admin dashboard         | `/admin`           | Username + password from `.env`         |
-| SHASHA portal           | `/shasha`          | **Discord** login + allowlisted user ID |
+| Part                    | Where              | Who gets in                                   |
+| ----------------------- | ------------------ | --------------------------------------------- |
+| Public site             | `/`                | Anyone                                        |
+| Blog                    | `/blog`            | Anyone (published posts only)                 |
+| Ticketing / account     | `/tickets`         | Anyone, signs in with **Roblox**              |
+| Studio                  | `/studio`          | **Roblox** login + group rank **30+**         |
+| Admin dashboard         | `/admin`           | Username + password from `.env`               |
+| SHASHA portal           | `/shasha`          | **Discord** login + allowlisted user ID       |
 
 ---
 
@@ -165,6 +167,34 @@ themselves.
 
 Read-only staff see the lists and the search, but no add form and no
 edit/remove buttons.
+
+---
+
+## Part 3b — The Studio (events & blog for the crew)
+
+`/studio` lets your **Roblox group** run the site without an admin password.
+Anyone who signs in with Roblox and holds rank **30 or above** in the group can
+create, edit and publish events and blog posts. Everyone else is bounced.
+
+There is nothing to configure — it's on by default:
+
+```env
+STUDIO_GROUP_ID="34669403"   # SHA SHA Productions
+STUDIO_MIN_RANK="30"         # 30 = Management, 255 = Managing Director
+```
+
+**To give someone access, promote them in the Roblox group.** To take it away,
+demote them. Rank is read from Roblox on each visit (cached for ~5 minutes), so
+it takes effect on its own — no config change, no redeploy, and no need for them
+to sign out and back in.
+
+| Page             | What it's for                                              |
+| ---------------- | ---------------------------------------------------------- |
+| `/studio`        | Overview, with counts and quick links                      |
+| `/studio/events` | Create, edit, delete and publish events                    |
+| `/studio/blog`   | Write posts. Drafts stay hidden; published ones hit `/blog` |
+
+Ranked members see a **Studio** link in their account menu once signed in.
 
 ---
 

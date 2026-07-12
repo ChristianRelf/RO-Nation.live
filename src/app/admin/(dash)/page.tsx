@@ -2,10 +2,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { AdminHeader, StatCard, Badge } from "@/components/admin-ui";
 import { formatDate, relativeDays } from "@/lib/format";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverview() {
+  await requireAdmin();
   const now = new Date();
   const [
     upcomingCount,

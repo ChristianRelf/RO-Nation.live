@@ -19,10 +19,13 @@ export function EventForm({
   action,
   event,
   error,
+  cancelHref = "/admin/events",
 }: {
   action: (formData: FormData) => void;
   event?: Event;
   error?: string;
+  /** Where "Cancel" goes — the admin dashboard and the Studio share this form. */
+  cancelHref?: string;
 }) {
   return (
     <form action={action} className="space-y-6">
@@ -195,7 +198,7 @@ export function EventForm({
         <button className="btn btn-accent">
           {event ? "Save changes" : "Create event"}
         </button>
-        <a href="/admin/events" className="btn btn-ghost">
+        <a href={cancelHref} className="btn btn-ghost">
           Cancel
         </a>
       </div>

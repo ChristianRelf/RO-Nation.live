@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { robloxProfileUrl } from "@/lib/roblox-users";
+import { requirePortalUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "History" };
@@ -13,6 +14,7 @@ const ACTION_STYLES: Record<string, string> = {
 };
 
 export default async function AuditPage() {
+  await requirePortalUser();
   const rows = await prisma.rosterAudit.findMany({
     orderBy: { createdAt: "desc" },
     take: 200,

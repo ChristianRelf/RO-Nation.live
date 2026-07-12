@@ -1,14 +1,16 @@
 import { AdminHeader } from "@/components/admin-ui";
 import { CareerForm } from "@/components/career-form";
 import { createCareer } from "@/app/actions/admin";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default function NewCareerPage({
+export default async function NewCareerPage({
   searchParams,
 }: {
   searchParams: { error?: string };
 }) {
+  await requireAdmin();
   return (
     <div>
       <AdminHeader
