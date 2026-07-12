@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env, robloxConfigured } from "@/lib/env";
-import { buildAuthorizeUrl, pkceChallenge, randomString } from "@/lib/roblox";
+import { robloxConfigured } from "@/lib/env";
+import { requestOrigin } from "@/lib/origin";
+import {
+  buildAuthorizeUrl,
+  pkceChallenge,
+  randomString,
+  redirectUriFor,
+} from "@/lib/roblox";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +16,16 @@ function sanitizeReturn(v: string | null) {
 }
 
 export async function GET(req: NextRequest) {
+  // Stay on the host the user started from: the session cookie we're about to
+  // set is scoped to it, so a sign-in begun on survey.ronation.live has to come
+  // back to survey.ronation.live. Each host used this way needs its callback URL
+  // registered in the Roblox OAuth app.
+  const origin = requestOrigin(req);
   const returnTo = sanitizeReturn(req.nextUrl.searchParams.get("returnTo"));
 
   if (!robloxConfigured) {
     return NextResponse.redirect(
-      new URL("/account?error=not-configured", env.siteUrl),
+      new URL("/account?error=not-configured", origin),
     );
   }
 
@@ -22,7 +33,14 @@ export async function GET(req: NextRequest) {
   const verifier = randomString(48);
   const challenge = await pkceChallenge(verifier);
 
-  const res = NextResponse.redirect(buildAuthorizeUrl({ state, challenge }));
+  const res = NextResponse.redirect(
+    buildAuthorizeUrl({
+      state,
+      challenge,
+      redirectUri: redirectUriFor(origin),
+    }),
+  );
+
   const opts = {
     httpOnly: true,
     sameSite: "lax" as const,

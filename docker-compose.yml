@@ -65,6 +65,7 @@ services:
     environment:
       SITE_HOST: ${SITE_HOST:-ronation.live}
       PORTAL_HOST: ${PORTAL_HOST:-portal.ronation.live}
+      SURVEY_HOST: ${SURVEY_HOST:-survey.ronation.live}
       ACME_EMAIL: ${ACME_EMAIL:-admin@ronation.live}
     ports:
       - "80:80"

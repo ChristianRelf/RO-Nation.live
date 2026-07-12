@@ -10,12 +10,15 @@ export default async function StudioOverviewPage() {
   await requireStudioUser();
   const user = await getStudioUser();
 
-  const [events, published, posts, drafts] = await Promise.all([
-    prisma.event.count(),
-    prisma.event.count({ where: { status: "PUBLISHED" } }),
-    prisma.post.count(),
-    prisma.post.count({ where: { status: "DRAFT" } }),
-  ]);
+  const [events, published, posts, drafts, surveys, responses] =
+    await Promise.all([
+      prisma.event.count(),
+      prisma.event.count({ where: { status: "PUBLISHED" } }),
+      prisma.post.count(),
+      prisma.post.count({ where: { status: "DRAFT" } }),
+      prisma.survey.count({ where: { status: "OPEN" } }),
+      prisma.surveyResponse.count(),
+    ]);
 
   return (
     <div>
@@ -24,12 +27,17 @@ export default async function StudioOverviewPage() {
         subtitle="Create events and write for the blog. Anything you publish goes live on the site straight away."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Events" value={events} hint={`${published} published`} />
         <StatCard label="Blog posts" value={posts} hint={`${drafts} in draft`} />
+        <StatCard
+          label="Open surveys"
+          value={surveys}
+          hint={`${responses} response${responses === 1 ? "" : "s"} in total`}
+        />
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <Link href="/studio/events/new" className="card card-hover p-6">
           <p className="font-display text-2xl uppercase">+ New event</p>
           <p className="mt-2 text-sm text-muted">
@@ -41,6 +49,13 @@ export default async function StudioOverviewPage() {
           <p className="font-display text-2xl uppercase">+ New post</p>
           <p className="mt-2 text-sm text-muted">
             Write a recap, an announcement, or a behind-the-scenes piece.
+          </p>
+        </Link>
+
+        <Link href="/studio/surveys/new" className="card card-hover p-6">
+          <p className="font-display text-2xl uppercase">+ New survey</p>
+          <p className="mt-2 text-sm text-muted">
+            Ask the crowd how a show went. One answer per Roblox account.
           </p>
         </Link>
       </div>

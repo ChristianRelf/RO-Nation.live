@@ -22,6 +22,29 @@ export function generateTicketCode() {
   return `RN-${out}`;
 }
 
+/**
+ * Public survey code: XXXXX-XXXXXXX-XXX (5-7-3).
+ *
+ * Uses the same unambiguous alphabet as ticket codes — no O/0, I/1, L — because
+ * these get read aloud and typed in by hand. 31^15 combinations, so guessing one
+ * is not a realistic way to find a survey.
+ */
+export function generateSurveyCode() {
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(15);
+  crypto.getRandomValues(bytes);
+
+  const chars = Array.from(bytes, (b) => alphabet[b % alphabet.length]);
+  return [
+    chars.slice(0, 5).join(""),
+    chars.slice(5, 12).join(""),
+    chars.slice(12, 15).join(""),
+  ].join("-");
+}
+
+/** Does a path look like a bare survey code, e.g. "/ABCDE-FGHJKMN-PQR"? */
+export const SURVEY_CODE_RE = /^[A-Z0-9]{5}-[A-Z0-9]{7}-[A-Z0-9]{3}$/i;
+
 /** Split a multi-line textarea value into trimmed, non-empty lines. */
 export function toLines(value: string) {
   return value

@@ -8,6 +8,7 @@ const links = [
   { label: "Overview", href: "/studio" },
   { label: "Events", href: "/studio/events" },
   { label: "Blog", href: "/studio/blog" },
+  { label: "Surveys", href: "/studio/surveys" },
 ];
 
 export function StudioNav({

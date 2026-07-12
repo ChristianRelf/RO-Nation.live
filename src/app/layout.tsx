@@ -62,10 +62,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // The SHASHA staff portal (portal.ronation.live/shasha) is its own product —
-  // it brings its own nav, so the marketing chrome is left off. Tagged by
-  // middleware; see src/middleware.ts.
-  const isPortal = headers().get("x-ron-area") === "portal";
+  // The SHASHA portal and the survey subdomain are their own products — they
+  // bring their own chrome, so the marketing header/footer is left off. Tagged
+  // by middleware; see src/middleware.ts.
+  const area = headers().get("x-ron-area");
+  const isPortal = area === "portal" || area === "survey";
 
   return (
     <html

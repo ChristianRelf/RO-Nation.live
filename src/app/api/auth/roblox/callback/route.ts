@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { env } from "@/lib/env";
-import { exchangeCode, fetchUserInfo } from "@/lib/roblox";
+import { requestOrigin } from "@/lib/origin";
+import { exchangeCode, fetchUserInfo, redirectUriFor } from "@/lib/roblox";
 import {
   USER_COOKIE,
   cookieOptions,
@@ -16,6 +16,8 @@ function sanitizeReturn(v?: string) {
 }
 
 export async function GET(req: NextRequest) {
+  // Same host the sign-in began on — see the login route.
+  const origin = requestOrigin(req);
   const params = req.nextUrl.searchParams;
   const code = params.get("code");
   const state = params.get("state");
@@ -27,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const fail = (reason: string) => {
     const res = NextResponse.redirect(
-      new URL(`/account?error=${reason}`, env.siteUrl),
+      new URL(`/account?error=${reason}`, origin),
     );
     clearOauthCookies(res);
     return res;
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const tokens = await exchangeCode(code, verifier);
+    const tokens = await exchangeCode(code, verifier, redirectUriFor(origin));
     const info = await fetchUserInfo(tokens.access_token);
 
     const username =
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
       avatarUrl: user.avatarUrl ?? undefined,
     });
 
-    const res = NextResponse.redirect(new URL(returnTo, env.siteUrl));
+    const res = NextResponse.redirect(new URL(returnTo, origin));
     res.cookies.set(USER_COOKIE, token, cookieOptions(60 * 60 * 24 * 30));
     clearOauthCookies(res);
     return res;

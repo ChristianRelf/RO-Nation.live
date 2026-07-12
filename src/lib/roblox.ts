@@ -6,8 +6,20 @@ import { env } from "./env";
 
 export const REDIRECT_PATH = "/api/auth/roblox/callback";
 
+/**
+ * The callback URL for the host the user is actually on.
+ *
+ * Sign-in has to work on survey.ronation.live as well as the main site, and the
+ * session cookie it sets is scoped to whichever host issued it — so the round
+ * trip must start and finish on the same origin. Every host used this way needs
+ * its callback URL registered in the Roblox OAuth app.
+ */
+export function redirectUriFor(origin: string) {
+  return `${origin}${REDIRECT_PATH}`;
+}
+
 export function redirectUri() {
-  return `${env.siteUrl}${REDIRECT_PATH}`;
+  return redirectUriFor(env.siteUrl);
 }
 
 function base64url(bytes: Uint8Array) {
@@ -33,10 +45,11 @@ export async function pkceChallenge(verifier: string) {
 export function buildAuthorizeUrl(params: {
   state: string;
   challenge: string;
+  redirectUri?: string;
 }) {
   const url = new URL(env.roblox.authorizeUrl);
   url.searchParams.set("client_id", env.roblox.clientId);
-  url.searchParams.set("redirect_uri", redirectUri());
+  url.searchParams.set("redirect_uri", params.redirectUri ?? redirectUri());
   url.searchParams.set("scope", "openid profile");
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", params.state);
@@ -55,11 +68,13 @@ export type RobloxTokens = {
 export async function exchangeCode(
   code: string,
   verifier: string,
+  redirect?: string,
 ): Promise<RobloxTokens> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: redirectUri(),
+    // Must be byte-identical to the redirect_uri used at authorize time.
+    redirect_uri: redirect ?? redirectUri(),
     client_id: env.roblox.clientId,
     client_secret: env.roblox.clientSecret,
     code_verifier: verifier,

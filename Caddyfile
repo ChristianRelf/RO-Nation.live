@@ -16,13 +16,13 @@
 	email {$ACME_EMAIL:admin@ronation.live}
 }
 
-{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live} {
+{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live} {
 	encode zstd gzip
 
-	# One upstream serves both names: the app reads the Host header to decide
-	# whether you get the public site or the SHASHA portal, and Caddy passes the
-	# original Host through untouched. `web` is the service name on the Docker
-	# network — not localhost, which inside this container would be Caddy itself.
+	# One upstream serves all three names: the app reads the Host header to decide
+	# whether you get the public site, the SHASHA portal or a survey, and Caddy
+	# passes the original Host through untouched. `web` is the service name on the
+	# Docker network — not localhost, which inside this container would be Caddy.
 	reverse_proxy web:3000
 
 	log {

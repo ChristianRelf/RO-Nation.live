@@ -7,14 +7,15 @@ There are two things in this repo, and they run from **one app, one container**:
 - the **public site** — `ronation.live` (events, careers, tickets)
 - the **SHASHA staff portal** — `portal.ronation.live/shasha` (VIP list, blacklist)
 
-| Part                    | Where              | Who gets in                                   |
-| ----------------------- | ------------------ | --------------------------------------------- |
-| Public site             | `/`                | Anyone                                        |
-| Blog                    | `/blog`            | Anyone (published posts only)                 |
-| Ticketing / account     | `/tickets`         | Anyone, signs in with **Roblox**              |
-| Studio                  | `/studio`          | **Roblox** login + group rank **30+**         |
-| Admin dashboard         | `/admin`           | Username + password from `.env`               |
-| SHASHA portal           | `/shasha`          | **Discord** login + allowlisted user ID       |
+| Part                | Where                        | Who gets in                             |
+| ------------------- | ---------------------------- | --------------------------------------- |
+| Public site         | `/`                          | Anyone                                  |
+| Blog                | `/blog`                      | Anyone (published posts only)           |
+| Ticketing / account | `/tickets`                   | Anyone, signs in with **Roblox**        |
+| Surveys             | `survey.…/<code>`            | **Roblox** login, one per account       |
+| Studio              | `/studio`                    | **Roblox** login + group rank **30+**   |
+| Admin dashboard     | `/admin`                     | Username + password from `.env`         |
+| SHASHA portal       | `/shasha`                    | **Discord** login + allowlisted user ID |
 
 ---
 
@@ -188,13 +189,35 @@ demote them. Rank is read from Roblox on each visit (cached for ~5 minutes), so
 it takes effect on its own — no config change, no redeploy, and no need for them
 to sign out and back in.
 
-| Page             | What it's for                                              |
-| ---------------- | ---------------------------------------------------------- |
-| `/studio`        | Overview, with counts and quick links                      |
-| `/studio/events` | Create, edit, delete and publish events                    |
-| `/studio/blog`   | Write posts. Drafts stay hidden; published ones hit `/blog` |
+| Page              | What it's for                                               |
+| ----------------- | ----------------------------------------------------------- |
+| `/studio`         | Overview, with counts and quick links                       |
+| `/studio/events`  | Create, edit, delete and publish events                     |
+| `/studio/blog`    | Write posts. Drafts stay hidden; published ones hit `/blog`  |
+| `/studio/surveys` | Build surveys, watch results come in, export them as CSV    |
 
 Ranked members see a **Studio** link in their account menu once signed in.
+
+### Surveys
+
+Build a survey in the Studio and it gets its own link:
+
+```text
+https://survey.ronation.live/ZX8P9-VWZ3UG7-3FV
+```
+
+Set it to **Open** and share that. People sign in with Roblox and answer **once**
+— the one-per-account rule is enforced by the database, not just the UI. Question
+types are short text, long text, multiple choice, checkboxes, a 1–5 rating and
+yes/no, and any question can be marked required.
+
+- **Draft** surveys 404, so an unfinished link gives nothing away.
+- Once someone has answered, the **questions lock** — changing them would silently
+  change what the existing results mean. Title, intro and status stay editable.
+- **Closed** surveys say so, and a form left open in a stale tab is rejected on
+  submit rather than sneaking a late answer in.
+- Results show a summary per question (bars, and an average for ratings), plus
+  who answered. **Export CSV** downloads the lot.
 
 ---
 
@@ -207,11 +230,12 @@ Point **both** records at your server's IP:
 ```text
 ronation.live.          A   <your server IP>
 portal.ronation.live.   A   <your server IP>
+survey.ronation.live.   A   <your server IP>
 ```
 
-Same server, same container — the portal is not a separate deployment. The app
+Same server, same container — none of these are separate deployments. The app
 works out which one you're on from the hostname: `portal.*` serves the staff
-portal, anything else serves the public site.
+portal, `survey.*` serves surveys, anything else serves the public site.
 
 ### 2. Get the code onto the server
 
@@ -295,9 +319,9 @@ redirects `http://` to `https://`. No certbot, no cron job, no renewal script.
 
 You only need three things to be true:
 
-**a. Both names point at this server.** You've done this — verify with
-`dig +short ronation.live` and `dig +short portal.ronation.live`; both should
-print the server's IP.
+**a. All three names point at this server.** Verify with `dig +short ronation.live`,
+`dig +short portal.ronation.live` and `dig +short survey.ronation.live` — each
+should print the server's IP. A name that doesn't resolve will fail issuance.
 
 **b. Ports 80 and 443 are open and free.** Certificate issuance uses port 80, so
 it can't be blocked or already taken:
@@ -315,6 +339,7 @@ first (`sudo systemctl disable --now nginx`).
 ```env
 SITE_HOST="ronation.live"
 PORTAL_HOST="portal.ronation.live"
+SURVEY_HOST="survey.ronation.live"
 ACME_EMAIL="you@example.com"     # where expiry warnings go
 ```
 
@@ -337,8 +362,18 @@ and it'll pick itself up.
 
 Go back to the Discord app (Part 2) and make sure
 `https://portal.ronation.live/api/auth/discord/callback` is in the Redirects list.
-Do the same for Roblox: its redirect is
-`https://ronation.live/api/auth/roblox/callback`.
+
+For Roblox, register **both** of these — sign-in has to work on the main site and
+on the survey subdomain, and the session cookie a sign-in creates is scoped to
+whichever hostname issued it:
+
+```text
+https://ronation.live/api/auth/roblox/callback
+https://survey.ronation.live/api/auth/roblox/callback
+```
+
+Miss the second one and surveys will fail at sign-in with an invalid-redirect
+error from Roblox.
 
 ### 8. Smoke test
 
