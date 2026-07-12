@@ -1,8 +1,9 @@
 import "server-only";
 import { env } from "./env";
 
-// Roblox group membership, from the public groups API. Used to decide who can
-// open the Studio: members of the configured group at rank >= STUDIO_MIN_RANK.
+// Roblox group membership, from the public groups API. It is the gate on both
+// the Studio (rank >= STUDIO_MIN_RANK) and the SHASHA portal (rank >=
+// SHASHA_MIN_RANK to read, >= SHASHA_MANAGER_RANK to write).
 
 const GROUPS_API = "https://groups.roblox.com/v2";
 
@@ -19,8 +20,11 @@ export type GroupMembership = {
 const TTL_MS = 5 * 60 * 1000;
 const cache = new Map<string, { at: number; value: GroupMembership | null }>();
 
+/** Cached per group as well as per user — the two gates may point at different groups. */
+const cacheKey = (groupId: string, robloxId: string) => `${groupId}:${robloxId}`;
+
 /**
- * The user's role in the configured group, or null if they aren't in it.
+ * The user's role in a group, or null if they aren't in it.
  *
  * A network failure returns null (no access) rather than throwing — the gate
  * fails closed, never open. Failures are deliberately NOT cached, so a blip at
@@ -28,10 +32,12 @@ const cache = new Map<string, { at: number; value: GroupMembership | null }>();
  */
 export async function getGroupMembership(
   robloxId: string,
+  groupId: string = env.studio.groupId,
 ): Promise<GroupMembership | null> {
   if (!/^\d+$/.test(robloxId)) return null;
 
-  const hit = cache.get(robloxId);
+  const key = cacheKey(groupId, robloxId);
+  const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
 
   let body: {
@@ -51,19 +57,20 @@ export async function getGroupMembership(
     return null;
   }
 
-  const entry = body.data?.find(
-    (g) => String(g.group?.id) === env.studio.groupId,
-  );
+  const entry = body.data?.find((g) => String(g.group?.id) === groupId);
   const value: GroupMembership | null = entry?.role
     ? { rank: entry.role.rank ?? 0, roleName: entry.role.name ?? "Member" }
     : null;
 
   // Only a definitive answer from Roblox is worth remembering.
-  cache.set(robloxId, { at: Date.now(), value });
+  cache.set(key, { at: Date.now(), value });
   return value;
 }
 
 /** Drop a cached rank so the next check re-reads it from Roblox. */
-export function forgetGroupMembership(robloxId: string) {
-  cache.delete(robloxId);
+export function forgetGroupMembership(
+  robloxId: string,
+  groupId: string = env.studio.groupId,
+) {
+  cache.delete(cacheKey(groupId, robloxId));
 }

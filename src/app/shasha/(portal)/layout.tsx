@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getPortalUser } from "@/lib/session";
+import { getPortalUser } from "@/lib/shasha";
 import { PortalNav } from "@/components/portal-nav";
 import { PortalFooter } from "@/components/portal-footer";
 

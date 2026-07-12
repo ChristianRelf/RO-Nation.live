@@ -1,5 +1,10 @@
 // Centralised, typed access to environment configuration.
 
+// The Roblox group everything ranks against — the Studio and the SHASHA portal
+// are two doors into the same organisation. Either can be pointed at a
+// different group, but they share one by default.
+const GROUP_ID = process.env.ROBLOX_GROUP_ID || "34669403";
+
 export const env = {
   siteUrl:
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
@@ -28,35 +33,22 @@ export const env = {
   // Members of this Roblox group at this rank or above can create and edit
   // events and blog posts on the main site, by signing in with Roblox.
   studio: {
-    groupId: process.env.STUDIO_GROUP_ID || "34669403",
+    groupId: process.env.STUDIO_GROUP_ID || GROUP_ID,
     minRank: Number(process.env.STUDIO_MIN_RANK ?? 30),
   },
 
   // ---- SHASHA portal (portal.ronation.live/shasha) ----------------
-  portal: {
-    // Fallback origin only. Deliberately NOT a NEXT_PUBLIC_ var: those are
-    // inlined at build time (empty in the Docker image), whereas the portal
-    // needs a correct origin at runtime. The OAuth routes derive the origin
-    // from the request instead — see portalOrigin() in lib/discord.ts.
-    url: (process.env.PORTAL_URL || "").replace(/\/$/, ""),
-  },
-  discord: {
-    clientId: process.env.DISCORD_CLIENT_ID || "",
-    clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
-    // Discord user IDs (snowflakes) allowed to write to the lists.
-    managerIds: idList(process.env.DISCORD_MANAGER_IDS),
-    // Discord user IDs allowed to sign in read-only. Managers are implicitly staff.
-    staffIds: idList(process.env.DISCORD_STAFF_IDS),
+  // Same Roblox group, two thresholds. Rank is read from Roblox on every
+  // request, so a promotion or a demotion in the group IS the access change —
+  // there is no list to keep in sync and nothing to revoke by hand.
+  shasha: {
+    groupId: process.env.SHASHA_GROUP_ID || GROUP_ID,
+    /** Read the VIP list and the blacklist. */
+    minRank: Number(process.env.SHASHA_MIN_RANK ?? 10),
+    /** Add, edit and remove people. In SHA SHA Productions, 30 = Management. */
+    managerRank: Number(process.env.SHASHA_MANAGER_RANK ?? 30),
   },
 };
-
-/** Parse a comma/space/newline separated list of Discord snowflakes. */
-function idList(raw?: string) {
-  return (raw || "")
-    .split(/[\s,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 /** True when real Roblox OAuth credentials are configured. */
 export const robloxConfigured = Boolean(
@@ -65,18 +57,3 @@ export const robloxConfigured = Boolean(
 
 /** Dev mock login is only available when Roblox isn't configured and it's allowed. */
 export const devLoginEnabled = env.allowDevLogin && !robloxConfigured;
-
-/** True when Discord OAuth credentials are configured for the portal. */
-export const discordConfigured = Boolean(
-  env.discord.clientId && env.discord.clientSecret,
-);
-
-/**
- * Access tiers for the portal, resolved fresh on every request from env — so
- * revoking someone is a config change, not a "wait for their cookie to expire".
- */
-export function portalRole(discordId: string): "manager" | "staff" | null {
-  if (env.discord.managerIds.includes(discordId)) return "manager";
-  if (env.discord.staffIds.includes(discordId)) return "staff";
-  return null;
-}

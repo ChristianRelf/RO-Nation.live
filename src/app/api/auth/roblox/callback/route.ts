@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requestOrigin } from "@/lib/origin";
-import { exchangeCode, fetchUserInfo, redirectUriFor } from "@/lib/roblox";
+import { exchangeCode, failPath, fetchUserInfo, redirectUriFor } from "@/lib/roblox";
 import {
   USER_COOKIE,
   cookieOptions,
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const fail = (reason: string) => {
     const res = NextResponse.redirect(
-      new URL(`/account?error=${reason}`, origin),
+      new URL(`${failPath(returnTo)}?error=${reason}`, origin),
     );
     clearOauthCookies(res);
     return res;

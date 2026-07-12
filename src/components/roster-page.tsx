@@ -1,5 +1,5 @@
 import type { RosterKind } from "@prisma/client";
-import { getPortalUser } from "@/lib/session";
+import { getPortalUser } from "@/lib/shasha";
 import { countRoster, findRoster } from "@/lib/roster";
 import { RosterAddForm } from "@/components/roster-add-form";
 import { RosterList } from "@/components/roster-list";
@@ -99,9 +99,8 @@ export async function RosterPage({
               <h2 className="font-display text-xl uppercase">Read only</h2>
               <p className="mt-2 text-sm text-muted">
                 You can search this list, but only management can add or remove
-                people. Ask an admin to add your Discord ID to{" "}
-                <code className="font-mono text-xs">DISCORD_MANAGER_IDS</code>{" "}
-                if that&apos;s wrong.
+                people. Access follows your rank in the Roblox group — if that
+                looks wrong, ask management about your rank.
               </p>
             </div>
           )}

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, RosterAction, RosterKind } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getPortalUser, type PortalUser } from "@/lib/session";
+import { getPortalUser, type PortalUser } from "@/lib/shasha";
 import {
   resolveRobloxUser,
   searchRobloxUsers,
@@ -75,7 +75,7 @@ async function audit(
       kind: entry.kind,
       robloxId: entry.robloxId,
       robloxUsername: entry.robloxUsername,
-      actorId: actor.did,
+      actorId: actor.robloxId,
       actorName: actor.displayName,
       summary,
     },
@@ -118,7 +118,7 @@ export async function addRosterEntry(formData: FormData) {
         avatarUrl: profile.avatarUrl,
         tags,
         reason,
-        addedById: actor.did,
+        addedById: actor.robloxId,
         addedByName: actor.displayName,
       },
     });
@@ -160,7 +160,7 @@ export async function updateRosterEntry(formData: FormData) {
     data: {
       reason,
       tags,
-      updatedById: actor.did,
+      updatedById: actor.robloxId,
       updatedByName: actor.displayName,
     },
   });

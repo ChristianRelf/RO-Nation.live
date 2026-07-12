@@ -2,13 +2,12 @@ import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { env, portalRole } from "./env";
+import { env } from "./env";
 
 const secret = new TextEncoder().encode(env.authSecret);
 
 export const USER_COOKIE = "ron_session";
 export const ADMIN_COOKIE = "ron_admin";
-export const PORTAL_COOKIE = "ron_portal";
 
 const cookieBase = {
   httpOnly: true,
@@ -97,60 +96,11 @@ export function clearAdminSession() {
   cookies().set(ADMIN_COOKIE, "", { ...cookieBase, maxAge: 0 });
 }
 
-// ---- SHASHA portal (Discord) session ------------------------------
-export type DiscordSession = {
-  did: string; // discord user id
-  username: string;
-  displayName: string;
-  avatarUrl: string;
-};
-
-export type PortalUser = DiscordSession & {
-  role: "manager" | "staff";
-  canWrite: boolean;
-};
-
-const PORTAL_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
-
-export async function createPortalToken(session: DiscordSession) {
-  return sign({ ...session }, "7d");
-}
-
-export function portalCookieOptions() {
-  return cookieOptions(PORTAL_MAX_AGE);
-}
-
-/**
- * The signed-in portal user, or null.
- *
- * The cookie only proves *who* someone is — their access level is re-derived
- * from the env allowlist on every request, so removing an ID from
- * DISCORD_MANAGER_IDS revokes them immediately rather than whenever their
- * cookie happens to expire.
- */
-export async function getPortalUser(): Promise<PortalUser | null> {
-  const token = cookies().get(PORTAL_COOKIE)?.value;
-  if (!token) return null;
-
-  const payload = await verify<DiscordSession>(token);
-  if (!payload?.did) return null;
-
-  const role = portalRole(payload.did);
-  if (!role) return null; // signed in, but no longer on the allowlist
-
-  return {
-    did: payload.did,
-    username: payload.username,
-    displayName: payload.displayName,
-    avatarUrl: payload.avatarUrl,
-    role,
-    canWrite: role === "manager",
-  };
-}
-
-export function clearPortalSession() {
-  cookies().set(PORTAL_COOKIE, "", { ...cookieBase, maxAge: 0 });
-}
+// The SHASHA portal has no session of its own: it signs in with Roblox, like
+// everything else, and the cookie it uses is the ordinary member session above.
+// It is scoped to portal.ronation.live because that is the host the OAuth round
+// trip runs on, so a portal login is not a login on the main site. Access is
+// decided by Roblox group rank on every request — see lib/shasha.ts.
 
 // ---- Page guards --------------------------------------------------
 //
@@ -168,8 +118,5 @@ export async function requireAdmin() {
   if (!(await isAdmin())) redirect("/admin/login");
 }
 
-export async function requirePortalUser(): Promise<PortalUser> {
-  const user = await getPortalUser();
-  if (!user) redirect("/shasha/login");
-  return user;
-}
+// requireStudioUser() lives in lib/studio.ts and requirePortalUser() in
+// lib/shasha.ts — both need a Roblox group lookup, which does not belong here.

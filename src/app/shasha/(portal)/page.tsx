@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { countRoster, findRoster } from "@/lib/roster";
-import { requirePortalUser } from "@/lib/session";
+import { requirePortalUser } from "@/lib/shasha";
 import { formatDateTime } from "@/lib/format";
 import { RosterSearch } from "@/components/roster-search";
 import { RosterList } from "@/components/roster-list";

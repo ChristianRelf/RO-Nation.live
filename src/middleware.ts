@@ -19,8 +19,18 @@ import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
 // /<CODE>. They are not served from a bare /<slug>, because that would reserve
 // the whole top-level namespace against every future RNL route.
 
-/** Paths the portal host may serve. */
-const PORTAL_PATHS = ["/shasha", "/legal", "/api/auth/discord", "/api/health"];
+/**
+ * Paths the portal host may serve. Roblox sign-in is included because SHASHA
+ * staff authenticate on this host — the session cookie is scoped to it, so the
+ * OAuth round trip has to start and end here, exactly as on the survey host.
+ */
+const PORTAL_PATHS = [
+  "/shasha",
+  "/legal",
+  "/api/auth/roblox",
+  "/api/auth/logout",
+  "/api/health",
+];
 
 /**
  * Paths the survey host may serve. Roblox sign-in is included because

@@ -14,7 +14,9 @@ const links = [
 export function PortalNav({
   user,
 }: {
-  user: { displayName: string; avatarUrl: string; role: "manager" | "staff" };
+  // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
+  // profile had, which can be nothing. Discord always handed us a default one.
+  user: { displayName: string; avatarUrl?: string; role: "manager" | "staff" };
 }) {
   const pathname = usePathname();
 
@@ -70,16 +72,22 @@ export function PortalNav({
               {user.role === "manager" ? "Management" : "Read only"}
             </p>
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={user.avatarUrl}
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-full border border-line"
-          />
+          {user.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatarUrl}
+              alt=""
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full border border-line"
+            />
+          ) : (
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-xs font-bold text-accent-ink">
+              {user.displayName.slice(0, 1).toUpperCase()}
+            </span>
+          )}
           <a
-            href="/api/auth/discord/logout"
+            href="/api/auth/logout?returnTo=/shasha/login"
             className="text-sm text-muted transition-colors hover:text-red-400"
           >
             Sign out

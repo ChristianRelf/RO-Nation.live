@@ -251,7 +251,11 @@ model RosterEntry {
   avatarUrl      String?
   tags           String[]   @default([]) // free-form roles, e.g. "vip+", "artist"
   reason         String     @db.Text
-  addedById      String // Discord user id of the manager who added them
+  // The manager who added them. A Roblox user id since the portal moved to
+  // Roblox sign-in; rows written before that hold a Discord id. Never joined on
+  // — it is a display/audit trail — so the mixed history is harmless, but don't
+  // assume you can resolve every one of these against Roblox.
+  addedById      String
   addedByName    String
   updatedById    String?
   updatedByName  String?
@@ -278,7 +282,7 @@ model RosterAudit {
   kind           RosterKind
   robloxId       String
   robloxUsername String
-  actorId        String // Discord user id
+  actorId        String // Roblox user id (Discord id on rows written before the portal moved to Roblox sign-in)
   actorName      String
   summary        String       @db.Text
   createdAt      DateTime     @default(now())

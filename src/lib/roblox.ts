@@ -22,6 +22,18 @@ export function redirectUri() {
   return redirectUriFor(env.siteUrl);
 }
 
+/**
+ * Where to send someone when sign-in fails, given where they were headed.
+ *
+ * It has to be a page that exists on the host they started on. The portal host
+ * serves /shasha and bounces everything else to the main site, so sending a
+ * failed SHASHA sign-in to /account would dump them on ronation.live with no
+ * explanation of what went wrong.
+ */
+export function failPath(returnTo: string) {
+  return returnTo.startsWith("/shasha") ? "/shasha/login" : "/account";
+}
+
 function base64url(bytes: Uint8Array) {
   return Buffer.from(bytes)
     .toString("base64")

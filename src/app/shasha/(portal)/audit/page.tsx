@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { robloxProfileUrl } from "@/lib/roblox-users";
-import { requirePortalUser } from "@/lib/session";
+import { requirePortalUser } from "@/lib/shasha";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "History" };

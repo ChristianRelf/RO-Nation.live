@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { discordConfigured, env } from "@/lib/env";
-import { getPortalUser } from "@/lib/session";
+import { env, robloxConfigured } from "@/lib/env";
+import { getPortalAccess } from "@/lib/shasha";
 import { PortalFooter } from "@/components/portal-footer";
 
 export const dynamic = "force-dynamic";
@@ -10,14 +11,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Signing in with Roblox and *having access* are now two different things: the
+// OAuth round trip succeeds for any Roblox account, and rank decides the rest.
+// So this page has to handle the middle state — signed in, but not ranked high
+// enough — or a junior member would be bounced back here on a loop with nothing
+// to read. Same shape as /studio/access.
+
 const ERRORS: Record<string, string> = {
-  denied: "Discord sign-in was cancelled.",
+  denied: "Roblox sign-in was cancelled.",
   state: "That sign-in link expired. Give it another go.",
-  exchange: "Discord wouldn't complete the sign-in. Try again in a moment.",
-  unauthorised:
-    "That Discord account isn't on the SHASHA access list. Ask management to add your Discord ID.",
+  exchange: "Roblox wouldn't complete the sign-in. Try again in a moment.",
   "not-configured":
-    "Discord sign-in isn't configured on this server yet (DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET).",
+    "Roblox sign-in isn't configured on this server yet (ROBLOX_CLIENT_ID / ROBLOX_CLIENT_SECRET).",
 };
 
 export default async function PortalLoginPage({
@@ -25,13 +30,15 @@ export default async function PortalLoginPage({
 }: {
   searchParams: { error?: string; returnTo?: string };
 }) {
-  if (await getPortalUser()) redirect("/shasha");
+  const access = await getPortalAccess();
+  if (access.state === "allowed") redirect("/shasha");
 
   const message = searchParams.error ? ERRORS[searchParams.error] : null;
-  const noManagers = !env.discord.managerIds.length;
   const returnTo = searchParams.returnTo?.startsWith("/shasha")
     ? searchParams.returnTo
     : "/shasha";
+
+  const membership = access.state === "denied" ? access.membership : null;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -50,38 +57,70 @@ export default async function PortalLoginPage({
               </p>
             </div>
 
-            <div className="card mt-8 p-6">
-              {message ? (
-                <p className="mb-4 border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                  {message}
+            {access.state === "anonymous" ? (
+              <div className="card mt-8 p-6">
+                {message ? (
+                  <p className="mb-4 border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                    {message}
+                  </p>
+                ) : null}
+
+                <a
+                  href={`/api/auth/roblox/login?returnTo=${encodeURIComponent(returnTo)}`}
+                  className={`btn w-full ${
+                    robloxConfigured
+                      ? "btn-accent"
+                      : "btn-ghost pointer-events-none opacity-40"
+                  }`}
+                  aria-disabled={!robloxConfigured}
+                >
+                  Sign in with Roblox
+                </a>
+
+                <p className="mt-4 text-center text-xs text-faint">
+                  Sign in with the Roblox account that holds your rank in the
+                  group. Rank {env.shasha.minRank} or above is required.
                 </p>
-              ) : null}
-
-              {noManagers ? (
-                <p className="mb-4 border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200">
-                  No managers are configured yet. Set{" "}
-                  <code className="font-mono text-xs">DISCORD_MANAGER_IDS</code>{" "}
-                  on the server, or nobody will be able to get in.
+              </div>
+            ) : (
+              <div className="card mt-8 p-6">
+                <h2 className="font-display text-xl uppercase">No access</h2>
+                <p className="mt-3 text-sm text-muted">
+                  You&apos;re signed in as{" "}
+                  <span className="font-semibold text-fg">
+                    {access.state === "denied"
+                      ? access.session.displayName
+                      : ""}
+                  </span>
+                  , but SHASHA is limited to group members ranked{" "}
+                  <span className="font-semibold text-fg">
+                    {env.shasha.minRank}
+                  </span>{" "}
+                  or above.
                 </p>
-              ) : null}
+                <p className="mt-3 text-sm text-muted">
+                  {membership
+                    ? `Your rank is ${membership.rank} (${membership.roleName}).`
+                    : "That account isn't in the group."}
+                </p>
+                <p className="mt-3 text-xs text-faint">
+                  Just been promoted? It can take a few minutes to take effect
+                  here. Otherwise, ask management about your rank.
+                </p>
 
-              <a
-                href={`/api/auth/discord/login?returnTo=${encodeURIComponent(returnTo)}`}
-                className={`btn w-full ${
-                  discordConfigured
-                    ? "btn-accent"
-                    : "btn-ghost pointer-events-none opacity-40"
-                }`}
-                aria-disabled={!discordConfigured}
-              >
-                Continue with Discord
-              </a>
-
-              <p className="mt-4 text-center text-xs text-faint">
-                Access is granted per Discord account. If you&apos;re not on the
-                list, sign-in will be refused.
-              </p>
-            </div>
+                <div className="mt-6 flex flex-col gap-2">
+                  <a
+                    href="/api/auth/logout?returnTo=/shasha/login"
+                    className="btn btn-ghost w-full"
+                  >
+                    Sign out
+                  </a>
+                  <Link href="/" className="btn btn-ghost w-full">
+                    Back to site
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

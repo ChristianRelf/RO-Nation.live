@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { RosterPage, type RosterSearchParams } from "@/components/roster-page";
-import { requirePortalUser } from "@/lib/session";
+import { requirePortalUser } from "@/lib/shasha";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Blacklist" };

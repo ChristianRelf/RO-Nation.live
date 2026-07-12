@@ -3,6 +3,7 @@ import { robloxConfigured } from "@/lib/env";
 import { requestOrigin } from "@/lib/origin";
 import {
   buildAuthorizeUrl,
+  failPath,
   pkceChallenge,
   randomString,
   redirectUriFor,
@@ -19,13 +20,13 @@ export async function GET(req: NextRequest) {
   // Stay on the host the user started from: the session cookie we're about to
   // set is scoped to it, so a sign-in begun on survey.ronation.live has to come
   // back to survey.ronation.live. Each host used this way needs its callback URL
-  // registered in the Roblox OAuth app.
+  // registered in the Roblox OAuth app — including portal.ronation.live.
   const origin = requestOrigin(req);
   const returnTo = sanitizeReturn(req.nextUrl.searchParams.get("returnTo"));
 
   if (!robloxConfigured) {
     return NextResponse.redirect(
-      new URL("/account?error=not-configured", origin),
+      new URL(`${failPath(returnTo)}?error=not-configured`, origin),
     );
   }
 
