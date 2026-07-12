@@ -222,7 +222,14 @@ docker compose up -d --build
 ```
 
 On boot the container creates any missing database tables and seeds starter
-content automatically, so there is no separate migration step.
+content automatically, so there is no separate migration step. **This is also how
+you ship a schema change** — pull, `docker compose up -d --build`, done.
+
+> **Don't run `npm` commands on the server.** `npm run db:push`, `npm run seed`
+> and `npm run dev` are for your own machine. On the server everything happens
+> inside the container, which reaches the database at `db:5432` on Docker's
+> internal network. Running Prisma from the host will try `localhost` and fail
+> with `P1001`, even though the app is perfectly healthy.
 
 Check it came up:
 
@@ -232,7 +239,20 @@ curl localhost:3000/api/health     # → {"ok":true,"db":"up"}
 docker compose logs -f web         # live logs, Ctrl+C to detach
 ```
 
-### 5. Put HTTPS in front of it
+### 5. Check the database isn't exposed
+
+Postgres should only be reachable from the server itself. Confirm:
+
+```bash
+docker compose ps
+```
+
+The `db` line must show `127.0.0.1:5433->5432/tcp`. If it shows `0.0.0.0:5433`,
+you're running an old `docker-compose.override.yml` and **Postgres is open to the
+internet** — published Docker ports bypass `ufw`. Pull the latest code and run
+`docker compose up -d` to rebind it, then set a real `POSTGRES_PASSWORD` in `.env`.
+
+### 6. Put HTTPS in front of it
 
 The app listens on port 3000. Terminate TLS with a reverse proxy and make sure
 the certificate covers **both** hostnames. With Caddy, this whole step is:
@@ -249,14 +269,14 @@ cert with `-d ronation.live -d portal.ronation.live`.
 > The portal must be served over **https**. Discord requires the redirect URL to
 > match the one you registered exactly, and that one is https.
 
-### 6. Register the real redirect URLs
+### 7. Register the real redirect URLs
 
 Go back to the Discord app (Part 2) and make sure
 `https://portal.ronation.live/api/auth/discord/callback` is in the Redirects list.
 Do the same for Roblox: its redirect is
 `https://ronation.live/api/auth/roblox/callback`.
 
-### 7. Smoke test
+### 8. Smoke test
 
 - <https://ronation.live> loads
 - <https://ronation.live/admin> logs in
@@ -295,20 +315,18 @@ Confirm it's up and which port it's on with `docker ps` — you want to see
 `0.0.0.0:5433->5432/tcp`.
 
 **`Can't reach database server at localhost:5432` (P1001) — note the 5432**
-Nothing is listening on 5432; the local database publishes on **5433**. Two causes:
+Nothing listens on 5432; the database publishes on **5433**. Either:
 
-- Your `.env` says `5432`. Older copies of `.env.example` had this wrong. Fix the
-  line to read:
+- **You ran `npm run db:push` on the server.** Don't — the container applies the
+  schema itself. Use `docker compose up -d --build` instead. (Host Prisma reads
+  `.env` and dials `localhost`; the app dials `db:5432` internally and is fine.)
+
+- **Your `.env` says `5432`.** Older copies of `.env.example` had this wrong. On
+  your own machine, fix the line to read:
 
   ```env
   DATABASE_URL="postgresql://ronation:ronation@localhost:5433/ronation?schema=public"
   ```
-
-- You ran the command from outside the project folder, so `.env` was never
-  loaded and Prisma fell back to a default. `cd` into the repo and retry.
-
-(Inside Docker this never applies — the web container talks to `db:5432` on the
-internal network and ignores `DATABASE_URL` from `.env` entirely.)
 
 **Portal says "That Discord account isn't on the SHASHA access list"**
 The Discord ID you signed in with isn't in `DISCORD_MANAGER_IDS` or

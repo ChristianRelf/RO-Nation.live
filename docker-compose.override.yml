@@ -1,6 +1,14 @@
-# Local dev convenience: publish the Postgres container to the host so
-# `npm run dev` (running outside Docker) can reach it. Not used in production.
+# Local dev convenience: publish the Postgres container so `npm run dev` (running
+# outside Docker) can reach it on localhost:5433.
+#
+# Docker Compose merges this file automatically on EVERY `docker compose up` —
+# including on the server — so the port is bound to 127.0.0.1 rather than
+# 0.0.0.0. Without that, Postgres is reachable from the public internet:
+# published Docker ports punch straight through ufw/iptables rules.
+#
+# The web container never uses this port; it reaches the database at db:5432 on
+# the internal Docker network.
 services:
   db:
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
