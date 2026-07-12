@@ -1,0 +1,202 @@
+// RO. Nation LIVE — data model
+// Postgres via Prisma. Run `prisma db push` to sync, `prisma generate` for the client.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------
+// People who sign in with Roblox to reserve tickets.
+// ------------------------------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  robloxId     String   @unique
+  username     String
+  displayName  String
+  avatarUrl    String?
+  profileUrl   String?
+  createdAt    DateTime @default(now())
+
+  tickets      Ticket[]
+  applications Application[]
+
+  @@map("users")
+}
+
+// ------------------------------------------------------------------
+// Events (shows, showcases, tournaments, meet-ups...).
+// ------------------------------------------------------------------
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  slug         String      @unique
+  title        String
+  tagline      String?
+  description   String      @db.Text
+  category     String      @default("Live Show")
+  venue        String?     // in-experience location / stage name
+  placeUrl     String?     // Roblox experience link
+  thumbnailUrl String?
+  startsAt     DateTime
+  endsAt       DateTime?
+  doorsAt      DateTime?
+  capacity     Int         @default(0) // 0 = unlimited
+  status       EventStatus @default(DRAFT)
+  featured     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tickets      Ticket[]
+
+  @@index([status, startsAt])
+  @@map("events")
+}
+
+// ------------------------------------------------------------------
+// A reserved ticket = one User for one Event. Verified in-game via API.
+// ------------------------------------------------------------------
+enum TicketStatus {
+  RESERVED
+  CHECKED_IN
+  CANCELLED
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  code        String       @unique // human-readable, e.g. RN-7F3A9C
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  status          TicketStatus @default(RESERVED)
+  createdAt       DateTime     @default(now())
+  checkedInAt     DateTime?
+  termsAcceptedAt DateTime?    // when the holder accepted the ticket T&Cs at checkout
+  activatedAt     DateTime?    // when the holder "activated" the ticket (reveals QR)
+
+  @@unique([eventId, userId]) // one ticket per person per event
+  @@index([eventId])
+  @@map("tickets")
+}
+
+// ------------------------------------------------------------------
+// Careers / open roles in the group.
+// ------------------------------------------------------------------
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+model Career {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  department    String    @default("Events")
+  commitment    String    @default("Volunteer") // Volunteer / Paid / Trial
+  location      String    @default("Remote — Roblox")
+  summary       String
+  description    String    @db.Text
+  requirements  String    @db.Text // one requirement per line
+  status        JobStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  applications  Application[]
+
+  @@index([status])
+  @@map("careers")
+}
+
+// ------------------------------------------------------------------
+// SHASHA portal (portal.ronation.live/shasha) — VIP list & blacklist.
+// Both lists hold the same shape, keyed on a Roblox player, so they share
+// one model discriminated by `kind`.
+// ------------------------------------------------------------------
+enum RosterKind {
+  VIP
+  BLACKLIST
+}
+
+model RosterEntry {
+  id             String     @id @default(cuid())
+  kind           RosterKind
+  robloxId       String // canonical Roblox user id — resolved server-side
+  robloxUsername String
+  displayName    String
+  avatarUrl      String?
+  tags           String[]   @default([]) // free-form roles, e.g. "vip+", "artist"
+  reason         String     @db.Text
+  addedById      String // Discord user id of the manager who added them
+  addedByName    String
+  updatedById    String?
+  updatedByName  String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([kind, robloxId]) // one entry per person per list
+  @@index([kind, createdAt])
+  @@index([robloxUsername])
+  @@map("roster_entries")
+}
+
+// Append-only history of every write to the lists, so management can see
+// who added or removed whom, and why.
+enum RosterAction {
+  ADDED
+  UPDATED
+  REMOVED
+}
+
+model RosterAudit {
+  id             String       @id @default(cuid())
+  action         RosterAction
+  kind           RosterKind
+  robloxId       String
+  robloxUsername String
+  actorId        String // Discord user id
+  actorName      String
+  summary        String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([createdAt])
+  @@map("roster_audit")
+}
+
+// ------------------------------------------------------------------
+// Job applications submitted through a career page.
+// ------------------------------------------------------------------
+enum ApplicationStatus {
+  NEW
+  REVIEWING
+  ACCEPTED
+  REJECTED
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  career         Career            @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  careerId       String
+  user           User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId         String?
+  robloxUsername String
+  discord        String?
+  timezone       String?
+  portfolio      String?
+  message        String            @db.Text
+  status         ApplicationStatus @default(NEW)
+  createdAt      DateTime          @default(now())
+
+  @@index([careerId])
+  @@map("applications")
+}

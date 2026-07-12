@@ -1,0 +1,280 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* RGB channels — consumed by Tailwind via rgb(var(--x) / <alpha-value>). */
+  --bg-rgb: 10 10 10;
+  --elev-rgb: 15 15 15;
+  --surface-rgb: 19 19 19;
+  --fg-rgb: 236 233 225; /* warm bone, not pure white */
+  --muted-rgb: 142 138 128; /* warm grey */
+  --faint-rgb: 99 96 88;
+  --accent-rgb: 43 107 255; /* electric blue */
+  --paper-rgb: 235 230 214; /* cream — inverted panels */
+
+  /* Convenience full-color vars for raw CSS in this file. */
+  --bg: rgb(10 10 10);
+  --elev: rgb(15 15 15);
+  --surface: rgb(19 19 19);
+  --line: rgb(255 255 255 / 0.1);
+  --fg: rgb(236 233 225);
+  --muted: rgb(142 138 128);
+  --faint: rgb(99 96 88);
+  --accent: rgb(43 107 255);
+  --accent-soft: rgb(43 107 255 / 0.12);
+  --paper: rgb(235 230 214);
+  --radius: 3px;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* Numeric-heavy UI (dates, counts) reads cleaner with lining tabular figures */
+  time,
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #242424;
+    border: 3px solid var(--bg);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #333;
+  }
+
+  /* Respect users who ask for less motion — neutralise transitions, scroll
+     animation, and the marquee/reveal effects (overrides inline transitions). */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8;
+  }
+
+  /* Small structural label with an index rule */
+  .kicker {
+    @apply text-[11px] font-semibold uppercase tracking-[0.2em] text-muted;
+  }
+
+  .display {
+    font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+    font-weight: 400;
+    line-height: 0.88;
+    letter-spacing: -0.005em;
+    text-transform: uppercase;
+  }
+
+  /* Buttons read like ticket / poster CTAs: squared, uppercase, inverting hover */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-[12px]
+           font-bold uppercase tracking-[0.09em] select-none;
+    border-radius: var(--radius);
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.12s ease;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn-accent {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 8px 20px -10px rgb(var(--accent-rgb) / 0.75);
+  }
+  .btn-accent:hover {
+    background: var(--fg);
+    color: #0a0a0a;
+    box-shadow: 0 10px 24px -10px rgb(0 0 0 / 0.55);
+  }
+  .btn-ghost {
+    @apply border text-fg;
+    border-color: rgb(255 255 255 / 0.22);
+  }
+  .btn-ghost:hover {
+    background: var(--fg);
+    color: #0a0a0a;
+    border-color: var(--fg);
+  }
+
+  .card {
+    background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    background-blend-mode: soft-light;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* Consistent interactive treatment for clickable cards — subtle lift, an
+     accent-tinted edge, and a soft shadow to separate from the gritty bg. */
+  .card-hover {
+    transition:
+      border-color 0.2s ease,
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s ease;
+  }
+  .card-hover:hover {
+    border-color: rgb(var(--accent-rgb) / 0.55);
+    transform: translateY(-3px);
+    box-shadow:
+      0 16px 34px -18px rgb(0 0 0 / 0.75),
+      0 0 0 1px rgb(var(--accent-rgb) / 0.12);
+  }
+
+  /* Inverted cream panel — with a paper-grain texture */
+  .panel-paper {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--paper);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+    background-size: 220px 220px;
+    background-blend-mode: soft-light;
+    color: #0f0f0f;
+    border-radius: var(--radius);
+  }
+
+  /* Squared tag / chip */
+  .pill {
+    @apply inline-flex items-center gap-1.5 border px-2.5 py-1 text-[10px]
+           font-bold uppercase tracking-[0.13em];
+    border-radius: var(--radius);
+    border-color: var(--line);
+    background: rgb(255 255 255 / 0.025);
+    color: var(--muted);
+  }
+
+  .link-underline {
+    @apply relative;
+  }
+  .link-underline::after {
+    content: "";
+    @apply absolute left-0 -bottom-0.5 h-px w-0 bg-current transition-all duration-300;
+  }
+  .link-underline:hover::after {
+    @apply w-full;
+  }
+
+  /* Perforated ticket stub edge (left column notches) */
+  .ticket-perf {
+    background-image: radial-gradient(
+      circle at center,
+      var(--bg) 0 5px,
+      transparent 6px
+    );
+    background-size: 14px 22px;
+    background-position: center;
+    background-repeat: repeat-y;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Fine film grain layered over everything (incl. cards + paper panels) */
+  .grain::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Coarser grunge sitting behind page content for a gritty, tactile base */
+  .grain::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.11;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size: 320px 320px;
+  }
+
+  /* A restrained top tint instead of a big AI-style radial bloom */
+  .accent-glow {
+    background: linear-gradient(
+      180deg,
+      rgb(var(--accent-rgb) / 0.07),
+      transparent 40%
+    );
+  }
+
+  /* Faint structural hairline grid, used sparingly for texture */
+  .hairline-grid {
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+
+  .mask-fade-r {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .fade-in-1 { animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+  .fade-in-2 { animation: fade-up 0.7s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+  .fade-in-3 { animation: fade-up 0.7s 0.16s cubic-bezier(0.16,1,0.3,1) both; }
+}

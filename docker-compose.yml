@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ronation
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ronation}
+      POSTGRES_DB: ronation
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ronation"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://ronation:${POSTGRES_PASSWORD:-ronation}@db:5432/ronation?schema=public
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      AUTH_SECRET: ${AUTH_SECRET:-please-change-this-secret}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me}
+      ROBLOX_CLIENT_ID: ${ROBLOX_CLIENT_ID:-}
+      ROBLOX_CLIENT_SECRET: ${ROBLOX_CLIENT_SECRET:-}
+      GAME_API_KEY: ${GAME_API_KEY:-change-me}
+      ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-false}
+      PORTAL_URL: ${PORTAL_URL:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_MANAGER_IDS: ${DISCORD_MANAGER_IDS:-}
+      DISCORD_STAFF_IDS: ${DISCORD_STAFF_IDS:-}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  db-data:

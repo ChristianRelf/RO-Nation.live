@@ -1,0 +1,6 @@
+# Local dev convenience: publish the Postgres container to the host so
+# `npm run dev` (running outside Docker) can reach it. Not used in production.
+services:
+  db:
+    ports:
+      - "5433:5432"
