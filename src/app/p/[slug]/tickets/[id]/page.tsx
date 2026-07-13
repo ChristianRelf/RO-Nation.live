@@ -6,6 +6,7 @@ import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getUserSession } from "@/lib/session";
 import { TicketDetail } from "@/components/ticket/ticket-detail";
 import { ticketBrand } from "@/lib/tickets/brand";
+import { ticketSeal } from "@/lib/tickets/seal";
 import { ticketUrl } from "@/lib/origin";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +57,8 @@ export default async function PartnerTicketDetailPage({
       holder={session.displayName}
       brandMark={brand.mark}
       brandName={brand.name}
+      brandLogo={brand.logo}
+      seal={ticketSeal(ticket.id, ticket.code)}
       ticketUrl={ticketUrl(ticket.id)}
       justIssued={searchParams.issued === "1"}
     />

@@ -65,8 +65,36 @@ export type DownloadTicket = {
   paid: string;
   brandName: string;
   brandMark: string;
+  /** The issuer's wordmark. NULL draws the lettered badge instead. */
+  brandLogo: string | null;
+  /** The ticket's opaque reference. */
+  reference: string;
+  /** The security seal — see lib/tickets/seal.ts. */
+  seal: string;
   ticketUrl: string;
 };
+
+/**
+ * Load an image for the canvas, or give up.
+ *
+ * It resolves to null on failure rather than rejecting, and the caller falls back
+ * to the lettered badge. A logo that 404s must cost you the logo, not the whole
+ * download — the point of the button is to hand somebody their ticket.
+ *
+ * crossOrigin is set because an uploaded logo could be served from another origin
+ * one day, and a canvas that has drawn a cross-origin image without CORS is
+ * TAINTED: toDataURL() then throws, and the download dies at the last step for a
+ * reason nothing on screen would explain.
+ */
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
 
 export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
   const [busy, setBusy] = useState(false);
@@ -78,6 +106,11 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
       // can rasterise the fallback — the ticket renders in Arial and looks like a
       // different product.
       if ("fonts" in document) await document.fonts.ready;
+
+      // Loaded BEFORE anything is drawn. Canvas drawing is synchronous, so an
+      // image awaited halfway through would land on top of text that had already
+      // been painted over it.
+      const logo = ticket.brandLogo ? await loadImage(ticket.brandLogo) : null;
 
       const canvas = document.createElement("canvas");
       canvas.width = W * SCALE;
@@ -158,19 +191,28 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
       ctx.fillStyle = ink;
       ctx.fillRect(RAIL, 0, W - RAIL - STUB, barH);
 
-      ctx.fillStyle = accent;
-      roundRect(ctx, RAIL + 24, barH / 2 - 12, 24, 24, 4);
-      ctx.fill();
-      ctx.fillStyle = accentInk;
-      ctx.font = `800 11px ${sans}`;
-      ctx.textAlign = "center";
-      ctx.fillText(ticket.brandMark, RAIL + 36, barH / 2 + 4);
+      if (logo) {
+        // Fixed height, width from the logo's own aspect ratio — so a wide
+        // wordmark and a square one both sit on the bar without being squashed.
+        const logoH = 22;
+        const logoW = (logo.width / logo.height) * logoH;
+        ctx.drawImage(logo, RAIL + 24, barH / 2 - logoH / 2, logoW, logoH);
+      } else {
+        ctx.fillStyle = accent;
+        roundRect(ctx, RAIL + 24, barH / 2 - 12, 24, 24, 4);
+        ctx.fill();
+        ctx.fillStyle = accentInk;
+        ctx.font = `800 11px ${sans}`;
+        ctx.textAlign = "center";
+        ctx.fillText(ticket.brandMark, RAIL + 36, barH / 2 + 4);
+
+        ctx.fillStyle = paper;
+        ctx.font = `bold 12px ${sans}`;
+        ctx.textAlign = "left";
+        ctx.fillText(ticket.brandName.toUpperCase(), RAIL + 58, barH / 2 + 4);
+      }
 
       ctx.fillStyle = paper;
-      ctx.font = `bold 12px ${sans}`;
-      ctx.textAlign = "left";
-      ctx.fillText(ticket.brandName.toUpperCase(), RAIL + 58, barH / 2 + 4);
-
       ctx.globalAlpha = 0.6;
       ctx.textAlign = "right";
       ctx.font = `bold 10px ${sans}`;
@@ -213,12 +255,33 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
         ctx.fillText(fit(ctx, value, (W - RAIL - STUB - 60) / 3), x, 248);
       });
 
-      ctx.globalAlpha = 0.25;
-      ctx.font = `bold 8px ${mono}`;
+      // The reference and the seal, printed together and low — the same pair the
+      // on-screen ticket carries, in the same place.
+      ctx.globalAlpha = 0.15;
+      ctx.fillRect(bx, 282, W - RAIL - STUB - 48, 1);
+      ctx.globalAlpha = 0.55;
+      ctx.font = `bold 10px ${mono}`;
+      ctx.fillText(`REF ${ticket.reference}`, bx, 304);
+      ctx.fillText(`SEC ${ticket.seal}`, bx + 300, 304);
+      ctx.globalAlpha = 1;
+
+      // The microtext band across the foot. Security print, not decoration: too
+      // fine to redraw by hand, and it turns to mush the moment somebody rescales
+      // a screenshot of it into a forgery. It carries the brand, the reference and
+      // the seal, so all three have to be faked together and consistently.
+      const bandY = H - 22;
+      ctx.globalAlpha = 0.04;
+      ctx.fillRect(RAIL, bandY, W - RAIL - STUB, 22);
+      ctx.globalAlpha = 0.35;
+      ctx.font = `bold 7px ${mono}`;
       ctx.fillText(
-        fit(ctx, `${ticket.brandName} · `.repeat(12), W - RAIL - STUB - 48),
+        fit(
+          ctx,
+          `${ticket.brandName} · ${ticket.reference} · ${ticket.seal} · `.repeat(8),
+          W - RAIL - STUB - 32,
+        ),
         bx,
-        320,
+        bandY + 14,
       );
       ctx.globalAlpha = 1;
 
@@ -248,11 +311,15 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
       ctx.font = `bold 15px ${mono}`;
       ctx.fillText(ticket.code, W - STUB / 2, qy + qrSize + 36);
 
+      ctx.globalAlpha = 0.6;
+      ctx.font = `bold 11px ${mono}`;
+      ctx.fillText(`SEC ${ticket.seal}`, W - STUB / 2, qy + qrSize + 54);
+
       ctx.globalAlpha = 0.5;
       ctx.font = `bold 9px ${sans}`;
-      ctx.fillText(ticket.brandName.toUpperCase(), W - STUB / 2, qy + qrSize + 56);
+      ctx.fillText(ticket.brandName.toUpperCase(), W - STUB / 2, qy + qrSize + 72);
       ctx.globalAlpha = 0.4;
-      ctx.fillText("NON-TRANSFERABLE", W - STUB / 2, qy + qrSize + 72);
+      ctx.fillText("NON-TRANSFERABLE", W - STUB / 2, qy + qrSize + 87);
       ctx.globalAlpha = 1;
 
       const url = canvas.toDataURL("image/png");

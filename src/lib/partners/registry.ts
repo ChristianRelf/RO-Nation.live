@@ -33,6 +33,18 @@ export type Partner = {
   disclaimer?: string;
   /** Ticket codes read `ST-XXXXXX`. Keep it short and unmistakable. */
   ticketPrefix: string;
+  /**
+   * The wordmark printed on the ticket's issuer bar. Optional.
+   *
+   * It must be WHITE (or very light) with a transparent background: that bar is
+   * near-black on every brand, and a dark logo would vanish into it. A path under
+   * /public, or an uploaded /uploads/… image.
+   *
+   * Leave it out and the ticket falls back to the lettered badge plus the name in
+   * type, which is what a partner with no artwork gets — and looks deliberate
+   * rather than unfinished. See lib/tickets/brand.ts.
+   */
+  logoUrl?: string;
   /** Which of the shared features this partner gets. A missing one must 404, not just hide its nav item. */
   features: readonly PartnerFeature[];
   /**

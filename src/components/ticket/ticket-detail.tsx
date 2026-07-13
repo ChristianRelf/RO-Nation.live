@@ -40,6 +40,8 @@ export function TicketDetail({
   holder,
   brandMark,
   brandName,
+  brandLogo,
+  seal,
   ticketUrl,
   justIssued,
 }: {
@@ -48,6 +50,10 @@ export function TicketDetail({
   holder: string;
   brandMark: string;
   brandName: string;
+  /** The issuer's wordmark. NULL falls back to the lettered badge. */
+  brandLogo: string | null;
+  /** The ticket's security seal. Computed server-side — see lib/tickets/seal.ts. */
+  seal: string;
   /** The absolute URL the QR encodes — this page, on this host. */
   ticketUrl: string;
   /** Straight from checkout. Activation throws its own confetti — see ActivateButton. */
@@ -125,6 +131,12 @@ export function TicketDetail({
             status={ticket.status}
             brandMark={brandMark}
             brandName={brandName}
+            brandLogo={brandLogo}
+            reference={ticket.id}
+            // Withheld with the code, for the same reason: a seal is half of the
+            // pair that proves a ticket, and printing it beside a sealed code
+            // would hand over the harder half early.
+            seal={revealed ? seal : null}
             ticketUrl={ticketUrl}
             revealed={revealed}
           />
@@ -252,6 +264,16 @@ export function TicketDetail({
             <Row label="Holder" value={holder} />
             <Row label="Issued by" value={brandName} />
             <Row label="Show" value={formatDate(event.startsAt)} />
+            {/* The reference is not secret — it is what this page's URL is
+                addressed by — so it shows from the moment the ticket exists. It
+                is what to quote to the crew if anything needs looking up before
+                you have activated. */}
+            <Row label="Reference" value={ticket.id} mono />
+            <Row
+              label="Security seal"
+              value={revealed ? seal : "Sealed until activated"}
+              mono={revealed}
+            />
           </dl>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -281,6 +303,9 @@ export function TicketDetail({
                   paid: priceLabel(ticket.priceRobux),
                   brandName,
                   brandMark,
+                  brandLogo,
+                  reference: ticket.id,
+                  seal,
                   ticketUrl,
                 }}
               />
