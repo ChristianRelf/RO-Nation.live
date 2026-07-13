@@ -1,73 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { isValidGameKey } from "@/lib/apikey";
-import { findTicket } from "@/lib/ticket-lookup";
+import { BAD_REQUEST, redeemTicket } from "@/lib/tickets/verify";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/v1/tickets/redeem
-// Auth: header `x-api-key: <GAME_API_KEY>`
-// Body: { "code": "RN-XXXXXX" }  OR  { "robloxId": "123", "eventId": "..." }
-// Marks a valid reserved ticket as CHECKED_IN. Idempotent: re-redeeming an
-// already checked-in ticket returns alreadyRedeemed: true.
+// POST /api/v1/tickets/redeem — burn the ticket and let them in.
+//
+// Auth:  x-api-key: <GAME_API_KEY>
+// Body:  { code } or { robloxId, eventId }, plus optional { eventId, seal }
+//
+// Same body and the SAME response shape as /verify — one shape to parse in Luau,
+// not two. The difference is that this one writes: a ticket that may be admitted
+// comes back marked CHECKED_IN, and the next call for it says
+// `admit: false, reason: "already_checked_in"`.
+//
+// Branch on `admit`, never on `valid`. An already-redeemed ticket is still a
+// perfectly VALID ticket — it just must not let a second person through, which is
+// the entire reason redeeming exists.
+//
+// Idempotent and race-safe: two scanners hitting the same ticket at once produce
+// exactly one check-in. See redeemTicket() in lib/tickets/verify.ts.
+
 export async function POST(req: NextRequest) {
   if (!isValidGameKey(req)) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "unauthorized" },
+      { status: 401 },
+    );
   }
 
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
-    /* handled below */
+    // Falls through to bad_request below.
   }
 
-  const code = body?.code ? String(body.code).trim().toUpperCase() : null;
-  const robloxId = body?.robloxId ? String(body.robloxId) : null;
-  const eventId = body?.eventId ? String(body.eventId) : null;
+  const str = (v: unknown) => (v == null ? null : String(v));
 
-  const ticket = await findTicket({ code, robloxId, eventId });
-  if (ticket === "bad_request") {
+  const result = await redeemTicket({
+    code: str(body.code),
+    robloxId: str(body.robloxId),
+    eventId: str(body.eventId),
+    seal: str(body.seal),
+  });
+
+  if (result === BAD_REQUEST) {
     return NextResponse.json(
-      { ok: false, error: "provide `code` or `robloxId` + `eventId`" },
+      { ok: false, error: "provide `code`, or `robloxId` + `eventId`" },
       { status: 400 },
     );
   }
-  if (!ticket) {
-    return NextResponse.json({ ok: true, redeemed: false, reason: "not_found" });
-  }
-  if (ticket.status === "CANCELLED") {
-    return NextResponse.json({ ok: true, redeemed: false, reason: "cancelled" });
-  }
-  if (ticket.status === "CHECKED_IN") {
-    return NextResponse.json({
-      ok: true,
-      redeemed: false,
-      alreadyRedeemed: true,
-      checkedInAt: ticket.checkedInAt,
-      user: {
-        robloxId: ticket.user.robloxId,
-        username: ticket.user.username,
-      },
-    });
-  }
 
-  const updated = await prisma.ticket.update({
-    where: { id: ticket.id },
-    data: { status: "CHECKED_IN", checkedInAt: new Date() },
-  });
-
-  return NextResponse.json({
-    ok: true,
-    redeemed: true,
-    checkedInAt: updated.checkedInAt,
-    // The tier is the ticket's own frozen snapshot — see the note in verify.
-    ticket: { code: ticket.code, tier: ticket.tierName, priceRobux: ticket.priceRobux },
-    event: { id: ticket.event.id, title: ticket.event.title },
-    user: {
-      robloxId: ticket.user.robloxId,
-      username: ticket.user.username,
-      displayName: ticket.user.displayName,
-    },
-  });
+  return NextResponse.json({ ok: true, ...result });
 }

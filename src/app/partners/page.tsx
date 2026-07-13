@@ -14,33 +14,13 @@ export const metadata: Metadata = {
 // Static list — swap names/blurbs/links for real partners.
 const partners = [
   {
-    name: "Neon District",
-    tier: "Headline sponsor",
+    name: "SHA SHA Productions",
+    tier: "Production partner",
     blurb:
-      "Roblox fashion group powering our stage looks and giving away in-experience merch at every show.",
+      "The production company that builds our stages, lights our shows and runs the live event.",
     url: site.socials.roblox,
   },
-  {
-    name: "Studio Vantage",
-    tier: "Build partner",
-    blurb:
-      "Environment artists who co-build our biggest festival maps and lighting rigs.",
-    url: site.socials.roblox,
-  },
-  {
-    name: "Pulse Audio",
-    tier: "Audio partner",
-    blurb:
-      "Original music and live sets soundtracking our headline nights.",
-    url: site.socials.youtube,
-  },
-  {
-    name: "Frame Collective",
-    tier: "Media partner",
-    blurb:
-      "Editors and streamers who capture and broadcast our events to a wider audience.",
-    url: site.socials.x,
-  },
+  
 ];
 
 export default function PartnersPage() {

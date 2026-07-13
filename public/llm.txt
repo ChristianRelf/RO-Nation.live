@@ -1,0 +1,325 @@
+# RO. Nation LIVE — Ticket API
+
+> Check whether a ticket is valid, find out what kind of ticket it is, and mark it
+> redeemed once it has been scanned at the door.
+>
+> This file is written for an LLM (or a person) wiring a Roblox experience up to
+> the door. Everything here is the real contract — if the code and this file ever
+> disagree, the code wins and this file is a bug.
+
+Base URL: https://ronation.live
+Auth:     every request needs the header `x-api-key: <GAME_API_KEY>`
+          (`Authorization: Bearer <GAME_API_KEY>` also works)
+Method:   POST, `Content-Type: application/json`
+
+Enable **Allow HTTP Requests** in Roblox Studio → Game Settings → Security, or
+none of this works.
+
+---
+
+## The two endpoints
+
+| Endpoint                   | Writes? | Use it for                                     |
+| -------------------------- | ------- | ---------------------------------------------- |
+| `POST /api/v1/tickets/verify` | No   | "Is this ticket good, and what is it?"         |
+| `POST /api/v1/tickets/redeem` | Yes  | "Let them in, and burn the ticket."            |
+
+They take the **same body** and return the **same response shape**. That is
+deliberate: you parse one shape in Luau, not two.
+
+`/verify` changes nothing, so call it as often as you like — when a player joins,
+to light up a VIP door, to show somebody their tier. Call `/redeem` once, at the
+moment they actually walk in.
+
+---
+
+## Identifying a ticket
+
+Send **one** of these:
+
+```json
+{ "code": "RN-4K9QW2" }                       // the code printed on the ticket
+{ "robloxId": "851394804", "eventId": "..." } // or: who is standing here
+```
+
+Optional, and both worth sending:
+
+```json
+{
+  "eventId": "cmr9nedoy0001fgfa4abrsbt2",  // the show THIS server is running
+  "seal": "PVZFNR"                          // the 6-char seal printed on the ticket
+}
+```
+
+### Always send `eventId` if you know it
+
+Without it, the API can only answer *"is this a real ticket"* — not *"is this a
+real ticket **for tonight**"*. A genuine ticket for last month's show would come
+back `valid: true`. With `eventId`, a ticket for any other show is refused with
+`reason: "wrong_event"`.
+
+### The seal is optional and is not what admits anybody
+
+`seal` is six characters printed on the ticket, derived from the ticket with a
+secret key. If you send it, the response includes `ticket.sealValid`. It exists so
+a crew member can eyeball a **printed or downloaded** ticket and spot a forgery
+without a scanner. The database is what actually admits people — you do not need
+the seal for a normal scan.
+
+---
+
+## The response
+
+Both endpoints return HTTP 200 with this shape whenever the request was
+understood. Failure to *find* a ticket is not an HTTP error — it is a 200 with
+`valid: false`.
+
+```json
+{
+  "ok": true,
+  "valid": true,
+  "admit": true,
+  "reason": "ok",
+  "message": "Admit — VIP — Front Barrier",
+
+  "ticket": {
+    "id": "cmrijfyc500029h3m26mh212t",
+    "code": "ST-4K9QW2",
+    "status": "RESERVED",
+    "admission": {
+      "tier": "VIP — Front Barrier",
+      "kind": "VIP",
+      "priceRobux": 250,
+      "paid": true
+    },
+    "activated": true,
+    "activatedAt": "2026-07-13T18:40:00.000Z",
+    "checkedIn": false,
+    "checkedInAt": null,
+    "seal": "PVZFNR",
+    "sealValid": true
+  },
+
+  "event": {
+    "id": "cmr9nedoy0001fgfa4abrsbt2",
+    "slug": "stro-the-first-rite",
+    "title": "THE FIRST RITE",
+    "startsAt": "2026-08-03T19:00:00.000Z",
+    "doorsAt": "2026-08-03T18:00:00.000Z",
+    "venue": "The Hollow — Main Stage",
+    "partnerId": "sleeptokenro"
+  },
+
+  "holder": {
+    "robloxId": "851394804",
+    "username": "chrxs_dev",
+    "displayName": "chrxs_dev"
+  }
+}
+```
+
+When no ticket matches, `ticket`, `event` and `holder` are all `null`:
+
+```json
+{ "ok": true, "valid": false, "admit": false, "reason": "not_found",
+  "message": "No ticket with that code.", "ticket": null, "event": null, "holder": null }
+```
+
+### `valid` vs `admit` — the one thing to get right
+
+**Branch on `admit`. Never on `valid`.**
+
+- `valid` — the ticket is real and was not cancelled.
+- `admit` — this person should walk through the door **right now**.
+
+An already-checked-in ticket is `valid: true` and `admit: false`. It is a perfectly
+genuine ticket; it has simply already been used, and letting a second person in on
+it is the exact thing redeeming exists to prevent. A server that branches on
+`valid` will happily admit an entire queue on one ticket.
+
+### `reason`
+
+| `reason`             | `valid` | `admit` | What happened                                    |
+| -------------------- | ------- | ------- | ------------------------------------------------ |
+| `ok`                 | true    | true    | Good ticket. Let them in.                        |
+| `already_checked_in` | true    | false   | Real ticket, already used. Do not admit again.   |
+| `cancelled`          | false   | false   | The holder cancelled it. Do not admit.           |
+| `not_found`          | false   | false   | No such code.                                    |
+| `wrong_event`        | false   | false   | Real ticket, but for a different show.           |
+
+`message` is a human sentence for the same thing. Show it to a crew member; do not
+parse it — it is written for people and may be reworded.
+
+### What kind of ticket is it?
+
+`ticket.admission`:
+
+- `tier` — the tier's name as it was **when the ticket was issued** ("General
+  Admission", "VIP — Front Barrier"). It is a snapshot: renaming or deleting a tier
+  afterwards does not change what somebody already holds.
+- `kind` — `"GA"` or `"VIP"`. `VIP` means it was a priced tier. Branch on this to
+  open the VIP room, spawn them on the barrier, hand out a badge.
+- `priceRobux` / `paid` — what it cost. Free tickets are `0` / `false`.
+
+> Paid (Robux) tiers are **switched off** platform-wide today, so in practice every
+> live ticket is `kind: "GA"`, `paid: false`. The field is real and populated —
+> build against it now and the VIP path works the day paid tiers are turned on.
+
+### Errors
+
+| HTTP | Body                                                | Meaning                       |
+| ---- | --------------------------------------------------- | ----------------------------- |
+| 401  | `{ "ok": false, "error": "unauthorized" }`          | Missing or wrong API key.     |
+| 400  | `{ "ok": false, "error": "provide `code`, or …" }`  | No usable identifier sent.    |
+
+---
+
+## Redeeming
+
+`POST /api/v1/tickets/redeem` does everything `/verify` does, and then — **only if
+`admit` would have been true** — marks the ticket `CHECKED_IN` and stamps
+`checkedInAt`. The response comes back with `status: "CHECKED_IN"`,
+`checkedIn: true` and `message: "Checked in — …"`.
+
+It is **idempotent and race-safe**:
+
+- Call it twice on the same ticket and the second call returns
+  `admit: false, reason: "already_checked_in"` with the original `checkedInAt`. It
+  does not error, and it does not move the timestamp.
+- Two servers scanning the same ticket at the same instant produce exactly **one**
+  check-in. The loser of the race is told the truth, not a stale success.
+
+So: retry freely. A dropped response is safe to re-send.
+
+Redeeming also activates a ticket the holder never activated on the website.
+Turning somebody away over a ritual they skipped is not a door policy.
+
+---
+
+## Luau: the whole thing
+
+```lua
+local HttpService = game:GetService("HttpService")
+
+local BASE    = "https://ronation.live"
+local API_KEY = "<GAME_API_KEY>"           -- keep this OUT of client scripts
+local EVENT_ID = "cmr9nedoy0001fgfa4abrsbt2" -- the show this server is running
+
+-- `path` is "/api/v1/tickets/verify" or "/api/v1/tickets/redeem"
+local function callTicketApi(path, body)
+    local ok, res = pcall(function()
+        return HttpService:RequestAsync({
+            Url = BASE .. path,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json",
+                ["x-api-key"] = API_KEY,
+            },
+            Body = HttpService:JSONEncode(body),
+        })
+    end)
+
+    -- The network failed. This is NOT "the ticket is bad" — do not turn somebody
+    -- away because the wifi blinked. Let staff decide, or retry.
+    if not ok or not res.Success then
+        return nil, "network"
+    end
+
+    return HttpService:JSONDecode(res.Body), nil
+end
+
+--- Look, don't touch. Safe to call whenever.
+local function verify(code)
+    return callTicketApi("/api/v1/tickets/verify", {
+        code = code,
+        eventId = EVENT_ID,   -- always: this is what pins it to TONIGHT
+    })
+end
+
+--- Let them in, and burn the ticket.
+local function redeem(code)
+    return callTicketApi("/api/v1/tickets/redeem", {
+        code = code,
+        eventId = EVENT_ID,
+    })
+end
+
+--- Somebody presented `code` at the door.
+local function admit(player, code)
+    local data, err = redeem(code)
+
+    if err == "network" then
+        return false, "Couldn't reach the door system. Try again."
+    end
+
+    -- Branch on `admit`, NOT on `valid`. See the note above.
+    if not data.admit then
+        return false, data.message  -- "Already checked in.", "Cancelled.", …
+    end
+
+    -- They're in. `admission.kind` says what they bought.
+    if data.ticket.admission.kind == "VIP" then
+        -- open the VIP room, spawn on the barrier, hand out the badge…
+        print(player.Name .. " is VIP: " .. data.ticket.admission.tier)
+    end
+
+    return true, data.message  -- "Checked in — General Admission"
+end
+```
+
+### Kicking anyone without a ticket
+
+```lua
+game.Players.PlayerAdded:Connect(function(player)
+    -- Look up by who they are, rather than asking them to type a code.
+    local data, err = callTicketApi("/api/v1/tickets/verify", {
+        robloxId = tostring(player.UserId),
+        eventId = EVENT_ID,
+    })
+
+    -- Fail OPEN on a network error, not closed. A blip at our end must not
+    -- start kicking the entire room out of a show they paid to attend.
+    if err == "network" then return end
+
+    if not data.valid then
+        player:Kick("You need a ticket for this show — get one at ronation.live")
+    end
+end)
+```
+
+Note that one uses `valid`, not `admit`: at the *gate* you are asking "do you hold
+a ticket at all", and somebody already checked in still does. `admit` is for the
+*door*, where the question is "should this ticket let another body through".
+
+---
+
+## The manual door
+
+Every scanner eventually dies mid-queue. The crew can check and check in a ticket
+by hand, from a browser, and it makes the **same decision this API makes** — same
+code path, so the laptop and the game can never disagree:
+
+- RNL's shows: `ronation.live/company/door` (Roblox group rank 245+)
+- A partner's shows: `portal.ronation.live/<slug>/door` (their crew, or RNL 250+)
+
+Both take a typed code or a USB barcode scanner — a scanner is just a keyboard,
+and the page is built for one: it clears and re-focuses the input after every
+check, so you can scan a queue without touching the laptop.
+
+---
+
+## Ticket anatomy, briefly
+
+- **Code** — `RN-4K9QW2` (RNL) or `ST-4K9QW2` (a partner's prefix). What the
+  barcode and the QR carry. This is what you send to the API.
+- **Barcode** — Code 128, down the left of the ticket. A cheap USB laser scanner
+  reads it.
+- **QR** — on the stub. It encodes the ticket's *URL*, not its code, so scanning it
+  with a phone opens the ticket page.
+- **Reference** — the ticket's opaque id (`cmrij…`). Not secret; it is what the URL
+  is addressed by.
+- **Seal** — six characters, e.g. `PVZFNR`. Anti-forgery, optional to check, see
+  above.
+- **Sealed until activated** — the code, barcode and QR are hidden until the holder
+  activates the ticket. A reserved-but-not-activated ticket is still valid, and
+  `/redeem` activates it for them.

@@ -16,6 +16,7 @@ export function PortalNav({
   brand,
   basePath,
   studioLink = false,
+  doorLink = false,
   user,
 }: {
   /** Wordmark in the top-left — "SHASHA", "Sleep Token RO". */
@@ -28,6 +29,11 @@ export function PortalNav({
    * /studio route to point at. So this is off unless a partner turns it on.
    */
   studioLink?: boolean;
+  /**
+   * The manual ticket check. Only for an org that HAS shows — SHASHA has none,
+   * and a partner without the events feature has no tickets to check.
+   */
+  doorLink?: boolean;
   user: {
     displayName: string;
     // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
@@ -43,6 +49,7 @@ export function PortalNav({
 
   const links = [
     { label: "Overview", href: basePath },
+    ...(doorLink ? [{ label: "Door", href: `${basePath}/door` }] : []),
     ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),
     { label: "VIP list", href: `${basePath}/vip` },
     { label: "Blacklist", href: `${basePath}/blacklist` },

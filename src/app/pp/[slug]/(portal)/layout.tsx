@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { partnerBySlug } from "@/lib/partners/registry";
+import { partnerBySlug, partnerHasFeature } from "@/lib/partners/registry";
 import { getPartnerUser } from "@/lib/partners/guard";
 import { partnerPortalPath } from "@/lib/partners/urls";
 import { PortalNav } from "@/components/portal-nav";
@@ -57,6 +57,7 @@ export default async function PartnerPortalLayout({
         // Every partner has a studio — at minimum they can edit their homepage
         // — so this is always on. Which SECTIONS it offers is what the registry's
         // features decide, inside the studio layout.
+        doorLink={partnerHasFeature(partner, "events")}
         studioLink
         user={{
           displayName: user.displayName,

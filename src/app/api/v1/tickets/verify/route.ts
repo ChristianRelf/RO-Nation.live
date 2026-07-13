@@ -1,66 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isValidGameKey } from "@/lib/apikey";
-import { findTicket } from "@/lib/ticket-lookup";
+import { BAD_REQUEST, checkTicket } from "@/lib/tickets/verify";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/v1/tickets/verify
-// Auth: header `x-api-key: <GAME_API_KEY>`
-// Body: { "code": "RN-XXXXXX" }  OR  { "robloxId": "123", "eventId": "..." }
-// Returns whether the ticket is valid (i.e. reserved or checked-in, not cancelled).
+// POST /api/v1/tickets/verify — is this ticket good, and what is it?
+//
+// Auth:  x-api-key: <GAME_API_KEY>
+// Body:  { code } or { robloxId, eventId }, plus optional { eventId, seal }
+//
+// READ ONLY. It changes nothing, so the game can call it as often as it likes:
+// when a player joins, to show somebody their tier, to light the VIP door. Use
+// /redeem when you actually want to burn the ticket.
+//
+// ALWAYS pass `eventId` if the server knows which show it is running. Without it
+// this can only answer "is this a real ticket" — not "is this a real ticket FOR
+// TONIGHT" — and a genuine ticket for last month's show comes back valid.
+//
+// The response shape is documented in full at /llm.txt.
+
 export async function POST(req: NextRequest) {
   if (!isValidGameKey(req)) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "unauthorized" },
+      { status: 401 },
+    );
   }
 
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
-    /* empty body allowed for error below */
+    // An unparseable body falls through to the bad_request below, which says what
+    // was actually wanted — more use to whoever is debugging than "invalid JSON".
   }
 
-  const code = body?.code ? String(body.code).trim().toUpperCase() : null;
-  const robloxId = body?.robloxId ? String(body.robloxId) : null;
-  const eventId = body?.eventId ? String(body.eventId) : null;
+  const str = (v: unknown) => (v == null ? null : String(v));
 
-  const ticket = await findTicket({ code, robloxId, eventId });
-  if (ticket === "bad_request") {
+  const result = await checkTicket({
+    code: str(body.code),
+    robloxId: str(body.robloxId),
+    eventId: str(body.eventId),
+    seal: str(body.seal),
+    // Deliberately unscoped: this key belongs to one deployment and is trusted
+    // with whatever it asks about. The WEB door scopes by org — see verify.ts.
+  });
+
+  if (result === BAD_REQUEST) {
     return NextResponse.json(
-      { ok: false, error: "provide `code` or `robloxId` + `eventId`" },
+      { ok: false, error: "provide `code`, or `robloxId` + `eventId`" },
       { status: 400 },
     );
   }
-  if (!ticket) {
-    return NextResponse.json({ ok: true, valid: false, reason: "not_found" });
-  }
 
-  const valid = ticket.status !== "CANCELLED";
-  return NextResponse.json({
-    ok: true,
-    valid,
-    reason: valid ? "ok" : "cancelled",
-    ticket: {
-      code: ticket.code,
-      status: ticket.status,
-      checkedInAt: ticket.checkedInAt,
-      // What they actually hold, so the door can treat a VIP as a VIP. Read from
-      // the TICKET's own snapshot, not from the tier row it points at: the tier
-      // may since have been renamed, re-priced or deleted, and none of that
-      // changes what this person bought. NULL tier = free general admission.
-      tier: ticket.tierName,
-      priceRobux: ticket.priceRobux,
-    },
-    event: {
-      id: ticket.event.id,
-      slug: ticket.event.slug,
-      title: ticket.event.title,
-      startsAt: ticket.event.startsAt,
-    },
-    user: {
-      robloxId: ticket.user.robloxId,
-      username: ticket.user.username,
-      displayName: ticket.user.displayName,
-    },
-  });
+  return NextResponse.json({ ok: true, ...result });
 }

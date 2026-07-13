@@ -4,14 +4,19 @@ import { requireCompanyUser } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
+// The snippet on the settings page. It MUST track the API's real response shape:
+// this is the code people paste into a live game, and a field that no longer
+// exists reads as `nil`, which reads as "no ticket", which kicks the room.
+//
+// Full documentation, written for an LLM to build from, lives at /llm.txt.
 const luau = `local HttpService = game:GetService("HttpService")
 
 local API_BASE = "%SITE%/api/v1"
 local API_KEY  = "YOUR_GAME_API_KEY"   -- keep this server-side only
 local EVENT_ID = "paste-the-event-id-here"
 
--- Call when a player joins the event place, then let them in / kick.
-local function redeemTicket(player)
+-- Redeem the ticket of whoever just joined, and let them in or kick them.
+local function admit(player)
 	local ok, res = pcall(function()
 		return HttpService:RequestAsync({
 			Url = API_BASE .. "/tickets/redeem",
@@ -22,23 +27,33 @@ local function redeemTicket(player)
 			},
 			Body = HttpService:JSONEncode({
 				robloxId = tostring(player.UserId),
-				eventId = EVENT_ID,
+				eventId = EVENT_ID,   -- pins the check to THIS show
 			}),
 		})
 	end)
 
+	-- The network failed. Fail OPEN: a blip at our end must not start kicking
+	-- a room full of people out of a show they hold tickets for.
 	if not ok or not res.Success then
-		return false
+		return true
 	end
+
 	local data = HttpService:JSONDecode(res.Body)
-	return data.redeemed == true or data.alreadyRedeemed == true
+
+	-- Branch on \`admit\`, never on \`valid\` — an already-used ticket is still
+	-- a valid one, and it must not let a second person through.
+	if data.admit then
+		if data.ticket.admission.kind == "VIP" then
+			print(player.Name .. " is VIP: " .. data.ticket.admission.tier)
+		end
+		return true
+	end
+
+	player:Kick(data.message or "No valid ticket for this show.")
+	return false
 end
 
-game.Players.PlayerAdded:Connect(function(player)
-	if not redeemTicket(player) then
-		player:Kick("No valid ticket found for this event.")
-	end
-end)`;
+game.Players.PlayerAdded:Connect(admit)`;
 
 export default async function SettingsPage() {
   await requireCompanyUser();
@@ -149,7 +164,43 @@ export default async function SettingsPage() {
           <code className="font-mono text-fg">code</code> or by{" "}
           <code className="font-mono text-fg">robloxId</code> +{" "}
           <code className="font-mono text-fg">eventId</code>. Find an event&apos;s
-          ID on its Attendees page.
+          ID on its Attendees page. Always send{" "}
+          <code className="font-mono text-fg">eventId</code>: without it the API
+          can only tell you the ticket is real, not that it is real{" "}
+          <em>for tonight</em>.
+        </p>
+
+        <p className="mt-4 text-sm text-muted">
+          The full contract — every field, every{" "}
+          <code className="font-mono text-fg">reason</code>, and working Luau —
+          lives at{" "}
+          <a
+            href="/llm.txt"
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent hover:text-fg"
+          >
+            /llm.txt
+          </a>
+          . It is written to be handed straight to an LLM.
+        </p>
+      </Section>
+
+      {/* The manual door */}
+      <Section title="The manual door">
+        <p className="text-muted">
+          Every scanner dies mid-queue eventually. Crew can check a ticket and
+          check somebody in by hand, from a browser — the{" "}
+          <a href="/company/door" className="text-accent hover:text-fg">
+            Door
+          </a>{" "}
+          page. It calls the same code the game API does, so the laptop and the
+          game can never disagree about who gets in.
+        </p>
+        <p className="mt-3 text-sm text-muted">
+          A USB barcode scanner works with no setup: it types the code and presses
+          Enter, and the page clears and re-focuses itself after every check.
+          Partners have the same page inside their own portal.
         </p>
       </Section>
 
