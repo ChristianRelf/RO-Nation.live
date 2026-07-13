@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { getCareerBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
-import { submitApplication } from "@/app/actions/applications";
 import { Kicker } from "@/components/ui";
 import { toLines } from "@/lib/utils";
+import { ApplyForm } from "@/components/apply-form";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +14,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const career = await prisma.career.findUnique({
-    where: { slug: params.slug },
-  });
+  const career = await getCareerBySlug(null, params.slug);
   if (!career) return { title: "Role not found" };
   return { title: career.title, description: career.summary };
 }
@@ -28,10 +26,9 @@ export default async function CareerPage({
   params: { slug: string };
   searchParams: { applied?: string; error?: string };
 }) {
-  const career = await prisma.career.findUnique({
-    where: { slug: params.slug },
-  });
-  if (!career || career.status === "DRAFT") notFound();
+  // null = RNL's own, so a partner's opening does not answer here.
+  const career = await getCareerBySlug(null, params.slug);
+  if (!career) notFound();
 
   const session = await getUserSession();
   const requirements = toLines(career.requirements);
@@ -84,105 +81,16 @@ export default async function CareerPage({
 
         {/* Apply */}
         <aside id="apply" className="lg:sticky lg:top-24 lg:self-start">
-          <div className="card p-6">
-            <h2 className="font-display text-2xl">Apply now</h2>
-            <p className="mt-1 text-sm text-muted">
-              Takes two minutes. We reply to everyone in the Discord.
-            </p>
-
-            {searchParams.applied ? (
-              <div className="mt-5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-                Application received — thank you! Keep an eye on your Roblox DMs
-                and the Discord.
-              </div>
-            ) : closed ? (
-              <div className="mt-5 rounded-xl border border-line bg-bg px-4 py-3 text-sm text-muted">
-                Applications for this role are currently closed.
-              </div>
-            ) : (
-              <form action={submitApplication} className="mt-5 space-y-3">
-                <input type="hidden" name="careerId" value={career.id} />
-                <input type="hidden" name="slug" value={career.slug} />
-
-                {searchParams.error === "invalid" ? (
-                  <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                    Please add your Roblox username and a message of at least 20
-                    characters.
-                  </p>
-                ) : null}
-
-                <Field
-                  name="robloxUsername"
-                  label="Roblox username"
-                  required
-                  defaultValue={session?.username ?? ""}
-                  placeholder="YourRobloxName"
-                />
-                <Field
-                  name="discord"
-                  label="Discord (optional)"
-                  placeholder="username#0000 or @username"
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <Field name="timezone" label="Timezone" placeholder="GMT / EST" />
-                  <Field
-                    name="portfolio"
-                    label="Portfolio / links"
-                    placeholder="Optional"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
-                    Why you? <span className="text-accent">*</span>
-                  </label>
-                  <textarea
-                    name="message"
-                    required
-                    rows={5}
-                    placeholder="Tell us about your experience and why this role fits you."
-                    className="w-full resize-none rounded-xl border border-line bg-bg px-4 py-3 text-sm outline-none transition-colors focus:border-accent"
-                  />
-                </div>
-                <button className="btn btn-accent w-full">
-                  Submit application
-                </button>
-                <p className="text-center text-xs text-faint">
-                  By applying you agree to be contacted about this role.
-                </p>
-              </form>
-            )}
-          </div>
+          <ApplyForm
+            career={career}
+            session={session}
+            applied={Boolean(searchParams.applied)}
+            error={searchParams.error}
+            closed={closed}
+            note="Takes two minutes. We reply to everyone in the Discord."
+          />
         </aside>
       </div>
-    </div>
-  );
-}
-
-function Field({
-  name,
-  label,
-  required,
-  defaultValue,
-  placeholder,
-}: {
-  name: string;
-  label: string;
-  required?: boolean;
-  defaultValue?: string;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
-        {label} {required ? <span className="text-accent">*</span> : null}
-      </label>
-      <input
-        name={name}
-        required={required}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        className="w-full rounded-xl border border-line bg-bg px-4 py-3 text-sm outline-none transition-colors focus:border-accent"
-      />
     </div>
   );
 }

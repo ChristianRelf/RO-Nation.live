@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { partnerBySlug } from "@/lib/partners/registry";
+import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getUserSession } from "@/lib/session";
 import { TicketDetail } from "@/components/ticket/ticket-detail";
 import { ticketBrand } from "@/lib/tickets/brand";
@@ -19,6 +20,10 @@ export default async function PartnerTicketDetailPage({
 }) {
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
+  // Tickets and shows only exist for a partner who HAS the events feature.
+  // Without this the routes stand even when the nav hides them, and a route
+  // that exists is a route somebody reaches.
+  assertPartnerFeature(partner, "events");
 
   const session = await getUserSession();
   if (!session) redirect(`/account?returnTo=/tickets/${params.code}`);

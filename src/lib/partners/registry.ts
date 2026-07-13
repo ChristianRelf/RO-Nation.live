@@ -92,7 +92,10 @@ export const PARTNERS: readonly Partner[] = [
     disclaimer:
       "Sleep Token RO is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
     ticketPrefix: "ST",
-    features: ["events"],
+    // Shows, their own blog, and their own crew applications. Not surveys —
+    // survey.ronation.live is still RNL-global and has no partner scope yet, so
+    // switching it on here would hand them a feature that does not exist.
+    features: ["events", "blog", "careers"],
     // Sleep Token RO want paid VIP tiers alongside free general admission. This
     // says they are allowed to price them; it does not put any on sale. The
     // master switch is off, so their paid tiers render locked and the reserve
@@ -129,8 +132,8 @@ const RESERVED = new Set([
   "careers",
   "tickets",
   "account",
-  "admin",
-  "studio",
+  "company",
+  "uploads",
   "shasha",
   "legal",
   "about",
@@ -138,6 +141,10 @@ const RESERVED = new Set([
   "faq",
   "contact",
   "partners",
+  // Gone, but still reserved: both redirect into /company, and a partner slug
+  // that shadowed one would swallow the redirect for everybody.
+  "admin",
+  "studio",
 ]);
 
 /** A DNS label: lowercase alphanumerics and inner hyphens. */

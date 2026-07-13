@@ -115,6 +115,6 @@ export async function submitSurveyResponse(formData: FormData) {
     throw err;
   }
 
-  revalidatePath(`/studio/surveys/${survey.id}/responses`);
+  revalidatePath(`/company/surveys/${survey.id}/responses`);
   redirect(`/survey/${code}?ok=1`);
 }

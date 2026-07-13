@@ -2,7 +2,8 @@
 
 A bold, modern website for the **RO. Nation LIVE** Roblox event-management group.
 Post events, sell (free) tickets tied to Roblox accounts, verify them in-game over
-an API, post careers, take applications, and run it all from an admin dashboard.
+an API, post careers, take applications, and run it all from one dashboard — plus
+partner sites (like Sleep Token RO) that their own crews author themselves.
 
 Built with **Next.js (App Router) · TypeScript · Tailwind · Prisma · PostgreSQL**,
 and packaged to run on any VPS with **Docker Compose**.
@@ -19,11 +20,12 @@ and packaged to run on any VPS with **Docker Compose**.
 - **Ticketing** — members sign in with **Roblox OAuth**, reserve a free ticket, and get a unique code.
 - **In-game verification API** — your Roblox experience checks & redeems tickets over HTTP with a shared key.
 - **Careers** — post roles, collect applications, track status (New → Reviewing → Accepted/Rejected).
-- **Admin dashboard** — password-protected: create/edit events & careers, view attendees, check people in, review applications.
-- **Studio** — `/studio`: Roblox group members ranked 30+ can create/publish events, write the blog and build surveys. Access follows the group ranks — promote someone and they're in.
-- **Blog** — public posts at `/blog`, written in the Studio. Drafts stay hidden.
-- **Surveys** — `survey.ronation.live/<code>`: built in the Studio, answered with a Roblox sign-in (one response per account), results summarised and exportable as CSV.
-- **SHASHA staff portal** — `portal.ronation.live/shasha`: Discord-gated VIP list & blacklist, searchable, with roles/reasons and a full change history.
+- **The Company** — `/company`: the one door onto ronation.live. Events, blog, surveys, careers, applications, attendees and check-in. Access is a rank in RNL's Roblox group — there is no password and no account list. (It replaced the old `/admin` and `/studio`, which now redirect here.)
+- **Partner sites & studios** — a partner gets `<slug>.ronation.live` and a studio at `portal.ronation.live/<slug>/studio`, where their crew edits their own shows and pricing, blog, careers, applications and homepage copy. Everything is scoped by `partnerId`: their content never appears on RNL's site, and RNL's never appears on theirs.
+- **Uploads** — images (5 MB, magic-byte checked) go to a Docker volume and are served straight off disk by Caddy. Scoped per-org, so one partner cannot overwrite another's files.
+- **Blog** — public posts at `/blog`, and on each partner's own site. Drafts stay hidden.
+- **Surveys** — `survey.ronation.live/<code>`: built in `/company`, answered with a Roblox sign-in (one response per account), results summarised and exportable as CSV.
+- **SHASHA staff portal** — `portal.ronation.live/shasha`: Roblox-ranked VIP list & blacklist, searchable, with roles/reasons and a full change history.
 - **Marketing pages** — Home, About (with a ticketing explainer), Contact + FAQ.
 - **Design** — dark, Live-Nation-inspired: big condensed type, event ticker, ticket-stub cards. No AI-template smell.
 
@@ -44,11 +46,43 @@ npm run dev                   # http://localhost:3000
 With `ALLOW_DEV_LOGIN="true"` and no Roblox credentials set, the `/account`
 page shows a **dev login** so you can test the whole ticketing flow locally.
 
-**Admin:** go to `/admin`, sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+**`/company`** (events, blog, surveys, careers, applications) needs a real Roblox
+sign-in and rank 245+ in the group — the dev login mints a fake `dev-<name>` id
+that no group can rank, so it cannot open that door. Configure Roblox OAuth to
+work on `/company` locally. See *Who gets in* below.
 
 ---
 
 ## Deploy on a VPS with Docker
+
+> ### Upgrading an existing server to `/company` + partner studios?
+>
+> Three one-off steps. Skip them and the container will stop on boot and tell you
+> so — which is the entrypoint working, not a bug.
+>
+> 1. **The schema needs a hand.** This release adds a unique constraint
+>    (`[partnerId, slug]` on posts and careers), and `prisma db push` will not add
+>    a constraint on its own. Prove it's safe, then apply it once:
+>
+>    ```bash
+>    # Should return no rows. If it does, rename the duplicate slugs first.
+>    docker compose exec db psql -U ronation -d ronation -c 'SELECT slug, count(*) FROM posts GROUP BY 1 HAVING count(*) > 1;'
+>    docker compose exec db psql -U ronation -d ronation -c 'SELECT slug, count(*) FROM careers GROUP BY 1 HAVING count(*) > 1;'
+>
+>    docker compose run --rm --entrypoint npx web prisma db push --accept-data-loss
+>    ```
+>
+> 2. **Delete `ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env`.** Nothing reads
+>    them. Access is now a Roblox group rank — see *Who gets in* below. Make sure
+>    somebody is ranked 245+ **before** you deploy, or nobody can sign in to
+>    `/company` at all.
+>
+> 3. **Back up the new `uploads` volume.** Uploaded images live there, not in
+>    Postgres — a database dump alone will not restore them.
+>
+>    ```bash
+>    docker run --rm -v ronation_uploads:/from -v "$PWD":/to alpine tar czf /to/uploads-backup.tar.gz -C /from .
+>    ```
 
 1. Copy the project to your server and create your `.env`:
 
@@ -61,8 +95,6 @@ page shows a **dev login** so you can test the whole ticketing flow locally.
    ```env
    NEXT_PUBLIC_SITE_URL="https://your-domain.com"
    AUTH_SECRET="<openssl rand -base64 48>"
-   ADMIN_USERNAME="you"
-   ADMIN_PASSWORD="<a strong password>"
    GAME_API_KEY="<openssl rand -hex 32>"
    POSTGRES_PASSWORD="<a strong db password>"
    ALLOW_DEV_LOGIN="false"
@@ -240,6 +272,35 @@ src/
   middleware.ts              # host routing: portal.* ⇄ main site
 prisma/                      # schema + seed
 ```
+
+---
+
+## Who gets in (the rank ladder)
+
+Every door is a **rank in RNL's Roblox group** ([RoNation Live](https://www.roblox.com/communities/33033115/RoNation-Live), id `33033115`). There is no
+allowlist to maintain, no shared password, and nothing to revoke by hand:
+promoting somebody **is** the grant, demoting them **is** the revocation. Rank is
+re-read from Roblox on every request (cached ~5 min) and never trusted from the
+session cookie, so a change lands on its own with no redeploy.
+
+| Rank | Opens |
+| --- | --- |
+| **200+** | SHASHA portal, read only — search the VIP list and blacklist |
+| **245+** | SHASHA writes, **and** `/company`: all of ronation.live |
+| **250+** | **Every partner portal and studio**, as an owner-equivalent |
+
+Set with `COMPANY_MIN_RANK`, `PARTNER_STAFF_RANK`, `SHASHA_MIN_RANK` and
+`SHASHA_MANAGER_RANK` — see `.env.example`.
+
+A **partner's own crew** get in the other way: an explicit `PartnerMember` row
+(seeded from `STRO_OWNER_ROBLOX_ID`). They are not in RNL's group at all, and
+RNL deliberately does **not** rank off *their* group — RNL doesn't own it, so
+ranking off it would let a partner mint access to RNL's infrastructure by
+promoting whoever they liked.
+
+> **`ADMIN_USERNAME` / `ADMIN_PASSWORD` are gone.** The shared-password `/admin`
+> dashboard was merged into `/company`. If they're still in your `.env`, delete
+> them — nothing reads them.
 
 ---
 

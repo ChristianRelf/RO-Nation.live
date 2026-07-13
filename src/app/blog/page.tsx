@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { getPublishedPosts } from "@/lib/queries";
 import { Reveal } from "@/components/reveal";
 import { Kicker } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -13,10 +13,8 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const posts = await prisma.post.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-  });
+  // null = RNL's own. A partner's posts live on the partner's own blog.
+  const posts = await getPublishedPosts(null);
 
   return (
     <div className="relative">

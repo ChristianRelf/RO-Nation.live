@@ -98,9 +98,41 @@ export async function getEventBySlug(scope: EventScope, slug: string) {
   return withCount;
 }
 
-export async function getOpenCareers() {
+// ---- Careers -----------------------------------------------------
+// Scoped exactly like the event queries above, and for the same reason: an
+// unscoped career list is not a query that fails, it is one that advertises a
+// partner's job openings on RNL's site. The scope is the first argument and has
+// no default, so it cannot be forgotten.
+
+export async function getOpenCareers(scope: EventScope) {
   return prisma.career.findMany({
-    where: { status: "OPEN" },
+    where: { partnerId: scope, status: "OPEN" },
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function getCareerBySlug(scope: EventScope, slug: string) {
+  const career = await prisma.career.findFirst({
+    where: { partnerId: scope, slug },
+  });
+  // DRAFT and CLOSED roles are not public. CLOSED still resolves for anyone
+  // holding the link, so the page can say "this one has closed" rather than 404.
+  return career && career.status !== "DRAFT" ? career : null;
+}
+
+// ---- Blog --------------------------------------------------------
+
+export async function getPublishedPosts(scope: EventScope, limit?: number) {
+  return prisma.post.findMany({
+    where: { partnerId: scope, status: "PUBLISHED" },
+    orderBy: { publishedAt: "desc" },
+    take: limit,
+  });
+}
+
+export async function getPostBySlug(scope: EventScope, slug: string) {
+  const post = await prisma.post.findFirst({
+    where: { partnerId: scope, slug, status: "PUBLISHED" },
+  });
+  return post ?? null;
 }

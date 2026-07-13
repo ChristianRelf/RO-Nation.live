@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { getPostBySlug } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
 import { Kicker } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
+// null = RNL's own. Scoped, so a partner's post is not reachable at
+// ronation.live/blog/<slug> even when the slug is known — drafts and archived
+// posts are not public either, whatever URL you have.
 async function getPost(slug: string) {
-  const post = await prisma.post.findUnique({ where: { slug } });
-  // Drafts and archived posts are not public, even if you know the URL.
-  if (!post || post.status !== "PUBLISHED") return null;
-  return post;
+  return getPostBySlug(null, slug);
 }
 
 export async function generateMetadata({

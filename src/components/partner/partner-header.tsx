@@ -1,18 +1,32 @@
 import Link from "next/link";
-import type { Partner } from "@/lib/partners/registry";
+import { partnerHasFeature, type Partner } from "@/lib/partners/registry";
 import { getUserSession } from "@/lib/session";
 
 /**
  * A partner site's own header. Links are bare paths ("/events") because the
  * browser is already on <slug>.ronation.live and the middleware rewrites from
  * there — see lib/partners/urls.ts.
+ *
+ * The nav is built from the registry's features, so it can't point at a route
+ * this partner doesn't have. That is presentation matching the guard, not
+ * standing in for it: the pages themselves call assertPartnerFeature and 404.
  */
 export async function PartnerHeader({ partner }: { partner: Partner }) {
   const session = await getUserSession();
 
   const nav = [
-    { label: "Shows", href: "/events" },
-    { label: "Tickets", href: "/tickets" },
+    ...(partnerHasFeature(partner, "events")
+      ? [
+          { label: "Shows", href: "/events" },
+          { label: "Tickets", href: "/tickets" },
+        ]
+      : []),
+    ...(partnerHasFeature(partner, "blog")
+      ? [{ label: "Blog", href: "/blog" }]
+      : []),
+    ...(partnerHasFeature(partner, "careers")
+      ? [{ label: "Crew", href: "/careers" }]
+      : []),
   ];
 
   return (

@@ -43,6 +43,9 @@ export async function submitApplication(formData: FormData) {
   await prisma.application.create({
     data: {
       careerId: data.careerId,
+      // Read from the career row, never from the form. It decides whose inbox
+      // this lands in, so it is not something the applicant gets to choose.
+      partnerId: career.partnerId,
       userId: session?.uid ?? null,
       robloxUsername: data.robloxUsername,
       discord: data.discord ?? null,

@@ -168,8 +168,14 @@ enum JobStatus {
 }
 
 model Career {
-  id           String    @id @default(cuid())
-  slug         String    @unique
+  id String @id @default(cuid())
+
+  /// A slug from lib/partners/registry.ts, or NULL for RNL's own. Same convention
+  /// as Event.partnerId — and the same rule: every query that LISTS careers must
+  /// filter on this, or one org's openings appear on another's site.
+  partnerId String?
+
+  slug         String
   title        String
   department   String    @default("Events")
   commitment   String    @default("Volunteer") // Volunteer / Paid / Trial
@@ -183,13 +189,26 @@ model Career {
 
   applications Application[]
 
-  @@index([status])
+  /// Scoped, not global: /careers/event-host on RNL and on a partner's site are
+  /// different pages, and neither should block the other from existing.
+  ///
+  /// CAVEAT, and it is a real one: Postgres treats NULLs as distinct, so this
+  /// constraint does NOT stop two RNL rows (partnerId = NULL) sharing a slug — it
+  /// only binds partner rows, where the column is a real value. RNL's uniqueness
+  /// therefore rests on uniqueSlug() in lib/content.ts, which loops until it finds
+  /// a free slug in the scope. A partial unique index (WHERE partnerId IS NULL)
+  /// would close the gap properly, but the entrypoint runs `prisma db push` on
+  /// every boot, and that makes the database match this schema exactly — it would
+  /// drop a hand-made index silently, every deploy. An enforcement that quietly
+  /// disappears is worse than one that is written down.
+  @@unique([partnerId, slug])
+  @@index([partnerId, status])
   @@map("careers")
 }
 
 // ------------------------------------------------------------------
-// Blog posts. Written in the Studio by group members ranked 30+ — see
-// src/lib/studio.ts. Authorship is recorded from their Roblox account.
+// Blog posts. Written in /company by RNL staff, or in a partner's studio by
+// their crew. Authorship is recorded from the writer's Roblox account.
 // ------------------------------------------------------------------
 enum PostStatus {
   DRAFT
@@ -198,8 +217,12 @@ enum PostStatus {
 }
 
 model Post {
-  id             String     @id @default(cuid())
-  slug           String     @unique
+  id String @id @default(cuid())
+
+  /// A slug from lib/partners/registry.ts, or NULL for RNL's own.
+  partnerId String?
+
+  slug           String
   title          String
   excerpt        String?
   coverUrl       String?
@@ -211,7 +234,10 @@ model Post {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  @@index([status, publishedAt])
+  /// Scoped per partner, with the same NULL caveat as Career.slug above — read
+  /// that note before relying on this to keep RNL's own slugs unique.
+  @@unique([partnerId, slug])
+  @@index([partnerId, status, publishedAt])
   @@map("posts")
 }
 
@@ -443,9 +469,16 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id             String            @id @default(cuid())
-  career         Career            @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  careerId       String
+  id     String @id @default(cuid())
+  career Career @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
+  careerId String
+
+  /// Copied from the career this was submitted against, so the inbox can be
+  /// listed and counted by org WITHOUT joining through careers on every read.
+  /// It is derived, never submitted: the actions read it from the Career row.
+  partnerId String?
+
   user           User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId         String?
   robloxUsername String
@@ -457,5 +490,85 @@ model Application {
   createdAt      DateTime          @default(now())
 
   @@index([careerId])
+  @@index([partnerId, status])
   @@map("applications")
+}
+
+// ------------------------------------------------------------------
+// A partner's editable homepage.
+//
+// Their site used to be hardcoded in app/p/[slug]/page.tsx — the hero, the about
+// panel, the FAQ, all of it in the component. That meant every copy change was a
+// deploy, and a partner could not fix a typo on their own site.
+//
+// Every column is optional, and the page falls back to the registry's own
+// tagline/description when a row (or a field) is missing. So a partner with no
+// row still renders exactly as they did before, and this is additive rather than
+// a migration everyone has to complete before their site works again.
+// ------------------------------------------------------------------
+model PartnerContent {
+  /// The partner slug. One row per partner, so the slug IS the key.
+  partnerId String @id
+
+  // Hero.
+  heroKicker   String?
+  heroTitle    String?
+  heroSubtitle String? @db.Text
+  heroImageUrl String?
+
+  // The "what this is" panel.
+  aboutKicker String?
+  aboutTitle  String?
+  aboutBody   String? @db.Text
+  aboutNote   String? @db.Text
+
+  /// [{ q, a }] — the accordion on the homepage. Json because it is a list of
+  /// pairs of arbitrary length, which flat columns model badly. Validated with
+  /// zod on the way in (lib/partners/content.ts), never trusted on the way out.
+  faq Json?
+
+  updatedAt     DateTime @updatedAt
+  updatedByName String?
+
+  @@map("partner_content")
+}
+
+// ------------------------------------------------------------------
+// Uploaded files.
+//
+// The BYTES do not live here — they are written to the uploads volume and served
+// straight off disk by Caddy (see the Caddyfile and lib/uploads.ts). This is the
+// record ABOUT each file: who put it there, when, and which org it belongs to.
+//
+// It exists for two reasons. An upload is a write to RNL's infrastructure by
+// somebody outside RNL, so it needs to be attributable — `url` alone, pasted into
+// an event's thumbnailUrl, records nothing about who uploaded it. And a file with
+// no row is an orphan: nothing lists it, nothing can clean it up, and the only way
+// to find it is to walk the disk.
+// ------------------------------------------------------------------
+model MediaAsset {
+  id String @id @default(cuid())
+
+  /// A slug from lib/partners/registry.ts, or NULL for RNL's own. Same convention
+  /// as Event.partnerId. It is also the directory the file sits in on disk, which
+  /// is what stops one partner from writing over another's.
+  partnerId String?
+
+  /// Public path: /uploads/<scope>/<id>.<ext>. What goes in thumbnailUrl/coverUrl.
+  url String @unique
+
+  /// The name the file had on the uploader's machine. Display only — NEVER used
+  /// to build the path on disk (that would be a directory-traversal hole).
+  filename String
+
+  /// Sniffed from the file's magic bytes, not from what the browser claimed.
+  mime String
+  size Int
+
+  uploadedById   String // Roblox id
+  uploadedByName String
+  createdAt      DateTime @default(now())
+
+  @@index([partnerId, createdAt])
+  @@map("media_assets")
 }

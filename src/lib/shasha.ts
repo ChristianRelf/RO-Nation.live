@@ -12,7 +12,7 @@ import { getGroupMembership, type GroupMembership } from "./roblox-group";
 // a demotion takes effect on its own. There is no allowlist to maintain: the
 // group IS the allowlist, and promoting someone in it is the whole grant.
 //
-// This deliberately mirrors lib/studio.ts. Two gates, same shape, one place to
+// This deliberately mirrors lib/company.ts. Two gates, same shape, one place to
 // learn — rather than a second, differently-shaped auth system.
 
 export type PortalRole = "manager" | "staff";
@@ -65,7 +65,7 @@ export async function getPortalUser(): Promise<PortalUser | null> {
 
 /**
  * Guard for portal pages and server actions. Every guarded page must call this
- * itself before reading data — see the note on requireAdmin() in lib/session.ts
+ * itself before reading data — see the note on the page guards in lib/session.ts
  * for why a layout guard alone leaks the page's RSC payload.
  */
 export async function requirePortalUser(): Promise<PortalUser> {

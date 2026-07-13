@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { partnerBySlug } from "@/lib/partners/registry";
+import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { StatusBadge } from "@/components/ui";
@@ -51,6 +52,10 @@ export default async function PartnerEventPage({
 }: Params & { searchParams: { error?: string } }) {
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
+  // Tickets and shows only exist for a partner who HAS the events feature.
+  // Without this the routes stand even when the nav hides them, and a route
+  // that exists is a route somebody reaches.
+  assertPartnerFeature(partner, "events");
 
   // Scoped: an RNL slug requested on this host resolves to null, not to RNL's
   // show rendered in the partner's brand. See getEventBySlug.

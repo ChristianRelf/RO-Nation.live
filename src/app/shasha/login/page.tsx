@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 // OAuth round trip succeeds for any Roblox account, and rank decides the rest.
 // So this page has to handle the middle state — signed in, but not ranked high
 // enough — or a junior member would be bounced back here on a loop with nothing
-// to read. Same shape as /studio/access.
+// to read. Same shape as /company/access.
 
 const ERRORS: Record<string, string> = {
   denied: "Roblox sign-in was cancelled.",

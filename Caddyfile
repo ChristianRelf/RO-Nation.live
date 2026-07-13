@@ -38,6 +38,25 @@
 	request_header -X-Ron-Brand
 	request_header -X-Ron-Area
 
+	# Uploaded images, served straight off the shared volume — they never touch
+	# Next. This block must come BEFORE the reverse_proxy below; handle_path strips
+	# the /uploads prefix, so /uploads/rnl/x.png reads /srv/uploads/rnl/x.png.
+	#
+	# The two headers are load-bearing, not hygiene. Everything under here was
+	# uploaded by a human — RNL staff or a partner's manager — and SVG is an
+	# accepted image type that can carry <script>. An <img src> never runs it, but
+	# a browser NAVIGATED to the file would, on RNL's own origin, with RNL's
+	# cookies. `sandbox` drops the document into an opaque origin so that script
+	# can reach nothing; `nosniff` stops the browser second-guessing the type and
+	# treating an image as HTML in the first place.
+	handle_path /uploads/* {
+		root * /srv/uploads
+		header X-Content-Type-Options nosniff
+		header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
 	# One upstream serves every name: the app reads the Host header to decide
 	# whether you get the public site, the SHASHA portal, a survey or a partner's
 	# site, and Caddy passes the original Host through untouched. `web` is the

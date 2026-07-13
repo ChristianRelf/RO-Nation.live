@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { partnerBySlug } from "@/lib/partners/registry";
+import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { CheckoutForm } from "@/components/ticket/checkout-form";
@@ -21,6 +22,10 @@ export default async function PartnerReservePage({
 }: Params & { searchParams: { error?: string } }) {
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
+  // Tickets and shows only exist for a partner who HAS the events feature.
+  // Without this the routes stand even when the nav hides them, and a route
+  // that exists is a route somebody reaches.
+  assertPartnerFeature(partner, "events");
 
   const event = await getEventBySlug(partner.slug, params.event);
   if (!event) notFound();

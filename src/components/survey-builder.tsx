@@ -350,7 +350,7 @@ export function SurveyBuilder({
         >
           {survey ? "Save survey" : "Create survey"}
         </button>
-        <a href="/studio/surveys" className="btn btn-ghost">
+        <a href="/company/surveys" className="btn btn-ghost">
           Cancel
         </a>
         {problems.length > 0 && !locked ? (

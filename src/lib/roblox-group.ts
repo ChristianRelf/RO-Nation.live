@@ -1,9 +1,10 @@
 import "server-only";
 import { env } from "./env";
 
-// Roblox group membership, from the public groups API. It is the gate on both
-// the Studio (rank >= STUDIO_MIN_RANK) and the SHASHA portal (rank >=
-// SHASHA_MIN_RANK to read, >= SHASHA_MANAGER_RANK to write).
+// Roblox group membership, from the public groups API. It is the gate on every
+// door: /company (rank >= COMPANY_MIN_RANK), the SHASHA portal (>= SHASHA_MIN_RANK
+// to read, >= SHASHA_MANAGER_RANK to write), and the staff override that opens
+// every partner portal (>= PARTNER_STAFF_RANK). See lib/env.ts for the ladder.
 
 const GROUPS_API = "https://groups.roblox.com/v2";
 
@@ -32,7 +33,7 @@ const cacheKey = (groupId: string, robloxId: string) => `${groupId}:${robloxId}`
  */
 export async function getGroupMembership(
   robloxId: string,
-  groupId: string = env.studio.groupId,
+  groupId: string = env.company.groupId,
 ): Promise<GroupMembership | null> {
   if (!/^\d+$/.test(robloxId)) return null;
 
@@ -70,7 +71,7 @@ export async function getGroupMembership(
 /** Drop a cached rank so the next check re-reads it from Roblox. */
 export function forgetGroupMembership(
   robloxId: string,
-  groupId: string = env.studio.groupId,
+  groupId: string = env.company.groupId,
 ) {
   cache.delete(cacheKey(groupId, robloxId));
 }

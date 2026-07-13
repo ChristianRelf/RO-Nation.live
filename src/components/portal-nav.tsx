@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 export function PortalNav({
   brand,
   basePath,
-  showsLink = false,
+  studioLink = false,
   user,
 }: {
   /** Wordmark in the top-left — "SHASHA", "Sleep Token RO". */
@@ -23,11 +23,11 @@ export function PortalNav({
   /** "/shasha" or "/<partner-slug>". */
   basePath: string;
   /**
-   * Partners manage their own line-up from here; SHASHA does not. RNL's events
-   * are the Studio's job, and SHASHA has no /shows route to point at — so this
-   * is off unless a partner turns it on.
+   * Partners author their own site from here — shows, blog, careers, homepage
+   * copy. SHASHA does not: RNL's content is /company's job, and SHASHA has no
+   * /studio route to point at. So this is off unless a partner turns it on.
    */
-  showsLink?: boolean;
+  studioLink?: boolean;
   user: {
     displayName: string;
     // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
@@ -43,7 +43,7 @@ export function PortalNav({
 
   const links = [
     { label: "Overview", href: basePath },
-    ...(showsLink ? [{ label: "Shows", href: `${basePath}/shows` }] : []),
+    ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),
     { label: "VIP list", href: `${basePath}/vip` },
     { label: "Blacklist", href: `${basePath}/blacklist` },
     { label: "History", href: `${basePath}/audit` },

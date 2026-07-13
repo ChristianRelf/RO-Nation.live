@@ -1,5 +1,6 @@
 import type { Event } from "@prisma/client";
 import { TierEditor, type TierDraft } from "./tier-editor";
+import { UploadField } from "./upload-field";
 
 // Format a Date for a <input type="datetime-local">. Uses the server's local
 // time; set the container TZ env var if you want a specific zone.
@@ -20,7 +21,7 @@ export function EventForm({
   action,
   event,
   error,
-  cancelHref = "/admin/events",
+  cancelHref = "/company/events",
   scope,
   tiers = [],
   robuxEnabled = false,
@@ -28,7 +29,7 @@ export function EventForm({
   action: (formData: FormData) => void;
   event?: Event;
   error?: string;
-  /** Where "Cancel" goes — the admin dashboard, the Studio and a partner portal share this form. */
+  /** Where "Cancel" goes — /company and every partner portal share this form. */
   cancelHref?: string;
   /**
    * The partner whose show this is, when the form is used in a partner portal.
@@ -174,21 +175,16 @@ export function EventForm({
 
       <div className="card space-y-5 p-6">
         <h3 className="font-display text-lg">Artwork &amp; visibility</h3>
-        <div>
-          <label className={labelClass}>Thumbnail image URL</label>
-          <input
-            name="thumbnailUrl"
-            defaultValue={event?.thumbnailUrl ?? ""}
-            placeholder="/placeholders/event-01.svg  or  https://…"
-            className={inputClass}
-          />
-          <p className="mt-1.5 text-xs text-faint">
-            Use a full URL, or drop an image in{" "}
-            <code className="font-mono">/public/</code> and reference it like{" "}
-            <code className="font-mono">/my-event.jpg</code>. 3:2 ratio looks
-            best.
-          </p>
-        </div>
+        {/* `scope` is the partner slug when a partner portal renders this form, and
+            undefined in /company — which is exactly what the upload route wants to
+            know. It authorises nothing; the route re-checks it. */}
+        <UploadField
+          name="thumbnailUrl"
+          label="Thumbnail image"
+          defaultValue={event?.thumbnailUrl}
+          partner={scope}
+          hint="JPG, PNG, GIF, WebP or SVG, up to 5 MB. A 3:2 ratio looks best. You can also paste a URL."
+        />
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label className={labelClass}>Status</label>

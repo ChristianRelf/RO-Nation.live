@@ -16,8 +16,10 @@ import { getPortalAccess } from "./shasha";
 // resolved so that nothing downstream has to care:
 //
 //   who may write   SHASHA ranks off RNL's Roblox group (lib/shasha.ts).
-//                   A partner's access is explicit grants (partners/guard.ts) —
-//                   RNL does not own their group, so it cannot rank off it.
+//                   A partner's own people hold explicit grants — RNL does not
+//                   own their group, so it cannot rank off it — while RNL staff
+//                   ranked PARTNER_STAFF_RANK+ get in on the override. Both are
+//                   resolved inside partners/guard.ts, so nothing here changes.
 //
 //   where it lives  /shasha/vip, vs /sleeptokenro/vip.
 //

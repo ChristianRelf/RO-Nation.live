@@ -15,13 +15,16 @@ type Account = {
 
 export function HeaderClient({
   account,
-  isAdmin,
-  isStudio,
+  canCompany,
 }: {
   account: Account;
-  isAdmin: boolean;
-  /** Signed in with Roblox and ranked high enough in the group for the Studio. */
-  isStudio: boolean;
+  /**
+   * Signed in with Roblox and ranked high enough in the group for /company.
+   *
+   * Presentation only. The link is a convenience, not a permission — /company
+   * re-reads the rank on every page and every write.
+   */
+  canCompany: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -69,11 +72,7 @@ export function HeaderClient({
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-3 md:flex">
             {account ? (
-              <AccountMenu
-                account={account}
-                isAdmin={isAdmin}
-                isStudio={isStudio}
-              />
+              <AccountMenu account={account} canCompany={canCompany} />
             ) : (
               <>
                 <Link
@@ -147,20 +146,12 @@ export function HeaderClient({
               >
                 My tickets
               </Link>
-              {isStudio && (
+              {canCompany && (
                 <Link
-                  href="/studio"
+                  href="/company"
                   className="rounded-lg px-3 py-3 text-base font-medium text-fg hover:bg-surface"
                 >
-                  Studio
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="rounded-lg px-3 py-3 text-base font-medium text-fg hover:bg-surface"
-                >
-                  Admin
+                  Company
                 </Link>
               )}
               <a
@@ -183,12 +174,10 @@ export function HeaderClient({
 
 function AccountMenu({
   account,
-  isAdmin,
-  isStudio,
+  canCompany,
 }: {
   account: NonNullable<Account>;
-  isAdmin: boolean;
-  isStudio: boolean;
+  canCompany: boolean;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -227,20 +216,12 @@ function AccountMenu({
           >
             My tickets
           </Link>
-          {isStudio && (
+          {canCompany && (
             <Link
-              href="/studio"
+              href="/company"
               className="block rounded-lg px-3 py-2 text-sm hover:bg-surface"
             >
-              Studio
-            </Link>
-          )}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="block rounded-lg px-3 py-2 text-sm hover:bg-surface"
-            >
-              Admin dashboard
+              Company
             </Link>
           )}
           <a

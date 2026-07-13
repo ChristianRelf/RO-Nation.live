@@ -9,14 +9,24 @@ export function CareerForm({
   action,
   career,
   error,
+  cancelHref = "/company/careers",
+  scope,
 }: {
   action: (formData: FormData) => void;
   career?: Career;
   error?: string;
+  /** Where "Cancel" goes — /company and every partner studio share this form. */
+  cancelHref?: string;
+  /**
+   * The partner whose role this is, when a partner's studio renders the form.
+   * Omitted by /company. Authorises nothing — the action re-reads the grant.
+   */
+  scope?: string;
 }) {
   return (
     <form action={action} className="space-y-6">
       {career ? <input type="hidden" name="id" value={career.id} /> : null}
+      {scope ? <input type="hidden" name="scope" value={scope} /> : null}
 
       {error === "required" ? (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
@@ -126,7 +136,7 @@ export function CareerForm({
         <button className="btn btn-accent">
           {career ? "Save changes" : "Create role"}
         </button>
-        <a href="/admin/careers" className="btn btn-ghost">
+        <a href={cancelHref} className="btn btn-ghost">
           Cancel
         </a>
       </div>

@@ -154,6 +154,34 @@ function partnerPortalRewrite(req: NextRequest, pathname: string) {
   return proceed(req, url);
 }
 
+/**
+ * /studio/… and /admin/… → /company/…, or null if this isn't one of them.
+ *
+ * They were the two authoring doors before /company merged them. Bookmarks, old
+ * Discord links and muscle memory all still point at them, and a 404 would look
+ * like the tool had been taken away rather than moved.
+ *
+ * Shared by the main-site branch and the local-dev one, which serves every host
+ * from a single origin — without it here, these 404 in dev and the redirect can
+ * only ever be tested in production.
+ */
+function legacyDoorRedirect(req: NextRequest, pathname: string, search: string) {
+  const legacy = /^\/(?:studio|admin)(\/.*)?$/.exec(pathname);
+  if (!legacy) return null;
+
+  const rest = legacy[1] ?? "";
+  // The two old front doors are the exception. /studio/access has moved to
+  // /company/access, and /admin/login named a password form that no longer
+  // exists at all — mapping either literally would land on a 404. Both mean
+  // "you need to sign in", which is what /company/access now says.
+  const to =
+    rest === "" || rest === "/login" || rest === "/access"
+      ? "/company/access"
+      : `/company${rest}`;
+
+  return NextResponse.redirect(new URL(`${to}${search}`, req.nextUrl.origin));
+}
+
 export function middleware(req: NextRequest) {
   const host = (req.headers.get("host") || "").split(":")[0].toLowerCase();
   const { pathname, search } = req.nextUrl;
@@ -198,6 +226,10 @@ export function middleware(req: NextRequest) {
       url.pathname = `/survey/${code}`;
       return proceed(req, url);
     }
+
+    const legacy = legacyDoorRedirect(req, pathname, search);
+    if (legacy) return legacy;
+
     return proceed(req);
   }
 
@@ -243,6 +275,10 @@ export function middleware(req: NextRequest) {
       new URL(`${pathname}${search}`, `https://${subdomainFor("portal", host)}`),
     );
   }
+
+  // The old authoring doors. /studio/events/x → /company/events/x.
+  const legacy = legacyDoorRedirect(req, pathname, search);
+  if (legacy) return legacy;
 
   // The internal prefixes are not public URLs. If one leaks — a copied link, a
   // stale revalidatePath — bounce it to where that page actually lives.

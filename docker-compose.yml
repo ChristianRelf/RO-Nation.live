@@ -24,15 +24,19 @@ services:
       DATABASE_URL: postgresql://ronation:${POSTGRES_PASSWORD:-ronation}@db:5432/ronation?schema=public
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       AUTH_SECRET: ${AUTH_SECRET:-please-change-this-secret}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me}
       ROBLOX_CLIENT_ID: ${ROBLOX_CLIENT_ID:-}
       ROBLOX_CLIENT_SECRET: ${ROBLOX_CLIENT_SECRET:-}
       GAME_API_KEY: ${GAME_API_KEY:-change-me}
       ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-false}
       PORTAL_URL: ${PORTAL_URL:-}
-      STUDIO_GROUP_ID: ${STUDIO_GROUP_ID:-34669403}
-      STUDIO_MIN_RANK: ${STUDIO_MIN_RANK:-30}
+      # The rank ladder. One Roblox group, three thresholds — see .env.example.
+      # ADMIN_USERNAME/ADMIN_PASSWORD used to sit here; the shared-password door
+      # they opened is gone, so they are not passed and nothing reads them.
+      ROBLOX_GROUP_ID: ${ROBLOX_GROUP_ID:-33033115}
+      COMPANY_MIN_RANK: ${COMPANY_MIN_RANK:-245}
+      PARTNER_STAFF_RANK: ${PARTNER_STAFF_RANK:-250}
+      SHASHA_MIN_RANK: ${SHASHA_MIN_RANK:-200}
+      SHASHA_MANAGER_RANK: ${SHASHA_MANAGER_RANK:-245}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       DISCORD_MANAGER_IDS: ${DISCORD_MANAGER_IDS:-}
@@ -44,7 +48,18 @@ services:
       # unreachable for everybody. The seed's own upsert is idempotent.
       STRO_OWNER_ROBLOX_ID: ${STRO_OWNER_ROBLOX_ID:-}
       STRO_OWNER_NAME: ${STRO_OWNER_NAME:-}
+      # Where uploaded images are written. Must match the volume mount below and
+      # the root Caddy serves them from.
+      UPLOAD_DIR: /app/uploads
       TZ: ${TZ:-UTC}
+    volumes:
+      # Uploaded images. A named volume, so they survive `docker compose up
+      # --build` — a bind to the source tree would be wiped by a redeploy, and
+      # baking them into the image would mean every upload needs a rebuild.
+      #
+      # BACK THIS UP. It is the one piece of state that is not in Postgres, so a
+      # database dump alone does NOT restore the site's artwork.
+      - uploads:/app/uploads
     # Bound to loopback: the public entrypoint is Caddy on 443. Publishing this
     # on 0.0.0.0 would let anyone reach the app over plain HTTP, bypassing TLS.
     ports:
@@ -85,8 +100,13 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data # issued certificates — must persist across redeploys
       - caddy-config:/config
+      # The same volume the app writes uploads to, mounted READ-ONLY: Caddy's job
+      # here is to hand the files out, and it has no business being able to change
+      # or delete one.
+      - uploads:/srv/uploads:ro
 
 volumes:
   db-data:
   caddy-data:
   caddy-config:
+  uploads:

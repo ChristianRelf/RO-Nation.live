@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { RosterOverview } from "@/components/roster-overview";
 import { requireScopeUser } from "@/lib/portal-scope";
-import { partnerBySlug, partnerHasFeature } from "@/lib/partners/registry";
+import { partnerBySlug } from "@/lib/partners/registry";
 import { partnerOrigin, partnerPortalPath } from "@/lib/partners/urls";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +26,13 @@ export default async function PartnerOverviewPage({
       />
 
       {/* Shown under the roster, not above it: the lists are what this portal is
-          used for day to day, and the line-up is edited far less often. */}
-      {partner && partnerHasFeature(partner, "events") && !searchParams.q ? (
+          used for day to day, and the site is edited far less often. */}
+      {partner && !searchParams.q ? (
         <div className="mt-10 card flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
           <div>
-            <h2 className="font-display text-xl uppercase">Your line-up</h2>
+            <h2 className="font-display text-xl uppercase">Your site</h2>
             <p className="mt-1 text-sm text-muted">
-              Announce a show, edit the details, or take one down.
+              Shows, blog, careers and the words on your homepage.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
@@ -45,10 +45,10 @@ export default async function PartnerOverviewPage({
               View site ↗
             </a>
             <Link
-              href={partnerPortalPath(partner.slug, "/shows")}
+              href={partnerPortalPath(partner.slug, "/studio")}
               className="btn btn-ghost py-2.5"
             >
-              Manage shows
+              Open studio
             </Link>
           </div>
         </div>

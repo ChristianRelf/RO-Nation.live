@@ -43,7 +43,7 @@ export default async function HomePage() {
     // null = RNL's own events. A partner's never appear on this site.
     getFeaturedEvent(null),
     getUpcomingEvents(null, 7),
-    getOpenCareers(),
+    getOpenCareers(null),
   ]);
 
   const grid = upcoming.filter((e) => e.id !== featured?.id).slice(0, 6);

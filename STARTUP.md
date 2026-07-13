@@ -13,9 +13,10 @@ There are two things in this repo, and they run from **one app, one container**:
 | Blog                | `/blog`                      | Anyone (published posts only)           |
 | Ticketing / account | `/tickets`                   | Anyone, signs in with **Roblox**        |
 | Surveys             | `survey.…/<code>`            | **Roblox** login, one per account       |
-| Studio              | `/studio`                    | **Roblox** login + group rank **30+**   |
-| Admin dashboard     | `/admin`                     | Username + password from `.env`         |
-| SHASHA portal       | `/shasha`                    | **Discord** login + allowlisted user ID |
+| The Company         | `/company`                   | **Roblox** login + group rank **245+**  |
+| Partner site        | `<slug>.ronation.live`       | Anyone                                  |
+| Partner studio      | `portal.…/<slug>/studio`     | Their crew, or RNL rank **250+**        |
+| SHASHA portal       | `/shasha`                    | **Roblox** login + group rank **200+**  |
 
 ---
 
@@ -79,7 +80,7 @@ Open <http://localhost:3000>. Locally, **both** the site and the portal are serv
 from the same address, so:
 
 - Site → <http://localhost:3000>
-- Admin → <http://localhost:3000/admin> (log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`)
+- Company → <http://localhost:3000/company> (needs a real Roblox sign-in and rank 245+ — see Part 3b)
 - Portal → <http://localhost:3000/shasha> (needs Part 2 first)
 - Health → <http://localhost:3000/api/health> → `{"ok":true,"db":"up"}`
 
@@ -171,17 +172,18 @@ edit/remove buttons.
 
 ---
 
-## Part 3b — The Studio (events & blog for the crew)
+## Part 3b — The Company (everything on ronation.live)
 
-`/studio` lets your **Roblox group** run the site without an admin password.
-Anyone who signs in with Roblox and holds rank **30 or above** in the group can
-create, edit and publish events and blog posts. Everyone else is bounced.
+`/company` is the one door onto RNL's own site. It replaced the old `/studio`
+**and** the password-protected `/admin` — both of those paths now just redirect
+here, so old links still work.
 
-There is nothing to configure — it's on by default:
+Anyone who signs in with Roblox and holds rank **245 or above** in the group gets
+in. Everyone else is bounced. There is no password, and no account list.
 
 ```env
-STUDIO_GROUP_ID="34669403"   # SHA SHA Productions
-STUDIO_MIN_RANK="30"         # 30 = Management, 255 = Managing Director
+ROBLOX_GROUP_ID="33033115"   # RoNation Live
+COMPANY_MIN_RANK="245"
 ```
 
 **To give someone access, promote them in the Roblox group.** To take it away,
@@ -189,14 +191,27 @@ demote them. Rank is read from Roblox on each visit (cached for ~5 minutes), so
 it takes effect on its own — no config change, no redeploy, and no need for them
 to sign out and back in.
 
-| Page              | What it's for                                               |
-| ----------------- | ----------------------------------------------------------- |
-| `/studio`         | Overview, with counts and quick links                       |
-| `/studio/events`  | Create, edit, delete and publish events                     |
-| `/studio/blog`    | Write posts. Drafts stay hidden; published ones hit `/blog`  |
-| `/studio/surveys` | Build surveys, watch results come in, export them as CSV    |
+| Page                    | What it's for                                              |
+| ----------------------- | ---------------------------------------------------------- |
+| `/company`              | Overview, with counts and quick links                      |
+| `/company/events`       | Create, edit, publish events — and check people in         |
+| `/company/blog`         | Write posts. Drafts stay hidden; published ones hit `/blog` |
+| `/company/surveys`      | Build surveys, watch results land, export them as CSV      |
+| `/company/careers`      | Post roles                                                 |
+| `/company/applications` | Review who applied, and move them along                    |
 
-Ranked members see a **Studio** link in their account menu once signed in.
+Ranked members see a **Company** link in their account menu once signed in.
+
+### Partner studios
+
+A partner (Sleep Token RO) runs their own site from
+`portal.ronation.live/<slug>/studio` — their shows and ticket pricing, their blog,
+their careers and applications, and the words on their homepage. Their crew get in
+via a `PartnerMember` row (seeded from `STRO_OWNER_ROBLOX_ID`).
+
+**Rank 250+ in RNL's group opens every partner's portal and studio**, with no row
+needed. That is the most powerful grant in the system — it reaches into orgs RNL
+doesn't own — so it sits at the top of the ladder.
 
 ### Surveys
 
@@ -257,9 +272,6 @@ openssl rand -hex 32      # GAME_API_KEY
 ```env
 NEXT_PUBLIC_SITE_URL="https://ronation.live"
 AUTH_SECRET="<the base64 string>"
-
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="<something long>"
 
 POSTGRES_PASSWORD="<something long>"
 
@@ -379,7 +391,8 @@ error from Roblox.
 
 - <https://ronation.live> loads, with a valid padlock
 - `http://ronation.live` redirects itself to https
-- <https://ronation.live/admin> logs in
+- <https://ronation.live/company> lets a rank-245+ member in, and bounces everyone else
+- <https://sleeptokenro.ronation.live> loads, and its studio opens at <https://portal.ronation.live/sleeptokenro/studio>
 - <https://portal.ronation.live> lands you on `/shasha`, and Discord sign-in works
 - <https://ronation.live/shasha> bounces you to the portal
 - Add a test VIP, confirm it shows in `/shasha/audit`, then remove them

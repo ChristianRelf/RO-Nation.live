@@ -2,6 +2,8 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 import type { PartnerRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
+import { getGroupMembership } from "@/lib/roblox-group";
 import { getUserSession, type UserSession } from "@/lib/session";
 import {
   partnerBySlug,
@@ -17,16 +19,22 @@ import { partnerPortalPath } from "./urls";
 // is derived from x-ron-brand, which is presentation only. Access is re-read
 // from the database on every request, here.
 //
-// It deliberately does NOT mirror lib/shasha.ts. SHASHA can say "the group IS
-// the allowlist" because RNL owns that Roblox group: promoting someone in it is
-// the whole grant, and there is no list to keep in sync. A partner is a
-// different organisation. RNL does not own their group, cannot see who is in
-// it, and cannot stop them promoting whoever they like — so ranking off it
-// would let a partner mint access to RNL's infrastructure at will.
+// There are exactly two ways in, and the asymmetry between them is the point.
 //
-// Hence explicit grants. A slug in the registry grants nobody anything (the
-// registry says so itself); a PartnerMember row is the grant, and deleting it
-// is the revocation.
+//   The partner's own people   An explicit PartnerMember row RNL grants. It is
+//                              NOT a rank in the partner's Roblox group: RNL
+//                              does not own that group, cannot see who is in it,
+//                              and cannot stop them promoting whoever they like
+//                              — so ranking off it would let a partner mint
+//                              access to RNL's infrastructure at will. A slug in
+//                              the registry grants nobody anything (the registry
+//                              says so itself); the row is the grant, and
+//                              deleting it is the revocation.
+//
+//   RNL staff                  A rank in RNL's OWN group, which RNL does control
+//                              — so here the group genuinely IS the allowlist,
+//                              exactly as in lib/shasha.ts. Rank 250+ opens every
+//                              partner portal. See the override below.
 
 export type PartnerUser = UserSession & {
   partner: Partner;
@@ -35,6 +43,13 @@ export type PartnerUser = UserSession & {
   canWrite: boolean;
   /** OWNER only. Grant and revoke other members of this partner. */
   canManageMembers: boolean;
+  /**
+   * True when this is RNL staff on the group override rather than one of the
+   * partner's own people. Presentation only — it changes what the portal says
+   * about you, not what you may do. Both routes have already been authorised by
+   * the time this is set.
+   */
+  isRnlStaff: boolean;
 };
 
 export type PartnerAccess =
@@ -68,18 +83,59 @@ export async function getPartnerAccess(
       },
     },
   });
-  if (!member) return { state: "denied", partner, session };
 
-  return {
-    state: "allowed",
-    user: {
-      ...session,
-      partner,
-      role: member.role,
-      canWrite: member.role === "MANAGER" || member.role === "OWNER",
-      canManageMembers: member.role === "OWNER",
-    },
-  };
+  if (member) {
+    return {
+      state: "allowed",
+      user: {
+        ...session,
+        partner,
+        role: member.role,
+        canWrite: member.role === "MANAGER" || member.role === "OWNER",
+        canManageMembers: member.role === "OWNER",
+        isRnlStaff: false,
+      },
+    };
+  }
+
+  // ---- The RNL staff override ---------------------------------------
+  //
+  // Rank PARTNER_STAFF_RANK or above in RNL's own group opens EVERY partner
+  // portal, with no PartnerMember row and nothing to revoke by hand — RNL builds
+  // and runs these sites, and needed a way in that didn't mean a database insert
+  // per person per partner.
+  //
+  // It is checked SECOND, after the row, for two reasons. The row is a local
+  // read and covers the common case (a partner's own staff, who are not in RNL's
+  // group at all), so the usual request never touches the network. And a partner
+  // who IS in RNL's group keeps the role their row gives them rather than being
+  // silently promoted to owner by it.
+  //
+  // Owner-equivalent is the intent: RNL staff can already edit the registry,
+  // deploy the app and read the database, so withholding the portal's own buttons
+  // from them would be theatre. It is deliberately the highest rank in the ladder
+  // because it is the one grant that reaches into organisations RNL does not own.
+  if (await isRnlStaff(session.robloxId)) {
+    return {
+      state: "allowed",
+      user: {
+        ...session,
+        partner,
+        role: "OWNER",
+        canWrite: true,
+        canManageMembers: true,
+        isRnlStaff: true,
+      },
+    };
+  }
+
+  return { state: "denied", partner, session };
+}
+
+/** Rank PARTNER_STAFF_RANK+ in RNL's group. Read live from Roblox, cached 5 min. */
+async function isRnlStaff(robloxId: string): Promise<boolean> {
+  const membership = await getGroupMembership(robloxId, env.partners.groupId);
+  return Boolean(membership && membership.rank >= env.partners.staffRank);
 }
 
 /** The signed-in partner user, or null. Cheap enough to call from a layout. */
@@ -92,7 +148,7 @@ export async function getPartnerUser(slug: string): Promise<PartnerUser | null> 
  * Guard for partner portal pages and server actions.
  *
  * Every guarded page must call this ITSELF before it reads any data — a guard
- * in the layout alone is not enough. See the long note on requireAdmin() in
+ * in the layout alone is not enough. See the long note on the page guards in
  * lib/session.ts: page segments render in parallel with their layout, so a
  * layout-only redirect still ships the page's RSC payload (here: another
  * partner's blacklist) in the body of the 307 that bounced the request.

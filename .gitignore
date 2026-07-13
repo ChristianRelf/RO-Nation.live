@@ -19,6 +19,10 @@ next-env.d.ts
 .env
 .env*.local
 
+# uploaded images (dev). In production these live on the `uploads` Docker volume,
+# not in the source tree — see docker-compose.yml.
+/uploads
+
 # misc
 .DS_Store
 *.pem

@@ -1,4 +1,5 @@
 import type { Post } from "@prisma/client";
+import { UploadField } from "./upload-field";
 
 const inputClass =
   "w-full rounded-xl border border-line bg-bg px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent";
@@ -9,16 +10,26 @@ export function PostForm({
   action,
   post,
   error,
-  cancelHref = "/studio/blog",
+  cancelHref = "/company/blog",
+  scope,
 }: {
   action: (formData: FormData) => void;
   post?: Post;
   error?: string;
   cancelHref?: string;
+  /**
+   * The partner whose post this is, when a partner's studio renders this form.
+   * Omitted by /company, whose actions don't read it.
+   *
+   * Safe to carry in the body: the action does not trust it for authorization —
+   * it re-reads the caller's grant on that partner. Same contract as EventForm.
+   */
+  scope?: string;
 }) {
   return (
     <form action={action} className="space-y-6">
       {post ? <input type="hidden" name="id" value={post.id} /> : null}
+      {scope ? <input type="hidden" name="scope" value={scope} /> : null}
 
       {error === "required" ? (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
@@ -73,15 +84,13 @@ export function PostForm({
       <div className="card space-y-5 p-6">
         <h3 className="font-display text-lg">Artwork &amp; visibility</h3>
 
-        <div>
-          <label className={labelClass}>Cover image URL</label>
-          <input
-            name="coverUrl"
-            defaultValue={post?.coverUrl ?? ""}
-            placeholder="/placeholders/event-01.svg  or  https://…"
-            className={inputClass}
-          />
-        </div>
+        <UploadField
+          name="coverUrl"
+          label="Cover image"
+          defaultValue={post?.coverUrl}
+          partner={scope}
+          hint="JPG, PNG, GIF, WebP or SVG, up to 5 MB. You can also paste a URL."
+        />
 
         <div>
           <label className={labelClass}>Status</label>

@@ -5,15 +5,15 @@ export const site = {
   shortName: "RO. Nation",
   tagline: "Roblox event management",
   description:
-    "RO. Nation LIVE produces live shows, showcases and tournaments inside Roblox — from stage build to sold-out floor. Reserve tickets, join the crew.",
+    "RO. Nation LIVE produces live shows, showcases and tournaments inside Roblox - from stage build to sold-out floor. Reserve tickets, join the crew.",
   // Placeholder socials — swap these for your real links.
   socials: {
-    discord: "https://discord.gg/your-invite",
-    roblox: "https://www.roblox.com/groups/0/RO-Nation-LIVE",
+    discord: "https://discord.gg/pxE7KRWgTY",
+    roblox: "https://www.roblox.com/communities/33033115/RoNation-Live#!/about",
     x: "https://x.com/your-handle",
     youtube: "https://youtube.com/@your-channel",
   },
-  contactEmail: "hello@ro-nation.live",
+  contactEmail: "hello@ronation.live",
 };
 
 export const nav = [

@@ -117,7 +117,66 @@ const stroTiers: Record<
   ],
 };
 
+/**
+ * Sleep Token RO's homepage copy.
+ *
+ * This used to be hardcoded in app/p/[slug]/page.tsx. It is now a row they own
+ * and can edit in their studio — so it is SEEDED, not baked in, and seeded only
+ * when the row is absent. Re-running the seed must never overwrite a change they
+ * made themselves, which is why this is a create-if-missing rather than an upsert.
+ *
+ * Two of the FAQ answers are load-bearing rather than decorative. The VIP one
+ * must not imply anything is on sale — paid tiers render locked while
+ * ROBUX_TICKETS_ENABLED is off, and a page that promises otherwise sells a ticket
+ * the site cannot honour. The last one restates the disclaimer in a visitor's own
+ * words; the footer carries the formal version, and neither replaces the other.
+ */
+const stroContent = {
+  heroKicker: "Roblox tribute shows",
+  heroSubtitle:
+    "Tribute shows staged inside Roblox. Full production, a live crowd, and a free ticket tied to your account.",
+  aboutKicker: "About",
+  aboutTitle: "A fan project, staged properly.",
+  aboutBody:
+    "Sleep Token RO is a Roblox event series run by fans — tribute shows, built and performed inside the platform, produced with the crew at RO. Nation LIVE. Tickets are free and tied to your Roblox account, so the floor stays fair and the door moves fast.",
+  aboutNote:
+    "We're not the band, and we don't pretend to be. No official music, artwork or branding is used here — this is a community putting on a show for people who love the same records we do.",
+  faq: [
+    {
+      q: "What does a ticket cost?",
+      a: "Nothing. Every ticket you can reserve today is free — one per Roblox account, tied to that account, and checked at the door.",
+    },
+    {
+      q: "How do I get in on the night?",
+      a: "Reserve a ticket, then open it from My tickets when doors open. It carries a code beginning ST-, and the crew redeems it as you come through — no code, no entry, so reserve before you travel.",
+    },
+    {
+      q: "Some shows list a VIP tier. Can I buy one?",
+      a: "Not yet. VIP tiers are designed and priced, but paid ticketing is switched off across the platform, so they render locked and cannot be reserved. Nothing is charged to anybody today.",
+    },
+    {
+      q: "The show is sold out. Will more tickets appear?",
+      a: "The cap is the room, so a sold-out show usually stays sold out. Tickets do come back when people release them, and the next show is normally announced within a few weeks.",
+    },
+    {
+      q: "Are you the band?",
+      a: "No — and we don't pretend to be. This is a fan-run Roblox event series, produced with RO. Nation LIVE. It isn't affiliated with, endorsed by, or connected to Sleep Token, and no official music, artwork or branding is used.",
+    },
+  ],
+};
+
 async function seedPartner() {
+  // Create-if-missing: a partner who has edited their homepage must not have it
+  // reset from under them the next time the container boots.
+  const content = await prisma.partnerContent.findUnique({
+    where: { partnerId: STRO },
+  });
+  if (!content) {
+    await prisma.partnerContent.create({
+      data: { partnerId: STRO, ...stroContent },
+    });
+  }
+
   for (const e of stroEvents) {
     const event = await prisma.event.upsert({
       where: { slug: e.slug },
@@ -333,11 +392,14 @@ async function main() {
     });
   }
   for (const c of careers) {
-    await prisma.career.upsert({
-      where: { slug: c.slug },
-      update: {},
-      create: c,
+    // Careers are unique per [partnerId, slug] now, not by slug alone. It cannot
+    // be an upsert: Prisma's compound-unique lookup will not take a null, and
+    // RNL's half of this key IS null. Find-then-create is the same thing here —
+    // this only ever runs on an empty database (see the guard in main()).
+    const existing = await prisma.career.findFirst({
+      where: { partnerId: null, slug: c.slug },
     });
+    if (!existing) await prisma.career.create({ data: c });
   }
   console.log(
     `[seed] created ${events.length} events and ${careers.length} careers.`,

@@ -3,7 +3,7 @@ import { EventStatus, PostStatus } from "@prisma/client";
 import { prisma } from "./db";
 import { slugify } from "./utils";
 
-// Form parsing shared by the admin dashboard and the Studio, so the two can't
+// Form parsing shared by /company and every partner's studio, so they can't
 // drift apart on what a valid event or post looks like.
 
 export function s(form: FormData, key: string) {
@@ -16,10 +16,22 @@ export function parseDate(v: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** A slug that doesn't collide with an existing row (ignoring `ignoreId`). */
+/**
+ * A slug that doesn't collide with an existing row in the SAME scope.
+ *
+ * Scope matters here, and getting it wrong is quiet rather than loud. Posts and
+ * careers are unique per `[partnerId, slug]`, so RNL and a partner may both have
+ * a "the-first-rite" — but if this checked globally, the partner's would silently
+ * come out as "the-first-rite-2" on their own site, for no reason a reader could
+ * see. Events are the exception: their slug is still globally unique, because a
+ * ticket code and the /events/<slug> route are shared across every org.
+ *
+ * `scope` is a partner slug, or null for RNL's own.
+ */
 export async function uniqueSlug(
   base: string,
   model: "event" | "career" | "post",
+  scope: string | null = null,
   ignoreId?: string,
 ) {
   const root = slugify(base) || model;
@@ -32,8 +44,10 @@ export async function uniqueSlug(
       model === "event"
         ? await prisma.event.findUnique({ where: { slug } })
         : model === "career"
-          ? await prisma.career.findUnique({ where: { slug } })
-          : await prisma.post.findUnique({ where: { slug } });
+          ? await prisma.career.findFirst({
+              where: { slug, partnerId: scope },
+            })
+          : await prisma.post.findFirst({ where: { slug, partnerId: scope } });
     if (!found || found.id === ignoreId) return slug;
     slug = `${root}-${++n}`;
   }

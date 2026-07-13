@@ -1,13 +1,18 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { env } from "./env";
 
 const secret = new TextEncoder().encode(env.authSecret);
 
+// One cookie, one identity: your Roblox account.
+//
+// There used to be a second — `ron_admin`, minted from a shared username and
+// password in the environment. It is gone. Every door is now a rank in RNL's
+// Roblox group (lib/company.ts, lib/shasha.ts, lib/partners/guard.ts), which
+// means access is per-person, revoked by demotion rather than by rotating a
+// secret several people knew, and every write is attributable to an account.
 export const USER_COOKIE = "ron_session";
-export const ADMIN_COOKIE = "ron_admin";
 
 const cookieBase = {
   httpOnly: true,
@@ -52,11 +57,6 @@ export async function createUserToken(session: UserSession) {
   return sign({ ...session }, "30d");
 }
 
-/** Create a signed admin session token (does not set a cookie). */
-export async function createAdminToken() {
-  return sign({ role: "admin" }, "12h");
-}
-
 // ---- Member (Roblox) session -------------------------------------
 export async function setUserSession(session: UserSession) {
   const token = await sign({ ...session }, "30d");
@@ -76,36 +76,20 @@ export function clearUserSession() {
   cookies().set(USER_COOKIE, "", { ...cookieBase, maxAge: 0 });
 }
 
-// ---- Admin session -----------------------------------------------
-export async function setAdminSession() {
-  const token = await sign({ role: "admin" }, "12h");
-  cookies().set(ADMIN_COOKIE, token, {
-    ...cookieBase,
-    maxAge: 60 * 60 * 12,
-  });
-}
-
-export async function isAdmin(): Promise<boolean> {
-  const token = cookies().get(ADMIN_COOKIE)?.value;
-  if (!token) return false;
-  const payload = await verify<{ role?: string }>(token);
-  return payload?.role === "admin";
-}
-
-export function clearAdminSession() {
-  cookies().set(ADMIN_COOKIE, "", { ...cookieBase, maxAge: 0 });
-}
-
-// The SHASHA portal has no session of its own: it signs in with Roblox, like
-// everything else, and the cookie it uses is the ordinary member session above.
-// It is scoped to portal.ronation.live because that is the host the OAuth round
-// trip runs on, so a portal login is not a login on the main site. Access is
-// decided by Roblox group rank on every request — see lib/shasha.ts.
+// No portal has a session of its own. /company, SHASHA and every partner portal
+// all sign in with Roblox and carry the ordinary member cookie above. A portal
+// cookie is scoped to portal.ronation.live, because that is the host its OAuth
+// round trip runs on — so signing in there is not signing in on the main site.
 
 // ---- Page guards --------------------------------------------------
 //
-// Every guarded PAGE must call one of these itself, before it reads any data —
-// a guard in the layout alone is not enough.
+// There are none here — they all need a Roblox group lookup, which does not
+// belong in this file: requireCompanyUser() is in lib/company.ts,
+// requirePortalUser() in lib/shasha.ts, requirePartnerUser() in
+// lib/partners/guard.ts.
+//
+// Wherever they live, the rule is the same: every guarded PAGE must call one
+// itself, before it reads any data — a guard in the layout alone is not enough.
 //
 // In the App Router, page segments render in parallel with their layout and are
 // serialised into the RSC payload independently. If the layout redirects, that
@@ -113,10 +97,3 @@ export function clearAdminSession() {
 // receives the page's data (draft events, blacklist entries) in the body of the
 // 307 it was bounced with. Redirecting from inside the page aborts that page's
 // own render, which is what actually withholds the data.
-
-export async function requireAdmin() {
-  if (!(await isAdmin())) redirect("/admin/login");
-}
-
-// requireStudioUser() lives in lib/studio.ts and requirePortalUser() in
-// lib/shasha.ts — both need a Roblox group lookup, which does not belong here.
