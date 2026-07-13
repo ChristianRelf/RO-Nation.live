@@ -10,6 +10,20 @@ export function s(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
 }
 
+/**
+ * The most a post body may be, in characters.
+ *
+ * There was no cap at all: `body` is `@db.Text`, and the action checked only that
+ * it was non-empty, so a single request could put an arbitrary number of megabytes
+ * into a row that is then read on every render of the page. Generous enough that no
+ * real post will ever meet it — this is about eight times the longest thing anybody
+ * has written here — and finite, which is the point.
+ *
+ * The editor shows a counter and sets `maxLength` on the textarea, but that is
+ * courtesy: it stops a person, not a forged POST. The truncation below is the wall.
+ */
+export const BODY_MAX = 80_000;
+
 export function parseDate(v: string): Date | null {
   if (!v) return null;
   const d = new Date(v);
@@ -76,7 +90,11 @@ export function readPostForm(form: FormData) {
     title: s(form, "title"),
     excerpt: s(form, "excerpt") || null,
     coverUrl: s(form, "coverUrl") || null,
-    body: s(form, "body"),
+    // Truncated, not rejected. A body at the cap is somebody pasting a novel or
+    // forging a request, and neither is worth an error page for the other's sake —
+    // but an unbounded string reaching @db.Text and then being parsed as Markdown
+    // on every render of the page is worth stopping.
+    body: s(form, "body").slice(0, BODY_MAX),
     status: (s(form, "status") as PostStatus) || PostStatus.DRAFT,
   };
 }

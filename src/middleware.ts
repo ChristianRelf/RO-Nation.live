@@ -5,6 +5,7 @@ import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
 // Host routing.
 //
 //   ronation.live/…                       → the public site
+//   portal.ronation.live/                 → the backstage landing page → /portal
 //   portal.ronation.live/shasha           → the SHASHA staff portal
 //   portal.ronation.live/<slug>           → a partner's portal      → /pp/<slug>
 //   survey.ronation.live/ABCDE-FGHJKMN-PQR → a survey
@@ -103,7 +104,7 @@ const INTERNAL_BRAND_RE = /^\/(?:p|pp)\/([a-z0-9-]+)(?=\/|$)/;
 function areaFor(path: string) {
   if (path.startsWith("/p/")) return "partner";
   if (path.startsWith("/pp/")) return "partner-portal";
-  if (path.startsWith("/shasha")) return "portal";
+  if (path.startsWith("/shasha") || path === "/portal") return "portal";
   if (path.startsWith("/survey")) return "survey";
   return "site";
 }
@@ -157,6 +158,20 @@ function partnerPortalRewrite(req: NextRequest, pathname: string) {
 
   const url = req.nextUrl.clone();
   url.pathname = `/pp/${partner.slug}${pathname.slice(seg.length + 1)}`;
+  return proceed(req, url);
+}
+
+/**
+ * `/` on the portal host → the static "backstage portal" landing page.
+ *
+ * A rewrite, not a redirect: `/` is the canonical URL of this host, and /portal
+ * is an internal path — the main site bounces /portal back here, so giving the
+ * page a URL of its own would be a loop. Shared with the local-dev branch, which
+ * serves portal.localhost from the same origin as everything else.
+ */
+function portalHomeRewrite(req: NextRequest) {
+  const url = req.nextUrl.clone();
+  url.pathname = "/portal";
   return proceed(req, url);
 }
 
@@ -222,6 +237,8 @@ export function middleware(req: NextRequest) {
   // branch does, minus the https redirects.
   if (!host || isLocalHost(host)) {
     if (isPortalHost(host)) {
+      if (pathname === "/") return portalHomeRewrite(req);
+
       const rewritten = partnerPortalRewrite(req, pathname);
       if (rewritten) return rewritten;
     }
@@ -259,12 +276,18 @@ export function middleware(req: NextRequest) {
 
   // ---- portal.ronation.live ---------------------------------------
   if (isPortalHost(host)) {
+    // The landing page: what this host is, and the doors off it. Served here
+    // rather than redirecting to /shasha, which met anyone without staff rank
+    // with a login wall and no explanation of where they had landed.
+    if (pathname === "/") return portalHomeRewrite(req);
+
     // portal.ronation.live/<slug>/… → the partner's own portal.
     const rewritten = partnerPortalRewrite(req, pathname);
     if (rewritten) return rewritten;
 
-    if (pathname === "/") {
-      return NextResponse.redirect(new URL("/shasha", req.nextUrl.origin));
+    // The internal path of the page above. It has no URL of its own — `/` is it.
+    if (pathname === "/portal" || pathname.startsWith("/portal/")) {
+      return NextResponse.redirect(new URL("/", req.nextUrl.origin));
     }
     if (!matches(pathname, PORTAL_PATHS)) {
       return NextResponse.redirect(
@@ -275,6 +298,15 @@ export function middleware(req: NextRequest) {
   }
 
   // ---- main site ---------------------------------------------------
+  // /portal is the landing page's internal path, and the portal host serves it
+  // at `/` — so hand the whole thing over to that host's root, not to /portal on
+  // it, which would only bounce back here.
+  if (pathname === "/portal" || pathname.startsWith("/portal/")) {
+    return NextResponse.redirect(
+      new URL("/", `https://${subdomainFor("portal", host)}`),
+    );
+  }
+
   // The subdomains own these paths, so hand them over.
   if (
     pathname === "/shasha" ||

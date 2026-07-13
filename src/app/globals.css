@@ -220,6 +220,125 @@
       0 0 0 1px rgb(var(--accent-rgb) / 0.12);
   }
 
+  /* ---- Long-form text ---------------------------------------------------
+   *
+   * The rendering of a Markdown body. Applied by <Prose> (components/prose.tsx),
+   * which is what every blog post goes through.
+   *
+   * Written by hand rather than with @tailwindcss/typography, for one reason: the
+   * plugin ships its own colour scale, and this site's colour comes from the token
+   * channels a brand overrides (--fg, --muted, --accent, --line). A prose block
+   * that did not read those would be the one part of a partner's page that stayed
+   * RNL-coloured. Every value below is a token, so a body on Sleep Token's site is
+   * bone-on-black with gold rules, and on RNL's it is the same shapes in blue,
+   * with nothing to keep in sync.
+   *
+   * Element selectors, not classes, because the markup is generated — there is no
+   * class to put on an <h2> that came out of a renderer.
+   */
+  .prose {
+    @apply text-lg leading-relaxed text-muted;
+  }
+  .prose > * + * {
+    @apply mt-5;
+  }
+
+  /* Headings step down in size but all sit in the display face, so a post's
+     structure reads as part of the site rather than as a Word document. */
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+    @apply font-normal uppercase leading-tight text-fg;
+  }
+  .prose h2 {
+    @apply mt-12 text-3xl sm:text-4xl;
+  }
+  .prose h3 {
+    @apply mt-10 text-2xl;
+  }
+  .prose h4 {
+    @apply mt-8 text-xl;
+  }
+  /* An h1 in the body would collide with the post's own title, which the page has
+     already set. Render it as an h2 would look, so a writer who types "# " gets
+     something sane rather than a second page title. */
+  .prose h1 {
+    font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+    @apply mt-12 text-3xl font-normal uppercase leading-tight text-fg sm:text-4xl;
+  }
+
+  .prose strong {
+    @apply font-semibold text-fg;
+  }
+  .prose em {
+    @apply italic;
+  }
+  .prose del {
+    @apply text-faint line-through;
+  }
+
+  .prose ul,
+  .prose ol {
+    @apply space-y-2 pl-6;
+  }
+  .prose ul {
+    @apply list-disc;
+  }
+  .prose ol {
+    @apply list-decimal;
+  }
+  .prose li::marker {
+    color: var(--accent);
+  }
+  /* GFM task lists: the checkbox is rendered by the parser, so it needs taming. */
+  .prose li input[type="checkbox"] {
+    @apply mr-2 align-middle;
+    accent-color: var(--accent);
+  }
+  .prose li:has(> input[type="checkbox"]) {
+    @apply list-none;
+  }
+
+  /* A quote is an accent rule and a step back in colour — no quotation marks, no
+     italics, no card. It is the one place the accent touches body copy. */
+  .prose blockquote {
+    @apply border-l-2 pl-5 text-muted;
+    border-color: var(--accent);
+  }
+
+  .prose code {
+    @apply border px-1.5 py-0.5 font-mono text-[0.85em] text-fg;
+    border-color: var(--line);
+    background-color: var(--elev);
+    border-radius: var(--radius);
+  }
+  .prose pre {
+    @apply overflow-x-auto border p-4;
+    border-color: var(--line);
+    background-color: var(--elev);
+    border-radius: var(--radius);
+  }
+  /* Inside a <pre> the border and background belong to the block, not to each
+     token — otherwise every line is boxed. */
+  .prose pre code {
+    @apply border-0 bg-transparent p-0 text-sm leading-relaxed;
+  }
+
+  .prose hr {
+    @apply my-10 border-0 border-t;
+    border-color: var(--line);
+  }
+
+  .prose th,
+  .prose td {
+    @apply border-b px-4 py-2.5;
+    border-color: var(--line);
+  }
+  .prose th {
+    @apply font-semibold text-fg;
+  }
+
   /* Inverted cream panel — with a paper-grain texture */
   .panel-paper {
     position: relative;

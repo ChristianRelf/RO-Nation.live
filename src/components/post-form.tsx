@@ -1,5 +1,7 @@
 import type { Post } from "@prisma/client";
 import { UploadField } from "./upload-field";
+import { MarkdownField } from "./markdown-field";
+import { BODY_MAX } from "@/lib/content";
 
 const inputClass =
   "w-full rounded-xl border border-line bg-bg px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent";
@@ -65,20 +67,14 @@ export function PostForm({
           />
         </div>
 
-        <div>
-          <label className={labelClass}>Body *</label>
-          <textarea
-            name="body"
-            required
-            rows={16}
-            defaultValue={post?.body}
-            placeholder={"Write the post here.\n\nBlank lines start a new paragraph."}
-            className={`${inputClass} resize-y leading-relaxed`}
-          />
-          <p className="mt-1.5 text-xs text-faint">
-            Plain text. Leave a blank line between paragraphs.
-          </p>
-        </div>
+        <MarkdownField
+          name="body"
+          label="Body"
+          required
+          defaultValue={post?.body}
+          maxLength={BODY_MAX}
+          hint="Markdown. Blank line between paragraphs; ## for a heading, **bold**, [link](url), - for a list."
+        />
       </div>
 
       <div className="card space-y-5 p-6">

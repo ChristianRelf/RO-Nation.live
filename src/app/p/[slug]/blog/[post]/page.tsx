@@ -5,7 +5,7 @@ import { partnerBySlug } from "@/lib/partners/registry";
 import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getPostBySlug } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
-import { toLines } from "@/lib/utils";
+import { Prose } from "@/components/prose";
 
 export const dynamic = "force-dynamic";
 
@@ -76,11 +76,11 @@ export default async function PartnerPostPage({ params }: Params) {
         />
       ) : null}
 
-      <div className="mt-10 max-w-2xl space-y-5 leading-relaxed text-muted">
-        {toLines(post.body).map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
-      </div>
+      {/* Was toLines(), which split on EVERY newline and turned one soft-wrapped
+          paragraph into a stack of separate <p>s — while RNL's blog split on blank
+          lines and got it right. Both now go through the same renderer, so the two
+          sites cannot disagree about what a post looks like again. */}
+      <Prose content={post.body} className="mt-10 max-w-2xl" />
     </article>
   );
 }

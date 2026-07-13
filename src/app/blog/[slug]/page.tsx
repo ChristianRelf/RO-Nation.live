@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlug } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
 import { Kicker } from "@/components/ui";
+import { Prose } from "@/components/prose";
 
 export const dynamic = "force-dynamic";
 
@@ -42,9 +43,6 @@ export default async function BlogPostPage({
 }) {
   const post = await getPost(params.slug);
   if (!post) notFound();
-
-  // Blank lines separate paragraphs; single newlines are kept inside them.
-  const paragraphs = post.body.split(/\n\s*\n/).filter((p) => p.trim());
 
   return (
     <article className="relative">
@@ -86,13 +84,7 @@ export default async function BlogPostPage({
       ) : null}
 
       <div className="shell max-w-3xl py-12">
-        <div className="space-y-5 text-lg leading-relaxed text-muted">
-          {paragraphs.map((p, i) => (
-            <p key={i} className="whitespace-pre-line">
-              {p}
-            </p>
-          ))}
-        </div>
+        <Prose content={post.body} />
 
         <div className="mt-14 border-t border-line pt-6">
           <Link
