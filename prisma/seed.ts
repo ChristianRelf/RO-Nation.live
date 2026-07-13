@@ -17,7 +17,7 @@ const at = (offsetDays: number, hour = 19) => {
 };
 
 // ------------------------------------------------------------------
-// Sleep Token RO — RNL's first partner.
+// Sleep Token — RNL's first partner.
 //
 // The partner itself is not seeded: it lives in code, in
 // src/lib/partners/registry.ts. What the database holds is the two things that
@@ -34,7 +34,7 @@ const stroEvents = [
     category: "Tribute Show",
     venue: "The Hollow — Main Stage",
     description:
-      "The first one. A full tribute set staged inside Roblox, built from the ground up by the Sleep Token RO crew — lighting, staging, the lot. Doors open an hour early: come in, walk the grounds, find your spot on the floor before it fills.\n\nFree entry. One ticket per account, verified at the door.",
+      "The first one. A full tribute set staged inside Roblox, built from the ground up by the Sleep Token crew — lighting, staging, the lot. Doors open an hour early: come in, walk the grounds, find your spot on the floor before it fills.\n\nFree entry. One ticket per account, verified at the door.",
     capacity: 300,
     featured: true,
     status: EventStatus.PUBLISHED,
@@ -118,7 +118,7 @@ const stroTiers: Record<
 };
 
 /**
- * Sleep Token RO's homepage copy.
+ * Sleep Token's homepage copy.
  *
  * This used to be hardcoded in app/p/[slug]/page.tsx. It is now a row they own
  * and can edit in their studio — so it is SEEDED, not baked in, and seeded only
@@ -138,7 +138,7 @@ const stroContent = {
   aboutKicker: "About",
   aboutTitle: "A fan project, staged properly.",
   aboutBody:
-    "Sleep Token RO is a Roblox event series run by fans — tribute shows, built and performed inside the platform, produced with the crew at RO. Nation LIVE. Tickets are free and tied to your Roblox account, so the floor stays fair and the door moves fast.",
+    "Sleep Token is a Roblox event series run by fans — tribute shows, built and performed inside the platform, produced with the crew at RO. Nation LIVE. Tickets are free and tied to your Roblox account, so the floor stays fair and the door moves fast.",
   aboutNote:
     "We're not the band, and we don't pretend to be. No official music, artwork or branding is used here — this is a community putting on a show for people who love the same records we do.",
   faq: [
@@ -200,11 +200,11 @@ async function seedPartner() {
   }
 
   const ownerId = process.env.STRO_OWNER_ROBLOX_ID?.trim();
-  const ownerName = process.env.STRO_OWNER_NAME?.trim() || "Sleep Token RO";
+  const ownerName = process.env.STRO_OWNER_NAME?.trim() || "Sleep Token";
 
   if (!ownerId) {
     console.warn(
-      `[seed] ${stroEvents.length} Sleep Token RO shows created, but NO portal owner.\n` +
+      `[seed] ${stroEvents.length} Sleep Token shows created, but NO portal owner.\n` +
         `[seed] Nobody can sign in to portal.ronation.live/${STRO} until one exists.\n` +
         `[seed] Re-run with: STRO_OWNER_ROBLOX_ID=<roblox-user-id> STRO_OWNER_NAME=<username> npm run seed`,
     );
@@ -226,7 +226,7 @@ async function seedPartner() {
   });
 
   console.log(
-    `[seed] Sleep Token RO: ${stroEvents.length} shows, owner ${ownerName} (${ownerId}).`,
+    `[seed] Sleep Token: ${stroEvents.length} shows, owner ${ownerName} (${ownerId}).`,
   );
 }
 

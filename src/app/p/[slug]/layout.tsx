@@ -4,6 +4,7 @@ import { partnerBySlug } from "@/lib/partners/registry";
 import { partnerOrigin } from "@/lib/partners/urls";
 import { PartnerHeader } from "@/components/partner/partner-header";
 import { PartnerFooter } from "@/components/partner/partner-footer";
+import { PartnerBackdrop } from "@/components/partner/backdrop";
 
 // A partner's site. Reached only by rewrite, from <slug>.ronation.live — see
 // src/middleware.ts. The pretty URL the visitor sees has no /p/<slug> in it.
@@ -54,6 +55,11 @@ export default function PartnerLayout({
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* Behind everything, fixed, on every page of this partner's site — so it
+          is here in the layout rather than on the homepage. Renders nothing for a
+          partner with no backdrop, which is all of them by default. */}
+      <PartnerBackdrop partner={partner} />
+
       <PartnerHeader partner={partner} />
       <main className="flex-1">{children}</main>
       <PartnerFooter partner={partner} />

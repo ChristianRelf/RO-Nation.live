@@ -3,7 +3,7 @@
 A bold, modern website for the **RO. Nation LIVE** Roblox event-management group.
 Post events, sell (free) tickets tied to Roblox accounts, verify them in-game over
 an API, post careers, take applications, and run it all from one dashboard — plus
-partner sites (like Sleep Token RO) that their own crews author themselves.
+partner sites (like Sleep Token) that their own crews author themselves.
 
 Built with **Next.js (App Router) · TypeScript · Tailwind · Prisma · PostgreSQL**,
 and packaged to run on any VPS with **Docker Compose**.

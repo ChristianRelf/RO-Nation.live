@@ -23,7 +23,7 @@ import {
 // FROM the scope. It only selects *which* org's guard to run, and that guard
 // re-reads the caller's membership of that org from the database (see
 // lib/portal-scope.ts). Posting `scope=sleeptokenro` from a SHASHA session
-// grants nothing — it just fails Sleep Token RO's guard instead of SHASHA's.
+// grants nothing — it just fails Sleep Token's guard instead of SHASHA's.
 //
 // The scope must ALSO bound every row an action touches. Passing the guard is
 // not sufficient on its own: ids are opaque, but they leak, and `update by id`

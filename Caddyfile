@@ -22,7 +22,7 @@
 # against the 5-per-domain-per-week limit.
 #
 # Partner hosts live at the end of the line, one per partner:
-#   sleeptokenro.ronation.live   → Sleep Token RO   (registry slug "sleeptokenro")
+#   sleeptokenro.ronation.live   → Sleep Token   (registry slug "sleeptokenro")
 #
 # The slug in lib/partners/registry.ts and the first label here MUST match — the
 # app resolves the brand from the Host header alone, so a name that is live in

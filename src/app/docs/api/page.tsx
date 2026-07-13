@@ -434,7 +434,7 @@ export default async function ApiDocsPage() {
           You mint one in your portal, under <span className="text-fg">API keys</span>{" "}
           — the links above. Minting is a <span className="text-fg">write</span>, so
           read-only staff cannot do it: on an organisation governed by its own Roblox
-          group, that is a rank. Sleep Token RO&rsquo;s crew read the portal at 249+
+          group, that is a rank. Sleep Token&rsquo;s crew read the portal at 249+
           and write at 253+, so the people who can work the door are deliberately not
           the same set as the people who can mint a credential that works the door
           from anywhere in the world.
@@ -442,7 +442,7 @@ export default async function ApiDocsPage() {
 
         <h3 className="mt-6 text-fg">It belongs to one organisation.</h3>
         <p className="text-muted">
-          A Sleep Token RO key sees Sleep Token RO&rsquo;s shows and nothing else.
+          A Sleep Token key sees Sleep Token&rsquo;s shows and nothing else.
           A ticket for anybody else&rsquo;s show comes back{" "}
           <Mono>not_found</Mono> — not &ldquo;forbidden&rdquo;, because whether
           somebody else&rsquo;s ticket exists is none of your business, and those

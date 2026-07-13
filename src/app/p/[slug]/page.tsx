@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 //
 // The SHAPE is the same for every partner, and it is built around one idea: an
 // enormous dim crest, a mark, a name, and then a great deal of black. It works
-// with artwork (Sleep Token RO) and without it (the pool of light and the
+// with artwork (Sleep Token) and without it (the pool of light and the
 // hairline grid carry a partner who has none), so this is not a Sleep Token page
 // with the others squeezed into it — it is a page that gets *more* atmospheric
 // the more artwork you give it.
@@ -57,23 +57,34 @@ export default async function PartnerHome({
   const rest = upcoming.filter((e) => e.id !== featured?.id);
   const attended = past.reduce((n, e) => n + e.ticketsCount, 0);
 
-  // The studio's own image wins over the registry's crest, so a partner can hang
-  // a tour poster behind the hero for one run of shows without a deploy. This
-  // also closes a live gap: heroImageUrl has been editable and uploadable since
-  // the content editor shipped, and nothing has ever rendered it.
-  const crest = content.heroImageUrl ?? partner.crestUrl ?? null;
+  // What goes behind the hero — or nothing, if a full-site backdrop is already
+  // carrying the atmosphere. Stacking a hero crest on top of a fixed backdrop is
+  // two enormous emblems fighting on one screen, so the bigger gesture wins and
+  // the hero falls back to type, space and the mark. See Partner.backdropUrl.
+  //
+  // The studio's own heroImageUrl beats both, always: it is the one an actual
+  // human set, for this run of shows, and it should not be silently ignored
+  // because of something in the registry. (Rendering it at all also closes a live
+  // gap — it has been editable and uploadable since the content editor shipped,
+  // and nothing has ever put it on a page.)
+  const crest =
+    content.heroImageUrl ?? (partner.backdropUrl ? null : partner.crestUrl ?? null);
 
   return (
     <div>
       {/* ---- Hero ---------------------------------------------------- */}
       <section className="relative overflow-hidden border-b border-line">
+        {/* Three cases, and the third is the reason this isn't a ternary:
+              crest      → the emblem, dim, behind the type.
+              backdrop   → NOTHING here. The fixed layer behind the whole site is
+                           already doing this job, and laying a grid and a glow on
+                           top of it just muddies the artwork it is showing.
+              neither    → type, space and a pool of light. What every partner had
+                           before this page learned to hold a picture, and still
+                           the right answer for a brand with no artwork. */}
         {crest ? (
           <HeroCrest src={crest} />
-        ) : (
-          // No artwork: the old treatment, which is still the right one. A brand
-          // with no crest gets type, space and a pool of light — that reads as
-          // deliberate rather than unfinished, and it is what every partner had
-          // before this page learned to hold a picture.
+        ) : partner.backdropUrl ? null : (
           <>
             <div className="hairline-grid pointer-events-none absolute inset-0 opacity-40" />
             <div
@@ -307,7 +318,7 @@ export default async function PartnerHome({
 
 /**
  * The partner's name as the hero wordmark: last word on its own line, in the
- * accent. "Sleep Token RO" reads as "Sleep Token" over "RO" — which keeps the
+ * accent. "Sleep Token" reads as "Sleep Token" over "RO" — which keeps the
  * fan project's own initials visibly attached to the name rather than letting the
  * page render as the band's name alone.
  */

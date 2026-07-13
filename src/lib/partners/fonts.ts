@@ -47,7 +47,7 @@ const jetbrains = JetBrains_Mono({
 
 const RNL_FONTS = `${archivo.variable} ${anton.variable} ${jetbrains.variable}`;
 
-// Sleep Token RO's display face. A high-contrast, light-weight garamond —
+// Sleep Token's display face. A high-contrast, light-weight garamond —
 // against RNL's Anton it reads as the opposite instinct entirely, which is the
 // point: a partner should not look like RNL wearing a different colour.
 //

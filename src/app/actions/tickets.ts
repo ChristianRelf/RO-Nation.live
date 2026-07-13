@@ -23,7 +23,7 @@ import { issueTicket } from "@/lib/tickets/issue";
 // It cannot. A redirect() from a SERVER ACTION does not run the middleware, and
 // the middleware is the only thing that knows <slug>.ronation.live/tickets means
 // /p/<slug>/tickets. So on a partner's site the redirect resolves against RNL's
-// route tree instead: reserving a Sleep Token RO ticket used to land the buyer
+// route tree instead: reserving a Sleep Token ticket used to land the buyer
 // on RNL's /tickets page — RNL's nav, RNL's footer, still on Sleep Token's
 // domain — and any redirect under /events/<slug> 404'd outright, because RNL's
 // copy of that route scopes to partnerId: null and the partner's show is not

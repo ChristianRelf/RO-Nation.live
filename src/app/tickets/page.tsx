@@ -13,7 +13,7 @@ export default async function TicketsPage() {
 
   // Every ticket this account holds, RNL's and any partner's. ronation.live is
   // the one wallet that shows all of them — each stub carries the brand of the
-  // show it admits you to, so a Sleep Token RO ticket still looks like one here.
+  // show it admits you to, so a Sleep Token ticket still looks like one here.
   const tickets = await prisma.ticket.findMany({
     where: { userId: session.uid },
     include: { event: true },

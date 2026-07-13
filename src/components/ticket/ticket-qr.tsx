@@ -8,7 +8,7 @@ import { qrMatrix } from "@/lib/qr";
 // works and one that only photographs well:
 //
 //   1. DARK INK ON CREAM PAPER, always — never the brand accent. Decoders need
-//      contrast, and a brand accent is not required to be dark: Sleep Token RO's
+//      contrast, and a brand accent is not required to be dark: Sleep Token's
 //      is dim gold, which on their near-black site would be a gold-on-black QR
 //      that no phone can read. `--paper-ink` on `--paper` is near-black on cream
 //      under EVERY brand, because that is what those two tokens mean. The accent

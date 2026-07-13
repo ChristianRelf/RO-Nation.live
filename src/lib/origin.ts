@@ -57,7 +57,7 @@ export function currentOrigin() {
 
 /**
  * The absolute URL a ticket's QR encodes — on the host the holder is actually
- * on, which is what keeps a Sleep Token RO ticket pointing at Sleep Token RO.
+ * on, which is what keeps a Sleep Token ticket pointing at Sleep Token.
  *
  * It takes the ticket's opaque ID, not its code. The code is withheld until the
  * holder activates, so it must not appear in the URL either — see the note on the

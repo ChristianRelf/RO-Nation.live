@@ -61,6 +61,20 @@ export type Partner = {
    */
   crestUrl?: string;
   /**
+   * Artwork behind the WHOLE site — fixed, every page, every section, with the
+   * content sliding over it. See components/partner/backdrop.tsx.
+   *
+   * When this is set the hero's own `crestUrl` is suppressed, and that is on
+   * purpose: two enormous emblems stacked on one screen is not twice the
+   * atmosphere, it is mush. Set ONE of them. The backdrop is the bigger gesture —
+   * it carries the entire site rather than the top of one page — so it wins.
+   *
+   * It is drawn dark and behind a scrim, because every word on the site is set on
+   * top of it. Pick an image that survives that: a single subject with room around
+   * it, not a busy composition and not one with words in it.
+   */
+  backdropUrl?: string;
+  /**
    * The stand-in image for a show this partner hasn't made a poster for yet.
    *
    * Not cosmetic. The shared EventCard's default is RNL's placeholder — electric
@@ -139,17 +153,17 @@ export type Partner = {
 export const PARTNERS: readonly Partner[] = [
   {
     slug: "sleeptokenro",
-    name: "Sleep Token RO",
+    name: "Sleep Token",
     shortName: "STRO",
     tagline: "Roblox tribute shows",
     description:
-      "Sleep Token RO stages tribute shows inside Roblox — full production, live crowd, free tickets. A fan project, built by fans, produced with RO. Nation LIVE.",
+      "Sleep Token stages tribute shows inside Roblox — full production, live crowd, free tickets. A fan project, built by fans, produced with RO. Nation LIVE.",
     // This one is not optional. The name references a real band who have nothing
     // to do with this, the site sits on an RNL subdomain, and RNL's name is in
     // the footer — so the page has to say what it is, in plain words, without
     // being hunted for.
     disclaimer:
-      "Sleep Token RO is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
+      "Sleep Token is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
     ticketPrefix: "ST",
     // The band's own marks, used with the permission the partner holds. They are
     // the reason the disclaimer above is now load-bearing rather than a
@@ -163,8 +177,16 @@ export const PARTNERS: readonly Partner[] = [
     // bar (near-black on every brand) without a white variant.
     logoUrl: "/brand/sleeptokenro/mark.png",
     crestUrl: "/brand/sleeptokenro/crest.png",
+    // Behind the whole site, fixed, with the page sliding over it. It suppresses
+    // the hero crest above — see the field's note on the type for why.
+    //
+    // This one is a PHOTOGRAPH, not line art, and the backdrop is tuned for that:
+    // it is desaturated and dropped well back, because a full-colour image at the
+    // strength a gold line drawing wants would put a magenta bougainvillea behind
+    // every paragraph on the site. See components/partner/backdrop.tsx.
+    backdropUrl: "/brand/sleeptokenro/flamingo.jpg",
     eventPlaceholderUrl: "/brand/sleeptokenro/event-placeholder.svg",
-    // Sleep Token RO run their own crew out of their own group, so their portal
+    // Sleep Token run their own crew out of their own group, so their portal
     // ranks off it rather than off a member row per person. RNL still holds the
     // floor (PartnerMember rows) and the 250+ override — see the note on
     // `governance` above for exactly what this does and does not hand over.
@@ -178,7 +200,7 @@ export const PARTNERS: readonly Partner[] = [
     // survey.ronation.live is still RNL-global and has no partner scope yet, so
     // switching it on here would hand them a feature that does not exist.
     features: ["events", "blog", "careers"],
-    // Sleep Token RO want paid VIP tiers alongside free general admission. This
+    // Sleep Token want paid VIP tiers alongside free general admission. This
     // says they are allowed to price them; it does not put any on sale. The
     // master switch is off, so their paid tiers render locked and the reserve
     // action refuses them. Nothing is charged to anybody today.

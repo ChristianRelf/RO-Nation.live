@@ -13,7 +13,7 @@ import { PartnerMark } from "./emblem";
  * standing in for it: the pages themselves call assertPartnerFeature and 404.
  *
  * The mark appears BESIDE the name, never instead of it. A logo alone is how a
- * fan site starts looking like the official one — the words "Sleep Token RO" in
+ * fan site starts looking like the official one — the words "Sleep Token" in
  * the corner of every page are load-bearing, and PartnerMark is decorative
  * (aria-hidden) precisely because the name is the thing being announced.
  */

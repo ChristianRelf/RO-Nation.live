@@ -26,7 +26,7 @@ export default async function PartnerTicketsPage({
 
   // This partner's tickets only. Someone's RNL tickets are theirs to see on
   // ronation.live — showing them here would put another brand's shows inside
-  // Sleep Token RO's wallet, which is confusing at best.
+  // Sleep Token's wallet, which is confusing at best.
   const tickets = await prisma.ticket.findMany({
     where: { userId: session.uid, event: { partnerId: partner.slug } },
     include: { event: true },

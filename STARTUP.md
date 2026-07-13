@@ -204,7 +204,7 @@ Ranked members see a **Company** link in their account menu once signed in.
 
 ### Partner studios
 
-A partner (Sleep Token RO) runs their own site from
+A partner (Sleep Token) runs their own site from
 `portal.ronation.live/<slug>/studio` — their shows and ticket pricing, their blog,
 their careers and applications, and the words on their homepage. Their crew get in
 via a `PartnerMember` row (seeded from `STRO_OWNER_ROBLOX_ID`).

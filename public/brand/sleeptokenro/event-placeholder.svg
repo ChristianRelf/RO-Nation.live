@@ -1,5 +1,5 @@
 <!--
-  Sleep Token RO — the stand-in for a show with no artwork yet.
+  Sleep Token — the stand-in for a show with no artwork yet.
 
   The shared EventCard falls back to /placeholders/event-01.svg, which is RNL's:
   electric blue, with RNL's own wordmark across it. On a partner's site that is

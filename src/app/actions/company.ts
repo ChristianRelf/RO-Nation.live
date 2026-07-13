@@ -77,7 +77,7 @@ export async function createEvent(formData: FormData) {
 //
 // Rank in RNL's group is what gets you in here, and by itself it says nothing
 // about a partner's shows — without this, a company user could edit or delete a
-// Sleep Token RO show by pasting its id into the URL. Staff ranked 250+ genuinely
+// Sleep Token show by pasting its id into the URL. Staff ranked 250+ genuinely
 // may touch a partner's shows, but they do it through that partner's own portal,
 // where the guard has authorised them FOR that partner. Passing one guard is not
 // the same as being allowed to touch the row.

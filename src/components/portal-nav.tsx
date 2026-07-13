@@ -20,7 +20,7 @@ export function PortalNav({
   keysLink = false,
   user,
 }: {
-  /** Wordmark in the top-left — "SHASHA", "Sleep Token RO". */
+  /** Wordmark in the top-left — "SHASHA", "Sleep Token". */
   brand: string;
   /** "/shasha" or "/<partner-slug>". */
   basePath: string;
