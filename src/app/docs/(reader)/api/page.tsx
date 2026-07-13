@@ -359,7 +359,8 @@ export default async function ApiDocsPage() {
   const { orgs } = await requireDocsUser();
 
   return (
-    <div className="shell py-14">
+    // No `shell` here: the docs layout owns the page frame and the sidebar grid.
+    <div className="pb-14">
       {/* 1 — Title */}
       <header className="max-w-3xl">
         <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">

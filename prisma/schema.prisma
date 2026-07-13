@@ -90,8 +90,8 @@ model Event {
 // reserve action refuse independently while it is off.
 // ------------------------------------------------------------------
 model TicketTier {
-  id          String  @id @default(cuid())
-  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId     String
   name        String // "General Admission", "VIP — Front Barrier"
   description String?
@@ -754,4 +754,151 @@ model ApiKey {
 
   @@index([partnerId, revokedAt])
   @@map("api_keys")
+}
+
+// ------------------------------------------------------------------
+// Internal guides — portal.ronation.live/docs/guides.
+//
+// Running an event, working the door, how the systems fit together. Authored at
+// /company/docs (requireCompanyUser, rank 245+) and READ by anybody with a door
+// on this platform at all: SHASHA staff, including the read-only tier, or a
+// partner's crew. See lib/docs-guard.ts.
+//
+// Deliberately NO partnerId, unlike Post and Career. There is one library, and
+// it is RNL's. A nullable scope column "just in case" is not free: it is a filter
+// that every future read has to remember, and the one that forgets is the one
+// that shows a partner somebody else's guide. If a partner library is ever
+// wanted, it is a new decision — not a column somebody left open.
+// ------------------------------------------------------------------
+enum GuideStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Guide {
+  id String @id @default(cuid())
+
+  /// Globally unique — one library, so unlike Post.slug this needs no scope, and
+  /// carries none of the NULL-tuple caveat that comes with one.
+  slug    String  @unique
+  title   String
+  excerpt String?
+  body    String  @db.Text
+
+  /// The heading it sits under on /docs/guides. Free text rather than an enum:
+  /// the sections are editorial ("Running a show", "The systems"), and an enum
+  /// would make adding one a deploy.
+  section String @default("General")
+
+  status GuideStatus @default(DRAFT)
+
+  /// Ascending within a section. Ties break on title.
+  order Int @default(0)
+
+  authorRobloxId String?
+  authorName     String
+  publishedAt    DateTime? // set the first time it goes PUBLISHED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status, section, order])
+  @@map("guides")
+}
+
+// ------------------------------------------------------------------
+// Brand assets — logos, artwork, guideline PDFs. Uploaded at /company/docs and
+// listed at portal.ronation.live/docs/brandassets.
+//
+// `visibility` decides WHERE THE BYTES LIVE, not merely who sees the row:
+//
+//   PUBLIC    written to UPLOAD_DIR and served by Caddy off the shared volume at
+//             /uploads/rnl/<uuid>.<ext>. A shareable URL is the FEATURE here — a
+//             partner pasting a logo link into a Discord is the entire point, and
+//             it keeps working when they are signed out, which is when they will
+//             be using it.
+//
+//   INTERNAL  written to PRIVATE_UPLOAD_DIR, a volume Caddy does not mount at
+//             all. No URL serves it. It is streamed by app/files/[id]/route.ts,
+//             which re-reads the session on every request, so a leaked link is
+//             worth nothing to a stranger.
+//
+// That is why this is a column and not a folder convention: the serving path is
+// derived from it, in exactly one place (brandAssetHref in lib/docs.ts), and
+// there is no way to render an INTERNAL asset as a public URL by forgetting
+// something.
+//
+// It carries its own file pointer rather than an FK to MediaAsset, whose `url` is
+// @unique and documents the PUBLIC path. An internal file has no public path, so
+// pointing at a MediaAsset would mean inventing a fake URL for it — and a fake
+// URL is precisely the string somebody later drops into an <img src>.
+// ------------------------------------------------------------------
+enum AssetVisibility {
+  PUBLIC
+  INTERNAL
+}
+
+model BrandAsset {
+  id String @id @default(cuid())
+
+  /// The heading it sits under. Free text, same reasoning as Guide.section.
+  category    String          @default("Logos")
+  title       String
+  description String?         @db.Text
+  visibility  AssetVisibility @default(PUBLIC)
+
+  /// "rnl/<uuid>.pdf" — relative to the root `visibility` selects. Never a URL,
+  /// never absolute, and never built from a name the uploader chose: the stored
+  /// name is a fresh UUID (lib/uploads.ts). Resolved against its root with a
+  /// prefix check before anything is opened, all the same.
+  storagePath String
+
+  /// The name it had on the uploader's machine. Display and Content-Disposition
+  /// only, sanitised at that point. NEVER used to build a path.
+  filename String
+
+  /// Sniffed from the magic bytes at upload, not taken from what the browser
+  /// claimed. Content-Type is set from this, so it must never come from a client.
+  mime String
+  size Int
+
+  /// Ascending within a category.
+  order Int @default(0)
+
+  uploadedById   String // Roblox id
+  uploadedByName String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([visibility, category, order])
+  @@map("brand_assets")
+}
+
+// ------------------------------------------------------------------
+// Spent SSO tickets.
+//
+// A ticket is a 60-second JWT that authorise.ronation.live hands to another host
+// so that host can mint its own session cookie (lib/sso.ts). It travels in a URL
+// — so it lands in browser history, in a Referer, and quite possibly in somebody's
+// access log. Three things make that survivable, and this table is the third:
+//
+//   • it expires in 60 seconds
+//   • it is bound to ONE audience, so a ticket for the portal is inert anywhere else
+//   • it can be spent exactly ONCE — this table
+//
+// The row IS the lock: `jti` is the primary key, so redeeming a ticket is an
+// INSERT, and a replay is a unique-constraint violation rather than a check that
+// somebody has to remember to write. Rows are deleted once they are past
+// expiresAt; a ticket that old is refused on its exp anyway, so the table only
+// ever holds a minute of traffic.
+// ------------------------------------------------------------------
+model SsoTicket {
+  /// The ticket's jti claim. The primary key, on purpose — see above.
+  jti String @id
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("sso_tickets")
 }

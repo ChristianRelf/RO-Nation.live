@@ -9,6 +9,7 @@ import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
 //   portal.ronation.live/shasha           → the SHASHA staff portal
 //   portal.ronation.live/<slug>           → a partner's portal      → /pp/<slug>
 //   survey.ronation.live/ABCDE-FGHJKMN-PQR → a survey
+//   authorise.ronation.live/…             → sign-in, for all of the above
 //   <slug>.ronation.live/…                → a partner's site        → /p/<slug>/…
 //
 // Everything is derived from the request host rather than an env var, because
@@ -27,16 +28,45 @@ import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
  */
 const PORTAL_PATHS = [
   "/shasha",
-  // The API docs. They live on the PORTAL host and nowhere else, because they are
-  // the companion to a key and only somebody who manages an org can mint one —
-  // the page guards on exactly that (lib/docs-guard.ts). Without this line the
-  // portal branch below bounces /docs off to the main site, where the route does
-  // not exist.
+  // The internal docs — guides, brand assets, the API reference. They live on the
+  // PORTAL host and nowhere else, because everything under here is for staff and
+  // partner crew; the pages guard on exactly that (lib/docs-guard.ts). Without
+  // this line the portal branch below bounces /docs off to the main site, where
+  // the route does not exist.
   "/docs",
+  // Gated file downloads — the brand guideline PDFs. Deliberately NOT under
+  // /uploads: Caddy serves that prefix straight off the volume, before the
+  // request reaches Next, so nothing there can ever check a session. These are
+  // streamed by app/files/[id], which checks one on every request.
+  "/files",
   "/legal",
+  "/api/auth/roblox",
+  // The ticket handoff. Every host that can hold a session needs this, because it
+  // is where a session is set — see lib/sso.ts.
+  "/api/auth/sso",
+  // The dev mock login. Inert in production — devLoginEnabled is false the moment
+  // ROBLOX_CLIENT_ID is set (lib/env.ts) — and needed here for the same reason
+  // PARTNER_PATHS has it: without it, signing in against this host in dev bounces
+  // to the main site, where the cookie would be set on the wrong origin.
+  "/api/auth/dev",
+  "/api/auth/logout",
+  "/api/health",
+];
+
+/**
+ * Paths the AUTHORISE host may serve — and it is a short list on purpose.
+ *
+ * This host mints sessions for every other one. It has no content, no partner
+ * brand and nothing to browse: one page, which explains what it is and shows an
+ * error if a sign-in went wrong, plus the auth routes themselves. Anything else
+ * belongs on the main site, and gets sent there.
+ */
+const AUTHORISE_PATHS = [
+  "/api/auth/sso",
   "/api/auth/roblox",
   "/api/auth/logout",
   "/api/health",
+  "/legal",
 ];
 
 /**
@@ -48,6 +78,7 @@ const SURVEY_PATHS = [
   "/survey",
   "/legal",
   "/api/auth/roblox",
+  "/api/auth/sso",
   "/api/auth/logout",
   "/api/health",
 ];
@@ -63,6 +94,7 @@ const SURVEY_PATHS = [
 const PARTNER_PATHS = [
   "/legal",
   "/api/auth/roblox",
+  "/api/auth/sso",
   // The dev mock login, so <slug>.localhost can be signed into without real
   // Roblox credentials. It is inert in production — devLoginEnabled is false the
   // moment ROBLOX_CLIENT_ID is set. See lib/env.ts.
@@ -81,10 +113,14 @@ const isLocalHost = (host: string) =>
 
 const isPortalHost = (host: string) => host.startsWith("portal.");
 const isSurveyHost = (host: string) => host.startsWith("survey.");
+const isAuthoriseHost = (host: string) => host.startsWith("authorise.");
 
 /** portal.ronation.live → ronation.live */
 const mainSiteHost = (host: string) =>
-  host.replace(/^portal\./, "").replace(/^survey\./, "");
+  host
+    .replace(/^portal\./, "")
+    .replace(/^survey\./, "")
+    .replace(/^authorise\./, "");
 
 const subdomainFor = (prefix: string, host: string) =>
   `${prefix}.${host.replace(/^www\./, "")}`;
@@ -104,7 +140,21 @@ const INTERNAL_BRAND_RE = /^\/(?:p|pp)\/([a-z0-9-]+)(?=\/|$)/;
 function areaFor(path: string) {
   if (path.startsWith("/p/")) return "partner";
   if (path.startsWith("/pp/")) return "partner-portal";
-  if (path.startsWith("/shasha") || path === "/portal") return "portal";
+  // The docs are portal chrome, not marketing chrome. Without this, /docs/api —
+  // a staff-only reference for people holding an API key — renders wrapped in the
+  // public site's header and footer, on the portal host.
+  //
+  // The route group in app/docs/(reader) does not appear in the URL, so /docs/api
+  // still matches this prefix.
+  if (
+    path.startsWith("/shasha") ||
+    path === "/portal" ||
+    path === "/authorise" ||
+    path === "/docs" ||
+    path.startsWith("/docs/")
+  ) {
+    return "portal";
+  }
   if (path.startsWith("/survey")) return "survey";
   return "site";
 }
@@ -243,6 +293,15 @@ export function middleware(req: NextRequest) {
       if (rewritten) return rewritten;
     }
 
+    // authorise.localhost gets its page too, so the sign-in host in dev is the
+    // same shape as the one in production rather than the main site's homepage
+    // wearing its name.
+    if (isAuthoriseHost(host) && pathname === "/") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/authorise";
+      return proceed(req, url);
+    }
+
     const code = surveyCodeFrom(pathname);
     if (code) {
       const url = req.nextUrl.clone();
@@ -254,6 +313,31 @@ export function middleware(req: NextRequest) {
     if (legacy) return legacy;
 
     return proceed(req);
+  }
+
+  // ---- authorise.ronation.live -------------------------------------
+  // The front door. It mints the sessions every other host runs on, and it holds
+  // nothing else: one page saying what it is, and the auth routes. See lib/sso.ts.
+  if (isAuthoriseHost(host)) {
+    // The page. Rewritten from `/`, exactly like the portal's landing page and for
+    // the same reason: `/` is this host's canonical URL, and /authorise is an
+    // internal path with no business having a URL of its own.
+    if (pathname === "/") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/authorise";
+      return proceed(req, url);
+    }
+    if (pathname === "/authorise" || pathname.startsWith("/authorise/")) {
+      return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+    }
+
+    if (matches(pathname, AUTHORISE_PATHS)) return proceed(req);
+
+    // Nothing else lives here. There is no content on this host to fall back to,
+    // so anything unrecognised belongs to the main site.
+    return NextResponse.redirect(
+      new URL(`${pathname}${search}`, `https://${mainSiteHost(host)}`),
+    );
   }
 
   // ---- survey.ronation.live ---------------------------------------
@@ -307,12 +391,24 @@ export function middleware(req: NextRequest) {
     );
   }
 
-  // The subdomains own these paths, so hand them over.
+  // Same again for the front door's internal path.
+  if (pathname === "/authorise" || pathname.startsWith("/authorise/")) {
+    return NextResponse.redirect(
+      new URL("/", `https://${subdomainFor("authorise", host)}`),
+    );
+  }
+
+  // The subdomains own these paths, so hand them over. /files is here with the
+  // rest because a download link pasted into a Discord as ronation.live/files/<id>
+  // would otherwise 404 for somebody perfectly entitled to the file: the session
+  // cookie is host-only, and on this host it does not exist.
   if (
     pathname === "/shasha" ||
     pathname.startsWith("/shasha/") ||
     pathname === "/docs" ||
-    pathname.startsWith("/docs/")
+    pathname.startsWith("/docs/") ||
+    pathname === "/files" ||
+    pathname.startsWith("/files/")
   ) {
     return NextResponse.redirect(
       new URL(`${pathname}${search}`, `https://${subdomainFor("portal", host)}`),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { robloxConfigured } from "@/lib/env";
 import { requestOrigin } from "@/lib/origin";
+import { authorizeUrlFor, isAuthoriseOrigin } from "@/lib/sso";
 import {
   buildAuthorizeUrl,
   failPath,
@@ -16,18 +17,32 @@ function sanitizeReturn(v: string | null) {
   return "/tickets";
 }
 
+// "Sign in with Roblox" — the link every login page in the app still points at.
+//
+// It used to run the OAuth round trip on whatever host it was called on, which is
+// why every host needed its own registered redirect_uri. Now it does that on ONE
+// host and forwards from all the others, so the existing links did not have to
+// change and old bookmarks still work.
+
 export async function GET(req: NextRequest) {
-  // Stay on the host the user started from: the session cookie we're about to
-  // set is scoped to it, so a sign-in begun on survey.ronation.live has to come
-  // back to survey.ronation.live. Each host used this way needs its callback URL
-  // registered in the Roblox OAuth app — including portal.ronation.live.
   const origin = requestOrigin(req);
   const returnTo = sanitizeReturn(req.nextUrl.searchParams.get("returnTo"));
 
+  // ---- Anywhere but the front door ---------------------------------
+  // Hand off to authorise.ronation.live. If they are already signed in there this
+  // costs two redirects and no clicks; if not, that host runs the Roblox flow and
+  // sends them back with a ticket. See lib/sso.ts.
+  if (!isAuthoriseOrigin(origin)) {
+    return NextResponse.redirect(authorizeUrlFor(origin, returnTo));
+  }
+
+  // ---- The front door ----------------------------------------------
+  // The only Roblox round trip in the system. The only redirect_uri Roblox has
+  // ever been told about.
   if (!robloxConfigured) {
-    return NextResponse.redirect(
-      new URL(`${failPath(returnTo)}?error=not-configured`, origin),
-    );
+    const url = new URL(failPath(returnTo), origin);
+    url.searchParams.set("error", "not-configured");
+    return NextResponse.redirect(url);
   }
 
   const state = randomString(24);

@@ -51,6 +51,10 @@ services:
       # Where uploaded images are written. Must match the volume mount below and
       # the root Caddy serves them from.
       UPLOAD_DIR: /app/uploads
+      # Where files that must NOT be public are written: brand guideline PDFs,
+      # unreleased artwork. Its volume is deliberately absent from Caddy's mounts
+      # below — that omission IS the access control. See lib/uploads.ts.
+      PRIVATE_UPLOAD_DIR: /app/private-uploads
       TZ: ${TZ:-UTC}
     volumes:
       # Uploaded images. A named volume, so they survive `docker compose up
@@ -60,6 +64,12 @@ services:
       # BACK THIS UP. It is the one piece of state that is not in Postgres, so a
       # database dump alone does NOT restore the site's artwork.
       - uploads:/app/uploads
+      # The gated files. BACK THIS UP TOO — same reasoning, and it is now two
+      # volumes a database dump does not restore, not one.
+      #
+      # Nothing serves this directory. It is read only by app/files/[id], which
+      # checks the caller's session before it opens a single byte.
+      - private-uploads:/app/private-uploads
     # Bound to loopback: the public entrypoint is Caddy on 443. Publishing this
     # on 0.0.0.0 would let anyone reach the app over plain HTTP, bypassing TLS.
     ports:
@@ -88,6 +98,9 @@ services:
       SITE_HOST: ${SITE_HOST:-ronation.live}
       PORTAL_HOST: ${PORTAL_HOST:-portal.ronation.live}
       SURVEY_HOST: ${SURVEY_HOST:-survey.ronation.live}
+      # The sign-in host. Caddy must terminate TLS for it or nobody can sign in to
+      # anything — see the note at the top of the Caddyfile.
+      AUTHORISE_HOST: ${AUTHORISE_HOST:-authorise.ronation.live}
       # The Caddyfile reads this on its address line. It has a default there, so
       # the omission was invisible — but STRO_HOST in .env was being ignored.
       STRO_HOST: ${STRO_HOST:-sleeptokenro.ronation.live}
@@ -104,9 +117,19 @@ services:
       # here is to hand the files out, and it has no business being able to change
       # or delete one.
       - uploads:/srv/uploads:ro
+      #
+      # `private-uploads` is NOT mounted here, and that is not an oversight — it is
+      # the mechanism. Caddy serves /uploads/* straight off the volume above,
+      # before a request has been anywhere near the app, so nothing it serves can
+      # ever check a session. Keeping the gated files out of this container's
+      # filesystem entirely means no Caddyfile edit can expose them by accident and
+      # no traversal out of /srv/uploads can reach them.
+      #
+      # DO NOT ADD IT.
 
 volumes:
   db-data:
   caddy-data:
   caddy-config:
   uploads:
+  private-uploads:

@@ -41,7 +41,19 @@ export function redirectUri() {
  * the partner's own sign-in page.
  */
 export function failPath(returnTo: string) {
+  // A sign-in that failed ON the front door. Its returnTo is the SSO authorize
+  // URL it was going to resume, and none of the pages below exist on that host —
+  // authorise.ronation.live serves one page, and it is the one that can explain
+  // this. (The `to` origin is still in that URL, so the page can offer a way back
+  // to where they started; see app/authorise/page.tsx.)
+  if (returnTo.startsWith("/api/auth/sso/")) {
+    const query = returnTo.split("?")[1] ?? "";
+    const to = new URLSearchParams(query).get("to");
+    return to ? `/?to=${encodeURIComponent(to)}` : "/";
+  }
+
   if (returnTo.startsWith("/shasha")) return "/shasha/login";
+  if (returnTo.startsWith("/docs")) return "/docs/login";
 
   const slug = returnTo.split("/")[1] ?? "";
   if (partnerBySlug(slug)) return `/${slug}/login`;

@@ -230,6 +230,9 @@ const RESERVED = new Set([
   "ronation",
   "portal",
   "survey",
+  // The sign-in host. A partner slugged "authorise" would take the subdomain that
+  // mints every session in the system — which is as bad as it sounds.
+  "authorise",
   "api",
   "p",
   "pp",
@@ -242,10 +245,15 @@ const RESERVED = new Set([
   "company",
   "uploads",
   "shasha",
-  // The API docs on the portal host. The middleware tries the partner rewrite
+  // The internal docs on the portal host. The middleware tries the partner rewrite
   // BEFORE it checks PORTAL_PATHS, so a partner slugged "docs" would swallow
   // portal.ronation.live/docs outright.
   "docs",
+  // Same exposure, and it matters more: /files serves the gated brand assets, so
+  // a partner slugged "files" would not merely shadow a route — it would take
+  // over the one path whose whole job is to check a session before handing out
+  // a file.
+  "files",
   "legal",
   "about",
   "team",

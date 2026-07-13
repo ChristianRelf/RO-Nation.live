@@ -1,6 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
-import { partnerBySlug } from "./partners/registry";
+import { activePartners, partnerBySlug } from "./partners/registry";
 import { partnerPortalPath, partnerPortalRoute } from "./partners/urls";
 import { getPartnerAccess } from "./partners/guard";
 import { getPortalAccess } from "./shasha";
@@ -120,4 +120,74 @@ export async function requireScopeManager(id: string): Promise<ScopedActor> {
   const scoped = await requireScopeUser(id);
   if (!scoped.canWrite) redirect(`${scoped.scope.basePath}?error=readonly`);
   return scoped;
+}
+
+// ------------------------------------------------------------------
+// "Which portals can this person open at all?"
+//
+// The two above answer it for ONE portal, named by the URL. The docs ask it the
+// other way round — they belong to nobody in particular, and you may read them
+// if you have a door anywhere: SHASHA staff, or a partner's crew. That question
+// lives here rather than in docs-guard.ts because it is about portals, and
+// because docs-guard's own "who can mint a key" list is the same walk with a
+// canWrite filter on the end. One loop, two tiers, no chance of them drifting.
+// ------------------------------------------------------------------
+
+/** A portal this person may open, and what they may do once inside it. */
+export type ScopeGrant = {
+  scope: RosterScope;
+  canWrite: boolean;
+};
+
+/**
+ * Every portal the caller may READ — read-only staff included. Does not redirect:
+ * an empty list is a fact for the caller to act on, not an error.
+ *
+ * Sequential rather than parallel, which is fine: the partner list is short, and
+ * every rank lookup behind it hits the same five-minute cache (lib/roblox-group).
+ */
+export async function readableScopes(): Promise<ScopeGrant[]> {
+  const grants: ScopeGrant[] = [];
+
+  const shasha = await getPortalAccess();
+  if (shasha.state === "allowed") {
+    // Non-null: SHASHA_SCOPE is the sentinel rosterScope() answers to first.
+    grants.push({
+      scope: rosterScope(SHASHA_SCOPE)!,
+      canWrite: shasha.user.canWrite,
+    });
+  }
+
+  for (const partner of activePartners()) {
+    const access = await getPartnerAccess(partner.slug);
+    if (access?.state === "allowed") {
+      grants.push({
+        scope: rosterScope(partner.slug)!,
+        canWrite: access.user.canWrite,
+      });
+    }
+  }
+
+  return grants;
+}
+
+/**
+ * The same question, answered as cheaply as it can be: does this person hold ANY
+ * door at all?
+ *
+ * Short-circuits on the first grant, which readableScopes() cannot — and that
+ * matters, because app/files/[id] calls this on every request for every byte a
+ * PDF viewer asks for, and walking the whole partner list each time would put a
+ * rank lookup in the path of a download.
+ */
+export async function hasAnyScope(): Promise<boolean> {
+  const shasha = await getPortalAccess();
+  if (shasha.state === "allowed") return true;
+
+  for (const partner of activePartners()) {
+    const access = await getPartnerAccess(partner.slug);
+    if (access?.state === "allowed") return true;
+  }
+
+  return false;
 }

@@ -23,6 +23,18 @@ export function formatDate(d: Date | string) {
   return dateFmt.format(new Date(d));
 }
 
+/**
+ * A file size a person can read. Deliberately not locale-formatted: the same
+ * string has to come out of a server render and a client one, and a thousands
+ * separator is exactly the sort of thing that differs between the two.
+ */
+export function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+}
+
 export function formatTime(d: Date | string) {
   return timeFmt.format(new Date(d));
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { EventStatus, PostStatus } from "@prisma/client";
+import { EventStatus, GuideStatus, PostStatus } from "@prisma/client";
 import { prisma } from "./db";
 import { slugify } from "./utils";
 
@@ -40,11 +40,13 @@ export function parseDate(v: string): Date | null {
  * see. Events are the exception: their slug is still globally unique, because a
  * ticket code and the /events/<slug> route are shared across every org.
  *
- * `scope` is a partner slug, or null for RNL's own.
+ * `scope` is a partner slug, or null for RNL's own. Events and guides ignore it:
+ * both are globally unique — an event because a ticket code and the /events/<slug>
+ * route are shared across every org, a guide because there is only one library.
  */
 export async function uniqueSlug(
   base: string,
-  model: "event" | "career" | "post",
+  model: "event" | "career" | "post" | "guide",
   scope: string | null = null,
   ignoreId?: string,
 ) {
@@ -57,11 +59,15 @@ export async function uniqueSlug(
     const found =
       model === "event"
         ? await prisma.event.findUnique({ where: { slug } })
-        : model === "career"
-          ? await prisma.career.findFirst({
-              where: { slug, partnerId: scope },
-            })
-          : await prisma.post.findFirst({ where: { slug, partnerId: scope } });
+        : model === "guide"
+          ? await prisma.guide.findUnique({ where: { slug } })
+          : model === "career"
+            ? await prisma.career.findFirst({
+                where: { slug, partnerId: scope },
+              })
+            : await prisma.post.findFirst({
+                where: { slug, partnerId: scope },
+              });
     if (!found || found.id === ignoreId) return slug;
     slug = `${root}-${++n}`;
   }
@@ -99,14 +105,30 @@ export function readPostForm(form: FormData) {
   };
 }
 
+export function readGuideForm(form: FormData) {
+  return {
+    title: s(form, "title"),
+    excerpt: s(form, "excerpt") || null,
+    section: s(form, "section") || "General",
+    // Truncated, not rejected — same wall, same reasoning as a post body above.
+    body: s(form, "body").slice(0, BODY_MAX),
+    order: parseInt(s(form, "order") || "0", 10) || 0,
+    status: (s(form, "status") as GuideStatus) || GuideStatus.DRAFT,
+  };
+}
+
 /**
- * `publishedAt` is stamped the first time a post goes live and then left alone,
- * so re-editing a published post doesn't shuffle it back to the top of the blog.
+ * `publishedAt` is stamped the first time something goes live and then left
+ * alone, so re-editing a published post doesn't shuffle it back to the top of the
+ * blog.
+ *
+ * Takes either status enum: they are distinct Prisma types but the same three
+ * strings, and the rule is the same for both.
  */
 export function resolvePublishedAt(
-  status: PostStatus,
+  status: PostStatus | GuideStatus,
   existing?: Date | null,
 ): Date | null {
-  if (status !== PostStatus.PUBLISHED) return existing ?? null;
+  if (status !== "PUBLISHED") return existing ?? null;
   return existing ?? new Date();
 }

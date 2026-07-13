@@ -28,9 +28,13 @@ export async function GET(req: NextRequest) {
   const returnTo = sanitizeReturn(req.cookies.get("ron_oauth_return")?.value);
 
   const fail = (reason: string) => {
-    const res = NextResponse.redirect(
-      new URL(`${failPath(returnTo)}?error=${reason}`, origin),
-    );
+    // Built with URL + searchParams rather than string-concatenating "?error=":
+    // failPath() may already carry a query of its own (the front-door case), and
+    // "/?to=x?error=y" is not a URL.
+    const url = new URL(failPath(returnTo), origin);
+    url.searchParams.set("error", reason);
+
+    const res = NextResponse.redirect(url);
     clearOauthCookies(res);
     return res;
   };

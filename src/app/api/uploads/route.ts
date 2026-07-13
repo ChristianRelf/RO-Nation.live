@@ -3,7 +3,12 @@ import { prisma } from "@/lib/db";
 import { getCompanyUser } from "@/lib/company";
 import { getPartnerAccess } from "@/lib/partners/guard";
 import { partnerBySlug } from "@/lib/partners/registry";
-import { MAX_UPLOAD_BYTES, RNL_SCOPE, saveUpload } from "@/lib/uploads";
+import {
+  IMAGE_TYPES,
+  MAX_UPLOAD_BYTES,
+  RNL_SCOPE,
+  saveUpload,
+} from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 // Node, not edge: this writes to the filesystem.
@@ -74,11 +79,15 @@ export async function POST(req: NextRequest) {
   }
 
   // ---- The file itself ----------------------------------------------
-  const saved = await saveUpload(file, scope);
+  // Images only. This is the door for cover art and thumbnails — everything it
+  // returns ends up in an <img src>, so it keeps taking images and nothing else,
+  // even though the disk underneath now also holds PDFs. Brand assets have their
+  // own door: api/uploads/brand.
+  const saved = await saveUpload(file, scope, { accept: IMAGE_TYPES });
   if (!saved.ok) {
     const message =
       saved.error === "too-large"
-        ? `That file is over ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB.`
+        ? `That file is over ${Math.round((saved.limit ?? MAX_UPLOAD_BYTES) / 1024 / 1024)} MB.`
         : saved.error === "empty"
           ? "That file is empty."
           : "That isn't an image we accept (JPG, PNG, GIF, WebP or SVG).";

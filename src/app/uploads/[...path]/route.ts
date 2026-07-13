@@ -29,6 +29,16 @@ const TYPES: Record<string, string> = {
   ".gif": "image/gif",
   ".webp": "image/webp",
   ".svg": "image/svg+xml",
+  // Public brand assets. Caddy already serves these in production — it types by
+  // extension off the volume — so without this line they 404 in dev only, which
+  // is exactly the kind of difference that gets found on the day of a show.
+  //
+  // Note the sandbox CSP below applies here too: Chrome will not run its PDF
+  // viewer inside a sandboxed document, so a public PDF downloads rather than
+  // previewing. That is a fine outcome for a brand guideline, and the header is
+  // not negotiable — it is what stops a hostile SVG on this same volume executing
+  // on RNL's origin.
+  ".pdf": "application/pdf",
 };
 
 export async function GET(
