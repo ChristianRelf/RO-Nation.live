@@ -49,7 +49,12 @@ export default async function PartnerEventsPage({
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {upcoming.map((event, i) => (
               <Reveal key={event.id} delay={(i % 3) * 60}>
-                <EventCard event={event} priority={i < 3} />
+                {/* Their placeholder, not RNL's — see EventCard.fallbackSrc. */}
+                <EventCard
+                  event={event}
+                  priority={i < 3}
+                  fallbackSrc={partner.eventPlaceholderUrl}
+                />
               </Reveal>
             ))}
           </div>
@@ -75,7 +80,7 @@ export default async function PartnerEventsPage({
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {past.map((event, i) => (
               <Reveal key={event.id} delay={(i % 3) * 60}>
-                <EventCard event={event} />
+                <EventCard event={event} fallbackSrc={partner.eventPlaceholderUrl} />
               </Reveal>
             ))}
           </div>

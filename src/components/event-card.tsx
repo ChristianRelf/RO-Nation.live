@@ -24,12 +24,28 @@ function statusFor(e: EventCardData): {
   return { key: "upcoming", label: relativeDays(e.startsAt) };
 }
 
+/** RNL's own. The default, so nothing that already renders a card changes. */
+const RNL_PLACEHOLDER = "/placeholders/event-01.svg";
+
 export function EventCard({
   event,
   priority,
+  fallbackSrc = RNL_PLACEHOLDER,
 }: {
   event: EventCardData;
   priority?: boolean;
+  /**
+   * The image for a show with no artwork yet.
+   *
+   * It is a prop, and not simply the constant above, because the default is
+   * RNL-BRANDED — blue, with RNL's wordmark across it. On a partner's site that
+   * is not just off-palette, it is another organisation's name printed over their
+   * show, and a partner with no posters up yet had a page full of them.
+   *
+   * Partners pass `partner.eventPlaceholderUrl`. RNL passes nothing and gets what
+   * it always got.
+   */
+  fallbackSrc?: string;
 }) {
   const { day, month } = dateBlock(event.startsAt);
   const status = statusFor(event);
@@ -46,7 +62,7 @@ export function EventCard({
       <div className="relative aspect-[4/3] overflow-hidden border-b border-line">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={event.thumbnailUrl || "/placeholders/event-01.svg"}
+          src={event.thumbnailUrl || fallbackSrc}
           alt=""
           loading={priority ? "eager" : "lazy"}
           className="h-full w-full object-cover grayscale-[0.15] transition-all duration-500 group-hover:scale-[1.04] group-hover:grayscale-0"

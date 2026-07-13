@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Partner } from "@/lib/partners/registry";
 import { site } from "@/lib/site";
 import { env } from "@/lib/env";
+import { PartnerDisclaimer, PartnerMark } from "./emblem";
 
 const legalLinks = [
   { label: "Privacy", href: "/legal/privacy" },
@@ -30,7 +31,10 @@ export function PartnerFooter({ partner }: { partner: Partner }) {
       <div className="shell relative py-14">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
           <div className="max-w-sm">
-            <p className="display text-2xl">{partner.name}</p>
+            <div className="flex items-center gap-3">
+              <PartnerMark partner={partner} size={30} className="max-h-7 opacity-70" />
+              <p className="display text-2xl">{partner.name}</p>
+            </div>
             <p className="mt-4 text-sm leading-relaxed text-muted">
               {partner.description}
             </p>
@@ -75,10 +79,13 @@ export function PartnerFooter({ partner }: { partner: Partner }) {
           </div>
         </div>
 
+        {/* Repeated here as well as under the hero, and both are wanted: the hero
+            catches somebody who has just landed, this catches somebody who has
+            read the whole page. Same component, so the two cannot drift apart. */}
         {partner.disclaimer ? (
-          <p className="mt-12 max-w-3xl border-t border-line pt-6 text-sm leading-relaxed text-muted">
-            {partner.disclaimer}
-          </p>
+          <div className="mt-12 border-t border-line pt-6">
+            <PartnerDisclaimer partner={partner} />
+          </div>
         ) : null}
 
         <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-line pt-6 text-xs text-faint sm:flex-row sm:items-center">

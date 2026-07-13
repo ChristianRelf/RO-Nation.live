@@ -425,9 +425,19 @@ export default async function ApiDocsPage() {
       {/* 2 — Getting a key */}
       <Section title="Getting a key">
         <p className="text-muted">
-          A manager of your organisation mints one in your portal, under{" "}
-          <span className="text-fg">API keys</span> — the links above. Two things
-          about a key, and they are the two things that matter.
+          A key is the whole of your credentials, and it looks like this:
+        </p>
+        <Code>{`rnl_k7m2p9x4qz_9f3hd2n8vqw4mzx7rbt6cyk3jphs5nga
+    └── keyId ──┘└──────────── secret ─────────────┘`}</Code>
+
+        <p className="mt-6 text-muted">
+          You mint one in your portal, under <span className="text-fg">API keys</span>{" "}
+          — the links above. Minting is a <span className="text-fg">write</span>, so
+          read-only staff cannot do it: on an organisation governed by its own Roblox
+          group, that is a rank. Sleep Token RO&rsquo;s crew read the portal at 249+
+          and write at 253+, so the people who can work the door are deliberately not
+          the same set as the people who can mint a credential that works the door
+          from anywhere in the world.
         </p>
 
         <h3 className="mt-6 text-fg">It belongs to one organisation.</h3>
@@ -436,28 +446,50 @@ export default async function ApiDocsPage() {
           A ticket for anybody else&rsquo;s show comes back{" "}
           <Mono>not_found</Mono> — not &ldquo;forbidden&rdquo;, because whether
           somebody else&rsquo;s ticket exists is none of your business, and those
-          are the same answer. You cannot widen the scope from the request. There
-          is no field for it.
+          are the same answer. The scope is read from the key on our side.{" "}
+          <span className="text-fg">
+            You cannot widen it from the request. There is no field for it.
+          </span>
         </p>
 
-        <h3 className="mt-6 text-fg">It carries only the scopes you ticked.</h3>
+        <h3 className="mt-6 text-fg">It carries only the scopes it was minted with.</h3>
         <p className="text-muted">
-          Six of them, one per thing a key can do. A key without{" "}
-          <Mono>TICKETS_ISSUE</Mono> cannot hand out tickets, and a door scanner
-          that leaks cannot be turned into a ticket printer. Calling an endpoint
-          your key has no scope for is a <span className="text-fg">403</span>, not
-          a 401 — your key is fine, it just isn&rsquo;t allowed to do that. Mint
-          another with the right boxes ticked.
+          Six of them, one per thing a key can do — listed below. Tick only what the
+          key needs: a door scanner with <Mono>TICKETS_REDEEM</Mono> and nothing else,
+          if it leaks, cannot be turned into a ticket printer. That is the entire
+          reason scopes exist — one key per job, not one key for everything.
+        </p>
+        <p className="text-muted">
+          Calling an endpoint your key has no scope for is a{" "}
+          <span className="text-fg">403</span>, never a 401. Your key is fine; it is
+          simply not allowed to do that. Scopes are fixed at mint and cannot be
+          edited afterwards, so changing what a key may do means replacing it —
+          deliberately.
+        </p>
+
+        <h3 className="mt-6 text-fg">It is shown once.</h3>
+        <p className="text-muted">
+          We store a SHA-256 of the token, not the token, so nobody — including us —
+          can ever read it back to you. Lose it and you mint a new one. There is no
+          reveal button, and no support request that produces one.
         </p>
 
         <p className="mt-6 text-muted">
-          The token is shown <span className="text-fg">once</span>, when it is
-          minted. We keep a hash, not the key, so nobody — including us — can read
-          it back to you. Lose it and mint a new one.
+          Keep it in <span className="text-fg">server</span> scripts only — never a{" "}
+          <Mono>LocalScript</Mono>, never <Mono>ReplicatedStorage</Mono>, never
+          anywhere a player can take a copy. Anybody holding it can do everything it
+          was minted with, from anywhere, as you. Revoke it the moment it leaks: the
+          portal&rsquo;s Revoke button kills it on the very next request.
         </p>
-        <p className="text-muted">
-          Keep it in server scripts. Never a LocalScript.
-        </p>
+
+        <Note>
+          <span className="text-fg">Handed a key that doesn&rsquo;t start with</span>{" "}
+          <Mono>rnl_</Mono>? That is <Mono>GAME_API_KEY</Mono>, the original one, and
+          it predates all of this. It is <span className="text-fg">unscoped</span> —
+          every show on the platform, RNL&rsquo;s and every partner&rsquo;s — and it
+          holds every scope. It still works, and it cannot be revoked from the portal.
+          It is on its way out: mint a scoped key and use that instead.
+        </Note>
       </Section>
 
       {/* 3 — Scopes */}

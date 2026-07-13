@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { partnerHasFeature, type Partner } from "@/lib/partners/registry";
 import { getUserSession } from "@/lib/session";
+import { PartnerMark } from "./emblem";
 
 /**
  * A partner site's own header. Links are bare paths ("/events") because the
@@ -10,6 +11,11 @@ import { getUserSession } from "@/lib/session";
  * The nav is built from the registry's features, so it can't point at a route
  * this partner doesn't have. That is presentation matching the guard, not
  * standing in for it: the pages themselves call assertPartnerFeature and 404.
+ *
+ * The mark appears BESIDE the name, never instead of it. A logo alone is how a
+ * fan site starts looking like the official one — the words "Sleep Token RO" in
+ * the corner of every page are load-bearing, and PartnerMark is decorative
+ * (aria-hidden) precisely because the name is the thing being announced.
  */
 export async function PartnerHeader({ partner }: { partner: Partner }) {
   const session = await getUserSession();
@@ -32,12 +38,19 @@ export async function PartnerHeader({ partner }: { partner: Partner }) {
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-bg/80 backdrop-blur">
       <div className="shell flex h-16 items-center justify-between gap-6">
-        <Link href="/" className="group flex flex-col leading-none">
-          <span className="display text-xl tracking-wide sm:text-2xl">
-            {partner.name}
-          </span>
-          <span className="mt-1 text-[9px] font-semibold uppercase tracking-kicker text-faint">
-            {partner.tagline}
+        <Link href="/" className="group flex items-center gap-3">
+          <PartnerMark
+            partner={partner}
+            size={34}
+            className="max-h-8 shrink-0 opacity-80 transition-opacity group-hover:opacity-100"
+          />
+          <span className="flex flex-col leading-none">
+            <span className="display text-xl tracking-wide sm:text-2xl">
+              {partner.name}
+            </span>
+            <span className="mt-1 text-[9px] font-semibold uppercase tracking-kicker text-faint">
+              {partner.tagline}
+            </span>
           </span>
         </Link>
 

@@ -1,0 +1,51 @@
+<!--
+  Sleep Token RO — the stand-in for a show with no artwork yet.
+
+  The shared EventCard falls back to /placeholders/event-01.svg, which is RNL's:
+  electric blue, with RNL's own wordmark across it. On a partner's site that is
+  not merely off-palette, it is the wrong organisation's name printed over their
+  show. So this brand supplies its own.
+
+  Deliberately ORIGINAL geometry — arches, rings, a horizon — not the band's
+  crest. A placeholder is an empty frame that says "a poster goes here", and
+  reusing the real artwork for it would make every unposted show look like a
+  finished one. It is on-palette (the same dim gold, the same near-black) and
+  nothing more.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="presentation">
+  <defs>
+    <!-- Tuned against the card, not against this file on its own. EventCard lays a
+         bottom-up gradient AND a grayscale filter over the image, so anything that
+         looks right here in isolation reads as an empty black rectangle in situ.
+         These values are what survive that. -->
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b09254" stop-opacity="0.85" />
+      <stop offset="70%" stop-color="#b09254" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#b09254" stop-opacity="0.1" />
+    </linearGradient>
+    <radialGradient id="pool" cx="50%" cy="46%" r="42%">
+      <stop offset="0%" stop-color="#b09254" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#b09254" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="#060605" />
+  <rect width="800" height="600" fill="url(#pool)" />
+
+  <g fill="none" stroke="url(#fade)" stroke-width="1.25">
+    <!-- The arch: a doorway, which is what a ticket is for. -->
+    <path d="M300 430 L300 300 A100 100 0 0 1 500 300 L500 430" />
+    <path d="M330 430 L330 305 A70 70 0 0 1 470 305 L470 430" />
+
+    <!-- Rings behind it. -->
+    <circle cx="400" cy="300" r="150" stroke-opacity="0.55" />
+    <circle cx="400" cy="300" r="182" stroke-opacity="0.3" />
+
+    <!-- The horizon, and the plinth it stands on. -->
+    <line x1="120" y1="430" x2="680" y2="430" />
+    <line x1="250" y1="446" x2="550" y2="446" stroke-opacity="0.5" />
+
+    <!-- A star, small, above the arch. -->
+    <path d="M400 196 L404 214 L422 218 L404 222 L400 240 L396 222 L378 218 L396 214 Z" fill="url(#fade)" stroke="none" />
+  </g>
+</svg>

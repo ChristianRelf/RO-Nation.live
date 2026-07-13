@@ -45,6 +45,30 @@ export type Partner = {
    * rather than unfinished. See lib/tickets/brand.ts.
    */
   logoUrl?: string;
+  /**
+   * The big emblem the homepage hero is built around. Optional, and the page is
+   * designed to be right without it.
+   *
+   * It is drawn ENORMOUS and dim, behind the type, bled off the edges — so it
+   * wants to be a single centred device (a crest, a seal, a sigil) on a
+   * transparent background, not a photograph and not a lockup with words in it.
+   * Type set over its own wordmark is a mess at any opacity.
+   *
+   * A partner's editable `heroImageUrl` (PartnerContent, set in their studio)
+   * overrides this when present — the registry is the default, the studio is the
+   * override, so a partner can put a poster behind the hero for one tour without
+   * a deploy.
+   */
+  crestUrl?: string;
+  /**
+   * The stand-in image for a show this partner hasn't made a poster for yet.
+   *
+   * Not cosmetic. The shared EventCard's default is RNL's placeholder — electric
+   * blue, with RNL's own wordmark across it — so a partner who leaves this unset
+   * gets a shows page with somebody else's name printed over every one of their
+   * events. Set it for any partner whose brand is not RNL's.
+   */
+  eventPlaceholderUrl?: string;
   /** Which of the shared features this partner gets. A missing one must 404, not just hide its nav item. */
   features: readonly PartnerFeature[];
   /**
@@ -127,6 +151,19 @@ export const PARTNERS: readonly Partner[] = [
     disclaimer:
       "Sleep Token RO is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
     ticketPrefix: "ST",
+    // The band's own marks, used with the permission the partner holds. They are
+    // the reason the disclaimer above is now load-bearing rather than a
+    // formality: a site carrying the real wings and the real crest is one a
+    // visitor could mistake for the band's own, and the disclaimer is the only
+    // thing that stops them. It is rendered plainly on every page — see
+    // components/partner/partner-footer.tsx. Do not shrink it, grey it out, or
+    // move it below the fold.
+    //
+    // `mark` is gold on transparent, which is why it works on the ticket's issuer
+    // bar (near-black on every brand) without a white variant.
+    logoUrl: "/brand/sleeptokenro/mark.png",
+    crestUrl: "/brand/sleeptokenro/crest.png",
+    eventPlaceholderUrl: "/brand/sleeptokenro/event-placeholder.svg",
     // Sleep Token RO run their own crew out of their own group, so their portal
     // ranks off it rather than off a member row per person. RNL still holds the
     // floor (PartnerMember rows) and the 250+ override — see the note on
@@ -146,7 +183,10 @@ export const PARTNERS: readonly Partner[] = [
     // master switch is off, so their paid tiers render locked and the reserve
     // action refuses them. Nothing is charged to anybody today.
     robuxTickets: true,
-    themeColor: "#0a0908",
+    // Duplicates --bg-rgb in styles/brands/sleeptokenro.css by necessity — the
+    // browser chrome colour is a JS export and cannot read a CSS variable. If one
+    // moves, move the other.
+    themeColor: "#060605",
     // Bone and dim gold — the brand's own accent, matched to the palette below.
     confetti: ["#b09254", "#d8c9a8", "#8e7742", "#ece9e1"],
     active: true,

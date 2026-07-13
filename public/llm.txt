@@ -20,29 +20,84 @@ none of this works.
 
 ## Getting a key
 
-A manager of your organisation mints one in your portal, under **API keys**:
+A key looks like this, and it is the whole of your credentials:
 
-- RNL's own: `portal.ronation.live/shasha/keys`
-- A partner's: `portal.ronation.live/<slug>/keys`
+```
+rnl_k7m2p9x4qz_9f3hd2n8vqw4mzx7rbt6cyk3jphs5nga
+    └── keyId ──┘└──────────── secret ─────────────┘
+```
 
-Two things about a key, and they are the two things that matter:
+Mint one in your portal, under **API keys**:
+
+| Organisation      | Where                                    | Who may mint                          |
+| ----------------- | ---------------------------------------- | ------------------------------------- |
+| RO. Nation LIVE   | `portal.ronation.live/shasha/keys`       | RNL group rank **245+**               |
+| Sleep Token RO    | `portal.ronation.live/sleeptokenro/keys` | STRO group rank **253+** (Co-Founder and above) |
+| Any partner       | `portal.ronation.live/<slug>/keys`       | that partner's managers, or RNL 250+  |
+
+Minting is a **write**, so read-only staff cannot do it. On a partner governed by
+their own Roblox group, that is a rank: Sleep Token RO's crew read the portal at
+249+ and write at 253+, so the people who can work the door are deliberately not
+the same set as the people who can mint a credential that works the door from
+anywhere in the world.
+
+### The three things that matter about a key
 
 **It belongs to one organisation.** A Sleep Token RO key sees Sleep Token RO's
 shows and nothing else. A ticket for anybody else's show comes back `not_found` —
 not "forbidden", because whether somebody else's ticket exists is none of your
-business, and those are the same answer. You cannot widen the scope from the
-request. There is no field for it.
+business, and those are the same answer. The scope is read from the key on our
+side. **You cannot widen it from the request. There is no field for it.**
 
-**It carries only the scopes you ticked.** Six of them, one per thing a key can
-do. A key without `TICKETS_ISSUE` cannot hand out tickets, and a door scanner that
-leaks cannot be turned into a ticket printer. Calling an endpoint your key has no
-scope for is a **403**, not a 401 — your key is fine, it just isn't allowed to do
-that. Mint another with the right boxes ticked.
+**It carries only the scopes it was minted with.** Six of them, one per thing a key
+can do:
 
-The token is shown **once**, when it is minted. We keep a hash, not the key, so
-nobody — including us — can read it back to you. Lose it and mint a new one.
+| Scope              | Lets the key…                                                  |
+| ------------------ | -------------------------------------------------------------- |
+| `EVENTS_READ`      | List your shows, their tiers, capacity, seats left.            |
+| `TICKETS_VERIFY`   | Check a ticket. Changes nothing.                               |
+| `TICKETS_REDEEM`   | Check somebody in at the door. **The scanner's scope.**        |
+| `TICKETS_ISSUE`    | Reserve and gift free tickets from inside the experience.      |
+| `TICKETS_PURCHASE` | Issue a **paid** ticket on your game server's word. See below. |
+| `TICKETS_VOID`     | Void a ticket, or revoke a player from a show.                 |
 
-Keep it in server scripts. Never a LocalScript.
+**Tick only what the key needs.** A door scanner with `TICKETS_REDEEM` and nothing
+else, if it leaks, cannot be turned into a ticket printer. That is the entire
+reason scopes exist — one key per job, not one key for everything.
+
+Calling an endpoint your key has no scope for is a **403**, never a 401. Your key
+is fine; it is simply not allowed to do that. Do not go and re-copy the key — mint
+one with the right boxes ticked. Scopes are fixed at mint and cannot be edited
+afterwards: changing what a key can do means replacing it, deliberately.
+
+**It is shown once.** We store a SHA-256 of the token, not the token, so nobody —
+including us — can ever read it back to you. Lose it and you mint a new one; there
+is no "reveal" button and there is no support request that produces one.
+
+### Keeping it
+
+Put it in **server** scripts only: a `Script` or a `ModuleScript` the client cannot
+require. Never a `LocalScript`, never in `ReplicatedStorage`, never in a place
+somebody can take a copy of it. Anybody holding the key can do everything it was
+minted with, from anywhere, as you.
+
+Revoke it the moment it leaks — the portal's **Revoke** button kills it on the very
+next request, and revoked is permanent (mint a replacement rather than un-revoking).
+A key you no longer recognise in the list is a key to revoke: the portal shows what
+each one was named, who minted it, and when it was last used, so an unused key with
+a name nobody remembers is safe to kill.
+
+### If you were handed a key that does not start with `rnl_`
+
+That is `GAME_API_KEY`, the original one, and it predates all of the above. It is
+**unscoped** — it can verify, redeem, issue, void and revoke tickets for every show
+on the platform, RNL's and every partner's alike — and it holds every scope. It is
+still accepted, so nothing that uses it breaks, and it is not in the portal, so it
+cannot be revoked from there.
+
+It is on its way out. If you are wiring something up today, mint a scoped key and
+use that instead. If you are maintaining something that still holds the old one,
+moving it onto a scoped key is the single best thing you can do to it.
 
 ---
 

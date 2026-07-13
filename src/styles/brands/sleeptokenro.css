@@ -1,43 +1,69 @@
 /* Sleep Token RO.
  *
- * Warm near-black, bone type, dim ritual gold. Sharp corners, heavier grain,
- * no bloom — where RNL is a loud poster (electric blue, Anton, 3px radius),
- * this is a candlelit one.
+ * Near-total black, bone type, dim ritual gold. Sharp corners, heavy grain, no
+ * bloom — where RNL is a loud poster (electric blue, Anton, 3px radius), this is
+ * a candlelit one. Where RNL fills the page, this empties it and puts one thing
+ * in the middle.
  *
- * Original work: an atmosphere, not a copy. Nothing here reproduces the band's
- * design, marks or artwork, and nothing should be added that does. The site is
- * an unofficial fan event series and has to remain visibly its own thing — see
- * the `disclaimer` on this partner in lib/partners/registry.ts.
+ * ---- On the artwork, because this reversed a rule ---------------------------
+ *
+ * This file used to say, in as many words, that nothing here reproduces the
+ * band's design, marks or artwork and that nothing should be added that does.
+ * That was the right default for a site holding no permission. It no longer
+ * describes reality: the partner holds permission for the marks, and the site now
+ * carries the real ones (public/brand/sleeptokenro/).
+ *
+ * The constraint has therefore MOVED, not gone away, and this is where it lives:
+ *
+ *   The disclaimer is now load-bearing. It is the only thing separating this page
+ *   from the band's own, and the closer the two look the more work it is doing. It
+ *   is rendered at readable size on every page (components/partner/partner-footer)
+ *   and repeated under the hero. Nothing in this stylesheet may hide it, dim it
+ *   into the background or push it out of sight — and "it spoils the atmosphere"
+ *   is not an argument against it, it is precisely the instinct the rule exists to
+ *   refuse.
+ *
+ *   The permission is for THESE ASSETS. It is not a licence to rebuild the band's
+ *   website — their layout, their words, their navigation. Borrow the atmosphere,
+ *   which is a genre and belongs to nobody. Do not reconstruct their pages.
+ *
+ * ---- The contract ----------------------------------------------------------
  *
  * Sets ONLY channels and shape/texture tokens; every derived colour is computed
- * from these in globals.css. Do not declare --accent, --line, --paper etc. here
- * — that is the one rule that keeps a brand from desyncing a colour from its
- * own channels.
+ * from these in globals.css. Do not declare --accent, --line, --paper etc. here —
+ * that is the one rule that keeps a brand from desyncing a colour from its own
+ * channels. Brand-scoped overrides of the SHARED components go at the bottom,
+ * where they can be seen, rather than being smuggled into globals.css.
  */
 :root[data-brand="sleeptokenro"] {
   /* ---- Channels ---------------------------------------------------- */
-  --bg-rgb: 10 9 8; /* warm black, a touch of umber */
-  --elev-rgb: 16 14 12;
-  --surface-rgb: 21 19 16;
+  /* Darker than it was. The crest is a gold line drawing on transparency, and it
+     only reads as *lit* in a room this black — at the old 10 9 8 it looked
+     printed on paper rather than glimpsed in the dark. If you change this, change
+     `themeColor` on the registry entry too: it duplicates this by necessity. */
+  --bg-rgb: 6 6 5;
+  --elev-rgb: 11 10 9;
+  --surface-rgb: 16 15 13;
   --fg-rgb: 236 233 225; /* bone */
   --muted-rgb: 150 142 128;
   --faint-rgb: 104 97 86;
 
-  --accent-rgb: 176 146 84; /* dim gold — leaf, not neon */
+  --accent-rgb: 176 146 84; /* dim gold — leaf, not neon. Matched to the crest. */
   --accent-hi-rgb: 216 201 168; /* the gold, lifted toward bone */
 
   /* The accent is LIGHT. Ink drawn on it must go dark, or every primary button
      on this site is bone-on-bone. globals.css warns about exactly this. */
-  --accent-ink-rgb: 18 15 11;
+  --accent-ink-rgb: 14 12 9;
 
   --paper-rgb: 226 220 206; /* aged bone — inverted panels */
-  --paper-ink-rgb: 18 15 11;
+  --paper-ink-rgb: 14 12 9;
 
-  /* Hairlines tinted bone rather than white, so rules sit in the warm palette
-     instead of cutting through it. */
-  --line-rgb: 226 220 206;
-  --line-alpha: 0.09;
-  --line-strong-alpha: 0.2;
+  /* Hairlines tinted GOLD rather than bone, so a rule reads as an inlay in the
+     palette rather than a crack through it. Kept low: on this brand a line is the
+     suggestion of a line. */
+  --line-rgb: 176 146 84;
+  --line-alpha: 0.14;
+  --line-strong-alpha: 0.3;
 
   /* ---- Shape + texture --------------------------------------------- */
   /* Squared off. RNL's 3px is a poster corner; this brand has none. */
@@ -47,4 +73,52 @@
      to be felt rather than merely present. */
   --grain-fine-opacity: 0.08;
   --grain-coarse-opacity: 0.16;
+}
+
+/* ---- Brand-scoped overrides -------------------------------------------------
+ *
+ * `:root[data-brand="…"] .x` (0,2,0) outranks the bare `.x` in globals.css
+ * (0,1,0), so these re-dress the SHARED components for this brand alone. RNL's own
+ * site and every future partner are untouched — which is the entire reason they
+ * live here and not in globals.css. Restyling .card there would restyle RNL.
+ */
+
+/* The display face is Cormorant, a high-contrast garamond. Uppercase at WIDE
+   tracking is what makes it read as carved rather than as a book — it is the one
+   typographic move this brand makes, so it is made properly. RNL's negative
+   tracking is right for a heavy grotesque and wrong here: on a light serif it
+   just closes the counters up. */
+:root[data-brand="sleeptokenro"] .display {
+  letter-spacing: 0.06em;
+  font-weight: 300;
+}
+
+/* Cards stop being cards. A filled, bordered box is the poster's instinct; here a
+   section is delimited by one gold rule and a great deal of nothing. */
+:root[data-brand="sleeptokenro"] .card {
+  background-color: transparent;
+  background-image: none;
+}
+
+:root[data-brand="sleeptokenro"] .card-hover:hover {
+  background-color: rgb(var(--accent-rgb) / 0.04);
+  border-color: var(--line-strong);
+}
+
+/* Buttons: hard-edged, wide-tracked, small. The gold fill is the one bright thing
+   on the page, which is exactly what makes "Reserve" findable in all this dark. */
+:root[data-brand="sleeptokenro"] .btn {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+}
+
+:root[data-brand="sleeptokenro"] .btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* The label on a reliquary. */
+:root[data-brand="sleeptokenro"] .kicker {
+  letter-spacing: 0.34em;
 }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/queries";
 import { dateBlock, formatDate, formatTime, relativeDays } from "@/lib/format";
 import { StatusBadge } from "@/components/ui";
+import { HeroCrest, PartnerDisclaimer, PartnerMark } from "@/components/partner/emblem";
 import { toLines } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -19,17 +20,19 @@ export const dynamic = "force-dynamic";
 // The COPY is theirs: hero, about panel and FAQ all come from PartnerContent,
 // which they edit in their studio. Every field falls back — to the registry's
 // tagline and description, or to the wording below — so a partner who has never
-// opened the editor still gets the page they had before this was editable.
+// opened the editor still gets a finished page.
 //
-// The LAYOUT is not theirs to change, and that is deliberate. Sleep Token RO has
-// no logo or key art yet, so its identity is carried by type, space and grain: a
-// big quiet wordmark, a lot of black, one line of gold. That reads as intentional
-// rather than unfinished, and it takes real artwork later without a redesign —
-// drop it in the hero and delete the hairline grid.
+// The SHAPE is the same for every partner, and it is built around one idea: an
+// enormous dim crest, a mark, a name, and then a great deal of black. It works
+// with artwork (Sleep Token RO) and without it (the pool of light and the
+// hairline grid carry a partner who has none), so this is not a Sleep Token page
+// with the others squeezed into it — it is a page that gets *more* atmospheric
+// the more artwork you give it.
 //
-// It is also, deliberately, not a copy of anyone's site. The atmosphere is a
-// genre; the specific design of the band's own pages is theirs. See the note in
-// styles/brands/sleeptokenro.css.
+// The disclaimer is rendered directly under the hero, not only in the footer.
+// That is deliberate and it is the one thing on this page not to quietly drop:
+// this site carries a real band's real marks, so the sentence that says it is not
+// their site has to be somewhere a visitor actually looks. See emblem.tsx.
 
 export default async function PartnerHome({
   params,
@@ -54,38 +57,60 @@ export default async function PartnerHome({
   const rest = upcoming.filter((e) => e.id !== featured?.id);
   const attended = past.reduce((n, e) => n + e.ticketsCount, 0);
 
+  // The studio's own image wins over the registry's crest, so a partner can hang
+  // a tour poster behind the hero for one run of shows without a deploy. This
+  // also closes a live gap: heroImageUrl has been editable and uploadable since
+  // the content editor shipped, and nothing has ever rendered it.
+  const crest = content.heroImageUrl ?? partner.crestUrl ?? null;
+
   return (
     <div>
       {/* ---- Hero ---------------------------------------------------- */}
       <section className="relative overflow-hidden border-b border-line">
-        <div className="hairline-grid pointer-events-none absolute inset-0 opacity-40" />
-        <div className="accent-glow pointer-events-none absolute inset-x-0 top-0 h-64" />
-        {/* A slow pool of light behind the wordmark, drawn in CSS — no image. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[60vh] w-[60vh] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.07] blur-3xl"
-          style={{
-            background: "radial-gradient(circle, var(--accent), transparent 65%)",
-          }}
-        />
+        {crest ? (
+          <HeroCrest src={crest} />
+        ) : (
+          // No artwork: the old treatment, which is still the right one. A brand
+          // with no crest gets type, space and a pool of light — that reads as
+          // deliberate rather than unfinished, and it is what every partner had
+          // before this page learned to hold a picture.
+          <>
+            <div className="hairline-grid pointer-events-none absolute inset-0 opacity-40" />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[60vh] w-[60vh] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.07] blur-3xl"
+              style={{
+                background: "radial-gradient(circle, var(--accent), transparent 65%)",
+              }}
+            />
+          </>
+        )}
 
-        <div className="shell relative flex min-h-[78vh] flex-col items-center justify-center py-24 text-center">
-          <p className="fade-in-1 kicker text-accent">{content.heroKicker}</p>
+        <div className="shell relative flex min-h-[88vh] flex-col items-center justify-center py-28 text-center">
+          {/* The mark sits above the name, small. It is an emblem, not a banner:
+              blown up it competes with the crest it is standing on. */}
+          <div className="fade-in-1 flex justify-center">
+            <PartnerMark partner={partner} size={72} className="max-h-16 opacity-90" />
+          </div>
 
-          {/* With no custom headline, the partner's own name is set as the
-              wordmark — the last word dropped onto its own line, in the accent.
-              That is the identity for a brand with no logo, so it is the default
-              rather than something they have to opt into. */}
-          <h1 className="fade-in-2 display mt-8 text-[clamp(3rem,11vw,9rem)] font-light leading-[0.9]">
+          <p className="fade-in-1 kicker mt-8 text-accent">{content.heroKicker}</p>
+
+          <h1 className="fade-in-2 display mt-6 text-[clamp(2.5rem,9vw,7.5rem)] leading-[0.95]">
             {content.heroTitle ?? <Wordmark name={partner.name} />}
           </h1>
+
+          {/* A hairline under the name — the inlay, closing the lockup. */}
+          <div
+            aria-hidden
+            className="fade-in-2 mt-10 h-px w-24 bg-accent/50"
+          />
 
           <p className="fade-in-3 mt-10 max-w-md text-balance leading-relaxed text-muted">
             {content.heroSubtitle}
           </p>
 
           {hasEvents ? (
-            <div className="fade-in-3 mt-10 flex flex-wrap items-center justify-center gap-3">
+            <div className="fade-in-3 mt-12 flex flex-wrap items-center justify-center gap-3">
               <Link href="/events" className="btn btn-accent">
                 {featured ? "Get a ticket" : "See the shows"}
               </Link>
@@ -97,15 +122,26 @@ export default async function PartnerHome({
         </div>
       </section>
 
+      {/* ---- Whose site this is -------------------------------------- */}
+      {/* Directly under the hero, in the flow of the page, at body size.
+          A visitor who has just seen the band's crest fill their screen is
+          precisely the visitor this sentence is for, and the footer is too late
+          to tell them. Do not move it, shrink it, or fold it away. */}
+      {partner.disclaimer ? (
+        <section className="border-b border-line bg-elev">
+          <div className="shell py-6">
+            <PartnerDisclaimer partner={partner} className="mx-auto text-center" />
+          </div>
+        </section>
+      ) : null}
+
       {/* ---- The next show ------------------------------------------- */}
       {hasEvents ? (
-        <section className="shell py-20">
-          <div className="mb-8 flex items-end justify-between gap-4">
+        <section className="shell py-24">
+          <div className="mb-10 flex items-end justify-between gap-4">
             <div>
               <p className="kicker text-accent">Next</p>
-              <h2 className="display mt-3 text-4xl sm:text-5xl">
-                The next show
-              </h2>
+              <h2 className="display mt-4 text-4xl sm:text-5xl">The next show</h2>
             </div>
             <Link
               href="/events"
@@ -118,11 +154,11 @@ export default async function PartnerHome({
           {featured ? (
             <FeaturedShow event={featured} />
           ) : (
-            <div className="card grid place-items-center px-6 py-20 text-center">
+            <div className="card grid place-items-center px-6 py-24 text-center">
               <p className="display text-3xl">Nothing announced</p>
-              <p className="mt-3 max-w-sm text-muted">
-                The next show hasn&apos;t been announced yet. Check back —
-                tickets are free, and they go fast.
+              <p className="mt-4 max-w-sm text-muted">
+                The next show hasn&apos;t been announced yet. Check back — tickets
+                are free, and they go fast.
               </p>
             </div>
           )}
@@ -132,7 +168,7 @@ export default async function PartnerHome({
       {/* ---- More shows ---------------------------------------------- */}
       {rest.length ? (
         <section className="shell pb-24">
-          <div className="mb-8 flex items-center gap-3 border-t border-line pt-10">
+          <div className="mb-8 flex items-center gap-3 border-t border-line pt-12">
             <h2 className="display text-3xl">Also coming</h2>
             <span className="pill">{rest.length}</span>
           </div>
@@ -142,7 +178,7 @@ export default async function PartnerHome({
               <li key={event.id}>
                 <Link
                   href={`/events/${event.slug}`}
-                  className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-2 py-6 transition-colors hover:bg-surface"
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-2 py-7 transition-colors hover:bg-surface"
                 >
                   <span className="tnum w-32 shrink-0 text-sm text-faint">
                     {formatDate(event.startsAt)}
@@ -164,17 +200,13 @@ export default async function PartnerHome({
       ) : null}
 
       {/* ---- Previously ---------------------------------------------- */}
-      {/* The archive. Numbers, not photographs: there is no key art or show
-          photography yet, and a grid of grey rectangles pretending to be a
-          gallery reads worse than an honest record of who turned up. When the
-          shots exist, they drop into these cards above the date line. */}
       {past.length ? (
         <section className="border-y border-line bg-elev">
-          <div className="shell py-20">
-            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div className="shell py-24">
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="kicker text-accent">Previously</p>
-                <h2 className="display mt-3 text-4xl sm:text-5xl">
+                <h2 className="display mt-4 text-4xl sm:text-5xl">
                   Shows we&apos;ve staged
                 </h2>
               </div>
@@ -192,18 +224,16 @@ export default async function PartnerHome({
                   <p className="tnum text-xs font-semibold tracking-kicker text-faint">
                     {formatDate(event.startsAt)}
                   </p>
-                  <h3 className="display mt-3 text-2xl">{event.title}</h3>
+                  <h3 className="display mt-4 text-2xl">{event.title}</h3>
                   {event.tagline ? (
                     <p className="mt-2 text-sm text-muted">{event.tagline}</p>
                   ) : null}
-                  <p className="mt-5 border-t border-line pt-4 text-sm text-faint">
+                  <p className="mt-6 border-t border-line pt-4 text-sm text-faint">
                     {event.venue ?? "Venue TBA"}
                     {event.ticketsCount > 0 ? (
                       <>
                         {" · "}
-                        <span className="tnum text-muted">
-                          {event.ticketsCount}
-                        </span>{" "}
+                        <span className="tnum text-muted">{event.ticketsCount}</span>{" "}
                         in the room
                       </>
                     ) : null}
@@ -219,11 +249,11 @@ export default async function PartnerHome({
       {/* Dropped entirely when the partner has written no body — an empty paper
           panel with a heading and nothing under it looks broken, not minimal. */}
       {content.aboutBody ? (
-        <section className="shell pb-24">
+        <section className="shell py-24">
           <div className="panel-paper p-10 sm:p-14">
             <p className="kicker !text-paper-ink/60">{content.aboutKicker}</p>
             {content.aboutTitle ? (
-              <h2 className="display mt-4 max-w-2xl text-4xl leading-tight text-paper-ink sm:text-5xl">
+              <h2 className="display mt-5 max-w-2xl text-4xl leading-tight text-paper-ink sm:text-5xl">
                 {content.aboutTitle}
               </h2>
             ) : null}
@@ -245,12 +275,10 @@ export default async function PartnerHome({
 
       {/* ---- Questions ------------------------------------------------ */}
       {content.faq.length ? (
-        <section className="shell pb-24">
-          <div className="mb-8 border-t border-line pt-10">
+        <section className="shell pb-28">
+          <div className="mb-10 border-t border-line pt-12">
             <p className="kicker text-accent">Questions</p>
-            <h2 className="display mt-3 text-4xl sm:text-5xl">
-              Before you come
-            </h2>
+            <h2 className="display mt-4 text-4xl sm:text-5xl">Before you come</h2>
           </div>
 
           <div className="max-w-3xl space-y-3">
@@ -279,8 +307,9 @@ export default async function PartnerHome({
 
 /**
  * The partner's name as the hero wordmark: last word on its own line, in the
- * accent. "Sleep Token RO" reads as "Sleep Token" over "RO", which is the whole
- * identity for a brand with no logo.
+ * accent. "Sleep Token RO" reads as "Sleep Token" over "RO" — which keeps the
+ * fan project's own initials visibly attached to the name rather than letting the
+ * page render as the band's name alone.
  */
 function Wordmark({ name }: { name: string }) {
   const parts = name.trim().split(/\s+/);
@@ -290,7 +319,7 @@ function Wordmark({ name }: { name: string }) {
   return (
     <>
       {parts.join(" ")}
-      <span className="mt-2 block text-accent">{last}</span>
+      <span className="mt-3 block text-accent">{last}</span>
     </>
   );
 }
@@ -304,10 +333,10 @@ function FeaturedShow({ event }: { event: EventWithCount }) {
   return (
     <div className="card grid overflow-hidden md:grid-cols-[auto_1fr_auto]">
       {/* Date block */}
-      <div className="flex items-center justify-center border-b border-line px-10 py-8 md:border-b-0 md:border-r">
+      <div className="flex items-center justify-center border-b border-line px-12 py-10 md:border-b-0 md:border-r">
         <div className="text-center leading-none">
           <p className="display text-6xl">{day}</p>
-          <p className="mt-2 text-xs font-bold tracking-kicker text-accent">
+          <p className="mt-3 text-xs font-bold tracking-kicker text-accent">
             {month}
           </p>
         </div>
@@ -322,10 +351,10 @@ function FeaturedShow({ event }: { event: EventWithCount }) {
           <span className="pill">{event.category}</span>
         </div>
 
-        <h3 className="display mt-4 text-4xl">{event.title}</h3>
+        <h3 className="display mt-5 text-4xl">{event.title}</h3>
         {event.tagline ? <p className="mt-3 text-muted">{event.tagline}</p> : null}
 
-        <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-3 text-sm">
+        <dl className="mt-7 flex flex-wrap gap-x-10 gap-y-3 text-sm">
           <div>
             <dt className="text-[11px] font-semibold uppercase tracking-wide text-faint">
               Doors
