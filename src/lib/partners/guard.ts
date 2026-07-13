@@ -21,20 +21,29 @@ import { partnerPortalPath } from "./urls";
 //
 // There are exactly two ways in, and the asymmetry between them is the point.
 //
-//   The partner's own people   An explicit PartnerMember row RNL grants. It is
-//                              NOT a rank in the partner's Roblox group: RNL
-//                              does not own that group, cannot see who is in it,
-//                              and cannot stop them promoting whoever they like
-//                              — so ranking off it would let a partner mint
-//                              access to RNL's infrastructure at will. A slug in
-//                              the registry grants nobody anything (the registry
-//                              says so itself); the row is the grant, and
-//                              deleting it is the revocation.
+//   The partner's own people   An explicit PartnerMember row RNL grants. The row
+//                              is the grant, and deleting it is the revocation. A
+//                              slug in the registry grants nobody anything — the
+//                              registry says so itself.
 //
 //   RNL staff                  A rank in RNL's OWN group, which RNL does control
 //                              — so here the group genuinely IS the allowlist,
 //                              exactly as in lib/shasha.ts. Rank 250+ opens every
 //                              partner portal. See the override below.
+//
+//   Their own group            OPT-IN, per partner, via `governance` in the
+//                              registry. Off by default and the default is the
+//                              careful one: RNL does not own a partner's group,
+//                              cannot see who is in it, and cannot stop them
+//                              promoting whoever they like — so switching this on
+//                              genuinely hands that partner's group admins the
+//                              power to grant access to RNL infrastructure. It is
+//                              a decision made per partner, on purpose.
+//
+// The three COMPOSE, and they compose in one direction only: each can raise what
+// you may do, none can lower it. A member row is a FLOOR, so a partner cannot lock
+// RNL's grantee out of their own portal by demoting them in a group RNL does not
+// control — and RNL's override sits above all of it regardless.
 
 export type PartnerUser = UserSession & {
   partner: Partner;
@@ -84,15 +93,26 @@ export async function getPartnerAccess(
     },
   });
 
-  if (member) {
+  // Their rank in THEIR group, if this partner is governed that way at all. Null
+  // for every partner who is not, which is the default — and for anybody who is
+  // simply not in the group.
+  const ranked = await partnerGroupRole(partner, session.robloxId);
+
+  // The row is the floor and the rank tops it up: whichever grants more wins. A
+  // partner who is governed by their group therefore cannot demote somebody RNL
+  // put there, and RNL cannot be surprised by somebody the partner promoted having
+  // LESS access than the row says. Either way the answer is the higher of the two.
+  const role = highestRole(member?.role ?? null, ranked);
+
+  if (role) {
     return {
       state: "allowed",
       user: {
         ...session,
         partner,
-        role: member.role,
-        canWrite: member.role === "MANAGER" || member.role === "OWNER",
-        canManageMembers: member.role === "OWNER",
+        role,
+        canWrite: role === "MANAGER" || role === "OWNER",
+        canManageMembers: role === "OWNER",
         isRnlStaff: false,
       },
     };
@@ -136,6 +156,48 @@ export async function getPartnerAccess(
 async function isRnlStaff(robloxId: string): Promise<boolean> {
   const membership = await getGroupMembership(robloxId, env.partners.groupId);
   return Boolean(membership && membership.rank >= env.partners.staffRank);
+}
+
+/**
+ * What this person's rank in the PARTNER's own group entitles them to — or null,
+ * which is the answer for every partner who has not opted into being governed that
+ * way, and for anybody who is not in the group.
+ *
+ * Deliberately never returns OWNER. Owner is the right to grant and revoke other
+ * members, and those members are rows in RNL's database — a grant that reaches
+ * outside the partner's own organisation. A rank in a group RNL cannot see is not
+ * the thing that should confer it. The partner's group owner (rank 255) gets
+ * MANAGER here: full run of their own portal, including API keys. OWNER stays a
+ * row, granted by RNL, deliberately.
+ */
+async function partnerGroupRole(
+  partner: Partner,
+  robloxId: string,
+): Promise<PartnerRole | null> {
+  const gov = partner.governance;
+  if (!gov) return null;
+
+  // Fails closed: a network blip at Roblox returns null, which grants nothing.
+  // Somebody who ALSO holds a member row still gets in on the row — the floor is
+  // read from our own database and does not depend on Roblox being up.
+  const membership = await getGroupMembership(robloxId, gov.groupId);
+  if (!membership) return null;
+
+  if (membership.rank >= gov.managerRank) return "MANAGER";
+  if (membership.rank >= gov.staffRank) return "STAFF";
+  return null;
+}
+
+const RANKING: Record<PartnerRole, number> = { STAFF: 1, MANAGER: 2, OWNER: 3 };
+
+/** The more powerful of two grants, or null when there is neither. */
+function highestRole(
+  a: PartnerRole | null,
+  b: PartnerRole | null,
+): PartnerRole | null {
+  if (!a) return b;
+  if (!b) return a;
+  return RANKING[a] >= RANKING[b] ? a : b;
 }
 
 /** The signed-in partner user, or null. Cheap enough to call from a layout. */

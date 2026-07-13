@@ -17,6 +17,7 @@ export function PortalNav({
   basePath,
   studioLink = false,
   doorLink = false,
+  keysLink = false,
   user,
 }: {
   /** Wordmark in the top-left — "SHASHA", "Sleep Token RO". */
@@ -34,6 +35,12 @@ export function PortalNav({
    * and a partner without the events feature has no tickets to check.
    */
   doorLink?: boolean;
+  /**
+   * API keys. Managers only — the page itself refuses read-only staff, and a nav
+   * item that bounces you is worse than no nav item. Hiding it is courtesy;
+   * requireScopeManager() in the page is the actual lock.
+   */
+  keysLink?: boolean;
   user: {
     displayName: string;
     // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
@@ -54,6 +61,7 @@ export function PortalNav({
     { label: "VIP list", href: `${basePath}/vip` },
     { label: "Blacklist", href: `${basePath}/blacklist` },
     { label: "History", href: `${basePath}/audit` },
+    ...(keysLink ? [{ label: "API keys", href: `${basePath}/keys` }] : []),
   ];
 
   return (

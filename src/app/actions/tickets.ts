@@ -2,25 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { env } from "@/lib/env";
 import { getUserSession } from "@/lib/session";
-import { generateTicketCode } from "@/lib/utils";
-import { isPast } from "@/lib/format";
-import { partnerBySlug } from "@/lib/partners/registry";
 import { partnerSiteRoute } from "@/lib/partners/urls";
-import { effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pricing";
+import { issueTicket } from "@/lib/tickets/issue";
 
-// Ticketing, for RNL's events and every partner's.
+// Ticketing, for RNL's events and every partner's — the WEBSITE's half of it.
 //
-// The partner is read from the EVENT, never from the form body. An event knows
-// whose show it is, and that cannot be forged by posting a different hidden
-// field — so there is nothing extra to validate here: reserving for a Sleep
-// Token RO show yields a Sleep Token RO ticket because the event says so.
+// The deciding is not here. Reserving a ticket — resolving the tier, taking the
+// lock on the event, counting the room, refusing a paid tier, refusing a revoked
+// player — lives in lib/tickets/issue.ts, and the game API calls exactly the same
+// function. That is not a refactor for tidiness: a checkout that oversells a room
+// the door then turns people away from is worse than either being wrong alone, and
+// two copies of a capacity check are two copies that eventually disagree.
 //
-// The TIER is read from the form, and is therefore not trusted: it is looked up
-// against that event's own tiers below, so a tier id belonging to another show
-// (or an invented one) resolves to nothing and the reservation is refused. It
-// never reaches the insert.
+// What is left here is what is genuinely the website's: the session, the terms
+// checkbox, and revalidating the pages the visitor is looking at.
 //
 // ---- Why nothing here calls redirect() -----------------------------------
 //
@@ -59,17 +55,17 @@ export type ReserveState =
         | "terms"
         | "badtier"
         | "payments_off"
+        | "payment_required"
+        | "revoked"
         | "unavailable"
         | "past"
         | "soldout"
-        | "tier_soldout";
+        | "tier_soldout"
+        | "not_found";
     };
 
 const fail = (error: Extract<ReserveState, { ok: false }>["error"]) =>
   ({ ok: false, error }) as const;
-
-const isCodeCollision = (err: any) =>
-  err?.code === "P2002" && err?.meta?.target?.includes?.("code");
 
 /** Refresh the event page and the ticket wallet, on whichever site they live. */
 function refreshTicketViews(partnerId: string | null, slug: string) {
@@ -97,144 +93,43 @@ export async function reserveTicket(
   // The "purchase" gate: you must accept the ticket terms & conditions.
   if (!acceptedTerms) return fail("terms");
 
-  // Whose show is this, and what is on sale? Read outside the transaction — it
-  // decides the code's prefix, the Robux gate and which routes to revalidate,
-  // none of which needs the lock. The transaction re-reads the event under FOR
-  // UPDATE for the parts that do.
+  // Only the slug is needed here, and only to revalidate the right pages
+  // afterwards. Everything that DECIDES anything — the tier, the caps, the money
+  // wall, the event lock — now lives in lib/tickets/issue.ts, because the game
+  // API issues tickets too and a second copy of the capacity check would
+  // eventually oversell a room this one thinks is full.
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { slug: true, partnerId: true, tiers: true },
+    select: { slug: true, partnerId: true },
   });
   if (!event) return fail("unavailable");
 
-  const partnerId = event.partnerId ?? null;
-  const partner = partnerBySlug(partnerId);
-  const prefix = partner?.ticketPrefix ?? "RN";
+  const outcome = await issueTicket({
+    eventId,
+    holder: { userId: session.uid },
+    tierId,
+    // Unscoped: this is the holder reserving for themselves on whichever site
+    // they are standing on, and the event they clicked is by definition theirs to
+    // click. Scope is what stops a partner's KEY reaching RNL's shows.
+    mode: { kind: "reserve" },
+  });
 
-  // Resolve the posted tier against THIS event's tiers. An id from another show,
-  // or one that has since been deactivated, matches nothing and is refused —
-  // which is why nothing below has to trust the form.
-  const tiers = effectiveTiers(event.tiers);
-  const tier = tiers.find((t) => (t.id ?? "") === tierId);
-  if (!tier) return fail("badtier");
-
-  if (tier.priceRobux > 0) {
-    // ---- The paid-ticket wall -------------------------------------------
-    //
-    // Refusal 1: Robux sales are off. Both keys must be open — the master switch
-    // AND the partner's registry grant. Today the master switch is off, so this
-    // is the one that fires, and the checkout has already rendered the tier as
-    // locked. This branch exists because the checkout's lock is *courtesy*: it
-    // stops a person, not a forged POST.
-    if (!robuxSalesAllowed(partner, env.robuxTickets)) {
-      return fail("payments_off");
+  if (!outcome.ok) {
+    // Two of issueTicket's refusals cannot reach a web visitor: `no_player` needs
+    // a Roblox id that Roblox has never heard of (this holder is a signed-in
+    // session, so they demonstrably exist), and `not_purchasable` is a game
+    // server charging for a free tier (this path charges nothing). Neither has a
+    // sentence written for it, because nobody will ever read one. Fold them into
+    // the generic refusal rather than putting words on a page that cannot render.
+    const reason = outcome.reason;
+    if (reason === "no_player" || reason === "not_purchasable") {
+      return fail("unavailable");
     }
-
-    // Refusal 2: reached only by switching ROBUX_TICKETS_ENABLED on. A flag is
-    // not a payment. Nothing in this codebase collects a single Robux — a real
-    // charge is a Developer Product prompted inside the Roblox experience and
-    // confirmed by ProcessReceipt calling back here, and none of that is built.
-    // Falling through would hand out a paid VIP ticket, for free, and look
-    // completely healthy doing it.
-    //
-    // So: fail loudly instead of quietly giving the room away. This throw is the
-    // line the payment work deletes — replace it with "mint the ticket PENDING,
-    // hand back a purchase prompt, settle on the receipt callback".
-    throw new Error(
-      "ROBUX_TICKETS_ENABLED is on, but no Robux payment pipeline exists — " +
-        "refusing to issue a paid ticket that nobody paid for. See lib/tickets/pricing.ts.",
-    );
+    return fail(reason);
   }
 
-  // The code is minted outside the transaction, and a collision retries the
-  // whole thing. It cannot be retried *inside*: in Postgres a failed statement
-  // aborts the surrounding transaction, so the second attempt would die on the
-  // poisoned transaction rather than on the duplicate code.
-  let outcome: ReserveState | null = null;
-  for (let attempt = 0; attempt < 5 && !outcome; attempt++) {
-    const code = generateTicketCode(prefix);
-    try {
-      outcome = await prisma.$transaction(async (tx) => {
-        // Take a write lock on the event row and hold it to commit. Everyone
-        // reserving for this event now queues here, so no two requests can both
-        // read `capacity - 1` and both insert. It serialises per event, so
-        // other events are unaffected — and unlike a Serializable transaction,
-        // there is no retry loop to get wrong.
-        //
-        // The tier counts below are read under this same lock, which is what
-        // makes a per-tier cap hold as tightly as the room's own.
-        const rows = await tx.$queryRaw<
-          { id: string; capacity: number; status: string; startsAt: Date }[]
-        >`SELECT id, capacity, status, "startsAt" FROM events WHERE id = ${eventId} FOR UPDATE`;
-
-        const ev = rows[0];
-        if (!ev || ev.status !== "PUBLISHED") return fail("unavailable");
-        if (isPast(ev.startsAt)) return fail("past");
-
-        // Already holding an active ticket? (Under the lock, so a double-submit
-        // resolves to the same ticket rather than a unique-constraint error.)
-        const existing = await tx.ticket.findUnique({
-          where: { eventId_userId: { eventId, userId: session.uid } },
-        });
-        if (existing && existing.status !== "CANCELLED") {
-          return { ok: true, id: existing.id } as const;
-        }
-
-        // The room's cap (0 = unlimited).
-        if (ev.capacity > 0) {
-          const taken = await tx.ticket.count({
-            where: { eventId, status: { not: "CANCELLED" } },
-          });
-          if (taken >= ev.capacity) return fail("soldout");
-        }
-
-        // The tier's own cap, on top. The implicit tier has no id and no cap.
-        if (tier.id && tier.capacity > 0) {
-          const takenInTier = await tx.ticket.count({
-            where: { eventId, tierId: tier.id, status: { not: "CANCELLED" } },
-          });
-          if (takenInTier >= tier.capacity) return fail("tier_soldout");
-        }
-
-        // What they hold is frozen here, not looked up later: renaming or
-        // re-pricing the tier tomorrow must not rewrite the ticket they are
-        // holding today. See the note on Ticket.tierName in schema.prisma.
-        const held = {
-          tierId: tier.id,
-          tierName: tier.name,
-          priceRobux: tier.priceRobux,
-          termsAcceptedAt: new Date(),
-        };
-
-        // Re-activate a previously cancelled ticket, or create a fresh one.
-        // Re-reserving re-picks the tier, so the snapshot is rewritten too.
-        if (existing) {
-          await tx.ticket.update({
-            where: { id: existing.id },
-            data: { status: "RESERVED", ...held },
-          });
-          return { ok: true, id: existing.id } as const;
-        }
-
-        const created = await tx.ticket.create({
-          data: { eventId, userId: session.uid, code, status: "RESERVED", ...held },
-        });
-        return { ok: true, id: created.id } as const;
-      });
-    } catch (err) {
-      if (isCodeCollision(err)) continue;
-      throw err;
-    }
-  }
-
-  // Five collisions in a 31^6 space is not bad luck, it is a broken generator.
-  // Throw rather than hand back a code no ticket was ever issued under.
-  if (!outcome) {
-    throw new Error("Could not allocate a unique ticket code after 5 attempts");
-  }
-
-  if (outcome.ok) refreshTicketViews(partnerId, event.slug);
-  return outcome;
+  refreshTicketViews(event.partnerId ?? null, event.slug);
+  return { ok: true, id: outcome.ticketId };
 }
 
 /**

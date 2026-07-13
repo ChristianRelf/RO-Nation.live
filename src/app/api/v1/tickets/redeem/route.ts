@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isValidGameKey } from "@/lib/apikey";
+import { authorize, badRequest, readJson } from "@/lib/api/guard";
+import { IDENTIFY_ERROR, lookupFrom } from "@/lib/api/lookup";
 import { BAD_REQUEST, redeemTicket } from "@/lib/tickets/verify";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/v1/tickets/redeem — burn the ticket and let them in.
 //
-// Auth:  x-api-key: <GAME_API_KEY>
+// Auth:  x-api-key: <key>          scope: TICKETS_REDEEM
 // Body:  { code }, or { robloxId, eventId }, or { username, eventId },
 //        plus optional { eventId, seal }
 //
@@ -23,40 +24,13 @@ export const dynamic = "force-dynamic";
 // exactly one check-in. See redeemTicket() in lib/tickets/verify.ts.
 
 export async function POST(req: NextRequest) {
-  if (!isValidGameKey(req)) {
-    return NextResponse.json(
-      { ok: false, error: "unauthorized" },
-      { status: 401 },
-    );
-  }
+  const auth = await authorize(req, "TICKETS_REDEEM");
+  if (auth instanceof NextResponse) return auth;
 
-  let body: Record<string, unknown> = {};
-  try {
-    body = await req.json();
-  } catch {
-    // Falls through to bad_request below.
-  }
+  const body = await readJson(req);
 
-  const str = (v: unknown) => (v == null ? null : String(v));
-
-  const result = await redeemTicket({
-    code: str(body.code),
-    robloxId: str(body.robloxId),
-    username: str(body.username),
-    eventId: str(body.eventId),
-    seal: str(body.seal),
-  });
-
-  if (result === BAD_REQUEST) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "provide `code`, or `robloxId` + `eventId`, or `username` + `eventId`",
-      },
-      { status: 400 },
-    );
-  }
+  const result = await redeemTicket(lookupFrom(body, auth.caller));
+  if (result === BAD_REQUEST) return badRequest(IDENTIFY_ERROR);
 
   return NextResponse.json({ ok: true, ...result });
 }

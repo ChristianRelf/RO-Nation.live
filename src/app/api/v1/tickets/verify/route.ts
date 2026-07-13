@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isValidGameKey } from "@/lib/apikey";
+import { authorize, badRequest, readJson } from "@/lib/api/guard";
+import { IDENTIFY_ERROR, lookupFrom } from "@/lib/api/lookup";
 import { BAD_REQUEST, checkTicket } from "@/lib/tickets/verify";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/v1/tickets/verify — is this ticket good, and what is it?
 //
-// Auth:  x-api-key: <GAME_API_KEY>
+// Auth:  x-api-key: <key>          scope: TICKETS_VERIFY
 // Body:  { code }, or { robloxId, eventId }, or { username, eventId },
 //        plus optional { eventId, seal }
 //
@@ -24,46 +25,21 @@ export const dynamic = "force-dynamic";
 // this can only answer "is this a real ticket" — not "is this a real ticket FOR
 // TONIGHT" — and a genuine ticket for last month's show comes back valid.
 //
-// The response shape is documented in full at /llm.txt.
+// SCOPED BY THE KEY. A partner's key sees only that partner's shows; a ticket for
+// anybody else's answers not_found. There is no body field to change that.
+//
+// The response shape is documented in full at /llm.txt and portal.ronation.live/docs/api.
 
 export async function POST(req: NextRequest) {
-  if (!isValidGameKey(req)) {
-    return NextResponse.json(
-      { ok: false, error: "unauthorized" },
-      { status: 401 },
-    );
-  }
+  const auth = await authorize(req, "TICKETS_VERIFY");
+  if (auth instanceof NextResponse) return auth;
 
-  let body: Record<string, unknown> = {};
-  try {
-    body = await req.json();
-  } catch {
-    // An unparseable body falls through to the bad_request below, which says what
-    // was actually wanted — more use to whoever is debugging than "invalid JSON".
-  }
+  // An unparseable body falls through to the bad_request below, which says what
+  // was actually wanted — more use to whoever is debugging than "invalid JSON".
+  const body = await readJson(req);
 
-  const str = (v: unknown) => (v == null ? null : String(v));
-
-  const result = await checkTicket({
-    code: str(body.code),
-    robloxId: str(body.robloxId),
-    username: str(body.username),
-    eventId: str(body.eventId),
-    seal: str(body.seal),
-    // Deliberately unscoped: this key belongs to one deployment and is trusted
-    // with whatever it asks about. The WEB door scopes by org — see verify.ts.
-  });
-
-  if (result === BAD_REQUEST) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "provide `code`, or `robloxId` + `eventId`, or `username` + `eventId`",
-      },
-      { status: 400 },
-    );
-  }
+  const result = await checkTicket(lookupFrom(body, auth.caller));
+  if (result === BAD_REQUEST) return badRequest(IDENTIFY_ERROR);
 
   return NextResponse.json({ ok: true, ...result });
 }

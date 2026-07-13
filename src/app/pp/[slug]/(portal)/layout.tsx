@@ -59,6 +59,9 @@ export default async function PartnerPortalLayout({
         // features decide, inside the studio layout.
         doorLink={partnerHasFeature(partner, "events")}
         studioLink
+        // Only an org with shows has tickets for a key to touch, and only a
+        // manager may mint one.
+        keysLink={user.canWrite && partnerHasFeature(partner, "events")}
         user={{
           displayName: user.displayName,
           avatarUrl: user.avatarUrl,

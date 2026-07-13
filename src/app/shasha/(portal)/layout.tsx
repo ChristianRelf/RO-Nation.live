@@ -25,6 +25,7 @@ export default async function PortalLayout({
       <PortalNav
         brand="SHASHA"
         basePath="/shasha"
+        keysLink={user.canWrite}
         user={{
           displayName: user.displayName,
           avatarUrl: user.avatarUrl,

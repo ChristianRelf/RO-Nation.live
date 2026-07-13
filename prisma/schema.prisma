@@ -153,9 +153,101 @@ model Ticket {
   tierName   String?
   priceRobux Int     @default(0)
 
+  // ---- Who gave it to them, if it was not simply taken ------------------
+  //
+  // NULL for the ordinary case: the holder reserved it themselves on the web.
+  // Set when a ticket was issued to somebody BY somebody — a gift from another
+  // player, a comp from the crew, an issue from a game server. Display and
+  // audit only; it grants nothing and is never read at the door.
+  issuedByRobloxId String?
+  issuedByName     String?
+
+  // ---- Revocation --------------------------------------------------------
+  //
+  // The difference between VOIDING a ticket and REVOKING one, and it is the only
+  // thing that records it.
+  //
+  // Voiding sets status = CANCELLED and stops here. It is the undo: a ticket
+  // issued to the wrong person, a duplicate, a change of plan. The holder is free
+  // to reserve again, exactly as if they had cancelled it themselves.
+  //
+  // Revoking sets status = CANCELLED *and* stamps this. It is the ban: the reason
+  // they may not have a ticket is the person, not the ticket. Because a Ticket row
+  // is unique on (eventId, userId) and cancellation keeps the row, the stamp
+  // survives — and the reserve path refuses to re-issue over it. Un-revoking is
+  // clearing this column, which is why it is a timestamp and not a boolean.
+  //
+  // It bans them from THIS SHOW, not from the org. A standing ban is the
+  // blacklist (RosterEntry), which is a different question with a different
+  // answer.
+  revokedAt     DateTime?
+  revokedReason String?
+  revokedByName String?
+
+  /// Every Robux payment made against this ticket. A LIST, not one: a holder who
+  /// already has general admission and then buys VIP inside the experience is
+  /// upgrading the one ticket they are allowed to hold for this event, and that
+  /// is a second payment against the same row.
+  purchases TicketPurchase[]
+
   @@unique([eventId, userId]) // one ticket per person per event
   @@index([eventId])
   @@map("tickets")
+}
+
+// ------------------------------------------------------------------
+// A Robux payment, as reported by a Roblox game server.
+//
+// This table exists because we CANNOT verify a Developer Product receipt. Roblox
+// offers no server-to-server endpoint to ask "was purchase X really paid for?" —
+// the only witness to a purchase is the ProcessReceipt handler running inside the
+// experience, and it tells us. So the trust boundary is the API key: whoever holds
+// a key with `tickets:purchase` can assert that somebody paid, and we believe them.
+// That is worth saying out loud rather than burying, because it means a leaked
+// purchase-scoped key can mint paid tickets for free.
+//
+// What this table CAN do, and the reason it is a table rather than a column, is
+// stop the same payment being honoured twice. `purchaseId` is Roblox's own
+// PurchaseId — a GUID, unique per transaction — and it is the unique key here.
+// ProcessReceipt is explicitly at-least-once: Roblox re-delivers a receipt until
+// the game returns PurchaseGranted, and a game server that crashes mid-call will
+// send it again. Without this, a re-delivery is a second ticket. With it, the
+// insert loses on the unique constraint and we hand back the FIRST ticket, which
+// is exactly what a retry should get.
+// ------------------------------------------------------------------
+model TicketPurchase {
+  id String @id @default(cuid())
+
+  /// Roblox's PurchaseId from the ProcessReceipt info. The idempotency key —
+  /// see the note above. This unique constraint IS the double-charge guard.
+  purchaseId String @unique
+
+  /// The ticket the payment bought. Cascade: a deleted ticket has no payment to
+  /// remember, and keeping the row would block the purchaseId forever.
+  ///
+  /// NOT unique — see Ticket.purchases. One ticket can be paid for twice, because
+  /// upgrading a tier is a second payment against the same ticket, and a unique
+  /// constraint here would reject the upgrade after the player had been charged.
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId String
+
+  /// What Roblox said it cost, as reported. Recorded, never trusted as authority —
+  /// the ticket's own priceRobux is the tier's price, read from our database.
+  robuxSpent Int @default(0)
+
+  /// Which key asserted the payment. NOT an FK — a key may be deleted, and the
+  /// payment record must outlive it. This is the audit trail for the trust boundary.
+  apiKeyId String?
+
+  /// The Roblox place / product the purchase happened in, if the game sent them.
+  placeId   String?
+  productId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("ticket_purchases")
 }
 
 // ------------------------------------------------------------------
@@ -571,4 +663,95 @@ model MediaAsset {
 
   @@index([partnerId, createdAt])
   @@map("media_assets")
+}
+
+// ------------------------------------------------------------------
+// API keys — how a Roblox experience talks to the door.
+//
+// Before this table there was exactly one key, GAME_API_KEY, an env var on the
+// server. That was fine while the only caller was RNL's own game. It stops being
+// fine the moment a partner is handed a key for THEIR experience, because a
+// single global secret has no scope: whoever holds it can verify, redeem, issue
+// and void tickets for every show RNL runs, including other partners'. The events
+// endpoint has carried a comment saying exactly this, unfixed, for months.
+//
+// So: a key is a row, it belongs to one organisation, and it carries a list of
+// the things it may do.
+//
+//   partnerId  WHOSE tickets it can see. A registry slug, or NULL for RNL's own —
+//              the same convention as Event.partnerId, which is what makes the
+//              scope check a single equality against the event. A key cannot read,
+//              redeem or void a ticket for a show that is not its org's. This is
+//              enforced server-side, from the key; the caller cannot ask for a
+//              wider scope, because there is nowhere to ask.
+//
+//   scopes     WHAT it may do. Read-only for a lobby board, verify+redeem for the
+//              door, issue for a giveaway bot. A door key that leaks cannot mint
+//              tickets; an issue key that leaks cannot void them.
+//
+// The SECRET is not here. `hash` is a SHA-256 of the full token, and the token is
+// shown exactly once, at creation, and never again — losing it means minting a new
+// one, which is the correct trade and the one every other API makes. SHA-256 and
+// not bcrypt because the token is 160 bits of CSPRNG output, not a password: there
+// is nothing to brute-force and a slow hash would just tax every request.
+//
+// `keyId` is the public half. It is embedded in the token (rnl_<keyId>_<secret>)
+// so a lookup is one indexed read rather than a scan of every hash in the table,
+// and it is safe to print in a UI, a log line or an audit row.
+// ------------------------------------------------------------------
+enum ApiKeyScope {
+  /// GET /api/v1/events, GET /api/v1/events/:id — the line-up, capacity, tiers.
+  EVENTS_READ
+  /// POST /api/v1/tickets/verify — look, don't touch.
+  TICKETS_VERIFY
+  /// POST /api/v1/tickets/redeem — check somebody in at the door.
+  TICKETS_REDEEM
+  /// POST /api/v1/tickets/reserve and /gift — hand out a free ticket.
+  TICKETS_ISSUE
+  /// POST /api/v1/tickets/purchase — assert that somebody paid Robux, and issue
+  /// the paid ticket. The heaviest scope in the list: nothing on our side can
+  /// check the claim. See TicketPurchase.
+  TICKETS_PURCHASE
+  /// POST /api/v1/tickets/void and /revoke — take a ticket away.
+  TICKETS_VOID
+}
+
+model ApiKey {
+  id String @id @default(cuid())
+
+  /// The org this key belongs to: a slug from lib/partners/registry.ts, or NULL
+  /// for RO. Nation LIVE's own. Plain column, not an FK — see RosterEntry.partnerId.
+  partnerId String?
+
+  /// What it is for, in the owner's words. "Main experience — door scanner".
+  name String
+
+  /// The public half of the token, and the only half we can ever show again.
+  keyId String @unique
+
+  /// SHA-256 (hex) of the whole token. Never the token itself.
+  hash String
+
+  scopes ApiKeyScope[] @default([])
+
+  /// Who minted it. A Roblox id — the portal user, never the key itself: a key
+  /// cannot mint another key, and there is no endpoint that would let it.
+  createdById   String
+  createdByName String
+
+  /// Touched on use, best-effort and deliberately imprecise (see lib/apikey.ts).
+  /// It answers "is this key still in use, or can I delete it?" — nothing more.
+  lastUsedAt DateTime?
+
+  /// Revoked keys are kept, not deleted: `keyId` stays claimed, and the audit
+  /// trail on TicketPurchase.apiKeyId still resolves to a name. A revoked key
+  /// authenticates nothing — the resolver refuses it before the hash is compared.
+  revokedAt     DateTime?
+  revokedByName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId, revokedAt])
+  @@map("api_keys")
 }

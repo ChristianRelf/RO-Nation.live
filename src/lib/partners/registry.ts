@@ -64,15 +64,38 @@ export type Partner = {
   robuxTickets?: boolean;
   /**
    * The partner's public Roblox group, linked from their site. Presentation
-   * only — it grants NOTHING.
-   *
-   * Portal access is the PartnerMember rows RNL grants, and deliberately not a
-   * rank in here: SHASHA can say "the group IS the allowlist" because RNL owns
-   * that group, but RNL does not own this one. Ranking off it would hand a
-   * partner the power to grant access to RNL's infrastructure by promoting
-   * someone in a group RNL cannot see or control.
+   * only — it grants NOTHING. `governance` below is what grants.
    */
   robloxGroupUrl?: string;
+  /**
+   * Let this partner run their OWN portal access off their OWN Roblox group.
+   *
+   * Off by default, and that default is the careful one. Portal access is normally
+   * PartnerMember rows that RNL grants and RNL revokes, precisely because RNL does
+   * not own a partner's group: turning this on hands the partner's own group admins
+   * the power to grant access to RNL infrastructure by promoting somebody, and RNL
+   * cannot see it happen. That is a real transfer of trust, and it should be a
+   * decision somebody makes on purpose, per partner — which is why it is a field
+   * here rather than a rank in env.ts.
+   *
+   * What it CANNOT do is take access away. Rank tops the member rows UP; the rows
+   * are the floor (see lib/partners/guard.ts). So a partner cannot lock RNL out of
+   * their portal by demoting people in a group RNL does not control, and RNL's own
+   * 250+ override still opens every partner portal regardless of any of this.
+   *
+   *   staffRank    read the portal — the lists, the door.
+   *   managerRank  write: edit the roster, the studio, and mint API keys.
+   *
+   * Roblox ranks run 0–255 (owner is always 255), so the owner always clears both.
+   */
+  governance?: {
+    /** THEIR group, not RNL's. Numeric id, as a string. */
+    groupId: string;
+    /** Rank at or above this reads the portal. */
+    staffRank: number;
+    /** Rank at or above this writes. Must be >= staffRank. */
+    managerRank: number;
+  };
   /** The browser chrome colour. The one colour TS has to know — it duplicates --bg, which is unavoidable: `viewport` is a JS export. */
   themeColor: string;
   /** Confetti is drawn to a <canvas>, so it can't read a CSS variable. It is the one visual value that genuinely belongs here. */
@@ -104,6 +127,16 @@ export const PARTNERS: readonly Partner[] = [
     disclaimer:
       "Sleep Token RO is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
     ticketPrefix: "ST",
+    // Sleep Token RO run their own crew out of their own group, so their portal
+    // ranks off it rather than off a member row per person. RNL still holds the
+    // floor (PartnerMember rows) and the 250+ override — see the note on
+    // `governance` above for exactly what this does and does not hand over.
+    governance: {
+      groupId: "636922593",
+      staffRank: 249, // 249+ — read the lists, work the door
+      managerRank: 253, // 253+ — write, and mint API keys
+    },
+    robloxGroupUrl: "https://www.roblox.com/communities/636922593",
     // Shows, their own blog, and their own crew applications. Not surveys —
     // survey.ronation.live is still RNL-global and has no partner scope yet, so
     // switching it on here would hand them a feature that does not exist.
@@ -147,6 +180,10 @@ const RESERVED = new Set([
   "company",
   "uploads",
   "shasha",
+  // The API docs on the portal host. The middleware tries the partner rewrite
+  // BEFORE it checks PORTAL_PATHS, so a partner slugged "docs" would swallow
+  // portal.ronation.live/docs outright.
+  "docs",
   "legal",
   "about",
   "team",
@@ -174,6 +211,33 @@ for (const p of PARTNERS) {
     throw new Error(`Duplicate partner slug "${p.slug}".`);
   }
   seen.add(p.slug);
+
+  // Governance is an access-control grant, so a typo in it is a security bug, not
+  // a rendering one. Fail the BUILD rather than the request: a managerRank below
+  // staffRank would silently promote every reader to a writer, and nothing about
+  // the running site would look wrong until somebody used it.
+  const gov = p.governance;
+  if (gov) {
+    if (!/^\d+$/.test(gov.groupId)) {
+      throw new Error(`Partner "${p.slug}": governance.groupId must be numeric.`);
+    }
+    if (gov.managerRank < gov.staffRank) {
+      throw new Error(
+        `Partner "${p.slug}": governance.managerRank (${gov.managerRank}) is below ` +
+          `staffRank (${gov.staffRank}) — that would make every reader a writer.`,
+      );
+    }
+    for (const [name, rank] of [
+      ["staffRank", gov.staffRank],
+      ["managerRank", gov.managerRank],
+    ] as const) {
+      if (!Number.isInteger(rank) || rank < 1 || rank > 255) {
+        throw new Error(
+          `Partner "${p.slug}": governance.${name} must be 1–255 (Roblox ranks; 0 is "not in the group").`,
+        );
+      }
+    }
+  }
 }
 
 export function partnerBySlug(slug: string | null | undefined): Partner | null {

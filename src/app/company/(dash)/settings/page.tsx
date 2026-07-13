@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const luau = `local HttpService = game:GetService("HttpService")
 
 local API_BASE = "%SITE%/api/v1"
-local API_KEY  = "YOUR_GAME_API_KEY"   -- keep this server-side only
+local API_KEY  = "rnl_..."             -- mint one in the portal. Server-side ONLY.
 local EVENT_ID = "paste-the-event-id-here"
 
 -- Redeem the ticket of whoever just joined, and let them in or kick them.
@@ -60,6 +60,12 @@ export default async function SettingsPage() {
   const base = env.siteUrl;
   const script = luau.replace("%SITE%", base);
 
+  // The portal is a subdomain of whatever host we are actually on, so this is
+  // right in dev (http://portal.localhost:3000) and in production alike — the same
+  // reason the middleware derives everything from the Host header rather than an
+  // env var. Keys and the API docs both live over there.
+  const portalOrigin = base.replace(/^(https?:\/\/)/, "$1portal.");
+
   return (
     <div>
       <AdminHeader
@@ -75,11 +81,16 @@ export default async function SettingsPage() {
           okText="Configured"
           badText="Not configured"
         />
+        {/* Set is now the state to WORRY about, not the healthy one. Keys are rows
+            in the database, minted per organisation with scopes; this env var is
+            the old global one, and it is unscoped and all-powerful. Amber, not
+            green. See lib/apikey.ts. */}
         <StatusTile
-          label="In-game API key"
-          ok={Boolean(env.gameApiKey)}
-          okText="Set"
-          badText="Missing"
+          label="Root API key (legacy)"
+          ok={!env.gameApiKey}
+          okText="Retired"
+          badText="Set — unscoped"
+          invert
         />
         <StatusTile
           label="Dev login"
@@ -116,31 +127,68 @@ export default async function SettingsPage() {
       {/* In-game API */}
       <Section title="In-game ticket API">
         <p className="text-muted">
-          Your Roblox experience verifies tickets by calling these endpoints with
-          the header{" "}
-          <code className="font-mono text-fg">x-api-key: &lt;GAME_API_KEY&gt;</code>
-          . Enable{" "}
+          Your Roblox experience talks to the door by calling these with the header{" "}
+          <code className="font-mono text-fg">x-api-key: &lt;key&gt;</code>. Enable{" "}
           <span className="text-fg">Allow HTTP Requests</span> in Game Settings →
           Security.
+        </p>
+
+        <p className="text-muted">
+          Keys are minted per organisation, with scopes, at{" "}
+          <a
+            href={`${portalOrigin}/shasha/keys`}
+            className="text-accent hover:text-fg"
+          >
+            portal.ronation.live/shasha/keys
+          </a>
+          . A key belongs to one org and can do only what it was granted — a door
+          scanner that leaks cannot be turned into a ticket printer. Partners mint
+          their own, in their own portal, and theirs can never see RNL&apos;s shows.
         </p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <tbody className="divide-y divide-line">
+              <EndpointRow method="GET" path="/api/v1/events" desc="The upcoming line-up" />
               <EndpointRow
                 method="GET"
-                path="/api/v1/events"
-                desc="List published upcoming events + counts"
+                path="/api/v1/events/<id>"
+                desc="One show: tiers, prices, seats left"
               />
               <EndpointRow
                 method="POST"
                 path="/api/v1/tickets/verify"
-                desc="Check if a ticket is valid (no side effects)"
+                desc="Is this ticket good? (no side effects)"
               />
               <EndpointRow
                 method="POST"
                 path="/api/v1/tickets/redeem"
-                desc="Mark a ticket checked-in at the door"
+                desc="Check somebody in at the door"
+              />
+              <EndpointRow
+                method="POST"
+                path="/api/v1/tickets/reserve"
+                desc="Give a player a free ticket"
+              />
+              <EndpointRow
+                method="POST"
+                path="/api/v1/tickets/gift"
+                desc="One player gives another a ticket"
+              />
+              <EndpointRow
+                method="POST"
+                path="/api/v1/tickets/purchase"
+                desc="They paid Robux — issue the paid ticket"
+              />
+              <EndpointRow
+                method="POST"
+                path="/api/v1/tickets/void"
+                desc="Cancel a ticket. They may reserve again"
+              />
+              <EndpointRow
+                method="POST"
+                path="/api/v1/tickets/revoke"
+                desc="Cancel it, and bar them from the show"
               />
             </tbody>
           </table>
@@ -150,7 +198,7 @@ export default async function SettingsPage() {
           Verify with curl
         </p>
         <Code>{`curl -X POST ${base}/api/v1/tickets/verify \\
-  -H "x-api-key: $GAME_API_KEY" \\
+  -H "x-api-key: $KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"code":"RN-AB12CD"}'`}</Code>
 
@@ -160,20 +208,16 @@ export default async function SettingsPage() {
         <Code>{script}</Code>
 
         <p className="mt-4 text-sm text-muted">
-          Tickets can be looked up by{" "}
-          <code className="font-mono text-fg">code</code> or by{" "}
-          <code className="font-mono text-fg">robloxId</code> +{" "}
-          <code className="font-mono text-fg">eventId</code>. Find an event&apos;s
-          ID on its Attendees page. Always send{" "}
-          <code className="font-mono text-fg">eventId</code>: without it the API
-          can only tell you the ticket is real, not that it is real{" "}
-          <em>for tonight</em>.
-        </p>
-
-        <p className="mt-4 text-sm text-muted">
-          The full contract — every field, every{" "}
-          <code className="font-mono text-fg">reason</code>, and working Luau —
-          lives at{" "}
+          The full contract — every endpoint, every field, every{" "}
+          <code className="font-mono text-fg">reason</code>, and working Luau for
+          the door and for ProcessReceipt — is at{" "}
+          <a
+            href={`${portalOrigin}/docs/api`}
+            className="text-accent hover:text-fg"
+          >
+            portal.ronation.live/docs/api
+          </a>
+          , and in machine-readable form at{" "}
           <a
             href="/llm.txt"
             target="_blank"
@@ -182,7 +226,7 @@ export default async function SettingsPage() {
           >
             /llm.txt
           </a>
-          . It is written to be handed straight to an LLM.
+          , which is written to be handed straight to an LLM.
         </p>
       </Section>
 

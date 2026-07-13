@@ -26,6 +26,12 @@ import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
  */
 const PORTAL_PATHS = [
   "/shasha",
+  // The API docs. They live on the PORTAL host and nowhere else, because they are
+  // the companion to a key and only somebody who manages an org can mint one —
+  // the page guards on exactly that (lib/docs-guard.ts). Without this line the
+  // portal branch below bounces /docs off to the main site, where the route does
+  // not exist.
+  "/docs",
   "/legal",
   "/api/auth/roblox",
   "/api/auth/logout",
@@ -270,7 +276,12 @@ export function middleware(req: NextRequest) {
 
   // ---- main site ---------------------------------------------------
   // The subdomains own these paths, so hand them over.
-  if (pathname === "/shasha" || pathname.startsWith("/shasha/")) {
+  if (
+    pathname === "/shasha" ||
+    pathname.startsWith("/shasha/") ||
+    pathname === "/docs" ||
+    pathname.startsWith("/docs/")
+  ) {
     return NextResponse.redirect(
       new URL(`${pathname}${search}`, `https://${subdomainFor("portal", host)}`),
     );

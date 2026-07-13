@@ -28,6 +28,12 @@ const ERRORS: Record<string, string> = {
   badtier: "That ticket type isn't available for this show. Pick another.",
   tier_soldout: "That tier sold out while you were deciding. Pick another.",
   payments_off: "Paid tickets aren't switched on yet — that tier can't be issued.",
+  // Robux cannot be charged from a web page — a real payment is a Developer
+  // Product prompted inside the experience. So a paid tier is not something this
+  // page can sell; it is something the show itself sells, at the door.
+  payment_required:
+    "Paid tiers are bought inside the experience, not here. Join the show and buy it in-game.",
+  revoked: "Your ticket for this show was revoked. Contact the organisers.",
 };
 
 export default async function ReservePage({

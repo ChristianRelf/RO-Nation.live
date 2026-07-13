@@ -22,6 +22,9 @@ const ERRORS: Record<string, string> = {
   badtier: "That ticket type isn't available for this show. Pick another.",
   tier_soldout: "That tier sold out while you were deciding. Pick another.",
   payments_off: "Paid tickets aren't switched on yet — that tier can't be issued.",
+  payment_required:
+    "Paid tiers are bought inside the experience, not here. Join the show and buy it in-game.",
+  revoked: "Your ticket for this show was revoked. Contact the organisers.",
 };
 
 export default async function PartnerReservePage({
