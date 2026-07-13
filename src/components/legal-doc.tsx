@@ -1,9 +1,26 @@
 import Link from "next/link";
 import { Kicker } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 
 // Shared layout for the legal documents so they stay visually consistent and
 // DRY. Each legal page just supplies a `sections` array.
+//
+// A section is paragraphs, optionally followed by a bulleted list — because the
+// honest answer to "what data do you hold?" is a list, and a list crammed into a
+// paragraph is how a policy stops being read.
+//
+// Every heading gets a stable anchor (slugified), so a specific clause can be
+// linked to: /legal/privacy#what-we-collect. Once a document is long enough that
+// you'd scroll to find anything, a contents index is rendered above it.
+
+export type LegalSection = {
+  heading: string;
+  body: string[];
+  list?: string[];
+};
+
+/** The point at which a wall of sections needs an index in front of it. */
+const CONTENTS_THRESHOLD = 8;
 const legalNav = [
   { label: "Privacy Policy", href: "/legal/privacy" },
   { label: "Terms of Service", href: "/legal/terms" },
@@ -36,10 +53,11 @@ export function LegalDoc({
   title: string;
   updated: string;
   intro?: string;
-  sections: { heading: string; body: string[] }[];
+  sections: LegalSection[];
   currentHref: string;
   nav?: { label: string; href: string }[];
 }) {
+  const showContents = sections.length >= CONTENTS_THRESHOLD;
   return (
     <div className="relative">
       <div className="accent-glow pointer-events-none absolute inset-x-0 top-0 h-56" />
@@ -76,9 +94,37 @@ export function LegalDoc({
           <p className="text-lg leading-relaxed text-muted">{intro}</p>
         ) : null}
 
+        {showContents ? (
+          <nav aria-label="Contents" className="card mt-10 p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-kicker text-faint">
+              Contents
+            </p>
+            <ol className="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              {sections.map((s, i) => (
+                <li key={s.heading} className="flex gap-3 text-sm">
+                  <span className="tnum font-mono text-xs text-faint">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <a
+                    href={`#${slugify(s.heading)}`}
+                    className="text-muted transition-colors hover:text-accent"
+                  >
+                    {s.heading}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        ) : null}
+
         <div className="mt-10 space-y-10">
           {sections.map((s, i) => (
-            <section key={s.heading}>
+            <section
+              key={s.heading}
+              id={slugify(s.heading)}
+              // Anchored headings land under the sticky header without it.
+              className="scroll-mt-24"
+            >
               <h2 className="flex items-baseline gap-3 font-display text-2xl">
                 <span className="font-mono text-sm text-accent">
                   {String(i + 1).padStart(2, "0")}
@@ -90,6 +136,17 @@ export function LegalDoc({
                   <p key={j}>{p}</p>
                 ))}
               </div>
+
+              {s.list?.length ? (
+                <ul className="mt-4 space-y-2.5">
+                  {s.list.map((item, j) => (
+                    <li key={j} className="flex gap-3 leading-relaxed text-muted">
+                      <span className="mt-[0.45rem] h-1 w-1 shrink-0 rounded-full bg-accent" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </section>
           ))}
         </div>

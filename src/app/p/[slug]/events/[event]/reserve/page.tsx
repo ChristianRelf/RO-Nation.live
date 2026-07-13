@@ -16,6 +16,14 @@ export const metadata: Metadata = { title: "Reserve ticket" };
 
 type Params = { params: { slug: string; event: string } };
 
+/** Refusals bounced back here by the checkout step. */
+const ERRORS: Record<string, string> = {
+  terms: "Please accept the ticket terms & conditions to continue.",
+  badtier: "That ticket type isn't available for this show. Pick another.",
+  tier_soldout: "That tier sold out while you were deciding. Pick another.",
+  payments_off: "Paid tickets aren't switched on yet — that tier can't be issued.",
+};
+
 export default async function PartnerReservePage({
   params,
   searchParams,
@@ -39,29 +47,13 @@ export default async function PartnerReservePage({
 
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
-  // Already holding an active ticket? Go and look at it.
-  //
-  // This redirect is also how a SUCCESSFUL PURCHASE navigates, which is not a
-  // coincidence and is worth knowing before you touch it. The reserve action
-  // revalidates, this page re-renders as part of that, and by then the buyer
-  // holds a ticket — so this fires, and lands them on it. That is exactly what
-  // is wanted, and it is the only navigation that works: a *page* redirect is a
-  // real HTTP 307 that the browser re-requests, so the middleware runs and a
-  // partner's buyer reaches the partner's ticket page. A redirect from the
-  // ACTION would not have (see app/actions/tickets.ts), and a client-side push
-  // cannot either, because this very re-render unmounts the component that would
-  // have to make it.
-  //
-  // Hence ?issued=1 here: it is what throws the confetti and says "Ticket
-  // confirmed". The cost is that someone who types this URL while already
-  // holding a ticket gets congratulated for it. That is a fair trade for the
-  // purchase — the path everybody actually takes — being right, and it needs no
-  // JavaScript to work at all.
+  // Already holding an active ticket? Go and look at it. (This used to double as
+  // the navigation for a successful purchase — checkout owns that now.)
   const existing = await prisma.ticket.findUnique({
     where: { eventId_userId: { eventId: event.id, userId: session.uid } },
   });
   if (existing && existing.status !== "CANCELLED") {
-    redirect(`/tickets/${existing.code}?issued=1`);
+    redirect(`/tickets/${existing.id}`);
   }
 
   const offers = await offersForEvent(event);
@@ -102,13 +94,16 @@ export default async function PartnerReservePage({
       </div>
 
       <section className="shell py-10">
+        {/* Bare paths, because the browser is already on the partner's host and
+            the middleware rewrites from there — see lib/partners/urls.ts. */}
         <CheckoutForm
-          eventId={event.id}
           eventTitle={event.title}
           startsAt={event.startsAt}
           venue={event.venue}
           offers={offers}
           terms={terms}
+          checkoutHref={`/events/${event.slug}/checkout`}
+          error={searchParams.error ? ERRORS[searchParams.error] : undefined}
         />
       </section>
     </div>

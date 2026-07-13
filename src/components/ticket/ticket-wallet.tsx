@@ -59,7 +59,7 @@ export function TicketWallet({
         activated={Boolean(t.activatedAt)}
         brandMark={brand.mark}
         qrValue={sealed ? null : ticketUrl(t.code)}
-        href={`/tickets/${t.code}`}
+        href={`/tickets/${t.id}`}
       />
     );
   };

@@ -202,7 +202,7 @@ export default async function EventPage({
                     </span>
                   </div>
                   <Link
-                    href={`/tickets/${myTicket!.code}`}
+                    href={`/tickets/${myTicket!.id}`}
                     className="btn btn-accent w-full"
                   >
                     View my ticket

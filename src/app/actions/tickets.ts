@@ -44,7 +44,14 @@ import { effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pricing";
 // nothing at all. See lib/partners/urls.ts.
 
 export type ReserveState =
-  | { ok: true; code: string }
+  /**
+   * The ticket's opaque ID — NOT its code.
+   *
+   * The checkout navigates with this, and the ticket page is addressed by it. The
+   * code is what the ticket page withholds until the holder activates, so handing
+   * it back here would put it straight into the URL bar and make the seal a lie.
+   */
+  | { ok: true; id: string }
   | {
       ok: false;
       error:
@@ -170,7 +177,7 @@ export async function reserveTicket(
           where: { eventId_userId: { eventId, userId: session.uid } },
         });
         if (existing && existing.status !== "CANCELLED") {
-          return { ok: true, code: existing.code } as const;
+          return { ok: true, id: existing.id } as const;
         }
 
         // The room's cap (0 = unlimited).
@@ -206,13 +213,13 @@ export async function reserveTicket(
             where: { id: existing.id },
             data: { status: "RESERVED", ...held },
           });
-          return { ok: true, code: existing.code } as const;
+          return { ok: true, id: existing.id } as const;
         }
 
-        await tx.ticket.create({
+        const created = await tx.ticket.create({
           data: { eventId, userId: session.uid, code, status: "RESERVED", ...held },
         });
-        return { ok: true, code } as const;
+        return { ok: true, id: created.id } as const;
       });
     } catch (err) {
       if (isCodeCollision(err)) continue;
@@ -258,8 +265,8 @@ export async function cancelTicket(formData: FormData) {
   refreshTicketViews(partnerId, slug);
   revalidatePath(
     partnerId
-      ? partnerSiteRoute(partnerId, `/tickets/${ticket.code}`)
-      : `/tickets/${ticket.code}`,
+      ? partnerSiteRoute(partnerId, `/tickets/${ticket.id}`)
+      : `/tickets/${ticket.id}`,
   );
 }
 
@@ -294,8 +301,8 @@ export async function activateTicket(
   const { partnerId } = ticket.event;
   revalidatePath(
     partnerId
-      ? partnerSiteRoute(partnerId, `/tickets/${ticket.code}`)
-      : `/tickets/${ticket.code}`,
+      ? partnerSiteRoute(partnerId, `/tickets/${ticket.id}`)
+      : `/tickets/${ticket.id}`,
   );
   return { activated: true };
 }

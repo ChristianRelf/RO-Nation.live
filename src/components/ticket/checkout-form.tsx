@@ -1,46 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useFormState, useFormStatus } from "react-dom";
-import { reserveTicket } from "@/app/actions/tickets";
 import { formatDate, formatTime } from "@/lib/format";
 import { priceLabel, type TierOffer } from "@/lib/tickets/pricing";
 
-// Checkout. One form: pick a tier, accept the terms, confirm.
+// Step one: pick a tier, accept the terms, go to checkout.
 //
-// It is a client component so the order summary can follow the tier you picked,
-// and so a REFUSED reservation says so in place — with your tier still selected —
-// instead of bouncing you through ?error= and starting you over. The action
-// cannot redirect anyway: a Server Action redirect skips the middleware, and on
-// a partner's site that lands the buyer on RNL's routes. See the note in
-// app/actions/tickets.ts.
+// It no longer reserves anything. It is a plain GET form pointed at
+// /events/<slug>/checkout, so submitting it is a NAVIGATION — which means the
+// whole thing works with JavaScript switched off, and the browser's back button
+// behaves. The checkout page is where the reservation actually happens, behind
+// the processing modal (see checkout-processing.tsx).
 //
-// A SUCCESSFUL reservation is not navigated from here. The reserve page redirects
-// to the new ticket on its own — the action revalidates, the page re-renders, and
-// by then the buyer holds a ticket. That is a page-level redirect, so it is a real
-// HTTP 307 and the middleware does run. The `useEffect` below is only a backstop
-// for the case where that re-render somehow does not happen; normally this
-// component is unmounted by the redirect long before the effect could fire.
+// Splitting it this way is also what makes room for Robux. A payment prompt has
+// to live on a page of its own — it is a round trip through Roblox, not a form
+// submit — and the checkout step is now that page. Today it processes a free
+// reservation; the frame does not change when it processes a purchase.
 //
-// Everything it decides (locked, sold out, price) is computed by
-// lib/tickets/pricing.ts, the SAME module the server runs, so the two cannot
-// drift; and none of it is trusted. The action re-resolves the tier against the
-// event and re-checks the Robux gate on its own, so what a disabled radio really
-// buys you is a person who isn't confused — not security.
-
-const ERRORS: Record<string, string> = {
-  auth: "Your session expired. Sign in again to reserve.",
-  terms: "Please accept the ticket terms & conditions to continue.",
-  badtier: "That ticket type isn’t available for this show. Pick another.",
-  tier_soldout: "That tier sold out while you were deciding. Pick another.",
-  payments_off:
-    "Paid tickets aren’t switched on yet — that tier can’t be issued.",
-  soldout: "This show just sold out.",
-  past: "This show has already taken place.",
-  unavailable: "This show isn’t available for reservations.",
-};
+// It stays a client component for one reason: the order summary follows the tier
+// you have selected. Everything it decides (locked, sold out, price) is computed
+// by lib/tickets/pricing.ts — the SAME module the server runs, so the two cannot
+// drift — and none of it is trusted. The action re-resolves the tier against the
+// event and re-checks the Robux gate on its own. A disabled radio buys a person
+// who isn't confused, not security.
 
 function LockIcon({ className }: { className?: string }) {
   return (
@@ -59,35 +42,25 @@ function LockIcon({ className }: { className?: string }) {
   );
 }
 
-function Confirm({ disabled }: { disabled: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      className="btn btn-accent mt-4 w-full text-base disabled:cursor-not-allowed disabled:opacity-40"
-      disabled={disabled || pending}
-    >
-      {pending ? "Confirming…" : "Confirm reservation"}
-    </button>
-  );
-}
-
 export function CheckoutForm({
-  eventId,
   eventTitle,
   startsAt,
   venue,
   offers,
   terms,
+  checkoutHref,
+  error,
 }: {
-  eventId: string;
   eventTitle: string;
   startsAt: Date | string;
   venue?: string | null;
   offers: TierOffer[];
   terms: string[];
+  /** Where this form posts: /events/<slug>/checkout, on whichever host we're on. */
+  checkoutHref: string;
+  /** A refusal bounced back from the checkout step. */
+  error?: string;
 }) {
-  const router = useRouter();
-  const [state, submit] = useFormState(reserveTicket, null);
 
   // Default to the first tier anyone can actually take, so the common case is
   // one click. If every tier is blocked the page never renders — the checkout
@@ -99,17 +72,15 @@ export function CheckoutForm({
     offers.find((o) => (o.id ?? "") === selectedId) ?? first ?? null;
   const blocked = !selected || Boolean(selected.blockedReason);
 
-  // Backstop only — see the note at the top. The reserve page's own redirect is
-  // what normally takes them to the ticket, and it unmounts this first.
-  useEffect(() => {
-    if (state?.ok) router.push(`/tickets/${state.code}?issued=1`);
-  }, [state, router]);
-
-  const error = state && !state.ok ? state.error : undefined;
-
   return (
-    <form action={submit} className="grid gap-8 lg:grid-cols-[1fr_23rem]">
-      <input type="hidden" name="eventId" value={eventId} />
+    // GET, not a server action: submitting navigates to the checkout page, which
+    // is a real page load — so the middleware runs and a partner's buyer lands on
+    // the partner's checkout, not RNL's. The tier rides in the query string.
+    <form
+      method="get"
+      action={checkoutHref}
+      className="grid gap-8 lg:grid-cols-[1fr_23rem]"
+    >
 
       {/* ---- Choose ---- */}
       <div className="space-y-8">
@@ -119,9 +90,9 @@ export function CheckoutForm({
             One ticket per Roblox account, per show.
           </p>
 
-          {error && ERRORS[error] ? (
+          {error ? (
             <p className="mt-4 rounded-brand border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
-              {ERRORS[error]}
+              {error}
             </p>
           ) : null}
 
@@ -148,7 +119,7 @@ export function CheckoutForm({
                       reads that as "no such tier" and refuses. */}
                   <input
                     type="radio"
-                    name="tierId"
+                    name="tier"
                     value={id}
                     checked={checked}
                     disabled={disabled}
@@ -283,9 +254,14 @@ export function CheckoutForm({
           </dl>
 
           <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-brand border border-line bg-bg/40 p-4 text-sm">
+            {/* `required` blocks the submit in the browser, and the checkout page
+                refuses without it as well — because a required attribute is a
+                courtesy, not a gate. The reservation action then demands the
+                acceptance a THIRD time, server-side, which is the one that counts. */}
             <input
               type="checkbox"
-              name="terms"
+              name="agreed"
+              value="1"
               required
               className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
             />
@@ -310,7 +286,12 @@ export function CheckoutForm({
             </span>
           </label>
 
-          <Confirm disabled={blocked} />
+          <button
+            className="btn btn-accent mt-4 w-full text-base disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={blocked}
+          >
+            Continue to checkout
+          </button>
 
           <p className="mt-3 text-center text-xs text-faint">
             Tied to your Roblox account · verified at the door

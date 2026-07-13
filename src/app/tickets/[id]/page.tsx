@@ -13,14 +13,21 @@ export default async function TicketDetailPage({
   params,
   searchParams,
 }: {
-  params: { code: string };
+  params: { id: string };
   searchParams: { issued?: string };
 }) {
   const session = await getUserSession();
-  if (!session) redirect(`/account?returnTo=/tickets/${params.code}`);
+  if (!session) redirect(`/account?returnTo=/tickets/${params.id}`);
 
+  // Found by ID, not by code.
+  //
+  // The code is the thing this page WITHHOLDS until the holder activates — so it
+  // cannot also be the thing in the address bar. Addressing the ticket by its own
+  // opaque id is what makes the seal real rather than decorative: before you
+  // activate, the code exists nowhere on the page, nowhere in the URL, and
+  // nowhere in the markup.
   const ticket = await prisma.ticket.findUnique({
-    where: { code: params.code },
+    where: { id: params.id },
     include: { event: true },
   });
   if (!ticket || ticket.userId !== session.uid) notFound();
@@ -35,7 +42,7 @@ export default async function TicketDetailPage({
       holder={session.displayName}
       brandMark={brand.mark}
       brandName={brand.name}
-      ticketUrl={ticketUrl(ticket.code)}
+      ticketUrl={ticketUrl(ticket.id)}
       justIssued={searchParams.issued === "1"}
     />
   );

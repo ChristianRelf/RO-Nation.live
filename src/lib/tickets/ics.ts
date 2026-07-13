@@ -17,6 +17,7 @@ const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + 
 
 export function ticketCalendarHref({
   code,
+  id,
   title,
   startsAt,
   endsAt,
@@ -25,7 +26,17 @@ export function ticketCalendarHref({
   url,
   organiser,
 }: {
-  code: string;
+  /**
+   * The ticket code — or NULL while the ticket is still sealed.
+   *
+   * The .ics is a data: URI, which means it is TEXT SITTING IN THE PAGE'S HTML.
+   * Putting the code in it before activation would hand it over to anybody who
+   * opened view-source: the ticket would look sealed and not be. So a sealed
+   * ticket gets a calendar entry that names the show and nothing else.
+   */
+  code: string | null;
+  /** Stable UID for the calendar entry. Opaque, so it is safe before activation. */
+  id: string;
   title: string;
   startsAt: Date;
   endsAt?: Date | null;
@@ -45,7 +56,7 @@ export function ticketCalendarHref({
     "CALSCALE:GREGORIAN",
     `PRODID:-//${esc(organiser)}//Tickets//EN`,
     "BEGIN:VEVENT",
-    `UID:${code}@ronation.live`,
+    `UID:${id}@ronation.live`,
     `DTSTAMP:${stamp(new Date())}`,
     `DTSTART:${stamp(start)}`,
     `DTEND:${stamp(end)}`,

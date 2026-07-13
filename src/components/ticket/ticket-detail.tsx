@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { formatDateTime, isPast } from "@/lib/format";
+import { formatDate, formatDateTime, isPast } from "@/lib/format";
 import { ticketCalendarHref } from "@/lib/tickets/ics";
 import { priceLabel } from "@/lib/tickets/pricing";
 import { Celebrate } from "./celebrate";
 import { ActivateButton, CancelButton } from "./ticket-actions";
 import { TicketArt } from "./ticket-art";
+import { TicketDownload } from "./ticket-download";
 
 // The ticket, open. Shared by RNL's route and every partner's — the two pages
 // differ only in how they find the ticket and who is allowed to see it, which is
@@ -57,15 +58,23 @@ export function TicketDetail({
   const activated = Boolean(ticket.activatedAt);
   const ended = isPast(event.startsAt);
 
-  // The QR is the thing you present. It stays sealed until they activate — the
-  // ritual is the point — but a checked-in ticket has obviously been presented,
-  // so there is nothing left to seal.
-  const qrValue = !cancelled && (activated || checkedIn) ? ticketUrl : null;
+  // Nothing that admits you is shown until you activate: not the QR, not the
+  // barcode, and not the code itself. Reserving gets you a place; activating is
+  // what arms the ticket, and it is a deliberate, one-way act — so the thing you
+  // present should not be sitting there from the moment you paid.
+  //
+  // A checked-in ticket has obviously already been presented, so there is nothing
+  // left to seal. A cancelled one has nothing worth revealing.
+  const revealed = !cancelled && (activated || checkedIn);
 
   const tierName = ticket.tierName ?? "General Admission";
 
   const calendarHref = ticketCalendarHref({
-    code: ticket.code,
+    // Sealed tickets get a calendar entry with no code in it — the .ics is a
+    // data: URI, so it is text in the page, and a code hidden on screen but
+    // printed in the markup is not hidden at all.
+    code: revealed ? ticket.code : null,
+    id: ticket.id,
     title: event.title,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
@@ -92,8 +101,9 @@ export function TicketDetail({
         </h1>
         {justIssued ? (
           <p className="mt-4 max-w-xl text-muted">
-            Saved to your wallet. Activate it when you&apos;re heading in — that
-            reveals the QR you show at the door.
+            Saved to your wallet. Your ticket code, barcode and QR stay sealed
+            until you activate — do that when you&apos;re heading in, and the
+            ticket arms itself.
           </p>
         ) : null}
       </div>
@@ -115,8 +125,27 @@ export function TicketDetail({
             status={ticket.status}
             brandMark={brandMark}
             brandName={brandName}
-            qrValue={qrValue}
+            ticketUrl={ticketUrl}
+            revealed={revealed}
           />
+
+          {/* Under the card, on the page rather than printed on the ticket: the
+              things that would clutter a real stub but that a holder still wants
+              — how the marks are read, and what the code alone will do. */}
+          <ul className="mt-6 grid gap-3 text-sm text-muted sm:grid-cols-3">
+            <Note title="Two marks, one code">
+              The barcode down the side and the QR on the stub carry the same
+              ticket. Either scans you in.
+            </Note>
+            <Note title="No phone? No problem">
+              The crew can check you in from the code alone. Read it out at the
+              door.
+            </Note>
+            <Note title="Tied to your account">
+              Issued to {holder}. It isn&apos;t transferable, and it won&apos;t
+              admit anyone else.
+            </Note>
+          </ul>
         </div>
       </section>
 
@@ -154,8 +183,9 @@ export function TicketDetail({
             <>
               <h2 className="display text-xl">Ready at the door</h2>
               <p className="mt-2 text-sm text-muted">
-                Your ticket is active. Show the QR on the stub — or read out the
-                code — and you&apos;ll be checked in inside the experience.
+                Your ticket is armed. Show the QR on the stub, hold up the
+                barcode, or read out the code — any of the three checks you in
+                inside the experience.
               </p>
               {event.placeUrl ? (
                 <a
@@ -172,8 +202,9 @@ export function TicketDetail({
             <>
               <h2 className="display text-xl">Ready to go?</h2>
               <p className="mt-2 text-sm text-muted">
-                Activating reveals the QR code on your stub. Do it when
-                you&apos;re heading in — it can&apos;t be undone.
+                Activating reveals your ticket code, the barcode and the QR — and
+                lets you download the ticket. Do it when you&apos;re heading in;
+                it can&apos;t be undone.
               </p>
               <ActivateButton ticketId={ticket.id} />
             </>
@@ -191,7 +222,7 @@ export function TicketDetail({
               label="Activated"
               at={ticket.activatedAt}
               done={activated}
-              detail={activated ? "QR revealed" : "Not activated yet"}
+              detail={activated ? "Code, barcode and QR revealed" : "Not activated yet"}
             />
             <Step
               label="Checked in"
@@ -208,17 +239,25 @@ export function TicketDetail({
           <h2 className="display text-xl">Ticket details</h2>
 
           <dl className="mt-4 space-y-3 text-sm">
-            <Row label="Ticket code" value={ticket.code} mono />
+            {/* The code is withheld with the marks, not shown beside them — a
+                sealed QR next to a printed code would be a lock with the key
+                taped to it. */}
+            <Row
+              label="Ticket code"
+              value={revealed ? ticket.code : "Sealed until activated"}
+              mono={revealed}
+            />
             <Row label="Admission" value={tierName} />
             <Row label="Paid" value={priceLabel(ticket.priceRobux)} />
             <Row label="Holder" value={holder} />
             <Row label="Issued by" value={brandName} />
+            <Row label="Show" value={formatDate(event.startsAt)} />
           </dl>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <a
               href={calendarHref}
-              download={`${ticket.code}.ics`}
+              download={`${revealed ? ticket.code : "ticket"}.ics`}
               className="btn btn-ghost"
             >
               Add to calendar
@@ -226,12 +265,49 @@ export function TicketDetail({
             <Link href={`/events/${event.slug}`} className="btn btn-ghost">
               View event
             </Link>
+
+            {/* Downloading a ticket that has not been activated would hand out a
+                PNG with a hole where the QR should be. There is nothing to keep
+                until it is armed. */}
+            {revealed ? (
+              <TicketDownload
+                ticket={{
+                  code: ticket.code,
+                  eventTitle: event.title,
+                  when: formatDateTime(event.startsAt),
+                  venue: event.venue,
+                  tierName,
+                  holder,
+                  paid: priceLabel(ticket.priceRobux),
+                  brandName,
+                  brandMark,
+                  ticketUrl,
+                }}
+              />
+            ) : null}
           </div>
 
           {!cancelled && !ended ? <CancelButton ticketId={ticket.id} /> : null}
         </div>
       </section>
     </div>
+  );
+}
+
+function Note({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="rounded-brand border border-line bg-elev p-4">
+      <p className="text-[11px] font-bold uppercase tracking-kicker text-accent">
+        {title}
+      </p>
+      <p className="mt-1.5 text-xs leading-relaxed text-muted">{children}</p>
+    </li>
   );
 }
 

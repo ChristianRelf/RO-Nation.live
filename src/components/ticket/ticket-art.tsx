@@ -1,16 +1,26 @@
 import { formatDate, formatTime } from "@/lib/format";
 import { priceLabel } from "@/lib/tickets/pricing";
 import { TicketQR } from "./ticket-qr";
+import { TicketBarcode } from "./ticket-barcode";
 
-// The ticket, full size. Body on the left, tear-off stub on the right, a
-// perforated seam between them and a punched notch at each end of it — the
-// geometry lives in globals.css under `.ticket`.
+// The ticket. It is meant to read as a physical object somebody printed — a pale
+// card lying on a dark table, not a dark card blending into one.
 //
-// The stub is CREAM and the body is dark, and that is not only a look. The QR
-// has to be dark ink on a light field to be readable at all (see ticket-qr.tsx),
-// so the mark needs a pale panel to sit on — and a pale tear-off stub is exactly
-// what a real ticket has. The constraint and the design agree, which is the only
-// reason to trust either of them.
+// That is why the stock is CREAM while the page is not. It is also what the two
+// machine-readable marks require: a QR and a Code 128 both need dark ink on a pale
+// field to scan at all (see ticket-qr.tsx and lib/tickets/barcode.ts), so the marks
+// need pale paper under them. A dark ticket would have meant two pale patches
+// floating on it — exactly the "designed first, made scannable afterwards" look
+// this avoids. The constraint and the design agree, which is the only reason to
+// trust either of them.
+//
+// Layout, left to right:
+//
+//   [ barcode rail ] │ [ body — issuer bar, title, when, who ] ┊ [ stub — QR ]
+//
+// The rail is the edge you point a laser scanner at; the stub is what a phone
+// camera gets. Both carry the same ticket code, and both stay sealed until the
+// holder activates — see `revealed`.
 
 export type TicketArtStatus = "RESERVED" | "CHECKED_IN" | "CANCELLED";
 
@@ -28,8 +38,16 @@ export function TicketArt({
   status,
   brandMark,
   brandName,
-  /** The URL the QR encodes. NULL keeps the stub sealed until they activate. */
-  qrValue,
+  /** The URL the QR encodes. */
+  ticketUrl,
+  /**
+   * Has the holder activated it?
+   *
+   * Until they have, the code, the barcode and the QR are all withheld — the
+   * ticket is real, it just isn't armed. ONE flag rather than three, so there is
+   * no way to end up printing a scannable barcode beside a hidden code.
+   */
+  revealed,
 }: {
   code: string;
   eventTitle: string;
@@ -44,105 +62,142 @@ export function TicketArt({
   status: TicketArtStatus;
   brandMark: string;
   brandName: string;
-  qrValue: string | null;
+  ticketUrl: string;
+  revealed: boolean;
 }) {
   const cancelled = status === "CANCELLED";
   const checkedIn = status === "CHECKED_IN";
 
   return (
-    // Dimmed, but NOT desaturated: `saturate-0` also drains the VOID stamp, and a
-    // grey VOID at 17% over a grey ticket is a stamp you have to hunt for. The
-    // one thing a dead ticket must say clearly is that it is dead.
-    <div className={`group ticket ${cancelled ? "opacity-75" : ""}`}>
-      <div className="relative flex flex-col sm:flex-row">
-        {/* ---- Body ---- */}
-        <div className="ticket-foil relative flex-1 overflow-hidden bg-surface p-6 sm:p-7">
-          <div className="ticket-guilloche pointer-events-none absolute inset-0" />
+    // Dimmed, but NOT desaturated: `saturate-0` would drain the VOID stamp too,
+    // and a grey VOID over a grey ticket is a stamp you have to hunt for. The one
+    // thing a dead ticket must say clearly is that it is dead.
+    <div className={`group ticket ${cancelled ? "opacity-80" : ""}`}>
+      <div className="panel-paper relative flex flex-col sm:flex-row">
+        {/* ---- Barcode rail ----------------------------------------------
+            The scannable edge. Vertical, because that is where a ticket puts it,
+            and because a tall thin rail is what a laser scanner is happiest with.
+            Hidden on a phone, where there is no room for it and the QR is the mark
+            anybody would actually use. */}
+        <div className="relative hidden shrink-0 flex-col items-center justify-between gap-3 border-r border-dashed border-paper-ink/25 px-3 py-6 sm:flex">
+          <span className="text-[8px] font-bold uppercase tracking-[0.3em] text-paper-ink/40 [writing-mode:vertical-rl]">
+            {brandName}
+          </span>
 
-          <div className="relative">
-            {/* Issuer + what this thing is */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-7 w-7 place-items-center rounded-brand bg-accent text-[11px] font-extrabold tracking-tight text-accent-ink">
-                  {brandMark}
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
-                  {brandName}
-                </span>
-              </div>
-              <span className="shrink-0 rounded-brand border border-accent/30 bg-accent-soft px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-accent">
-                Admit one
+          {revealed && !cancelled ? (
+            <TicketBarcode value={code} vertical length={196} thickness={42} />
+          ) : (
+            <div className="grid h-[196px] w-[42px] place-items-center border border-dashed border-paper-ink/20">
+              <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-paper-ink/35 [writing-mode:vertical-rl]">
+                {cancelled ? "Void" : "Sealed"}
               </span>
             </div>
+          )}
 
-            <h2 className="display mt-5 text-3xl leading-[0.95] sm:text-4xl">
+          <span className="font-mono text-[9px] font-bold tracking-[0.18em] text-paper-ink/60 [writing-mode:vertical-rl]">
+            {revealed && !cancelled ? code : "—"}
+          </span>
+        </div>
+
+        {/* ---- Body ------------------------------------------------------- */}
+        <div className="relative min-w-0 flex-1">
+          {/* The issuer bar: the one dark band on the card, and the loudest place
+              the promoter's name appears. A real ticket names its promoter across
+              the top, and this is that. */}
+          <div className="flex items-center justify-between gap-4 bg-paper-ink px-5 py-2.5 sm:px-7">
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-6 w-6 place-items-center rounded-brand bg-accent text-[10px] font-extrabold tracking-tight text-accent-ink">
+                {brandMark}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-paper">
+                {brandName}
+              </span>
+            </div>
+            <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.24em] text-paper/60">
+              Admit one
+            </span>
+          </div>
+
+          <div className="p-5 sm:p-7">
+            {category ? (
+              <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-paper-ink/45">
+                {category}
+              </p>
+            ) : null}
+
+            <h2 className="display mt-2 text-3xl leading-[0.95] text-paper-ink sm:text-4xl">
               {eventTitle}
             </h2>
             {tagline ? (
-              <p className="mt-2 line-clamp-1 text-sm text-muted">{tagline}</p>
+              <p className="mt-2 line-clamp-1 text-sm text-paper-ink/60">
+                {tagline}
+              </p>
             ) : null}
 
-            <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
-              <time className="font-semibold text-fg">
+            {/* When and where — big enough to read across a dark room. */}
+            <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-paper-ink/15 pt-4">
+              <time className="display text-xl text-paper-ink">
                 {formatTime(startsAt)}
               </time>
-              <span className="text-faint">·</span>
-              <time className="text-fg">{formatDate(startsAt)}</time>
+              <span className="text-paper-ink/30">·</span>
+              <time className="text-sm font-semibold text-paper-ink/80">
+                {formatDate(startsAt)}
+              </time>
               {venue ? (
                 <>
-                  <span className="text-faint">·</span>
-                  <span className="text-muted">{venue}</span>
+                  <span className="text-paper-ink/30">·</span>
+                  <span className="text-sm text-paper-ink/60">{venue}</span>
                 </>
               ) : null}
-            </p>
+            </div>
 
-            {/* The data grid a ticket wears: what you hold, who holds it.
-                Two columns, not four. A tier is named by whoever set it up —
-                "VIP — Front Barrier" — and four columns across a ticket this
-                wide gave each one about 100px, which turned the commonest value
-                of all into "General Admi…". */}
-            <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5">
+            {/* What you hold, and who holds it. Two columns, not four: a tier is
+                named by whoever set it up ("VIP — Front Barrier"), and four columns
+                across a card this wide turned the commonest value of all into
+                "General Admi…". */}
+            <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4">
               <Field label="Admission" value={tierName} />
               <Field label="Holder" value={holder} />
               <Field
                 label="Doors"
                 value={doorsAt ? formatTime(doorsAt) : formatTime(startsAt)}
               />
-              <Field
-                label="Paid"
-                value={priceLabel(priceRobux)}
-                accent={priceRobux > 0}
-              />
+              <Field label="Paid" value={priceLabel(priceRobux)} />
             </dl>
 
-            {/* Microtext — the fine repeated serial real tickets are printed
-                with. Decorative, and it does not pretend to be anything else. */}
+            {/* Microtext — the fine repeated serial a real ticket is printed with.
+                Decorative, and it doesn't pretend otherwise. It repeats the BRAND
+                rather than the code, so it gives nothing away before activation. */}
             <p
               aria-hidden
-              className="mt-5 select-none overflow-hidden text-nowrap font-mono text-[6px] leading-none tracking-[0.3em] text-faint/40"
+              className="mt-6 select-none overflow-hidden text-nowrap font-mono text-[6px] leading-none tracking-[0.3em] text-paper-ink/20"
             >
-              {`${code} · `.repeat(24)}
+              {`${brandName} · `.repeat(20)}
             </p>
           </div>
 
-          {/* Overprint. Only ever one of these, and never on a live ticket. */}
+          {/* Overprint. Only ever one, and never on a live ticket. */}
           {cancelled ? (
-            <Stamp className="text-red-500">Void</Stamp>
+            <Stamp className="text-red-600">Void</Stamp>
           ) : checkedIn ? (
-            <Stamp className="text-emerald-400">Checked in</Stamp>
+            <Stamp className="text-emerald-700">Checked in</Stamp>
           ) : null}
         </div>
 
-        {/* ---- Stub ---- */}
-        <div className="ticket-stub-panel panel-paper relative flex shrink-0 flex-col items-center justify-center gap-3 p-4">
-          {qrValue ? (
-            <TicketQR value={qrValue} size={132} mark={brandMark} />
+        {/* ---- Stub -------------------------------------------------------- */}
+        {/* The seam and the punched notches are drawn in the PAGE colour by
+            globals.css, so they read as holes cut through the card rather than
+            lines printed on it — which is only true now that the card is pale and
+            the page is not. */}
+        <div className="ticket-stub-panel relative flex shrink-0 flex-col items-center justify-center gap-3 p-5">
+          {revealed && !cancelled ? (
+            <TicketQR value={ticketUrl} size={124} mark={brandMark} />
           ) : (
-            <div className="grid h-[132px] w-[132px] place-items-center border border-dashed border-paper-ink/25 px-3 text-center">
+            <div className="grid h-[124px] w-[124px] place-items-center border border-dashed border-paper-ink/25 px-3 text-center">
               <span className="text-[10px] font-semibold uppercase leading-snug tracking-[0.12em] text-paper-ink/45">
                 {/* A cancelled ticket has no QR either, and telling its holder it
-                    is "sealed until activated" invites them to go looking for a
-                    button that is not there and would not help. */}
+                    is "sealed until activated" would send them hunting for a button
+                    that isn't there and wouldn't help. */}
                 {cancelled ? (
                   "No longer valid"
                 ) : (
@@ -158,10 +213,13 @@ export function TicketArt({
 
           <div className="text-center">
             <p className="font-mono text-[13px] font-bold tracking-[0.2em] text-paper-ink">
-              {code}
+              {revealed && !cancelled ? code : "•••‑••••••"}
             </p>
-            <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.22em] text-paper-ink/50">
-              Admit one · Non-transferable
+            <p className="mt-1.5 text-[8px] font-bold uppercase tracking-[0.2em] text-paper-ink/55">
+              {brandName}
+            </p>
+            <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-paper-ink/40">
+              Non-transferable
             </p>
           </div>
         </div>
@@ -170,25 +228,13 @@ export function TicketArt({
   );
 }
 
-function Field({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
+function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-faint">
+      <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-paper-ink/45">
         {label}
       </dt>
-      <dd
-        className={`mt-1 truncate text-sm font-semibold ${
-          accent ? "text-accent" : "text-fg"
-        }`}
-      >
+      <dd className="mt-1 truncate text-sm font-semibold text-paper-ink">
         {value}
       </dd>
     </div>

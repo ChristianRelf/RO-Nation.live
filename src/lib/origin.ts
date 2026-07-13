@@ -59,10 +59,14 @@ export function currentOrigin() {
  * The absolute URL a ticket's QR encodes — on the host the holder is actually
  * on, which is what keeps a Sleep Token RO ticket pointing at Sleep Token RO.
  *
- * `<slug>.ronation.live/tickets/ST-XXXXXX` is a real, working URL: the
- * middleware rewrites it to /p/<slug>/tickets/ST-XXXXXX. Scanning the mark on a
- * partner's ticket opens the partner's site, in the partner's brand.
+ * It takes the ticket's opaque ID, not its code. The code is withheld until the
+ * holder activates, so it must not appear in the URL either — see the note on the
+ * lookup in app/tickets/[id]/page.tsx.
+ *
+ * `<slug>.ronation.live/tickets/<id>` is a real, working URL: the middleware
+ * rewrites it to /p/<slug>/tickets/<id>. Scanning the mark on a partner's ticket
+ * opens the partner's site, in the partner's brand.
  */
-export function ticketUrl(code: string) {
-  return `${currentOrigin()}/tickets/${code}`;
+export function ticketUrl(id: string) {
+  return `${currentOrigin()}/tickets/${id}`;
 }
