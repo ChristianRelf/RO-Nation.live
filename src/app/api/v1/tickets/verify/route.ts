@@ -7,7 +7,14 @@ export const dynamic = "force-dynamic";
 // POST /api/v1/tickets/verify — is this ticket good, and what is it?
 //
 // Auth:  x-api-key: <GAME_API_KEY>
-// Body:  { code } or { robloxId, eventId }, plus optional { eventId, seal }
+// Body:  { code }, or { robloxId, eventId }, or { username, eventId },
+//        plus optional { eventId, seal }
+//
+// A Roblox server already knows who joined — Player.UserId and Player.Name — so it
+// can ask "does this player hold a ticket for tonight?" without anybody typing a
+// code at all. Send `robloxId` when you have it: it is the identity. `username` is
+// there for the cases where a human is doing the typing, and it is resolved to an
+// id before anything is looked up (see resolveHolderId in lib/tickets/verify.ts).
 //
 // READ ONLY. It changes nothing, so the game can call it as often as it likes:
 // when a player joins, to show somebody their tier, to light the VIP door. Use
@@ -40,6 +47,7 @@ export async function POST(req: NextRequest) {
   const result = await checkTicket({
     code: str(body.code),
     robloxId: str(body.robloxId),
+    username: str(body.username),
     eventId: str(body.eventId),
     seal: str(body.seal),
     // Deliberately unscoped: this key belongs to one deployment and is trusted
@@ -48,7 +56,11 @@ export async function POST(req: NextRequest) {
 
   if (result === BAD_REQUEST) {
     return NextResponse.json(
-      { ok: false, error: "provide `code`, or `robloxId` + `eventId`" },
+      {
+        ok: false,
+        error:
+          "provide `code`, or `robloxId` + `eventId`, or `username` + `eventId`",
+      },
       { status: 400 },
     );
   }

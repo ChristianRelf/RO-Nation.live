@@ -8,6 +8,7 @@ import {
   BAD_REQUEST,
   checkTicket,
   redeemTicket,
+  type LookupInput,
   type VerifyResult,
 } from "@/lib/tickets/verify";
 
@@ -49,6 +50,37 @@ async function authorise(slug?: string) {
   return null;
 }
 
+/**
+ * What the crew typed, as a lookup — or the complaint to show them instead.
+ *
+ * Two ways in, because two things happen at a real door. Usually there is a code
+ * to scan. Sometimes there is a person who lost it and all they have is their
+ * name, so the door can ask by player instead — the same lookup the game API makes
+ * when somebody joins the experience.
+ *
+ * A player lookup NEEDS a show pinned. One person can hold a ticket to every event
+ * we run, so "has @x got a ticket" has no single answer until the door says which
+ * night it is.
+ */
+function lookup(
+  formData: FormData,
+  scope: string | null,
+): LookupInput | DoorState {
+  const code = String(formData.get("code") || "").trim();
+  const player = String(formData.get("player") || "").trim();
+  const eventId = String(formData.get("eventId") || "").trim() || null;
+
+  if (!code && !player) return err("Scan a ticket code, or enter a player.");
+  if (!code && !eventId) {
+    return err("Pick tonight's show to look a player up by name.");
+  }
+
+  return { code: code || null, username: player || null, eventId, scope };
+}
+
+const isComplaint = (v: LookupInput | DoorState): v is DoorState =>
+  "state" in v;
+
 /** Look, don't touch. */
 export async function doorCheck(
   _prev: DoorState | null,
@@ -57,12 +89,13 @@ export async function doorCheck(
   const slug = String(formData.get("scope") || "") || undefined;
   const scope = await authorise(slug);
 
-  const code = String(formData.get("code") || "").trim();
-  const eventId = String(formData.get("eventId") || "").trim() || null;
-  if (!code) return err("Type or scan a ticket code.");
+  const input = lookup(formData, scope);
+  if (isComplaint(input)) return input;
 
-  const result = await checkTicket({ code, eventId, scope });
-  if (result === BAD_REQUEST) return err("Type or scan a ticket code.");
+  const result = await checkTicket(input);
+  if (result === BAD_REQUEST) {
+    return err("Scan a ticket code, or enter a player.");
+  }
 
   return { state: "result", result };
 }
@@ -75,12 +108,13 @@ export async function doorRedeem(
   const slug = String(formData.get("scope") || "") || undefined;
   const scope = await authorise(slug);
 
-  const code = String(formData.get("code") || "").trim();
-  const eventId = String(formData.get("eventId") || "").trim() || null;
-  if (!code) return err("Type or scan a ticket code.");
+  const input = lookup(formData, scope);
+  if (isComplaint(input)) return input;
 
-  const result = await redeemTicket({ code, eventId, scope });
-  if (result === BAD_REQUEST) return err("Type or scan a ticket code.");
+  const result = await redeemTicket(input);
+  if (result === BAD_REQUEST) {
+    return err("Scan a ticket code, or enter a player.");
+  }
 
   // The attendee list for this show now shows one more person through the door.
   if (result.ticket) {

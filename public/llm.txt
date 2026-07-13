@@ -38,9 +38,28 @@ moment they actually walk in.
 Send **one** of these:
 
 ```json
-{ "code": "RN-4K9QW2" }                       // the code printed on the ticket
-{ "robloxId": "851394804", "eventId": "..." } // or: who is standing here
+{ "code": "RN-4K9QW2" }                        // the code printed on the ticket
+{ "robloxId": "851394804", "eventId": "..." }  // or: who is standing here
+{ "username": "chrxs_dev", "eventId": "..." }  // or: the same person, by name
 ```
+
+### Asking by player, not by code
+
+Your server already knows who joined — `Player.UserId` and `Player.Name` — so it can
+ask *"does this player hold a ticket for tonight?"* the moment they spawn, without
+anybody typing anything. That is what `robloxId` is for, and it is the one to reach
+for: **send `robloxId` whenever you have it.**
+
+`username` exists for the times a human is doing the typing. It is resolved against
+Roblox's own API into a `robloxId` before any ticket is looked up, because a
+username is a label a player can change and an id is not — so somebody who renamed
+the night before the show still walks through their own door. (An id sent in the
+`username` field is accepted as-is.)
+
+**A player lookup needs `eventId`.** One person can hold a ticket to every show we
+run, so their name alone does not identify a ticket. Without it you get a `400`. A
+`code`, by contrast, identifies exactly one ticket on its own — though you should
+still send `eventId` with it, for the reason below.
 
 Optional, and both worth sending:
 
@@ -291,6 +310,27 @@ Note that one uses `valid`, not `admit`: at the *gate* you are asking "do you ho
 a ticket at all", and somebody already checked in still does. `admit` is for the
 *door*, where the question is "should this ticket let another body through".
 
+### Looking somebody up by name
+
+For a staff command or an admin panel, where a person is typing rather than a
+server reading `Player.UserId`:
+
+```lua
+--- "/hasticket chrxs_dev"
+local function hasTicket(username)
+    local data, err = callTicketApi("/api/v1/tickets/verify", {
+        username = username,
+        eventId = EVENT_ID,   -- required for a player lookup, not optional
+    })
+    if err == "network" then return nil end
+    return data.valid, data  -- data.holder tells you WHO we matched
+end
+```
+
+The response's `holder` block comes back with the canonical `robloxId`, `username`
+and `displayName` of whoever we matched. Read it before acting on the answer — it
+is how you confirm the name resolved to the person you meant.
+
 ---
 
 ## The manual door
@@ -305,6 +345,10 @@ code path, so the laptop and the game can never disagree:
 Both take a typed code or a USB barcode scanner — a scanner is just a keyboard,
 and the page is built for one: it clears and re-focuses the input after every
 check, so you can scan a queue without touching the laptop.
+
+Both also take a **player** instead of a code — a username or a Roblox id — for the
+person who turns up having lost theirs. Same lookup as `username` above, and it
+needs tonight's show picked for the same reason.
 
 ---
 

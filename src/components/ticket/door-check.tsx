@@ -69,6 +69,7 @@ export function DoorCheck({
   const shown = redeemState ?? state;
 
   const codeRef = useRef<HTMLInputElement>(null);
+  const playerRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Clear and re-focus after every verdict, so the next scan just works. Without
@@ -76,6 +77,10 @@ export function DoorCheck({
   // door stops dead — which happens at the worst possible moment, mid-queue.
   useEffect(() => {
     if (!shown) return;
+    // The player box is cleared for the same reason: a name left sitting in it
+    // would be re-submitted with the NEXT person's scan, and a code plus a name
+    // is a code — so the door would silently ignore what it was just told.
+    if (playerRef.current) playerRef.current.value = "";
     if (codeRef.current) {
       codeRef.current.value = "";
       codeRef.current.focus();
@@ -106,6 +111,32 @@ export function DoorCheck({
         <p className="mt-2 text-xs text-faint">
           Scan the barcode or the QR, or type it in. A USB scanner works here —
           it types the code and presses Enter.
+        </p>
+
+        {/* The no-code door. Somebody always turns up having lost theirs, and the
+            queue does not pause for it — so the crew can look them up by who they
+            are instead. Needs a show pinned below: a name alone doesn't say which
+            night. */}
+        <div className="my-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.14em] text-faint">
+          <span className="h-px flex-1 bg-line" />
+          or no code?
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
+          Player
+        </label>
+        <input
+          ref={playerRef}
+          name="player"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="username or Roblox ID"
+          className="w-full rounded-brand border border-line bg-bg px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
+        />
+        <p className="mt-2 text-xs text-faint">
+          Looks up the ticket they hold for the show below. A rename is fine — we
+          resolve the name against Roblox before we look.
         </p>
 
         {events.length ? (

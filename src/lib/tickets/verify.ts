@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { resolveRobloxUser } from "@/lib/roblox-users";
 import { ticketSeal } from "./seal";
 
 // The one place that decides whether a ticket gets somebody through the door.
@@ -99,6 +100,13 @@ export type LookupInput = {
   code?: string | null;
   /** With `eventId`, the other way to find a ticket: who is standing here. */
   robloxId?: string | null;
+  /**
+   * The same question asked by name — "chrxs_dev". Also needs `eventId`.
+   *
+   * Resolved to a robloxId before anything is looked up. See resolveHolderId():
+   * a username is a label a player can change, not an identity.
+   */
+  username?: string | null;
   /** The show this door belongs to. Pass it whenever you know it — see above. */
   eventId?: string | null;
   /** The seal printed on the ticket, if the crew typed it in. Optional. */
@@ -121,28 +129,40 @@ export async function checkTicket(
 ): Promise<VerifyResult | typeof BAD_REQUEST> {
   const code = input.code ? input.code.trim().toUpperCase() : null;
   const robloxId = input.robloxId ? String(input.robloxId).trim() : null;
+  const username = input.username ? String(input.username).trim() : null;
   const eventId = input.eventId ? String(input.eventId).trim() : null;
 
-  if (!code && !(robloxId && eventId)) return BAD_REQUEST;
+  // A holder is only an answer to "which ticket" once you know which show. One
+  // person can hold a ticket to every show we run, so a name with no eventId is
+  // an ambiguous question, not a lookup.
+  if (!code && !((robloxId || username) && eventId)) return BAD_REQUEST;
 
-  const ticket = code
-    ? await prisma.ticket.findUnique({
-        where: { code },
-        include: { event: true, user: true },
-      })
-    : await lookupByHolder(robloxId!, eventId!);
+  let ticket = null;
+  if (code) {
+    ticket = await prisma.ticket.findUnique({
+      where: { code },
+      include: { event: true, user: true },
+    });
+  } else {
+    const holderId = robloxId ?? (await resolveHolderId(username!));
+    ticket = holderId ? await lookupByHolder(holderId, eventId!) : null;
+  }
+
+  // Say what was actually asked. "No ticket with that code" in response to a
+  // username sends the crew hunting for a code nobody typed.
+  const nothing = code ? "No ticket with that code." : "No ticket for that player.";
 
   const missing = (reason: "not_found" | "wrong_event", message: string) =>
     ({ valid: false, admit: false, reason, message, ticket: null, event: null, holder: null }) as const;
 
-  if (!ticket) return missing("not_found", "No ticket with that code.");
+  if (!ticket) return missing("not_found", nothing);
 
   // Scope, twice over. `scope` keeps a partner's crew out of RNL's tickets (and
   // each other's); `eventId` keeps a real ticket for another show from opening
   // tonight's door. Both answer "not this door" rather than leaking what the
   // ticket actually is.
   if (input.scope !== undefined && (ticket.event.partnerId ?? null) !== input.scope) {
-    return missing("not_found", "No ticket with that code.");
+    return missing("not_found", nothing);
   }
   if (eventId && ticket.eventId !== eventId) {
     return missing("wrong_event", "That ticket is for a different show.");
@@ -217,6 +237,39 @@ export async function checkTicket(
     reason: "ok",
     message: `Admit — ${admission.tier}`,
   };
+}
+
+/**
+ * Turn what somebody typed — "chrxs_dev", "@chrxs_dev", or an id — into a robloxId.
+ *
+ * A USERNAME IS NOT AN IDENTITY. A player can rename tomorrow, and the copy we
+ * stored when they signed in is only true as of the day they signed in. So the
+ * name is resolved against Roblox, which answers with the id, and the id is what
+ * the ticket is actually looked up by. That id never changes, so a player who
+ * renamed the night before the show still gets through their own door.
+ *
+ * Roblox is a third party and the door cannot stop when it has a bad minute, so a
+ * failed call falls back to our own users table. That copy is the stale one, which
+ * is why a name matching two accounts there is refused instead of guessed at: one
+ * of the two is a rename we never saw, and admitting the wrong person on a coin
+ * flip is worse than making the crew type the id.
+ */
+async function resolveHolderId(username: string): Promise<string | null> {
+  const name = username.replace(/^@/, "").trim();
+  if (!name) return null;
+
+  // An id typed into the name field is already the answer.
+  if (/^\d{1,20}$/.test(name)) return name;
+
+  const profile = await resolveRobloxUser(name);
+  if (profile) return profile.robloxId;
+
+  const matches = await prisma.user.findMany({
+    where: { username: { equals: name, mode: "insensitive" } },
+    select: { robloxId: true },
+    take: 2,
+  });
+  return matches.length === 1 ? matches[0].robloxId : null;
 }
 
 async function lookupByHolder(robloxId: string, eventId: string) {

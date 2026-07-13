@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 // POST /api/v1/tickets/redeem — burn the ticket and let them in.
 //
 // Auth:  x-api-key: <GAME_API_KEY>
-// Body:  { code } or { robloxId, eventId }, plus optional { eventId, seal }
+// Body:  { code }, or { robloxId, eventId }, or { username, eventId },
+//        plus optional { eventId, seal }
 //
 // Same body and the SAME response shape as /verify — one shape to parse in Luau,
 // not two. The difference is that this one writes: a ticket that may be admitted
@@ -41,13 +42,18 @@ export async function POST(req: NextRequest) {
   const result = await redeemTicket({
     code: str(body.code),
     robloxId: str(body.robloxId),
+    username: str(body.username),
     eventId: str(body.eventId),
     seal: str(body.seal),
   });
 
   if (result === BAD_REQUEST) {
     return NextResponse.json(
-      { ok: false, error: "provide `code`, or `robloxId` + `eventId`" },
+      {
+        ok: false,
+        error:
+          "provide `code`, or `robloxId` + `eventId`, or `username` + `eventId`",
+      },
       { status: 400 },
     );
   }
