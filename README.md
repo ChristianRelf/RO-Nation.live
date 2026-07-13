@@ -30,7 +30,7 @@ and packaged to run on any VPS with **Docker Compose**.
 - **Design** — dark, Live-Nation-inspired: big condensed type, event ticker, ticket-stub cards. No AI-template smell.
 
 ---
-
+xcv
 ## Quick start (local, no Roblox needed)
 
 Requires Node 20+ and a PostgreSQL database (or just use Docker below).
