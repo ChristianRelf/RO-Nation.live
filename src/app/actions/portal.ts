@@ -18,12 +18,12 @@ import {
 
 // The roster actions, shared by SHASHA and every partner portal.
 //
-// SECURITY — the scope arrives on the form body, which is attacker-controlled.
+// SECURITY - the scope arrives on the form body, which is attacker-controlled.
 // That is fine, and it is worth being precise about why: nothing is authorized
 // FROM the scope. It only selects *which* org's guard to run, and that guard
 // re-reads the caller's membership of that org from the database (see
 // lib/portal-scope.ts). Posting `scope=sleeptokenro` from a SHASHA session
-// grants nothing — it just fails Sleep Token's guard instead of SHASHA's.
+// grants nothing - it just fails Sleep Token's guard instead of SHASHA's.
 //
 // The scope must ALSO bound every row an action touches. Passing the guard is
 // not sufficient on its own: ids are opaque, but they leak, and `update by id`
@@ -64,7 +64,7 @@ function parseTags(raw: string) {
 }
 
 /**
- * Revalidate the INTERNAL route, not the public path — a partner's pages render
+ * Revalidate the INTERNAL route, not the public path - a partner's pages render
  * at /pp/<slug>/…, so revalidatePath("/sleeptokenro/vip") would match no route
  * at all and quietly leave the list stale after a write. See partners/urls.ts.
  */

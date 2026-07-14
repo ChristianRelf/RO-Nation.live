@@ -84,7 +84,7 @@ export default async function CompanyAssetsPage({
                           message={
                             a.visibility === "INTERNAL"
                               ? `Delete "${a.title}"? The file is deleted too.`
-                              : `Delete "${a.title}"? It comes off the docs page, but the file stays where it is — its URL may already have been shared.`
+                              : `Delete "${a.title}"? It comes off the docs page, but the file stays where it is - its URL may already have been shared.`
                           }
                         >
                           Delete

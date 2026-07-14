@@ -5,19 +5,19 @@ import { BAD_REQUEST, redeemTicket } from "@/lib/tickets/verify";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/v1/tickets/redeem — burn the ticket and let them in.
+// POST /api/v1/tickets/redeem - burn the ticket and let them in.
 //
 // Auth:  x-api-key: <key>          scope: TICKETS_REDEEM
 // Body:  { code }, or { robloxId, eventId }, or { username, eventId },
 //        plus optional { eventId, seal }
 //
-// Same body and the SAME response shape as /verify — one shape to parse in Luau,
+// Same body and the SAME response shape as /verify - one shape to parse in Luau,
 // not two. The difference is that this one writes: a ticket that may be admitted
 // comes back marked CHECKED_IN, and the next call for it says
 // `admit: false, reason: "already_checked_in"`.
 //
 // Branch on `admit`, never on `valid`. An already-redeemed ticket is still a
-// perfectly VALID ticket — it just must not let a second person through, which is
+// perfectly VALID ticket - it just must not let a second person through, which is
 // the entire reason redeeming exists.
 //
 // Idempotent and race-safe: two scanners hitting the same ticket at once produce

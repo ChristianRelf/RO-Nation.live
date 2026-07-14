@@ -10,7 +10,7 @@ export function RosterList({
   canWrite,
   query,
 }: {
-  /** Which org's list this is — travels with each write. See lib/portal-scope.ts. */
+  /** Which org's list this is - travels with each write. See lib/portal-scope.ts. */
   scope: string;
   entries: RosterEntry[];
   canWrite: boolean;

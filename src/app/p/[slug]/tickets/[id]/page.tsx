@@ -31,7 +31,7 @@ export default async function PartnerTicketDetailPage({
 
   // Found by ID, not by code.
   //
-  // The code is the thing this page WITHHOLDS until the holder activates — so it
+  // The code is the thing this page WITHHOLDS until the holder activates - so it
   // cannot also be the thing in the address bar. Addressing the ticket by its own
   // opaque id is what makes the seal real rather than decorative: before you
   // activate, the code exists nowhere on the page, nowhere in the URL, and
@@ -43,7 +43,7 @@ export default async function PartnerTicketDetailPage({
 
   // Yours, AND for a show on this site. The second half matters: without it, an
   // RNL ticket code opens on the partner's host, rendering an RNL event in the
-  // partner's brand. It is the visitor's own ticket either way — no data leaks —
+  // partner's brand. It is the visitor's own ticket either way - no data leaks -
   // but it belongs on the site whose show it admits them to.
   if (!ticket || ticket.userId !== session.uid) notFound();
   if (ticket.event.partnerId !== partner.slug) notFound();

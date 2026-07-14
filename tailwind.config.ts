@@ -16,7 +16,7 @@ const config: Config = {
         muted: "rgb(var(--muted-rgb) / <alpha-value>)",
         faint: "rgb(var(--faint-rgb) / <alpha-value>)",
         // `ink` is the readable colour ON that ground. Anything drawn on
-        // bg-accent must be text-accent-ink, never text-white — a brand with a
+        // bg-accent must be text-accent-ink, never text-white - a brand with a
         // light accent flips it to near-black. Same for paper.
         accent: {
           DEFAULT: "rgb(var(--accent-rgb) / <alpha-value>)",
@@ -36,6 +36,12 @@ const config: Config = {
       },
       letterSpacing: {
         kicker: "0.22em",
+      },
+      transitionTimingFunction: {
+        // The site's existing settle, named so components stop retyping the tuple.
+        settle: "cubic-bezier(0.16, 1, 0.3, 1)",
+        // Mechanical: fast out, hard stop. The rail's detent, the view tabs.
+        detent: "cubic-bezier(0.2, 0.9, 0.2, 1)",
       },
       maxWidth: {
         shell: "1240px",

@@ -19,7 +19,7 @@ const legalLinks = [
  *   domain. The credit is the deal.
  *
  *   The disclaimer. A partner whose name references a real-world act carries one
- *   (registry.disclaimer), and it is rendered plainly — normal body size, above
+ *   (registry.disclaimer), and it is rendered plainly - normal body size, above
  *   the fold of the footer, not greyed out to nothing. A disclaimer nobody can
  *   read is not a disclaimer; and because this sits on an RNL subdomain with
  *   RNL's name beside it, an ambiguous page is RNL's problem too, not only the
@@ -94,7 +94,7 @@ export function PartnerFooter({ partner }: { partner: Partner }) {
             endorsed by Roblox Corporation.
           </p>
 
-          {/* The RNL credit — every partner site carries it. */}
+          {/* The RNL credit - every partner site carries it. */}
           <p className="flex items-center gap-1.5">
             <span>Produced with</span>
             <a

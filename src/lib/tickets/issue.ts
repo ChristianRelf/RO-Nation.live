@@ -26,19 +26,19 @@ import { effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pricing";
 //             server acting for a player who is standing in front of it. Free
 //             tiers only.
 //
-//   gift      Somebody GAVE it to them — a giveaway bot, a crew comp, a player
+//   gift      Somebody GAVE it to them - a giveaway bot, a crew comp, a player
 //             buying one for a friend. May be a paid tier, and no money changes
 //             hands: that is what a comp is. It is recorded on the ticket
 //             (issuedBy…) so a VIP nobody paid for is never a mystery.
 //
 //   purchase  Somebody PAID for it, in Robux, inside the experience. See the long
-//             note on TicketPurchase in schema.prisma — we cannot verify the
+//             note on TicketPurchase in schema.prisma - we cannot verify the
 //             payment and we are not pretending to. What we can do, and do, is
 //             refuse to honour the same PurchaseId twice.
 
 export type IssueReason =
   | "ok"
-  /** No such event — or it is not this key's org's, which is the same answer. */
+  /** No such event - or it is not this key's org's, which is the same answer. */
   | "not_found"
   /** The event exists but is not on sale: DRAFT or ARCHIVED. */
   | "unavailable"
@@ -55,7 +55,7 @@ export type IssueReason =
   | "payments_off"
   /** A priced tier, reached by a path that collects no money. Use /purchase. */
   | "payment_required"
-  /** /purchase, but the tier is free. Nothing to pay for — do not charge them. */
+  /** /purchase, but the tier is free. Nothing to pay for - do not charge them. */
   | "not_purchasable";
 
 export type IssueOutcome =
@@ -63,7 +63,7 @@ export type IssueOutcome =
       ok: true;
       ticketId: string;
       /**
-       * True when no new ticket was created — they already held one, or this was
+       * True when no new ticket was created - they already held one, or this was
        * a PurchaseId we had already honoured.
        *
        * The caller needs this and must not treat it as a failure. A game server
@@ -82,7 +82,7 @@ export type IssueMode =
   | { kind: "reserve" }
   | {
       kind: "gift";
-      /** Who gave it. A Roblox id — a player, or a crew member. */
+      /** Who gave it. A Roblox id - a player, or a crew member. */
       byRobloxId: string;
       byName: string;
     }
@@ -99,7 +99,7 @@ export type IssueMode =
 
 export type IssueInput = {
   eventId: string;
-  /** Our own User.id (the website has one) — or a Roblox id (the game has that). */
+  /** Our own User.id (the website has one) - or a Roblox id (the game has that). */
   holder: { userId: string } | { robloxId: string };
   /** null / "" = the implicit free General Admission. */
   tierId?: string | null;
@@ -111,7 +111,7 @@ export type IssueInput = {
    *   null        RNL's own shows.
    *   "<slug>"    that partner's, and nothing else.
    *
-   * An event outside the scope answers "not_found" — never "not yours", which
+   * An event outside the scope answers "not_found" - never "not yours", which
    * would confirm the event exists to somebody with no business knowing.
    */
   scope?: string | null;
@@ -130,7 +130,7 @@ const isDuplicateUser = (err: any) =>
 /**
  * Find, or create, the User row a ticket will hang off.
  *
- * The website always has one — you cannot reach the checkout without signing in.
+ * The website always has one - you cannot reach the checkout without signing in.
  * The GAME does not: a player standing in a partner's experience may never have
  * opened ronation.live in their life, and refusing them a ticket on that basis
  * would be absurd. So their Roblox profile is resolved and a User row is created
@@ -139,11 +139,11 @@ const isDuplicateUser = (err: any) =>
  * Resolved against Roblox rather than trusted from the request: the game sends an
  * id, and the username we store must be the one Roblox says goes with it, not one
  * the caller typed. Falls back to whatever we already hold if Roblox is having a
- * bad minute — a stale display name is not a reason to refuse somebody a ticket.
+ * bad minute - a stale display name is not a reason to refuse somebody a ticket.
  *
  * The create RACES, and has to survive it. Two game servers greeting the same
- * first-time player at the same instant — or Roblox re-delivering one receipt while
- * the first is still in flight — both read "no such user" and both insert. One
+ * first-time player at the same instant - or Roblox re-delivering one receipt while
+ * the first is still in flight - both read "no such user" and both insert. One
  * wins; the other must pick up the winner's row rather than dying on the unique
  * constraint and handing a 500 to somebody who has already paid.
  */
@@ -186,7 +186,7 @@ async function resolveHolderUserId(
 /**
  * Issue a ticket.
  *
- * Every refusal is a `reason`, never a throw — the callers are a form and a game
+ * Every refusal is a `reason`, never a throw - the callers are a form and a game
  * server, and neither of them can do anything useful with a stack trace. The one
  * exception is a code generator that cannot find a free code in five tries, which
  * is a broken generator and not a user error.
@@ -199,7 +199,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
   // Checked FIRST, before anything else can refuse it. ProcessReceipt is
   // at-least-once: Roblox re-delivers a receipt until the game says it granted,
   // and a game server that crashed mid-call will send the same PurchaseId again.
-  // By then the show may be sold out, or past, or the tier deactivated — and none
+  // By then the show may be sold out, or past, or the tier deactivated - and none
   // of that is a reason to tell somebody who has already been charged that they
   // have no ticket. They have one. Hand it back.
   if (mode.kind === "purchase") {
@@ -216,7 +216,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
   });
   if (!event) return fail("not_found");
 
-  // Scope. An event belonging to another org is "not_found", full stop — see the
+  // Scope. An event belonging to another org is "not_found", full stop - see the
   // note on IssueInput.scope.
   const partnerId = event.partnerId ?? null;
   if (input.scope !== undefined && partnerId !== input.scope) {
@@ -227,7 +227,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
   const prefix = partner?.ticketPrefix ?? "RN";
 
   // The tier is resolved against THIS event's own tiers, so an id from another
-  // show — or an invented one — matches nothing and never reaches the insert.
+  // show - or an invented one - matches nothing and never reaches the insert.
   const tiers = effectiveTiers(event.tiers);
   const tier = tiers.find((t) => (t.id ?? "") === (input.tierId ?? ""));
   if (!tier) return fail("badtier");
@@ -236,7 +236,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
   const robuxAllowed = robuxSalesAllowed(partner, env.robuxTickets);
 
   if (tier.priceRobux > 0) {
-    // A priced tier, and Robux sales are off — globally, or for this partner.
+    // A priced tier, and Robux sales are off - globally, or for this partner.
     // Nobody may have this tier today, by any route. Not even a gift: a comped
     // VIP seat to a tier that is not supposed to exist yet is still a VIP seat.
     if (!robuxAllowed) return fail("payments_off");
@@ -246,13 +246,13 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
     // through /purchase, because Robux cannot be charged from a web page.
     //
     // This branch replaces the throw that used to live in app/actions/tickets.ts
-    // — the one whose comment said "this throw is the line the payment work
+    // - the one whose comment said "this throw is the line the payment work
     // deletes". This is that deletion. Gifts pass, because a gift is a comp and
     // charges nobody.
     if (mode.kind === "reserve") return fail("payment_required");
   } else if (mode.kind === "purchase") {
     // Free tier, and somebody says they paid for it. Something is wrong on the
-    // game's side — refuse rather than take the money and issue what they could
+    // game's side - refuse rather than take the money and issue what they could
     // have had for nothing.
     return fail("not_purchasable");
   }
@@ -283,7 +283,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
         // Take a write lock on the event row and hold it to commit. Everyone
         // reserving for this event now queues here, so no two requests can both
         // read `capacity - 1` and both insert. It serialises per event, so other
-        // events are unaffected — and unlike a Serializable transaction there is
+        // events are unaffected - and unlike a Serializable transaction there is
         // no retry loop to get wrong. The tier counts below are read under this
         // same lock, which is what makes a per-tier cap hold as tightly as the
         // room's own.
@@ -311,7 +311,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
         // ---- They already hold one ------------------------------------
         if (existing && existing.status !== "CANCELLED") {
           // A purchase is not a no-op. They have been CHARGED. Silently handing
-          // back the ticket they already had would be taking Robux for nothing —
+          // back the ticket they already had would be taking Robux for nothing -
           // so the payment lands on the ticket they hold, upgrading its tier. It
           // is the same ticket (one per person per event, always), now VIP.
           if (mode.kind === "purchase") {
@@ -418,7 +418,7 @@ export type VoidOutcome =
  * Void a ticket, or revoke it.
  *
  * They are the same write plus one column, and the difference is entirely in what
- * happens NEXT — which is why they are one function and not two:
+ * happens NEXT - which is why they are one function and not two:
  *
  *   void    (ban: false)  Cancel it. The undo. Issued to the wrong player, a
  *                         duplicate, a change of plan. They may reserve again
@@ -427,7 +427,7 @@ export type VoidOutcome =
  *
  *   revoke  (ban: true)   Cancel it AND stamp revokedAt, which issueTicket()
  *                         reads and refuses over. The problem is the person, not
- *                         the ticket. It bans them from THIS SHOW — a standing
+ *                         the ticket. It bans them from THIS SHOW - a standing
  *                         ban across every show is the blacklist, which is a
  *                         different question with a different answer.
  *
@@ -457,7 +457,7 @@ export async function voidTicket(input: {
       status: "CANCELLED",
       // Revoking an already-voided ticket upgrades it to a ban, which is a real
       // thing somebody will want to do. Voiding an already-REVOKED one does NOT
-      // silently lift the ban — clearing it is its own deliberate act.
+      // silently lift the ban - clearing it is its own deliberate act.
       ...(input.ban
         ? {
             revokedAt: ticket.revokedAt ?? new Date(),

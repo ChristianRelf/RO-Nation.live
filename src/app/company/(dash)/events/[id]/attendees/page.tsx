@@ -26,7 +26,7 @@ export default async function AttendeesPage({
   const active = event.tickets.filter((t) => t.status !== "CANCELLED");
   const checkedIn = event.tickets.filter((t) => t.status === "CHECKED_IN");
 
-  // Live tickets per tier, by the name frozen ON the ticket — so a tier that has
+  // Live tickets per tier, by the name frozen ON the ticket - so a tier that has
   // since been renamed or deleted still shows the people who bought it, under
   // the name they bought it under.
   const byTier = new Map<string, number>();

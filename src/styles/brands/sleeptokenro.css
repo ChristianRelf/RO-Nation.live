@@ -1,7 +1,7 @@
 /* Sleep Token.
  *
  * Near-total black, bone type, dim ritual gold. Sharp corners, heavy grain, no
- * bloom — where RNL is a loud poster (electric blue, Anton, 3px radius), this is
+ * bloom - where RNL is a loud poster (electric blue, Anton, 3px radius), this is
  * a candlelit one. Where RNL fills the page, this empties it and puts one thing
  * in the middle.
  *
@@ -19,18 +19,18 @@
  *   from the band's own, and the closer the two look the more work it is doing. It
  *   is rendered at readable size on every page (components/partner/partner-footer)
  *   and repeated under the hero. Nothing in this stylesheet may hide it, dim it
- *   into the background or push it out of sight — and "it spoils the atmosphere"
+ *   into the background or push it out of sight - and "it spoils the atmosphere"
  *   is not an argument against it, it is precisely the instinct the rule exists to
  *   refuse.
  *
  *   The permission is for THESE ASSETS. It is not a licence to rebuild the band's
- *   website — their layout, their words, their navigation. Borrow the atmosphere,
+ *   website - their layout, their words, their navigation. Borrow the atmosphere,
  *   which is a genre and belongs to nobody. Do not reconstruct their pages.
  *
  * ---- The contract ----------------------------------------------------------
  *
  * Sets ONLY channels and shape/texture tokens; every derived colour is computed
- * from these in globals.css. Do not declare --accent, --line, --paper etc. here —
+ * from these in globals.css. Do not declare --accent, --line, --paper etc. here -
  * that is the one rule that keeps a brand from desyncing a colour from its own
  * channels. Brand-scoped overrides of the SHARED components go at the bottom,
  * where they can be seen, rather than being smuggled into globals.css.
@@ -38,7 +38,7 @@
 :root[data-brand="sleeptokenro"] {
   /* ---- Channels ---------------------------------------------------- */
   /* Darker than it was. The crest is a gold line drawing on transparency, and it
-     only reads as *lit* in a room this black — at the old 10 9 8 it looked
+     only reads as *lit* in a room this black - at the old 10 9 8 it looked
      printed on paper rather than glimpsed in the dark. If you change this, change
      `themeColor` on the registry entry too: it duplicates this by necessity. */
   --bg-rgb: 6 6 5;
@@ -48,14 +48,14 @@
   --muted-rgb: 150 142 128;
   --faint-rgb: 104 97 86;
 
-  --accent-rgb: 176 146 84; /* dim gold — leaf, not neon. Matched to the crest. */
+  --accent-rgb: 176 146 84; /* dim gold - leaf, not neon. Matched to the crest. */
   --accent-hi-rgb: 216 201 168; /* the gold, lifted toward bone */
 
   /* The accent is LIGHT. Ink drawn on it must go dark, or every primary button
      on this site is bone-on-bone. globals.css warns about exactly this. */
   --accent-ink-rgb: 14 12 9;
 
-  --paper-rgb: 226 220 206; /* aged bone — inverted panels */
+  --paper-rgb: 226 220 206; /* aged bone - inverted panels */
   --paper-ink-rgb: 14 12 9;
 
   /* Hairlines tinted GOLD rather than bone, so a rule reads as an inlay in the
@@ -69,22 +69,41 @@
   /* Squared off. RNL's 3px is a poster corner; this brand has none. */
   --radius: 0px;
 
-  /* Grain pushed harder than RNL's — the murk is the identity here, so it wants
+  /* Grain pushed harder than RNL's - the murk is the identity here, so it wants
      to be felt rather than merely present. */
   --grain-fine-opacity: 0.08;
   --grain-coarse-opacity: 0.16;
+
+  /* ---- The display face -------------------------------------------
+   *
+   * A STACK, not a font, and it has to be - this is the only place in the system where
+   * a font stack can be expressed, because next/font hands back one hashed family name
+   * per file and nothing that can chain them.
+   *
+   * Roabla is this brand's own face. IT CONTAINS NO DIGITS - the file maps 315 glyphs
+   * and 0-9 are not among them, which is normal for a "Demo Version" release. A missing
+   * glyph does not fail loudly: the browser falls back CHARACTER BY CHARACTER, so a
+   * heading reading "RITE II 2025" would come out with the letters in Roabla and the
+   * year in whatever the browser happened to pick. Two typefaces inside one word reads
+   * as a bug, not as a choice.
+   *
+   * So Cormorant sits behind it and catches the numerals. It was the display face here
+   * until now, so the digits land in the type this brand was already drawn around.
+   * If you ever swap Roabla for a face WITH digits, this line still works - Cormorant
+   * simply stops being reached. */
+  --font-display: var(--font-roabla), var(--font-cormorant), Georgia, serif;
 }
 
 /* ---- Brand-scoped overrides -------------------------------------------------
  *
  * `:root[data-brand="…"] .x` (0,2,0) outranks the bare `.x` in globals.css
  * (0,1,0), so these re-dress the SHARED components for this brand alone. RNL's own
- * site and every future partner are untouched — which is the entire reason they
+ * site and every future partner are untouched - which is the entire reason they
  * live here and not in globals.css. Restyling .card there would restyle RNL.
  */
 
 /* The display face is Cormorant, a high-contrast garamond. Uppercase at WIDE
-   tracking is what makes it read as carved rather than as a book — it is the one
+   tracking is what makes it read as carved rather than as a book - it is the one
    typographic move this brand makes, so it is made properly. RNL's negative
    tracking is right for a heavy grotesque and wrong here: on a light serif it
    just closes the counters up. */
@@ -121,4 +140,74 @@
 /* The label on a reliquary. */
 :root[data-brand="sleeptokenro"] .kicker {
   letter-spacing: 0.34em;
+}
+
+/* ---- The merch table, on this brand ----------------------------------------
+ *
+ * merch.ronation.live/sleeptoken is the same DOM as merch.ronation.live/babymetal.
+ * Not a fork, not a variant - the same components, repainted, because every value in
+ * them is a channel this file already overrides. These six rules are the whole of
+ * the difference, and they are all SUBTRACTIONS.
+ *
+ * RNL's merch table is a stall: scaffolding under a work light, gaffer tape, a
+ * hand-lettered price card, ink slightly out of register. That is a room with people
+ * in it. This brand's is a reliquary: one gold wire in a dark room with a garment
+ * hanging off it, and nothing else. The road crew have gone home.
+ *
+ * Note what is NOT here: no colour, no font, no new component. The bar, the crop
+ * marks, the swing tag and the stamps all turn gold on their own, because they were
+ * built from --line-strong and --accent rather than from a hex. That is the whole
+ * reason the shop was built out of rules and masks instead of filled boxes - this
+ * file sets `.card { background: transparent }` above, and any object defined by a
+ * fill would simply have vanished.
+ */
+
+/* Scaffolding becomes wire: one gold hairline, no lit top edge, no bolts. */
+:root[data-brand="sleeptokenro"] .rail-bar {
+  height: 1px;
+}
+:root[data-brand="sleeptokenro"] .rail-bar::before {
+  display: none;
+}
+:root[data-brand="sleeptokenro"] .rail-bracket {
+  display: none;
+}
+
+/* No gaffer tape in a reliquary. Nothing here was stuck up in a hurry. */
+:root[data-brand="sleeptokenro"] .tape,
+:root[data-brand="sleeptokenro"] .tape-ink {
+  display: none;
+}
+
+/* Misregistration is a screen-printing accident, and it belongs to a stall that runs
+   its own press. Cormorant is engraved, not printed - a 2px offset on it reads as a
+   rendering bug rather than as ink. */
+:root[data-brand="sleeptokenro"] .misprint {
+  text-shadow: none;
+}
+
+/* It hangs more still. The air in this room is heavier. */
+:root[data-brand="sleeptokenro"] .hanger-body {
+  --sway-amp: 1.4deg;
+}
+
+/* ---- The room is struck ----------------------------------------------------
+ *
+ * RNL's merch table is a stall at the back of a venue: a truss, six par cans raking
+ * beams through the haze, a crowd between you and the stage. That is a room with people
+ * in it, and it is right for RNL.
+ *
+ * It is wrong here, and not only because it was burying the artwork. Sleep Token's room
+ * is a reliquary - one thing, in the dark, and a great deal of nothing around it. Point
+ * a lighting rig at that and you have a gig; take the rig away and you have a shrine.
+ * This brand file has been stripping the road crew from the start (the gaffer tape, the
+ * scaffold brackets, the misprint); this is the same instinct, finished.
+ *
+ * So the whole venue is struck and the backdrop is the only thing left standing. It is
+ * ONE rule rather than a list, and deliberately so: written as `everything except the
+ * backdrop`, any layer added to the room in future is dark on this brand by default,
+ * which is the safe way round. A new par can that quietly reappeared on Sleep Token's
+ * shelf is exactly the bug a list of `display: none`s produces six months later. */
+:root[data-brand="sleeptokenro"] .rig > *:not(.venue-backdrop) {
+  display: none;
 }

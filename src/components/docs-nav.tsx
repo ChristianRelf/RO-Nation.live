@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The docs sidebar. A sibling of CompanyNav rather than a reuse of PortalNav,
- * whose links are hard-wired to a roster (VIP, blacklist, history) — the docs
+ * whose links are hard-wired to a roster (VIP, blacklist, history) - the docs
  * have nothing in common with that shape.
  */
 export function DocsNav({ showApi }: { showApi: boolean }) {
@@ -16,7 +16,7 @@ export function DocsNav({ showApi }: { showApi: boolean }) {
     { label: "Overview", href: "/docs" },
     { label: "Guides", href: "/docs/guides" },
     { label: "Brand assets", href: "/docs/brandassets" },
-    // Only for somebody who could actually hold a key. Hiding it is courtesy —
+    // Only for somebody who could actually hold a key. Hiding it is courtesy -
     // requireDocsUser() on the page is the lock. See lib/docs-guard.ts.
     ...(showApi ? [{ label: "Ticket API", href: "/docs/api" }] : []),
   ];

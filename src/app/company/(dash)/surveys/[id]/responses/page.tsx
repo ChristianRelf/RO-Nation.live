@@ -59,7 +59,7 @@ export default async function SurveyResponsesPage({
           <p className="font-display text-2xl uppercase">No responses yet</p>
           <p className="mt-2 max-w-sm text-sm text-muted">
             {survey.status === "OPEN"
-              ? "The survey is open — share the link and answers will land here."
+              ? "The survey is open - share the link and answers will land here."
               : "The survey isn't open yet, so nobody can answer it."}
           </p>
         </div>
@@ -155,7 +155,7 @@ function QuestionSummary({
     );
   }
 
-  // Everything else is countable — show a bar per option.
+  // Everything else is countable - show a bar per option.
   const buckets: { key: string; count: number }[] =
     type === "CHECKBOXES"
       ? options.map((o) => ({

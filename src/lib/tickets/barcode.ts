@@ -1,13 +1,13 @@
-// Code 128 (subset B) — the barcode down the side of the ticket.
+// Code 128 (subset B) - the barcode down the side of the ticket.
 //
 // It is a REAL barcode. Point a scanner at it and it reads the ticket code back,
 // character for character. That matters more than it sounds: the obvious way to
 // draw a barcode is to hash the string into a row of random-width bars, which
-// photographs beautifully and scans as absolutely nothing — the same trap the QR
+// photographs beautifully and scans as absolutely nothing - the same trap the QR
 // on this ticket used to be in (see the note in ticket-qr.tsx).
 //
 // The door already accepts a typed code and a scanned QR. A working barcode means
-// a crew member with a cheap USB laser scanner — the thing every real venue has —
+// a crew member with a cheap USB laser scanner - the thing every real venue has -
 // can check somebody in without a phone camera.
 //
 // Subset B covers ASCII 32–126, which is every character a ticket code can hold
@@ -39,7 +39,7 @@ const PATTERNS = [
   "211214", "211232", "233111",
 ];
 
-/** START B. Subset B is the only one we need — see the note above. */
+/** START B. Subset B is the only one we need - see the note above. */
 const START_B = 104;
 /** STOP. Seven elements, not six: the final one is the terminating bar. */
 const STOP = "2331112";
@@ -49,7 +49,7 @@ export type BarcodeElement = { width: number; bar: boolean };
 
 export type Barcode = {
   elements: BarcodeElement[];
-  /** Total width in modules — what you divide by to fit it into a box. */
+  /** Total width in modules - what you divide by to fit it into a box. */
   modules: number;
 };
 

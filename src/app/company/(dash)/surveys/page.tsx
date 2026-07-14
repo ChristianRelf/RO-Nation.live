@@ -38,7 +38,7 @@ export default async function CompanySurveysPage({
       {searchParams.ok ? (
         <p className="mb-6 border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-300">
           {searchParams.ok === "created"
-            ? "Survey created — share the link below."
+            ? "Survey created - share the link below."
             : searchParams.ok === "deleted"
               ? "Survey deleted."
               : searchParams.locked

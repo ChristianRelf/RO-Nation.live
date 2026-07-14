@@ -8,7 +8,7 @@ import { useState } from "react";
 // indexed inputs. Indexed names have to be re-assembled by hand on the server,
 // and a gap in the indices (remove row 1 of 3) is exactly the kind of thing that
 // re-assembly gets subtly wrong. A single field is parsed and validated in one
-// place — see readTiersForm() in lib/tickets/tiers-form.ts, which runs it through
+// place - see readTiersForm() in lib/tickets/tiers-form.ts, which runs it through
 // zod and refuses anything that doesn't fit. Nothing here is trusted.
 
 export type TierDraft = {
@@ -55,7 +55,7 @@ export function TierEditor({
       <div>
         <h3 className="font-display text-lg">Ticket tiers</h3>
         <p className="mt-1 text-xs text-faint">
-          Leave this empty and the event sells a single free General Admission —
+          Leave this empty and the event sells a single free General Admission -
           which is what every event did before tiers existed.
         </p>
       </div>
@@ -102,7 +102,7 @@ export function TierEditor({
                 <input
                   value={tier.name}
                   onChange={(e) => patch(i, { name: e.target.value })}
-                  placeholder="VIP — Front Barrier"
+                  placeholder="VIP - Front Barrier"
                   className={inputClass}
                 />
               </div>
@@ -143,7 +143,7 @@ export function TierEditor({
             </div>
 
             <div className="mt-3">
-              <label className={labelClass}>Perks — one per line</label>
+              <label className={labelClass}>Perks - one per line</label>
               <textarea
                 rows={3}
                 value={tier.perks}

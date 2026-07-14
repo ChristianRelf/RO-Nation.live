@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Reserve ticket" };
 
 const terms = [
-  "Your ticket admits one person and is tied to your Roblox account — it can't be transferred or resold.",
+  "Your ticket admits one person and is tied to your Roblox account - it can't be transferred or resold.",
   "Entry is verified in-experience at the door using your ticket code. Have it ready.",
   `${site.name} may cancel, reschedule, or change the line-up of any event.`,
   "You agree to follow Roblox Community Standards and event moderation while attending.",
@@ -27,8 +27,8 @@ const ERRORS: Record<string, string> = {
   terms: "Please accept the ticket terms & conditions to continue.",
   badtier: "That ticket type isn't available for this show. Pick another.",
   tier_soldout: "That tier sold out while you were deciding. Pick another.",
-  payments_off: "Paid tickets aren't switched on yet — that tier can't be issued.",
-  // Robux cannot be charged from a web page — a real payment is a Developer
+  payments_off: "Paid tickets aren't switched on yet - that tier can't be issued.",
+  // Robux cannot be charged from a web page - a real payment is a Developer
   // Product prompted inside the experience. So a paid tier is not something this
   // page can sell; it is something the show itself sells, at the door.
   payment_required:
@@ -59,7 +59,7 @@ export default async function ReservePage({
   //
   // This used to be how a SUCCESSFUL PURCHASE navigated: the action revalidated,
   // this page re-rendered, the buyer now held a ticket, and this redirect fired.
-  // It was a clever trick and it is gone — checkout now owns the navigation, and
+  // It was a clever trick and it is gone - checkout now owns the navigation, and
   // does it with a real `location.assign` once the reservation returns a code.
   // So this is back to meaning only what it says: you already have one.
   const existing = await prisma.ticket.findUnique({
@@ -70,7 +70,7 @@ export default async function ReservePage({
   }
 
   const offers = await offersForEvent(event);
-  // Nothing left that anybody could take — don't render a checkout whose every
+  // Nothing left that anybody could take - don't render a checkout whose every
   // option is dead. Sold out is the event page's news to break.
   if (!anyAvailable(offers)) redirect(`/events/${event.slug}?error=soldout`);
 

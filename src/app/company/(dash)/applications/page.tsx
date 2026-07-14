@@ -183,7 +183,7 @@ function Meta({
           <p className="text-fg">{value}</p>
         )
       ) : (
-        <p className="text-faint">—</p>
+        <p className="text-faint">-</p>
       )}
     </div>
   );

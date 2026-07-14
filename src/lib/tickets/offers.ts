@@ -14,7 +14,7 @@ import {
  * What's actually on sale for an event, resolved against live ticket counts.
  *
  * The one place the Robux master switch is read for *display*. It is read again,
- * independently, in app/actions/tickets.ts — the action does not trust this, and
+ * independently, in app/actions/tickets.ts - the action does not trust this, and
  * must not: this decides what a visitor is shown, and that is not the same job
  * as deciding what may be issued.
  */

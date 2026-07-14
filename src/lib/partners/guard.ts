@@ -23,11 +23,11 @@ import { partnerPortalPath } from "./urls";
 //
 //   The partner's own people   An explicit PartnerMember row RNL grants. The row
 //                              is the grant, and deleting it is the revocation. A
-//                              slug in the registry grants nobody anything — the
+//                              slug in the registry grants nobody anything - the
 //                              registry says so itself.
 //
 //   RNL staff                  A rank in RNL's OWN group, which RNL does control
-//                              — so here the group genuinely IS the allowlist,
+//                              - so here the group genuinely IS the allowlist,
 //                              exactly as in lib/shasha.ts. Rank 250+ opens every
 //                              partner portal. See the override below.
 //
@@ -35,7 +35,7 @@ import { partnerPortalPath } from "./urls";
 //                              registry. Off by default and the default is the
 //                              careful one: RNL does not own a partner's group,
 //                              cannot see who is in it, and cannot stop them
-//                              promoting whoever they like — so switching this on
+//                              promoting whoever they like - so switching this on
 //                              genuinely hands that partner's group admins the
 //                              power to grant access to RNL infrastructure. It is
 //                              a decision made per partner, on purpose.
@@ -43,7 +43,7 @@ import { partnerPortalPath } from "./urls";
 // The three COMPOSE, and they compose in one direction only: each can raise what
 // you may do, none can lower it. A member row is a FLOOR, so a partner cannot lock
 // RNL's grantee out of their own portal by demoting them in a group RNL does not
-// control — and RNL's override sits above all of it regardless.
+// control - and RNL's override sits above all of it regardless.
 
 export type PartnerUser = UserSession & {
   partner: Partner;
@@ -54,7 +54,7 @@ export type PartnerUser = UserSession & {
   canManageMembers: boolean;
   /**
    * True when this is RNL staff on the group override rather than one of the
-   * partner's own people. Presentation only — it changes what the portal says
+   * partner's own people. Presentation only - it changes what the portal says
    * about you, not what you may do. Both routes have already been authorised by
    * the time this is set.
    */
@@ -94,7 +94,7 @@ export async function getPartnerAccess(
   });
 
   // Their rank in THEIR group, if this partner is governed that way at all. Null
-  // for every partner who is not, which is the default — and for anybody who is
+  // for every partner who is not, which is the default - and for anybody who is
   // simply not in the group.
   const ranked = await partnerGroupRole(partner, session.robloxId);
 
@@ -121,7 +121,7 @@ export async function getPartnerAccess(
   // ---- The RNL staff override ---------------------------------------
   //
   // Rank PARTNER_STAFF_RANK or above in RNL's own group opens EVERY partner
-  // portal, with no PartnerMember row and nothing to revoke by hand — RNL builds
+  // portal, with no PartnerMember row and nothing to revoke by hand - RNL builds
   // and runs these sites, and needed a way in that didn't mean a database insert
   // per person per partner.
   //
@@ -159,12 +159,12 @@ async function isRnlStaff(robloxId: string): Promise<boolean> {
 }
 
 /**
- * What this person's rank in the PARTNER's own group entitles them to — or null,
+ * What this person's rank in the PARTNER's own group entitles them to - or null,
  * which is the answer for every partner who has not opted into being governed that
  * way, and for anybody who is not in the group.
  *
  * Deliberately never returns OWNER. Owner is the right to grant and revoke other
- * members, and those members are rows in RNL's database — a grant that reaches
+ * members, and those members are rows in RNL's database - a grant that reaches
  * outside the partner's own organisation. A rank in a group RNL cannot see is not
  * the thing that should confer it. The partner's group owner (rank 255) gets
  * MANAGER here: full run of their own portal, including API keys. OWNER stays a
@@ -178,7 +178,7 @@ async function partnerGroupRole(
   if (!gov) return null;
 
   // Fails closed: a network blip at Roblox returns null, which grants nothing.
-  // Somebody who ALSO holds a member row still gets in on the row — the floor is
+  // Somebody who ALSO holds a member row still gets in on the row - the floor is
   // read from our own database and does not depend on Roblox being up.
   const membership = await getGroupMembership(robloxId, gov.groupId);
   if (!membership) return null;
@@ -209,7 +209,7 @@ export async function getPartnerUser(slug: string): Promise<PartnerUser | null> 
 /**
  * Guard for partner portal pages and server actions.
  *
- * Every guarded page must call this ITSELF before it reads any data — a guard
+ * Every guarded page must call this ITSELF before it reads any data - a guard
  * in the layout alone is not enough. See the long note on the page guards in
  * lib/session.ts: page segments render in parallel with their layout, so a
  * layout-only redirect still ships the page's RSC payload (here: another
@@ -221,7 +221,7 @@ export async function requirePartnerUser(slug: string): Promise<PartnerUser> {
   return user;
 }
 
-/** Managers and owners only — the write tier. */
+/** Managers and owners only - the write tier. */
 export async function requirePartnerManager(slug: string): Promise<PartnerUser> {
   const user = await requirePartnerUser(slug);
   if (!user.canWrite) redirect(`${partnerPortalPath(slug)}?error=readonly`);
@@ -232,7 +232,7 @@ export async function requirePartnerManager(slug: string): Promise<PartnerUser> 
  * 404 unless the partner actually has this feature.
  *
  * The registry is explicit that a feature a partner does not have "must 404, not
- * just hide its nav item" — hiding the link leaves the route standing, and a
+ * just hide its nav item" - hiding the link leaves the route standing, and a
  * route that exists is a route somebody reaches.
  */
 export function assertPartnerFeature(partner: Partner, feature: PartnerFeature) {

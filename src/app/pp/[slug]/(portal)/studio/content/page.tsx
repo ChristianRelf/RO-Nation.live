@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Homepage" };
 // The homepage copy. Not behind a feature flag: every partner has a homepage,
 // whatever else the registry gave them.
 //
-// Write tier only — this is the one studio section with nothing worth reading if
+// Write tier only - this is the one studio section with nothing worth reading if
 // you cannot change it, since the page itself is public anyway.
 
 export default async function PartnerContentPage({

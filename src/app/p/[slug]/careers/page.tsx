@@ -16,7 +16,7 @@ export function generateMetadata({
   return {
     title: "Crew",
     description: partner
-      ? `Open roles with ${partner.name} — build and run the shows.`
+      ? `Open roles with ${partner.name} - build and run the shows.`
       : undefined,
   };
 }
@@ -75,7 +75,7 @@ export default async function PartnerCareersIndex({
         <div className="card grid place-items-center px-6 py-20 text-center">
           <p className="display text-3xl">Nothing open right now</p>
           <p className="mt-3 max-w-sm text-muted">
-            No roles are open at the moment. Keep an eye here — the crew grows
+            No roles are open at the moment. Keep an eye here - the crew grows
             with every show.
           </p>
         </div>

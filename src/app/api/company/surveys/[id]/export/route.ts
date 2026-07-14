@@ -23,7 +23,7 @@ export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  // A GET handler has no layout to hide behind — it must check for itself.
+  // A GET handler has no layout to hide behind - it must check for itself.
   const user = await getCompanyUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorised" }, { status: 403 });

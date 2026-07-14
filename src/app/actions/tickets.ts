@@ -6,11 +6,11 @@ import { getUserSession } from "@/lib/session";
 import { partnerSiteRoute } from "@/lib/partners/urls";
 import { issueTicket } from "@/lib/tickets/issue";
 
-// Ticketing, for RNL's events and every partner's — the WEBSITE's half of it.
+// Ticketing, for RNL's events and every partner's - the WEBSITE's half of it.
 //
-// The deciding is not here. Reserving a ticket — resolving the tier, taking the
+// The deciding is not here. Reserving a ticket - resolving the tier, taking the
 // lock on the event, counting the room, refusing a paid tier, refusing a revoked
-// player — lives in lib/tickets/issue.ts, and the game API calls exactly the same
+// player - lives in lib/tickets/issue.ts, and the game API calls exactly the same
 // function. That is not a refactor for tidiness: a checkout that oversells a room
 // the door then turns people away from is worse than either being wrong alone, and
 // two copies of a capacity check are two copies that eventually disagree.
@@ -24,13 +24,13 @@ import { issueTicket } from "@/lib/tickets/issue";
 // the middleware is the only thing that knows <slug>.ronation.live/tickets means
 // /p/<slug>/tickets. So on a partner's site the redirect resolves against RNL's
 // route tree instead: reserving a Sleep Token ticket used to land the buyer
-// on RNL's /tickets page — RNL's nav, RNL's footer, still on Sleep Token's
-// domain — and any redirect under /events/<slug> 404'd outright, because RNL's
+// on RNL's /tickets page - RNL's nav, RNL's footer, still on Sleep Token's
+// domain - and any redirect under /events/<slug> 404'd outright, because RNL's
 // copy of that route scopes to partnerId: null and the partner's show is not
 // RNL's. (Page-level redirects are fine: they are real HTTP 307s, which the
 // browser re-requests and the middleware does see. It is only actions.)
 //
-// So these actions RETURN their outcome, and the client navigates — an ordinary
+// So these actions RETURN their outcome, and the client navigates - an ordinary
 // client-side navigation, which does run the middleware. Cancelling and
 // activating navigate nowhere at all: they revalidate, and the page they are on
 // re-renders in place, which is both correct and the better thing to look at.
@@ -41,7 +41,7 @@ import { issueTicket } from "@/lib/tickets/issue";
 
 export type ReserveState =
   /**
-   * The ticket's opaque ID — NOT its code.
+   * The ticket's opaque ID - NOT its code.
    *
    * The checkout navigates with this, and the ticket page is addressed by it. The
    * code is what the ticket page withholds until the holder activates, so handing
@@ -94,8 +94,8 @@ export async function reserveTicket(
   if (!acceptedTerms) return fail("terms");
 
   // Only the slug is needed here, and only to revalidate the right pages
-  // afterwards. Everything that DECIDES anything — the tier, the caps, the money
-  // wall, the event lock — now lives in lib/tickets/issue.ts, because the game
+  // afterwards. Everything that DECIDES anything - the tier, the caps, the money
+  // wall, the event lock - now lives in lib/tickets/issue.ts, because the game
   // API issues tickets too and a second copy of the capacity check would
   // eventually oversell a room this one thinks is full.
   const event = await prisma.event.findUnique({
@@ -166,7 +166,7 @@ export async function cancelTicket(formData: FormData) {
 }
 
 /**
- * Flip a reserved ticket to "activated" — this reveals the real QR on the stub.
+ * Flip a reserved ticket to "activated" - this reveals the real QR on the stub.
  *
  * Returns whether it fired, so the client can throw the confetti. It used to say
  * so with a ?activated=1 redirect, which is the one thing an action must not do.

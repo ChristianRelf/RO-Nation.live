@@ -1,10 +1,10 @@
-# RO. Nation LIVE — Ticket API
+# RO. Nation LIVE - Ticket API
 
 > Check whether a ticket is valid, find out what kind of ticket it is, hand one
 > out, take one back, and mark it redeemed once it has been scanned at the door.
 >
 > This file is written for an LLM (or a person) wiring a Roblox experience up to
-> the door. Everything here is the real contract — if the code and this file ever
+> the door. Everything here is the real contract - if the code and this file ever
 > disagree, the code wins and this file is a bug.
 
 Base URL: https://ronation.live
@@ -44,7 +44,7 @@ anywhere in the world.
 ### The three things that matter about a key
 
 **It belongs to one organisation.** A Sleep Token key sees Sleep Token's
-shows and nothing else. A ticket for anybody else's show comes back `not_found` —
+shows and nothing else. A ticket for anybody else's show comes back `not_found` -
 not "forbidden", because whether somebody else's ticket exists is none of your
 business, and those are the same answer. The scope is read from the key on our
 side. **You cannot widen it from the request. There is no field for it.**
@@ -63,15 +63,15 @@ can do:
 
 **Tick only what the key needs.** A door scanner with `TICKETS_REDEEM` and nothing
 else, if it leaks, cannot be turned into a ticket printer. That is the entire
-reason scopes exist — one key per job, not one key for everything.
+reason scopes exist - one key per job, not one key for everything.
 
 Calling an endpoint your key has no scope for is a **403**, never a 401. Your key
-is fine; it is simply not allowed to do that. Do not go and re-copy the key — mint
+is fine; it is simply not allowed to do that. Do not go and re-copy the key - mint
 one with the right boxes ticked. Scopes are fixed at mint and cannot be edited
 afterwards: changing what a key can do means replacing it, deliberately.
 
-**It is shown once.** We store a SHA-256 of the token, not the token, so nobody —
-including us — can ever read it back to you. Lose it and you mint a new one; there
+**It is shown once.** We store a SHA-256 of the token, not the token, so nobody -
+including us - can ever read it back to you. Lose it and you mint a new one; there
 is no "reveal" button and there is no support request that produces one.
 
 ### Keeping it
@@ -81,7 +81,7 @@ require. Never a `LocalScript`, never in `ReplicatedStorage`, never in a place
 somebody can take a copy of it. Anybody holding the key can do everything it was
 minted with, from anywhere, as you.
 
-Revoke it the moment it leaks — the portal's **Revoke** button kills it on the very
+Revoke it the moment it leaks - the portal's **Revoke** button kills it on the very
 next request, and revoked is permanent (mint a replacement rather than un-revoking).
 A key you no longer recognise in the list is a key to revoke: the portal shows what
 each one was named, who minted it, and when it was last used, so an unused key with
@@ -90,8 +90,8 @@ a name nobody remembers is safe to kill.
 ### If you were handed a key that does not start with `rnl_`
 
 That is `GAME_API_KEY`, the original one, and it predates all of the above. It is
-**unscoped** — it can verify, redeem, issue, void and revoke tickets for every show
-on the platform, RNL's and every partner's alike — and it holds every scope. It is
+**unscoped** - it can verify, redeem, issue, void and revoke tickets for every show
+on the platform, RNL's and every partner's alike - and it holds every scope. It is
 still accepted, so nothing that uses it breaks, and it is not in the portal, so it
 cannot be revoked from there.
 
@@ -132,25 +132,25 @@ parse one shape in Luau, not nine.
 
 ### Asking by player, not by code
 
-Your server already knows who joined — `Player.UserId` and `Player.Name` — so it can
+Your server already knows who joined - `Player.UserId` and `Player.Name` - so it can
 ask *"does this player hold a ticket for tonight?"* the moment they spawn, without
 anybody typing anything. That is what `robloxId` is for, and it is the one to reach
 for: **send `robloxId` whenever you have it.**
 
 `username` exists for the times a human is doing the typing. It is resolved against
 Roblox's own API into a `robloxId` before any ticket is looked up, because a
-username is a label a player can change and an id is not — so somebody who renamed
+username is a label a player can change and an id is not - so somebody who renamed
 the night before the show still walks through their own door. (An id sent in the
 `username` field is accepted as-is.)
 
-The endpoints that **write a new ticket** — `/reserve`, `/gift`, `/purchase` — take
+The endpoints that **write a new ticket** - `/reserve`, `/gift`, `/purchase` - take
 `robloxId` only, and no username. Resolving a name costs a round trip to Roblox
 that can fail, and a name is a label that can change: neither is a thing to hang
 "who gets a ticket" on. Your game server has `Player.UserId`. Use it.
 
 **A player lookup needs `eventId`.** One person can hold a ticket to every show we
 run, so their name alone does not identify a ticket. Without it you get a `400`. A
-`code`, by contrast, identifies exactly one ticket on its own — though you should
+`code`, by contrast, identifies exactly one ticket on its own - though you should
 still send `eventId` with it, for the reason below.
 
 Optional, and both worth sending:
@@ -164,7 +164,7 @@ Optional, and both worth sending:
 
 ### Always send `eventId` if you know it
 
-Without it, the API can only answer *"is this a real ticket"* — not *"is this a
+Without it, the API can only answer *"is this a real ticket"* - not *"is this a
 real ticket **for tonight**"*. A genuine ticket for last month's show would come
 back `valid: true`. With `eventId`, a ticket for any other show is refused with
 `reason: "wrong_event"`.
@@ -174,7 +174,7 @@ back `valid: true`. With `eventId`, a ticket for any other show is refused with
 `seal` is six characters printed on the ticket, derived from the ticket with a
 secret key. If you send it, the response includes `ticket.sealValid`. It exists so
 a crew member can eyeball a **printed or downloaded** ticket and spot a forgery
-without a scanner. The database is what actually admits people — you do not need
+without a scanner. The database is what actually admits people - you do not need
 the seal for a normal scan.
 
 ---
@@ -182,7 +182,7 @@ the seal for a normal scan.
 ## The response
 
 Every ticket endpoint returns HTTP 200 with this shape whenever the request was
-understood. Failure to *find* a ticket is not an HTTP error — it is a 200 with
+understood. Failure to *find* a ticket is not an HTTP error - it is a 200 with
 `valid: false`. So is a refusal to issue one.
 
 ```json
@@ -191,14 +191,14 @@ understood. Failure to *find* a ticket is not an HTTP error — it is a 200 with
   "valid": true,
   "admit": true,
   "reason": "ok",
-  "message": "Admit — VIP — Front Barrier",
+  "message": "Admit - VIP - Front Barrier",
 
   "ticket": {
     "id": "cmrijfyc500029h3m26mh212t",
     "code": "ST-4K9QW2",
     "status": "RESERVED",
     "admission": {
-      "tier": "VIP — Front Barrier",
+      "tier": "VIP - Front Barrier",
       "kind": "VIP",
       "priceRobux": 250,
       "paid": true
@@ -217,7 +217,7 @@ understood. Failure to *find* a ticket is not an HTTP error — it is a 200 with
     "title": "THE FIRST RITE",
     "startsAt": "2026-08-03T19:00:00.000Z",
     "doorsAt": "2026-08-03T18:00:00.000Z",
-    "venue": "The Hollow — Main Stage",
+    "venue": "The Hollow - Main Stage",
     "partnerId": "sleeptokenro"
   },
 
@@ -238,15 +238,15 @@ When there is no ticket to talk about, `ticket`, `event` and `holder` are all
 ```
 
 The writing endpoints add one or two fields of their own **alongside** this shape,
-never instead of it — `issued`, `created`, `voided`, `banned`. They are described
+never instead of it - `issued`, `created`, `voided`, `banned`. They are described
 under each endpoint below.
 
-### `valid` vs `admit` — the one thing to get right
+### `valid` vs `admit` - the one thing to get right
 
 **Branch on `admit`. Never on `valid`.**
 
-- `valid` — the ticket is real and was not cancelled.
-- `admit` — this person should walk through the door **right now**.
+- `valid` - the ticket is real and was not cancelled.
+- `admit` - this person should walk through the door **right now**.
 
 An already-checked-in ticket is `valid: true` and `admit: false`. It is a perfectly
 genuine ticket; it has simply already been used, and letting a second person in on
@@ -260,25 +260,25 @@ it is the exact thing redeeming exists to prevent. A server that branches on
 | `ok`                 | true    | true    | Good ticket. Let them in.                        |
 | `already_checked_in` | true    | false   | Real ticket, already used. Do not admit again.   |
 | `cancelled`          | false   | false   | Voided, revoked, or the holder cancelled it.     |
-| `not_found`          | false   | false   | No such code — or not one of your org's.         |
+| `not_found`          | false   | false   | No such code - or not one of your org's.         |
 | `wrong_event`        | false   | false   | Real ticket, but for a different show.           |
 
 `message` is a human sentence for the same thing. Show it to a crew member; do not
-parse it — it is written for people and may be reworded.
+parse it - it is written for people and may be reworded.
 
 ### What kind of ticket is it?
 
 `ticket.admission`:
 
-- `tier` — the tier's name as it was **when the ticket was issued** ("General
-  Admission", "VIP — Front Barrier"). It is a snapshot: renaming or deleting a tier
+- `tier` - the tier's name as it was **when the ticket was issued** ("General
+  Admission", "VIP - Front Barrier"). It is a snapshot: renaming or deleting a tier
   afterwards does not change what somebody already holds.
-- `kind` — `"GA"` or `"VIP"`. `VIP` means it was a priced tier. Branch on this to
+- `kind` - `"GA"` or `"VIP"`. `VIP` means it was a priced tier. Branch on this to
   open the VIP room, spawn them on the barrier, hand out a badge.
-- `priceRobux` / `paid` — what it cost. Free tickets are `0` / `false`.
+- `priceRobux` / `paid` - what it cost. Free tickets are `0` / `false`.
 
 > Paid (Robux) tiers are **switched off** platform-wide today, so in practice every
-> live ticket is `kind: "GA"`, `paid: false`. The field is real and populated —
+> live ticket is `kind: "GA"`, `paid: false`. The field is real and populated -
 > build against it now and the VIP path works the day paid tiers are turned on.
 
 ### Errors
@@ -290,7 +290,7 @@ parse it — it is written for people and may be reworded.
 | 400  | `{ "ok": false, "error": "provide `code`, or …" }`  | No usable identifier sent.           |
 
 A `403` is not a reason to re-copy your key. It means the key is fine and does not
-have that scope — go and mint one that does.
+have that scope - go and mint one that does.
 
 `401` and `403` also carry a `hint`: a sentence saying what to do about it. Show it
 to whoever is wiring this up; don't parse it.
@@ -314,13 +314,13 @@ are left:
   "event": {
     "id": "cmr9nedoy0001fgfa4abrsbt2", "slug": "stro-the-first-rite",
     "title": "THE FIRST RITE", "status": "PUBLISHED",
-    "startsAt": "…", "doorsAt": "…", "venue": "The Hollow — Main Stage",
+    "startsAt": "…", "doorsAt": "…", "venue": "The Hollow - Main Stage",
     "capacity": 200, "reserved": 176, "remaining": 24, "partnerId": "sleeptokenro"
   },
   "tiers": [
     { "id": null, "name": "General Admission", "kind": "GA", "priceRobux": 0,
       "remaining": 24, "available": true,  "blockedReason": null },
-    { "id": "cmr9…", "name": "VIP — Front Barrier", "kind": "VIP", "priceRobux": 250,
+    { "id": "cmr9…", "name": "VIP - Front Barrier", "kind": "VIP", "priceRobux": 250,
       "remaining": 0,  "available": false, "blockedReason": "soldout" }
   ]
 }
@@ -328,8 +328,8 @@ are left:
 
 **`available: false` means do not prompt for it.** `blockedReason` says why:
 
-- `soldout` — the tier is full, or the room is.
-- `locked` — it is priced, and Robux sales are off. Nobody can buy it today, and
+- `soldout` - the tier is full, or the room is.
+- `locked` - it is priced, and Robux sales are off. Nobody can buy it today, and
   taking somebody's money for a ticket that cannot be issued is the worst bug in
   this whole document.
 
@@ -340,14 +340,14 @@ for is one free General Admission. Send `tierId: null`, or leave it out entirely
 
 ## Handing out tickets
 
-### `POST /api/v1/tickets/reserve` — give this player a ticket
+### `POST /api/v1/tickets/reserve` - give this player a ticket
 
 ```json
 { "robloxId": "851394804", "eventId": "cmr9…", "tierId": null }
 ```
 
 The player is standing in front of you and wants in. They do **not** need an
-account on ronation.live — if they have never opened the site in their life, we
+account on ronation.live - if they have never opened the site in their life, we
 create one for them from their Roblox profile. They have a Roblox account, and that
 is enough.
 
@@ -360,7 +360,7 @@ already hold, with `created: false`. Nobody holds two.
 
 Adds to the response: `issued` (true/false), `created` (was a new one made).
 
-### `POST /api/v1/tickets/gift` — X gives Y a ticket
+### `POST /api/v1/tickets/gift` - X gives Y a ticket
 
 ```json
 { "robloxId": "851394804",       // who GETS it
@@ -372,7 +372,7 @@ Adds to the response: `issued` (true/false), `created` (was a new one made).
 for and nobody is recorded as handing out is a seat that turns up in an audit as a
 mystery. The giver is stamped on the ticket and shown in the portal.
 
-A gift **may** be a priced tier. That is a comp — a free VIP, given away — and no
+A gift **may** be a priced tier. That is a comp - a free VIP, given away - and no
 Robux changes hands, which is exactly what a giveaway is. It still respects the
 paid-ticket switch: if Robux sales are off for your org, its priced tiers do not
 exist yet, and comping a seat in a tier that isn't supposed to exist is still
@@ -383,12 +383,12 @@ Adds to the response: `issued`, `created`, `gifted`.
 ### Why an issue can be refused
 
 All three issuing endpoints answer `{ "ok": true, "issued": false, "reason": …,
-"message": … }` — a 200, because the request was understood perfectly and the answer
+"message": … }` - a 200, because the request was understood perfectly and the answer
 is no.
 
 | `reason`            | What happened                                                  |
 | ------------------- | -------------------------------------------------------------- |
-| `not_found`         | No such show — or not one of yours.                            |
+| `not_found`         | No such show - or not one of yours.                            |
 | `unavailable`       | The show is not open for tickets (draft, or archived).         |
 | `past`              | It has already happened.                                       |
 | `badtier`           | No such tier on this show, or it has been deactivated.         |
@@ -422,7 +422,7 @@ is no.
 Robux cannot be charged from a website. A real payment is a Developer Product
 prompted inside your experience, and the **only** witness to it is the
 `ProcessReceipt` handler on your game server. Roblox offers no server-to-server call
-for us to ask *"was purchase X really paid for?"* — so we cannot check. **We take
+for us to ask *"was purchase X really paid for?"* - so we cannot check. **We take
 your game server's word for it.**
 
 That is the trust boundary, and it is worth reading twice rather than skimming:
@@ -435,14 +435,14 @@ trust with your own Robux, and revoke the key the moment it leaks.
 That a payment is honoured **exactly once**.
 
 `purchaseId` is Roblox's own `PurchaseId`, and it is the idempotency key.
-`ProcessReceipt` is explicitly at-least-once — Roblox re-delivers a receipt until
+`ProcessReceipt` is explicitly at-least-once - Roblox re-delivers a receipt until
 your game returns `PurchaseGranted`, and a server that crashes mid-call **will**
 send it again. So:
 
 - Send the same `purchaseId` twice and the second call returns the **same ticket**,
   `created: false`, and takes no second payment. **Retry freely.** A dropped
   response is safe to re-send, and you should re-send it.
-- It is checked **before anything else can refuse it** — before the show is sold
+- It is checked **before anything else can refuse it** - before the show is sold
   out, before it is past, before the tier is deactivated. Somebody who has already
   been charged must never be told they have no ticket because the room filled up
   while their receipt was in flight.
@@ -453,7 +453,7 @@ send it again. So:
 #### Granting the receipt
 
 Return `Enum.ProductPurchaseDecision.PurchaseGranted` **only** once this has
-answered `issued: true`. If it answers `issued: false`, do not grant — return
+answered `issued: true`. If it answers `issued: false`, do not grant - return
 `NotProcessedYet` and let Roblox re-deliver.
 
 And do not prompt at all for a tier that `GET /api/v1/events/<id>` says is
@@ -461,36 +461,36 @@ And do not prompt at all for a tier that `GET /api/v1/events/<id>` says is
 refund, not an error message.
 
 > Paid tiers are switched off platform-wide today, so this endpoint answers
-> `payments_off` for every priced tier right now. It is real and it works — build
+> `payments_off` for every priced tier right now. It is real and it works - build
 > against it, and the day the switch flips, your purchase path is already correct.
 
 ---
 
 ## Taking a ticket back
 
-Both take the same body as `/verify` — a `code`, or a player + `eventId` — plus an
+Both take the same body as `/verify` - a `code`, or a player + `eventId` - plus an
 optional `reason` and `byName`.
 
-### `POST /api/v1/tickets/void` — cancel it
+### `POST /api/v1/tickets/void` - cancel it
 
 Issued to the wrong player. A duplicate. A change of plan. The ticket is cancelled
 and **the holder may reserve again immediately**, exactly as if they had cancelled
-it themselves — because voiding is a statement about the *ticket*, not the person.
+it themselves - because voiding is a statement about the *ticket*, not the person.
 
-### `POST /api/v1/tickets/revoke` — cancel it, and bar them
+### `POST /api/v1/tickets/revoke` - cancel it, and bar them
 
 Everything `/void` does, plus the part that matters: the holder is stamped, and
 `/reserve`, `/gift` and `/purchase` all refuse to hand them another one for this
-show. Without that, a revoke is a gesture — they click Reserve again and walk
+show. Without that, a revoke is a gesture - they click Reserve again and walk
 straight back in.
 
 The difference is what you are *saying*. Voiding says "this ticket is wrong".
 Revoking says "this person is not coming". Use the second only when you mean it,
-and send a `reason` — it is written down, and it is what the crew will read when
+and send a `reason` - it is written down, and it is what the crew will read when
 this person turns up at the door and asks why.
 
 It bars them from **this show**. A standing ban across everything you run is the
-blacklist, in the portal — a different question with a different answer.
+blacklist, in the portal - a different question with a different answer.
 
 Lifting a revocation is done in the portal, not from the game. The same key that
 can ban should not quietly un-ban.
@@ -498,7 +498,7 @@ can ban should not quietly un-ban.
 Both add to the response: `voided`, `banned`, `alreadyVoid`.
 
 Both are idempotent, and **neither will touch a `CHECKED_IN` ticket**: they answer
-`voided: false, reason: "checked_in"`. That person is already in the room —
+`voided: false, reason: "checked_in"`. That person is already in the room -
 cancelling the record now would not get them out of it, it would only make the
 record lie. Whoever asked for this wants security, not a database write.
 
@@ -526,7 +526,7 @@ local function callApi(path, body)
         })
     end)
 
-    -- The network failed. This is NOT "the ticket is bad" — do not turn somebody
+    -- The network failed. This is NOT "the ticket is bad" - do not turn somebody
     -- away because the wifi blinked. Let staff decide, or retry.
     if not ok or not res.Success then
         return nil, "network"
@@ -557,7 +557,7 @@ local function admit(player, code)
         print(player.Name .. " is VIP: " .. data.ticket.admission.tier)
     end
 
-    return true, data.message  -- "Checked in — General Admission"
+    return true, data.message  -- "Checked in - General Admission"
 end
 ```
 
@@ -576,7 +576,7 @@ game.Players.PlayerAdded:Connect(function(player)
     if err == "network" then return end
 
     if not data.valid then
-        player:Kick("You need a ticket for this show — get one at ronation.live")
+        player:Kick("You need a ticket for this show - get one at ronation.live")
     end
 end)
 ```
@@ -599,7 +599,7 @@ local function reserveFor(player)
     if err == "network" then return false, "Couldn't reach the ticket system." end
     if not data.issued then return false, data.message end  -- soldout, revoked, past…
 
-    return true, data.ticket.code   -- "RN-4K9QW2" — show it to them
+    return true, data.ticket.code   -- "RN-4K9QW2" - show it to them
 end
 ```
 
@@ -610,7 +610,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 
 -- productId → the tier it buys. Fill this in from GET /api/v1/events/<id>.
 local TIER_FOR_PRODUCT = {
-    [123456789] = "cmr9tierid…",   -- VIP — Front Barrier
+    [123456789] = "cmr9tierid…",   -- VIP - Front Barrier
 }
 
 MarketplaceService.ProcessReceipt = function(receipt)
@@ -638,7 +638,7 @@ MarketplaceService.ProcessReceipt = function(receipt)
         return Enum.ProductPurchaseDecision.NotProcessedYet
     end
 
-    -- They have their ticket. `data.created` is false on a re-delivery — that is
+    -- They have their ticket. `data.created` is false on a re-delivery - that is
     -- success, not a duplicate, and it must still be granted or Roblox will keep
     -- sending it forever.
     return Enum.ProductPurchaseDecision.PurchaseGranted
@@ -663,7 +663,7 @@ end
 ```
 
 The response's `holder` block comes back with the canonical `robloxId`, `username`
-and `displayName` of whoever we matched. Read it before acting on the answer — it
+and `displayName` of whoever we matched. Read it before acting on the answer - it
 is how you confirm the name resolved to the person you meant.
 
 ---
@@ -671,17 +671,17 @@ is how you confirm the name resolved to the person you meant.
 ## The manual door
 
 Every scanner eventually dies mid-queue. The crew can check and check in a ticket
-by hand, from a browser, and it makes the **same decision this API makes** — same
+by hand, from a browser, and it makes the **same decision this API makes** - same
 code path, so the laptop and the game can never disagree:
 
 - RNL's shows: `ronation.live/company/door` (Roblox group rank 245+)
 - A partner's shows: `portal.ronation.live/<slug>/door` (their crew, or RNL 250+)
 
-Both take a typed code or a USB barcode scanner — a scanner is just a keyboard,
+Both take a typed code or a USB barcode scanner - a scanner is just a keyboard,
 and the page is built for one: it clears and re-focuses the input after every
 check, so you can scan a queue without touching the laptop.
 
-Both also take a **player** instead of a code — a username or a Roblox id — for the
+Both also take a **player** instead of a code - a username or a Roblox id - for the
 person who turns up having lost theirs. Same lookup as `username` above, and it
 needs tonight's show picked for the same reason.
 
@@ -689,16 +689,16 @@ needs tonight's show picked for the same reason.
 
 ## Ticket anatomy, briefly
 
-- **Code** — `RN-4K9QW2` (RNL) or `ST-4K9QW2` (a partner's prefix). What the
+- **Code** - `RN-4K9QW2` (RNL) or `ST-4K9QW2` (a partner's prefix). What the
   barcode and the QR carry. This is what you send to the API.
-- **Barcode** — Code 128, down the left of the ticket. A cheap USB laser scanner
+- **Barcode** - Code 128, down the left of the ticket. A cheap USB laser scanner
   reads it.
-- **QR** — on the stub. It encodes the ticket's *URL*, not its code, so scanning it
+- **QR** - on the stub. It encodes the ticket's *URL*, not its code, so scanning it
   with a phone opens the ticket page.
-- **Reference** — the ticket's opaque id (`cmrij…`). Not secret; it is what the URL
+- **Reference** - the ticket's opaque id (`cmrij…`). Not secret; it is what the URL
   is addressed by.
-- **Seal** — six characters, e.g. `PVZFNR`. Anti-forgery, optional to check, see
+- **Seal** - six characters, e.g. `PVZFNR`. Anti-forgery, optional to check, see
   above.
-- **Sealed until activated** — the code, barcode and QR are hidden until the holder
+- **Sealed until activated** - the code, barcode and QR are hidden until the holder
   activates the ticket. A reserved-but-not-activated ticket is still valid, and
   `/redeem` activates it for them.

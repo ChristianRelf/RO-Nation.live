@@ -1,8 +1,8 @@
 # Local dev convenience: publish the Postgres container so `npm run dev` (running
 # outside Docker) can reach it on localhost:5433.
 #
-# Docker Compose merges this file automatically on EVERY `docker compose up` —
-# including on the server — so the port is bound to 127.0.0.1 rather than
+# Docker Compose merges this file automatically on EVERY `docker compose up` -
+# including on the server - so the port is bound to 127.0.0.1 rather than
 # 0.0.0.0. Without that, Postgres is reachable from the public internet:
 # published Docker ports punch straight through ufw/iptables rules.
 #

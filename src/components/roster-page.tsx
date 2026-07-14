@@ -15,7 +15,7 @@ const MESSAGES: Record<string, { tone: "ok" | "bad"; text: string }> = {
   added: { tone: "ok", text: "Added to the list." },
   updated: { tone: "ok", text: "Changes saved." },
   removed: { tone: "ok", text: "Removed from the list." },
-  exists: { tone: "bad", text: "They're already on this list — edit them below." },
+  exists: { tone: "bad", text: "They're already on this list - edit them below." },
   nouser: { tone: "bad", text: "No Roblox account matched that name or ID." },
   noreason: { tone: "bad", text: "A reason is required." },
   readonly: { tone: "bad", text: "Your account has read-only access." },
@@ -23,7 +23,7 @@ const MESSAGES: Record<string, { tone: "ok" | "bad"; text: string }> = {
 
 /**
  * The VIP list and the blacklist are the same tool pointed at a different
- * `kind` — and SHASHA and a partner's portal are the same tool pointed at a
+ * `kind` - and SHASHA and a partner's portal are the same tool pointed at a
  * different `scope`. So all of those pages are this one component, differing
  * only in copy.
  *
@@ -92,8 +92,8 @@ export async function RosterPage({
           <RosterSearch
             placeholder={
               isVip
-                ? "Search VIPs — username, ID, role or reason…"
-                : "Search the blacklist — username, ID, tag or reason…"
+                ? "Search VIPs - username, ID, role or reason…"
+                : "Search the blacklist - username, ID, tag or reason…"
             }
           />
           <RosterList

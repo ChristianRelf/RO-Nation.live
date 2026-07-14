@@ -5,18 +5,18 @@ import { partnerBySlug } from "@/lib/partners/registry";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/v1/events            — the published upcoming shows this key can see.
-// GET /api/v1/events?partner=x  — root key only; see below.
+// GET /api/v1/events            - the published upcoming shows this key can see.
+// GET /api/v1/events?partner=x  - root key only; see below.
 //
 // Auth: x-api-key: <key>        scope: EVENTS_READ
 //
 // This endpoint used to carry a comment saying that `partner` *selected* but did
-// not *isolate* — there was one global key, so anybody holding it could read any
+// not *isolate* - there was one global key, so anybody holding it could read any
 // partner's list by editing the query string, and the comment said in as many
 // words: do not let a partner's key ship without closing this.
 //
 // Closed. The scope now comes from the key. A partner's key sees that partner's
-// shows and nothing else, and `?partner=` cannot widen it — asking for somebody
+// shows and nothing else, and `?partner=` cannot widen it - asking for somebody
 // else's is a 403, not a quiet redirect to your own, because silently answering a
 // different question than the one asked is how an integration ships a bug that
 // only appears at the door.

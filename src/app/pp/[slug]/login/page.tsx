@@ -15,14 +15,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const partner = partnerBySlug(params.slug);
   return {
-    title: `${partner?.name ?? "Portal"} — sign in`,
+    title: `${partner?.name ?? "Portal"} - sign in`,
     robots: { index: false, follow: false },
   };
 }
 
 // Signing in with Roblox and *having access* are two different things: the OAuth
 // round trip succeeds for any Roblox account, and the grant decides the rest. So
-// this page has to handle the middle state — signed in, but not a member — or
+// this page has to handle the middle state - signed in, but not a member - or
 // someone the partner hasn't been granted access yet would be bounced back here
 // on a loop with nothing to read. Same shape as /shasha/login.
 
@@ -114,7 +114,7 @@ export default async function PartnerLoginPage({
                   {partner.name} portal.
                 </p>
                 <p className="mt-3 text-xs text-faint">
-                  Access here is granted per account, not by Roblox group rank —
+                  Access here is granted per account, not by Roblox group rank -
                   so a promotion in the group won&apos;t do it. Ask {partner.name}{" "}
                   management, or RO. Nation LIVE, to add you.
                 </p>

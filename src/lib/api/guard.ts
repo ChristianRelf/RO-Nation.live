@@ -49,7 +49,7 @@ export async function authorize(
     return deny(
       403,
       "forbidden",
-      `This key does not have the "${scope}" scope. A key's scopes are fixed when it is minted — add the scope by minting a new key in your portal.`,
+      `This key does not have the "${scope}" scope. A key's scopes are fixed when it is minted - add the scope by minting a new key in your portal.`,
     );
   }
 
@@ -72,7 +72,7 @@ export const badRequest = (error: string) => deny(400, error);
 /**
  * Trim a value the caller sent into a string, or null.
  *
- * Numbers become strings deliberately — Luau's JSONEncode will happily send a
+ * Numbers become strings deliberately - Luau's JSONEncode will happily send a
  * robloxId as a number, and refusing that would be a footgun for exactly the
  * people this API is for.
  */

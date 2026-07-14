@@ -6,7 +6,7 @@ import { issueTicket } from "@/lib/tickets/issue";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/v1/tickets/purchase — somebody paid Robux. Give them the ticket.
+// POST /api/v1/tickets/purchase - somebody paid Robux. Give them the ticket.
 //
 // Auth:  x-api-key: <key>          scope: TICKETS_PURCHASE
 // Body:  { purchaseId, robloxId, eventId, tierId, robuxSpent?, placeId?, productId? }
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 // Robux cannot be charged from a website. A real payment is a Developer Product
 // prompted inside the Roblox experience, and the ONLY witness to it is the
 // ProcessReceipt handler running on the game server. Roblox offers no
-// server-to-server call for us to ask "was purchase X really paid for?" — so we
+// server-to-server call for us to ask "was purchase X really paid for?" - so we
 // cannot check. We take the game server's word for it.
 //
 // That is the trust boundary, and it is worth staring at rather than skimming:
@@ -30,13 +30,13 @@ export const dynamic = "force-dynamic";
 //
 // That a payment is honoured EXACTLY ONCE. `purchaseId` is Roblox's own
 // PurchaseId, and it is the idempotency key. ProcessReceipt is explicitly
-// at-least-once — Roblox re-delivers a receipt until the game returns
+// at-least-once - Roblox re-delivers a receipt until the game returns
 // PurchaseGranted, and a server that crashes mid-call WILL send it again. So:
 //
 //   • Send the same purchaseId twice and the second call returns the SAME ticket,
 //     `created: false`, and takes no second payment. Retry freely; a dropped
 //     response is safe to re-send, and you should re-send it.
-//   • It is checked before anything else can refuse — before the show is sold out,
+//   • It is checked before anything else can refuse - before the show is sold out,
 //     before it is past, before the tier is deactivated. Somebody who has ALREADY
 //     BEEN CHARGED must never be told they have no ticket because the room filled
 //     up while their receipt was in flight.
@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 //     Robux and changing nothing is theft with extra steps.
 //
 // Return PurchaseGranted to Roblox only once this has answered `issued: true`. If
-// it answers `issued: false`, do NOT grant — return NotProcessedYet and let Roblox
+// it answers `issued: false`, do NOT grant - return NotProcessedYet and let Roblox
 // re-deliver, or refund. `payments_off` means the tier cannot be issued to anybody
 // today, so do not prompt for it at all: read GET /api/v1/events/<id> first, and
 // only prompt for a tier that says `available: true`.
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   const eventId = str(body.eventId);
   const tierId = str(body.tierId);
 
-  // No purchaseId, no idempotency — and without idempotency a retried receipt is
+  // No purchaseId, no idempotency - and without idempotency a retried receipt is
   // a second ticket. Refuse rather than take the risk on the caller's behalf.
   if (!purchaseId || !robloxId || !eventId || !tierId) {
     return badRequest(

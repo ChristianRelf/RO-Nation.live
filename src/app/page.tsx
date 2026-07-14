@@ -9,6 +9,7 @@ import {
 import { Countdown } from "@/components/countdown";
 import { EventCard } from "@/components/event-card";
 import { EventTicker } from "@/components/event-ticker";
+import { MerchStrip } from "@/components/merch-strip";
 import { QuoteMarquee, type Quote } from "@/components/quote-marquee";
 import { Reveal } from "@/components/reveal";
 import { Kicker, SectionHeading } from "@/components/ui";
@@ -28,7 +29,7 @@ const pillars = [
   {
     step: "01",
     title: "We produce",
-    body: "Custom-built venues, live production, hosts and a full run-of-show. Every event is designed from the blockout up — not a template.",
+    body: "Custom-built venues, live production, hosts and a full run-of-show. Every event is designed from the blockout up - not a template.",
   },
   {
     step: "02",
@@ -38,11 +39,11 @@ const pillars = [
   {
     step: "03",
     title: "We verify in-game",
-    body: "Your ticket is checked at the door inside the experience through our API — no screenshots, no fakes, no queue-jumping.",
+    body: "Your ticket is checked at the door inside the experience through our API - no screenshots, no fakes, no queue-jumping.",
   },
 ];
 
-// Crowd copy. Swap these for real quotes as they come in — the layout takes any
+// Crowd copy. Swap these for real quotes as they come in - the layout takes any
 // number of them and loops until the strip is full.
 const quotes: Quote[] = [
   {
@@ -75,7 +76,7 @@ const quotes: Quote[] = [
 const faqs = [
   {
     q: "Are tickets actually free?",
-    a: "Every ticket is free. You just sign in with Roblox so we can verify you at the door — no payment, no resale, ever.",
+    a: "Every ticket is free. You just sign in with Roblox so we can verify you at the door - no payment, no resale, ever.",
   },
   {
     q: "What do I need to get in?",
@@ -83,7 +84,7 @@ const faqs = [
   },
   {
     q: "What happens if a show sells out?",
-    a: "Capacity is real and it's enforced at the door. When a show fills up, that's it — which is why the Discord gets the drop first.",
+    a: "Capacity is real and it's enforced at the door. When a show fills up, that's it - which is why the Discord gets the drop first.",
   },
   {
     q: "Can I run an event with you?",
@@ -103,7 +104,7 @@ export default async function HomePage() {
 
   const grid = upcoming.filter((e) => e.id !== featured?.id).slice(0, 6);
   const tickerItems = upcoming.map(
-    (e) => `${e.title} — ${formatDate(e.startsAt).toUpperCase()}`,
+    (e) => `${e.title} - ${formatDate(e.startsAt).toUpperCase()}`,
   );
 
   // Urgency, but only when it's true: a capacity of 0 means unlimited, and a bar
@@ -162,7 +163,7 @@ export default async function HomePage() {
             <Reveal delay={120}>
               <p className="mt-8 max-w-lg text-lg leading-relaxed text-muted">
                 {site.shortName} LIVE produces the shows, showcases and
-                tournaments the community actually shows up for — from the first
+                tournaments the community actually shows up for - from the first
                 block placed in Studio to the last drop on the floor.
               </p>
             </Reveal>
@@ -311,6 +312,12 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* ---------------- MERCH ---------------- */}
+      {/* High on the page, directly after the shows: somebody who has just looked at a
+          gig is exactly the person who wants the shirt. It renders nothing at all when
+          there is nothing on sale. */}
+      <MerchStrip />
 
       {/* ---------------- HOW IT WORKS ---------------- */}
       <section className="border-y border-line bg-elev">
@@ -476,7 +483,7 @@ export default async function HomePage() {
                 Run the show with us.
               </h2>
               <p className="mt-5 max-w-xl text-black/70">
-                Hosts, builders, moderators, editors — every great event is a
+                Hosts, builders, moderators, editors - every great event is a
                 team effort. If you want your name on the credits, we want to
                 meet you.
               </p>
@@ -484,7 +491,7 @@ export default async function HomePage() {
                 href="/careers"
                 className="mt-7 inline-flex items-center gap-2 rounded-[3px] bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.09em] text-paper transition-colors hover:bg-accent hover:text-accent-ink"
               >
-                See open roles{careers.length ? ` — ${careers.length}` : ""}
+                See open roles{careers.length ? ` - ${careers.length}` : ""}
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-2.5">
@@ -549,7 +556,7 @@ export default async function HomePage() {
           </h2>
           <p className="mx-auto mt-7 max-w-md text-lg text-muted">
             Tickets are free, capacity isn&apos;t. The Discord hears about every
-            show first — everyone else finds out when it&apos;s already full.
+            show first - everyone else finds out when it&apos;s already full.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Link href="/events" className="btn btn-accent">

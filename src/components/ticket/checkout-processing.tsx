@@ -7,15 +7,15 @@ import { reserveTicket } from "@/app/actions/tickets";
 // ticket.
 //
 // The staging is deliberate. "PROCESSING PURCHASE…" then "VERIFYING TICKET…" is
-// how this reads to a person, and it is also the shape the Robux flow will need —
+// how this reads to a person, and it is also the shape the Robux flow will need -
 // a payment that is prompted inside Roblox, then a receipt confirmed on the way
 // back. Today there is no payment: the first stage is a free reservation, and the
 // second is the ticket being minted and confirmed. The frame is right, so the day
 // payments land, only what happens inside stage one changes.
 //
 // The reservation fires ONCE, immediately, and races the animation. The action is
-// the authority — it re-resolves the tier, re-checks the Robux gate and takes the
-// row lock — so this component decides nothing. It only decides how long you look
+// the authority - it re-resolves the tier, re-checks the Robux gate and takes the
+// row lock - so this component decides nothing. It only decides how long you look
 // at it: if the server is slow, the stage bar waits for it; if the server is fast,
 // the bar still runs its course, because a purchase that resolves in 80ms feels
 // broken rather than fast.
@@ -23,7 +23,7 @@ import { reserveTicket } from "@/app/actions/tickets";
 // Navigation is a hard `location.assign`, not a router push. A ticket lives on the
 // host you bought it from, and on a partner's site the client router would have to
 // be trusted to route through middleware to reach it. A real navigation always
-// does. This is the end of a flow — one page load is not a cost worth being clever
+// does. This is the end of a flow - one page load is not a cost worth being clever
 // about.
 
 type Stage = {
@@ -43,7 +43,7 @@ const ERRORS: Record<string, string> = {
   terms: "You need to accept the ticket terms before checking out.",
   badtier: "That ticket type isn't available for this show.",
   tier_soldout: "That tier sold out while you were checking out.",
-  payments_off: "Paid tickets aren't switched on yet — that tier can't be issued.",
+  payments_off: "Paid tickets aren't switched on yet - that tier can't be issued.",
   payment_required:
     "Paid tiers are bought inside the experience. Join the show and buy it in-game.",
   revoked: "Your ticket for this show was revoked. Contact the organisers.",
@@ -80,7 +80,7 @@ export function CheckoutProcessing({
 
   useEffect(() => {
     // React 18 mounts twice in dev StrictMode. Without this guard the reservation
-    // is attempted twice — harmless, because the action is idempotent per account
+    // is attempted twice - harmless, because the action is idempotent per account
     // and returns the existing ticket under the row lock, but it would still be
     // two rows of noise in the log for every checkout.
     if (started.current) return;
@@ -179,7 +179,7 @@ export function CheckoutProcessing({
             </div>
 
             <p className="mt-6 text-xs text-faint">
-              Don&apos;t close this window — we&apos;re issuing your ticket.
+              Don&apos;t close this window - we&apos;re issuing your ticket.
             </p>
           </>
         )}

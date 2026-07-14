@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * The docs header. A server component — unlike PortalNav it has no active-link
+ * The docs header. A server component - unlike PortalNav it has no active-link
  * state to track, because the nav below it owns that.
  */
 export function DocsHeader({

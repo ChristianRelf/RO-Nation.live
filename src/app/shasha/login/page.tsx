@@ -7,14 +7,14 @@ import { PortalFooter } from "@/components/portal-footer";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "SHASHA — sign in",
+  title: "SHASHA - sign in",
   robots: { index: false, follow: false },
 };
 
 // Signing in with Roblox and *having access* are now two different things: the
 // OAuth round trip succeeds for any Roblox account, and rank decides the rest.
-// So this page has to handle the middle state — signed in, but not ranked high
-// enough — or a junior member would be bounced back here on a loop with nothing
+// So this page has to handle the middle state - signed in, but not ranked high
+// enough - or a junior member would be bounced back here on a loop with nothing
 // to read. Same shape as /company/access.
 
 const ERRORS: Record<string, string> = {

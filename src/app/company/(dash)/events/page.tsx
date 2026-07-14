@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Events" };
 
 export default async function CompanyEventsPage() {
   await requireCompanyUser();
-  // RNL's own events. A partner's belong to the partner — they are managed from
+  // RNL's own events. A partner's belong to the partner - they are managed from
   // their own portal, by their own crew, and must not be listed (or editable)
   // here just because a slug happens to live in the same table.
   const events = await prisma.event.findMany({

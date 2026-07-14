@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Careers",
   description:
-    "Join the RO. Nation LIVE crew — hosts, builders, moderators, editors and more. Open volunteer and paid roles.",
+    "Join the RO. Nation LIVE crew - hosts, builders, moderators, editors and more. Open volunteer and paid roles.",
 };
 
 export default async function CareersPage() {
@@ -25,7 +25,7 @@ export default async function CareersPage() {
         </h1>
         <p className="mt-5 max-w-2xl text-lg text-muted">
           Every sold-out show is built by people who love this. We&apos;re always
-          looking for reliable, creative crew — most roles start as volunteer and
+          looking for reliable, creative crew - most roles start as volunteer and
           the best move into paid production work.
         </p>
       </div>

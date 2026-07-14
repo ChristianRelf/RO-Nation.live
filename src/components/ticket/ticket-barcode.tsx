@@ -1,11 +1,11 @@
 import { barcodeBars } from "@/lib/tickets/barcode";
 
-// The barcode on the ticket. A real Code 128 — see lib/tickets/barcode.ts for why
+// The barcode on the ticket. A real Code 128 - see lib/tickets/barcode.ts for why
 // that is not a detail.
 //
 // Same two rules as the QR, for the same reasons. DARK INK ON PALE PAPER, never
 // the brand accent: a scanner needs contrast, and a partner's accent may be dim
-// gold. And THE QUIET ZONE IS PART OF THE MARK — ten clear modules at each end,
+// gold. And THE QUIET ZONE IS PART OF THE MARK - ten clear modules at each end,
 // drawn inside this component's own viewBox, so no caller can crop it off by
 // setting the barcode flush against a border.
 
@@ -40,7 +40,7 @@ export function TicketBarcode({
       height={vertical ? length : thickness}
       className={className}
       // The bars carry the data in their WIDTHS. Stretching them to fill the box
-      // is fine — a scanner reads ratios — but they must not be letterboxed into
+      // is fine - a scanner reads ratios - but they must not be letterboxed into
       // a smaller box and re-centred, which is what the default would do.
       preserveAspectRatio="none"
       role="img"

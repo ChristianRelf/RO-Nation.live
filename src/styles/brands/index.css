@@ -5,17 +5,17 @@
  *   :root[data-brand="sleeptokenro"] { --accent-rgb: 176 146 84; … }
  *
  * A brand sets only the channels and the shape/texture tokens declared in the
- * "a brand sets" blocks of globals.css. It never sets a derived token — those
+ * "a brand sets" blocks of globals.css. It never sets a derived token - those
  * are computed from the channels, which is what makes it impossible for a brand
  * to leave --accent and --accent-rgb pointing at different colours.
  *
  * Order-independent: :root[data-brand] has specificity (0,2,0) and beats the
  * plain :root (0,1,0) that defines the RNL defaults, so it does not matter which
  * CSS chunk the bundler emits first. (Tailwind's @layer directives are compiled
- * away — there are no native cascade layers here to reason about.)
+ * away - there are no native cascade layers here to reason about.)
  *
  * Imported by the ROOT layout, so the palette is available wherever <html>
- * renders — including Next's 404 and error boundaries, which sit outside the
+ * renders - including Next's 404 and error boundaries, which sit outside the
  * nested layouts. Add each new brand below.
  */
 

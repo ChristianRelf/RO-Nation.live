@@ -15,7 +15,7 @@ export function slugify(input: string) {
 /**
  * PREFIX-XXXXXX ticket code, using unambiguous characters.
  *
- * The prefix is the brand that issued it — "RN" for RO. Nation LIVE, or the
+ * The prefix is the brand that issued it - "RN" for RO. Nation LIVE, or the
  * partner's `ticketPrefix` from the registry ("ST-4K9QW2"). It is decoration,
  * not identity: codes are unique across the whole `tickets` table regardless of
  * prefix, so nothing looks a ticket up by parsing one. It just means a holder
@@ -33,7 +33,7 @@ export function generateTicketCode(prefix = "RN") {
 /**
  * Public survey code: XXXXX-XXXXXXX-XXX (5-7-3).
  *
- * Uses the same unambiguous alphabet as ticket codes — no O/0, I/1, L — because
+ * Uses the same unambiguous alphabet as ticket codes - no O/0, I/1, L - because
  * these get read aloud and typed in by hand. 31^15 combinations, so guessing one
  * is not a realistic way to find a survey.
  */

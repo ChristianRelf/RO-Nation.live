@@ -7,7 +7,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "RO. Nation LIVE is a Roblox event management group producing shows, showcases and tournaments — with real ticketing and in-experience door verification.",
+    "RO. Nation LIVE is a Roblox event management group producing shows, showcases and tournaments - with real ticketing and in-experience door verification.",
 };
 
 const services = [
@@ -17,7 +17,7 @@ const services = [
   },
   {
     title: "Venue & stage building",
-    body: "Custom venues built in Studio and optimised for big servers — stages, lighting rigs and interactive set pieces.",
+    body: "Custom venues built in Studio and optimised for big servers - stages, lighting rigs and interactive set pieces.",
   },
   {
     title: "Ticketing & entry",
@@ -25,7 +25,7 @@ const services = [
   },
   {
     title: "Talent & casting",
-    body: "Hosts, performers, DJs and commentators from our roster — vetted, briefed and show-ready.",
+    body: "Hosts, performers, DJs and commentators from our roster - vetted, briefed and show-ready.",
   },
 ];
 
@@ -53,7 +53,7 @@ const ticketSteps = [
   {
     n: "02",
     t: "Show up in-experience",
-    d: "Join the event experience on Roblox when doors open. Your ticket lives in your account — nothing to screenshot.",
+    d: "Join the event experience on Roblox when doors open. Your ticket lives in your account - nothing to screenshot.",
   },
   {
     n: "03",
@@ -75,7 +75,7 @@ export default function AboutPage() {
           </h1>
           <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted">
             {site.name} is a Roblox event management group. We produce live
-            shows, showcases, tournaments and festivals — handling everything
+            shows, showcases, tournaments and festivals - handling everything
             from the first block placed in Studio to verifying tickets at the
             door. What started as a few friends throwing shows is now a full
             crew of builders, hosts, editors and moderators.

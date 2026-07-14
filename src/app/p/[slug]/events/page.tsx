@@ -20,7 +20,7 @@ export default async function PartnerEventsPage({
   assertPartnerFeature(partner, "events");
 
   // Scoped to this partner. RNL's own events never appear here, and this
-  // partner's never appear on RNL's /events — see lib/queries.ts.
+  // partner's never appear on RNL's /events - see lib/queries.ts.
   const [upcoming, past] = await Promise.all([
     getUpcomingEvents(partner.slug),
     getPastEvents(partner.slug, 6),
@@ -35,7 +35,7 @@ export default async function PartnerEventsPage({
         <h1 className="display mt-5 text-5xl sm:text-6xl md:text-7xl">Shows</h1>
         <p className="mt-5 max-w-xl text-lg text-muted">
           Free tickets, tied to your Roblox account and verified at the door.
-          One per person — bring the crew, but everyone needs their own.
+          One per person - bring the crew, but everyone needs their own.
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export default async function PartnerEventsPage({
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {upcoming.map((event, i) => (
               <Reveal key={event.id} delay={(i % 3) * 60}>
-                {/* Their placeholder, not RNL's — see EventCard.fallbackSrc. */}
+                {/* Their placeholder, not RNL's - see EventCard.fallbackSrc. */}
                 <EventCard
                   event={event}
                   priority={i < 3}

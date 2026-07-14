@@ -7,7 +7,7 @@ import { partnerPortalPath } from "@/lib/partners/urls";
 // authoring page for its whole life, so it is in bookmarks and in every link
 // anyone has ever sent about a show. It costs one file to not break those.
 //
-// No guard, deliberately. It reads nothing and renders nothing — it just points
+// No guard, deliberately. It reads nothing and renders nothing - it just points
 // at the new location, and the page it points at does its own guarding.
 export default function ShowsRedirect({
   params,

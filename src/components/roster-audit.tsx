@@ -24,7 +24,7 @@ export async function RosterAudit({ scope }: { scope: RosterScope }) {
         </p>
         <h1 className="display mt-3 text-5xl">History</h1>
         <p className="mt-2 text-sm text-muted">
-          Every change to the VIP list and blacklist — who did it, to whom, and
+          Every change to the VIP list and blacklist - who did it, to whom, and
           why. The 200 most recent are shown.
         </p>
       </div>

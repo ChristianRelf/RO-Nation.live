@@ -6,14 +6,14 @@ import { PartnerMark } from "./emblem";
 /**
  * A partner site's own header. Links are bare paths ("/events") because the
  * browser is already on <slug>.ronation.live and the middleware rewrites from
- * there — see lib/partners/urls.ts.
+ * there - see lib/partners/urls.ts.
  *
  * The nav is built from the registry's features, so it can't point at a route
  * this partner doesn't have. That is presentation matching the guard, not
  * standing in for it: the pages themselves call assertPartnerFeature and 404.
  *
  * The mark appears BESIDE the name, never instead of it. A logo alone is how a
- * fan site starts looking like the official one — the words "Sleep Token" in
+ * fan site starts looking like the official one - the words "Sleep Token" in
  * the corner of every page are load-bearing, and PartnerMark is decorative
  * (aria-hidden) precisely because the name is the thing being announced.
  */

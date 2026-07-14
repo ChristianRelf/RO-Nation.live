@@ -7,7 +7,7 @@ export default function NotFound() {
       <p className="kicker">Error 404</p>
       <h1 className="display mt-4 text-7xl sm:text-9xl">Off the grid</h1>
       <p className="mt-5 max-w-md text-muted">
-        This page doesn&apos;t exist — it may have wrapped, moved, or never made
+        This page doesn&apos;t exist - it may have wrapped, moved, or never made
         the line-up.
       </p>
       <div className="mt-8 flex gap-3">

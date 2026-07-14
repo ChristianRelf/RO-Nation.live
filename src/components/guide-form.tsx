@@ -9,8 +9,8 @@ const labelClass =
 
 /**
  * A sibling of PostForm rather than a reuse of it: that one is typed `post?: Post`
- * and every line of its copy is about the blog. The shared part — the markdown
- * editor and its body cap — is the component both of them compose.
+ * and every line of its copy is about the blog. The shared part - the markdown
+ * editor and its body cap - is the component both of them compose.
  */
 export function GuideForm({
   action,
@@ -48,7 +48,7 @@ export function GuideForm({
           />
           {guide ? (
             <p className="mt-1.5 text-xs text-faint">
-              URL: <code className="font-mono">/docs/guides/{guide.slug}</code> —
+              URL: <code className="font-mono">/docs/guides/{guide.slug}</code> -
               this stays put if you retitle, so links already shared keep working.
             </p>
           ) : null}
@@ -122,7 +122,7 @@ export function GuideForm({
             <option value="ARCHIVED">Archived</option>
           </select>
           <p className="mt-1.5 text-xs text-faint">
-            Published guides are visible to anybody with a portal door — including
+            Published guides are visible to anybody with a portal door - including
             read-only staff. They are not public.
           </p>
         </div>

@@ -18,15 +18,15 @@ export const dynamic = "force-dynamic";
 // A partner's home page.
 //
 // The COPY is theirs: hero, about panel and FAQ all come from PartnerContent,
-// which they edit in their studio. Every field falls back — to the registry's
-// tagline and description, or to the wording below — so a partner who has never
+// which they edit in their studio. Every field falls back - to the registry's
+// tagline and description, or to the wording below - so a partner who has never
 // opened the editor still gets a finished page.
 //
 // The SHAPE is the same for every partner, and it is built around one idea: an
 // enormous dim crest, a mark, a name, and then a great deal of black. It works
 // with artwork (Sleep Token) and without it (the pool of light and the
 // hairline grid carry a partner who has none), so this is not a Sleep Token page
-// with the others squeezed into it — it is a page that gets *more* atmospheric
+// with the others squeezed into it - it is a page that gets *more* atmospheric
 // the more artwork you give it.
 //
 // The disclaimer is rendered directly under the hero, not only in the footer.
@@ -44,7 +44,7 @@ export default async function PartnerHome({
 
   const content = await getPartnerContent(partner);
 
-  // A partner without the events feature still has a homepage — it just has no
+  // A partner without the events feature still has a homepage - it just has no
   // shows on it. So the event queries are skipped rather than the page refused.
   const hasEvents = partnerHasFeature(partner, "events");
 
@@ -57,7 +57,7 @@ export default async function PartnerHome({
   const rest = upcoming.filter((e) => e.id !== featured?.id);
   const attended = past.reduce((n, e) => n + e.ticketsCount, 0);
 
-  // What goes behind the hero — or nothing, if a full-site backdrop is already
+  // What goes behind the hero - or nothing, if a full-site backdrop is already
   // carrying the atmosphere. Stacking a hero crest on top of a fixed backdrop is
   // two enormous emblems fighting on one screen, so the bigger gesture wins and
   // the hero falls back to type, space and the mark. See Partner.backdropUrl.
@@ -65,7 +65,7 @@ export default async function PartnerHome({
   // The studio's own heroImageUrl beats both, always: it is the one an actual
   // human set, for this run of shows, and it should not be silently ignored
   // because of something in the registry. (Rendering it at all also closes a live
-  // gap — it has been editable and uploadable since the content editor shipped,
+  // gap - it has been editable and uploadable since the content editor shipped,
   // and nothing has ever put it on a page.)
   const crest =
     content.heroImageUrl ?? (partner.backdropUrl ? null : partner.crestUrl ?? null);
@@ -110,7 +110,7 @@ export default async function PartnerHome({
             {content.heroTitle ?? <Wordmark name={partner.name} />}
           </h1>
 
-          {/* A hairline under the name — the inlay, closing the lockup. */}
+          {/* A hairline under the name - the inlay, closing the lockup. */}
           <div
             aria-hidden
             className="fade-in-2 mt-10 h-px w-24 bg-accent/50"
@@ -168,7 +168,7 @@ export default async function PartnerHome({
             <div className="card grid place-items-center px-6 py-24 text-center">
               <p className="display text-3xl">Nothing announced</p>
               <p className="mt-4 max-w-sm text-muted">
-                The next show hasn&apos;t been announced yet. Check back — tickets
+                The next show hasn&apos;t been announced yet. Check back - tickets
                 are free, and they go fast.
               </p>
             </div>
@@ -257,7 +257,7 @@ export default async function PartnerHome({
       ) : null}
 
       {/* ---- What this is -------------------------------------------- */}
-      {/* Dropped entirely when the partner has written no body — an empty paper
+      {/* Dropped entirely when the partner has written no body - an empty paper
           panel with a heading and nothing under it looks broken, not minimal. */}
       {content.aboutBody ? (
         <section className="shell py-24">
@@ -318,7 +318,7 @@ export default async function PartnerHome({
 
 /**
  * The partner's name as the hero wordmark: last word on its own line, in the
- * accent. "Sleep Token" reads as "Sleep Token" over "RO" — which keeps the
+ * accent. "Sleep Token" reads as "Sleep Token" over "RO" - which keeps the
  * fan project's own initials visibly attached to the name rather than letting the
  * page render as the band's name alone.
  */

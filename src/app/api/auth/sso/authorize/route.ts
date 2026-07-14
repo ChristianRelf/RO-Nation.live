@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 // See lib/sso.ts for why a ticket rather than a domain-wide cookie.
 
 function sanitizeReturn(v: string | null) {
-  // A path on the target host — never an absolute URL. `//evil.com` is a
+  // A path on the target host - never an absolute URL. `//evil.com` is a
   // protocol-relative URL that most parsers treat as another origin, which is why
   // it is refused explicitly rather than left to `startsWith("/")`.
   if (v && v.startsWith("/") && !v.startsWith("//")) return v;
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const origin = requestOrigin(req);
 
   // This route mints credentials. It exists on one host and it answers on one
-  // host — anywhere else it is simply not here.
+  // host - anywhere else it is simply not here.
   if (!isAuthoriseOrigin(origin)) {
     return new NextResponse("Not found", { status: 404 });
   }

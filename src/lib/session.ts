@@ -7,7 +7,7 @@ const secret = new TextEncoder().encode(env.authSecret);
 
 // One cookie, one identity: your Roblox account.
 //
-// There used to be a second — `ron_admin`, minted from a shared username and
+// There used to be a second - `ron_admin`, minted from a shared username and
 // password in the environment. It is gone. Every door is now a rank in RNL's
 // Roblox group (lib/company.ts, lib/shasha.ts, lib/partners/guard.ts), which
 // means access is per-person, revoked by demotion rather than by rotating a
@@ -79,21 +79,21 @@ export function clearUserSession() {
 // No portal has a session of its own. /company, SHASHA and every partner portal
 // all sign in with Roblox and carry the ordinary member cookie above. A portal
 // cookie is scoped to portal.ronation.live, because that is the host its OAuth
-// round trip runs on — so signing in there is not signing in on the main site.
+// round trip runs on - so signing in there is not signing in on the main site.
 
 // ---- Page guards --------------------------------------------------
 //
-// There are none here — they all need a Roblox group lookup, which does not
+// There are none here - they all need a Roblox group lookup, which does not
 // belong in this file: requireCompanyUser() is in lib/company.ts,
 // requirePortalUser() in lib/shasha.ts, requirePartnerUser() in
 // lib/partners/guard.ts.
 //
 // Wherever they live, the rule is the same: every guarded PAGE must call one
-// itself, before it reads any data — a guard in the layout alone is not enough.
+// itself, before it reads any data - a guard in the layout alone is not enough.
 //
 // In the App Router, page segments render in parallel with their layout and are
 // serialised into the RSC payload independently. If the layout redirects, that
-// payload is still attached to the redirect response — so an unauthorised client
+// payload is still attached to the redirect response - so an unauthorised client
 // receives the page's data (draft events, blacklist entries) in the body of the
 // 307 it was bounced with. Redirecting from inside the page aborts that page's
 // own render, which is what actually withholds the data.

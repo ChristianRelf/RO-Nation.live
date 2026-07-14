@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// A partner's checkout. The same page as RNL's, scoped to the partner — and every
+// A partner's checkout. The same page as RNL's, scoped to the partner - and every
 // link in it is a BARE path, because the browser is already on the partner's host
 // and the middleware rewrites from there. Sending them to /tickets/<code> here
 // lands them on the partner's ticket page, on the partner's domain, in the
@@ -53,7 +53,7 @@ export default async function PartnerCheckoutPage({
   }
 
   // Re-checked here even though the reserve step already did. The query string is
-  // not evidence — it is a URL anybody can type. See the note on RNL's checkout.
+  // not evidence - it is a URL anybody can type. See the note on RNL's checkout.
   if (searchParams.agreed !== "1") redirect(`${reserveHref}?error=terms`);
 
   const offers = await offersForEvent(event);

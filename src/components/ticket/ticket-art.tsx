@@ -3,24 +3,24 @@ import { priceLabel } from "@/lib/tickets/pricing";
 import { TicketQR } from "./ticket-qr";
 import { TicketBarcode } from "./ticket-barcode";
 
-// The ticket. It is meant to read as a physical object somebody printed — a pale
+// The ticket. It is meant to read as a physical object somebody printed - a pale
 // card lying on a dark table, not a dark card blending into one.
 //
 // That is why the stock is CREAM while the page is not. It is also what the two
 // machine-readable marks require: a QR and a Code 128 both need dark ink on a pale
 // field to scan at all (see ticket-qr.tsx and lib/tickets/barcode.ts), so the marks
 // need pale paper under them. A dark ticket would have meant two pale patches
-// floating on it — exactly the "designed first, made scannable afterwards" look
+// floating on it - exactly the "designed first, made scannable afterwards" look
 // this avoids. The constraint and the design agree, which is the only reason to
 // trust either of them.
 //
 // Layout, left to right:
 //
-//   [ barcode rail ] │ [ body — issuer bar, title, when, who ] ┊ [ stub — QR ]
+//   [ barcode rail ] │ [ body - issuer bar, title, when, who ] ┊ [ stub - QR ]
 //
 // The rail is the edge you point a laser scanner at; the stub is what a phone
 // camera gets. Both carry the same ticket code, and both stay sealed until the
-// holder activates — see `revealed`.
+// holder activates - see `revealed`.
 
 export type TicketArtStatus = "RESERVED" | "CHECKED_IN" | "CANCELLED";
 
@@ -40,7 +40,7 @@ export function TicketArt({
   brandName,
   /** The issuer's wordmark, printed on the dark bar. NULL falls back to the badge. */
   brandLogo,
-  /** The ticket's opaque reference — what the URL is addressed by. Never secret. */
+  /** The ticket's opaque reference - what the URL is addressed by. Never secret. */
   reference,
   /**
    * The security seal: six characters, HMAC'd from the id and the code.
@@ -54,7 +54,7 @@ export function TicketArt({
   /**
    * Has the holder activated it?
    *
-   * Until they have, the code, the barcode and the QR are all withheld — the
+   * Until they have, the code, the barcode and the QR are all withheld - the
    * ticket is real, it just isn't armed. ONE flag rather than three, so there is
    * no way to end up printing a scannable barcode beside a hidden code.
    */
@@ -109,15 +109,15 @@ export function TicketArt({
           )}
 
           <span className="font-mono text-[9px] font-bold tracking-[0.18em] text-paper-ink/60 [writing-mode:vertical-rl]">
-            {revealed && !cancelled ? code : "—"}
+            {revealed && !cancelled ? code : "-"}
           </span>
         </div>
 
         {/* ---- Body -------------------------------------------------------
             `ticket-foil` and `ticket-guilloche` are the security print: the fine
             engine-turned linework a banknote or a real ticket is guilloched with,
-            and a foil sheen that moves. Neither stops a determined forger — nothing
-            printed can — but both are a nuisance to reproduce from a screenshot,
+            and a foil sheen that moves. Neither stops a determined forger - nothing
+            printed can - but both are a nuisance to reproduce from a screenshot,
             and their absence is instantly obvious next to a genuine one. */}
         <div className="ticket-foil relative min-w-0 flex-1 overflow-hidden">
           <div className="ticket-guilloche pointer-events-none absolute inset-0" />
@@ -128,7 +128,7 @@ export function TicketArt({
             {brandLogo ? (
               // The real wordmark. Not next/image: the logo can come from the
               // registry or from an upload, and an unconfigured remote host throws
-              // there rather than degrading — a promoter's name is not worth a 500.
+              // there rather than degrading - a promoter's name is not worth a 500.
               // It is a fixed-height, auto-width mark, so a wide logo and a square
               // one both sit on the bar correctly.
               //
@@ -140,7 +140,7 @@ export function TicketArt({
               />
             ) : (
               // No artwork: the lettered badge and the name in type. Deliberate,
-              // not a gap — see the note in lib/tickets/brand.ts.
+              // not a gap - see the note in lib/tickets/brand.ts.
               <div className="flex items-center gap-2.5">
                 <span className="grid h-6 w-6 place-items-center rounded-brand bg-accent text-[10px] font-extrabold tracking-tight text-accent-ink">
                   {brandMark}
@@ -171,7 +171,7 @@ export function TicketArt({
               </p>
             ) : null}
 
-            {/* When and where — big enough to read across a dark room. */}
+            {/* When and where - big enough to read across a dark room. */}
             <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-paper-ink/15 pt-4">
               <time className="display text-xl text-paper-ink">
                 {formatTime(startsAt)}
@@ -189,7 +189,7 @@ export function TicketArt({
             </div>
 
             {/* What you hold, and who holds it. Two columns, not four: a tier is
-                named by whoever set it up ("VIP — Front Barrier"), and four columns
+                named by whoever set it up ("VIP - Front Barrier"), and four columns
                 across a card this wide turned the commonest value of all into
                 "General Admi…". */}
             <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4">
@@ -203,8 +203,8 @@ export function TicketArt({
             </dl>
 
             {/* The reference and the seal, printed together and low. The seal is
-                the second half of the pair — the other copy is down in the
-                microtext band — because forging one and forgetting the other is
+                the second half of the pair - the other copy is down in the
+                microtext band - because forging one and forgetting the other is
                 how a faked ticket gives itself away. */}
             <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-1 border-t border-paper-ink/15 pt-4 font-mono text-[9px] tracking-[0.14em] text-paper-ink/50">
               <span>
@@ -243,7 +243,7 @@ export function TicketArt({
         {/* ---- Stub -------------------------------------------------------- */}
         {/* The seam and the punched notches are drawn in the PAGE colour by
             globals.css, so they read as holes cut through the card rather than
-            lines printed on it — which is only true now that the card is pale and
+            lines printed on it - which is only true now that the card is pale and
             the page is not. */}
         <div className="ticket-stub-panel relative flex shrink-0 flex-col items-center justify-center gap-3 p-5">
           {revealed && !cancelled ? (

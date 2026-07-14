@@ -4,7 +4,7 @@
 // complete implementation of "add to calendar", and one that cannot 404, cannot
 // leak a ticket code into a server log, and needs nothing deployed to work.
 
-/** Escape the characters iCalendar gives meaning to. Order matters — backslash first. */
+/** Escape the characters iCalendar gives meaning to. Order matters - backslash first. */
 const esc = (s: string) =>
   s
     .replace(/\\/g, "\\\\")
@@ -27,7 +27,7 @@ export function ticketCalendarHref({
   organiser,
 }: {
   /**
-   * The ticket code — or NULL while the ticket is still sealed.
+   * The ticket code - or NULL while the ticket is still sealed.
    *
    * The .ics is a data: URI, which means it is TEXT SITTING IN THE PAGE'S HTML.
    * Putting the code in it before activation would hand it over to anybody who
@@ -67,7 +67,7 @@ export function ticketCalendarHref({
     "BEGIN:VALARM",
     "TRIGGER:-PT30M",
     "ACTION:DISPLAY",
-    `DESCRIPTION:${esc(`${title} — doors soon`)}`,
+    `DESCRIPTION:${esc(`${title} - doors soon`)}`,
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",

@@ -6,7 +6,7 @@ import { partnerBySlug } from "@/lib/partners/registry";
 // The confetti burst, and nothing else.
 //
 // This used to own the QR as well, which forced the whole ticket to be a client
-// component. It doesn't any more: the ticket — and the QR inside it — renders on
+// component. It doesn't any more: the ticket - and the QR inside it - renders on
 // the server, and this renders nothing at all. It exists purely to fire once,
 // when a ticket is issued or activated.
 
@@ -14,7 +14,7 @@ import { partnerBySlug } from "@/lib/partners/registry";
 const RNL_CONFETTI = ["#2b6bff", "#7aa2ff", "#ece9e1", "#ffd166", "#ff5d73"];
 
 /**
- * Confetti is painted to a <canvas>, which cannot read a CSS variable — so
+ * Confetti is painted to a <canvas>, which cannot read a CSS variable - so
  * unlike everything else on the page, these colours have to be literal. They
  * come from the partner preset, found via the `data-brand` the root layout put
  * on <html>.
@@ -24,7 +24,7 @@ function confettiColors(): readonly string[] {
   return partnerBySlug(slug)?.confetti ?? RNL_CONFETTI;
 }
 
-// Self-contained confetti burst on a full-screen canvas — no dependencies.
+// Self-contained confetti burst on a full-screen canvas - no dependencies.
 export function fireConfetti() {
   if (typeof window === "undefined") return;
   const prefersReduced = window.matchMedia(

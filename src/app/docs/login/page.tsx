@@ -8,7 +8,7 @@ import { PortalFooter } from "@/components/portal-footer";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Docs — sign in",
+  title: "Docs - sign in",
   robots: { index: false, follow: false },
 };
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 //
 // It cannot be /shasha/login, which is what the docs used to bounce to. That page
 // sanitises returnTo against "/shasha" and throws away anything else, and its
-// denial copy talks about your rank in RNL's Roblox group — which is meaningless
+// denial copy talks about your rank in RNL's Roblox group - which is meaningless
 // to a partner's manager, who has no rank in that group at all and is perfectly
 // entitled to read the docs.
 
@@ -96,7 +96,7 @@ export default async function DocsLoginPage({
                   <span className="font-semibold text-fg">
                     {session.displayName}
                   </span>
-                  , but the docs are for RNL staff and partner crew — and that
+                  , but the docs are for RNL staff and partner crew - and that
                   account is neither.
                 </p>
                 {/* Deliberately no list of who DOES get in, and no rank number:

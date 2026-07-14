@@ -9,14 +9,14 @@ export const metadata: Metadata = {
     "The builders, hosts, editors and moderators behind RO. Nation LIVE.",
 };
 
-// Static roster — swap names/roles/handles for the real crew.
+// Static roster - swap names/roles/handles for the real crew.
 const crew = [
   {
     name: "Ava Renn",
     role: "Founder & Executive Producer",
     department: "Leadership",
     robloxUsername: "avarenn",
-    blurb: "Runs the show end to end — booking, run-of-show and live direction.",
+    blurb: "Runs the show end to end - booking, run-of-show and live direction.",
   },
   {
     name: "Milo Kade",
@@ -30,7 +30,7 @@ const crew = [
     role: "Head Host",
     department: "Talent",
     robloxUsername: "senalive",
-    blurb: "The voice of the floor — hosting, hyping and keeping the energy up.",
+    blurb: "The voice of the floor - hosting, hyping and keeping the energy up.",
   },
   {
     name: "Ray Vasquez",
@@ -51,7 +51,7 @@ const crew = [
     role: "Moderation Lead",
     department: "Safety",
     robloxUsername: "coledraper",
-    blurb: "Keeps events safe and welcoming — moderation is a feature here.",
+    blurb: "Keeps events safe and welcoming - moderation is a feature here.",
   },
 ];
 
@@ -113,7 +113,7 @@ export default function TeamPage() {
               Want in?
             </h2>
             <p className="mx-auto mt-5 max-w-md text-black/70">
-              We open new roles before every season — builders, hosts, editors
+              We open new roles before every season - builders, hosts, editors
               and moderators. If you take events seriously, we want to hear from
               you.
             </p>

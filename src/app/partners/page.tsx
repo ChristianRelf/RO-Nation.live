@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "The groups, creators and sponsors who help RO. Nation LIVE put on bigger, better shows.",
 };
 
-// Static list — swap names/blurbs/links for real partners.
+// Static list - swap names/blurbs/links for real partners.
 const partners = [
   {
     name: "SHA SHA Productions",
@@ -25,7 +25,7 @@ const partners = [
 
 export default function PartnersPage() {
   // Partner sites running on RNL infrastructure, read straight from the
-  // registry that routes them — so this section cannot claim a site that isn't
+  // registry that routes them - so this section cannot claim a site that isn't
   // live, or miss one that is.
   const sites = activePartners();
 
@@ -62,7 +62,7 @@ export default function PartnersPage() {
                     <span className="pill">Partner site</span>
                   </div>
                   <p className="mt-3 flex-1 text-muted">
-                    Their shows, their brand — ticketed and run on RO. Nation
+                    Their shows, their brand - ticketed and run on RO. Nation
                     LIVE.
                   </p>
                   <span className="mt-6 inline-flex items-center gap-2 font-semibold text-accent">
@@ -113,7 +113,7 @@ export default function PartnersPage() {
               Become a partner
             </h2>
             <p className="mx-auto mt-5 max-w-lg text-black/70">
-              Building, music, media, or sponsorship — if you want to reach a
+              Building, music, media, or sponsorship - if you want to reach a
               live Roblox crowd, let&apos;s talk. Tell us what you do and how
               you&apos;d like to get involved.
             </p>

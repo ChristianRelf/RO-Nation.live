@@ -19,7 +19,7 @@ export const IDENTIFY_ERROR =
  * Read the ticket identifiers out of a request body, and pin the lookup to the
  * caller's own org.
  *
- * `scope` comes from the KEY, never from the body — there is no field for it, and
+ * `scope` comes from the KEY, never from the body - there is no field for it, and
  * that is the point. A partner's key looking up an RNL code gets "not_found": the
  * ticket is real, and it is none of their business, and those are the same answer.
  */
@@ -40,7 +40,7 @@ export function lookupFrom(
 /**
  * Describe a ticket the way /verify describes it, whatever just happened to it.
  *
- * EVERY ticket endpoint answers in this one shape — issue, gift, purchase, void,
+ * EVERY ticket endpoint answers in this one shape - issue, gift, purchase, void,
  * revoke, verify, redeem. A Luau integration parses `data.ticket.admission.kind`
  * once and it means the same thing everywhere, whether the ticket was just minted
  * or just scanned. Extra per-endpoint fields (`created`, `voided`…) ride alongside
@@ -68,7 +68,7 @@ export async function ticketEnvelope(
   const result = await checkTicket({ code: ticket.code, scope: caller.scope });
 
   // Unreachable: BAD_REQUEST means no identifier was given, and we just gave it a
-  // code. Handled anyway rather than asserted away — the day checkTicket grows a
+  // code. Handled anyway rather than asserted away - the day checkTicket grows a
   // new refusal, this should be a 500 that gets fixed, not a `"bad_request"`
   // string spread across a response that claims to be a ticket.
   if (result === BAD_REQUEST) {

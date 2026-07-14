@@ -6,7 +6,7 @@ import { RosterSearch } from "@/components/roster-search";
 import { RosterList } from "@/components/roster-list";
 
 /**
- * The portal landing page: one search box over both lists, or — with no query —
+ * The portal landing page: one search box over both lists, or - with no query -
  * the counts and the latest changes.
  *
  * Shared by SHASHA and every partner portal, scoped by `scope`. See the note at
@@ -45,14 +45,14 @@ export async function RosterOverview({
         </p>
         <h1 className="display mt-3 text-5xl">Who are you looking for?</h1>
         <p className="mt-2 text-sm text-muted">
-          Search both lists at once — by Roblox username, user ID, role or
+          Search both lists at once - by Roblox username, user ID, role or
           reason.
         </p>
       </div>
 
       {searchParams.error === "readonly" ? (
         <p className="mb-6 border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          Your account has read-only access — only management can change the
+          Your account has read-only access - only management can change the
           lists.
         </p>
       ) : null}

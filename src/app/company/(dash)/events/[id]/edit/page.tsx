@@ -21,7 +21,7 @@ export default async function CompanyEditEventPage({
 }) {
   await requireCompanyUser();
   // RNL's own events only. A partner's event id resolves to null here, so the
-  // form never renders for one — matching the write guard in actions/company.ts,
+  // form never renders for one - matching the write guard in actions/company.ts,
   // which would refuse it anyway.
   const event = await prisma.event.findFirst({
     where: { id: params.id, partnerId: null },

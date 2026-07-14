@@ -5,7 +5,7 @@ import type { Partner } from "./registry";
 
 // A partner's editable homepage copy.
 //
-// Every field is optional and every read falls back to something sane — the
+// Every field is optional and every read falls back to something sane - the
 // registry's own tagline and description, or the wording the page shipped with.
 // A partner who has never opened the content editor still gets the site they had
 // before, which is what makes this additive rather than a migration.
@@ -25,7 +25,7 @@ export const FaqList = z.array(FaqItem).max(20);
 
 /**
  * Parse the FAQ out of a form. Returns null when the JSON is unusable, so the
- * caller can bounce the submit rather than silently saving an empty accordion —
+ * caller can bounce the submit rather than silently saving an empty accordion -
  * "no questions" and "the questions failed to parse" must not look the same.
  */
 export function parseFaq(raw: string): FaqItem[] | null {
@@ -39,12 +39,12 @@ export function parseFaq(raw: string): FaqItem[] | null {
 }
 
 /**
- * The FAQ as stored — validated on the way OUT as well as in.
+ * The FAQ as stored - validated on the way OUT as well as in.
  *
  * The column is Json, so Prisma types it as JsonValue: it could be anything, and
  * a row written before this shape settled (or by hand, in psql) would otherwise
  * flow straight into the page as `any` and blow up at render. Anything that
- * doesn't parse is dropped rather than thrown — a malformed FAQ should cost the
+ * doesn't parse is dropped rather than thrown - a malformed FAQ should cost the
  * partner their accordion, not their whole homepage.
  */
 export function readFaq(value: unknown): FaqItem[] {

@@ -17,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const survey = await find(params.code);
   return {
-    title: survey ? `${survey.title} — Survey` : "Survey",
+    title: survey ? `${survey.title} - Survey` : "Survey",
     robots: { index: false, follow: false },
   };
 }
@@ -39,7 +39,7 @@ export default async function SurveyPage({
 }) {
   const survey = await find(params.code);
 
-  // A draft is indistinguishable from a bad code — no hints that it exists.
+  // A draft is indistinguishable from a bad code - no hints that it exists.
   if (!survey || survey.status === "DRAFT") notFound();
 
   const session = await getUserSession();
@@ -75,7 +75,7 @@ export default async function SurveyPage({
 
         <div className="mt-10">
           {done ? (
-            <Panel tone="ok" title="Thanks — that's in.">
+            <Panel tone="ok" title="Thanks - that's in.">
               <p>
                 Your answers have been recorded
                 {existing ? ` on ${formatDateTime(existing.createdAt)}` : ""}.
@@ -92,7 +92,7 @@ export default async function SurveyPage({
             <Panel tone="muted" title="Sign in to answer">
               <p className="mb-5">
                 Answers are tied to your Roblox account so everyone gets one say.
-                We only see your username — nothing else.
+                We only see your username - nothing else.
               </p>
               <a
                 href={`/api/auth/roblox/login?returnTo=/${code}`}

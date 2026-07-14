@@ -17,7 +17,7 @@ export default async function NewPartnerPostPage({
   params: { slug: string };
   searchParams: { error?: string };
 }) {
-  // The write tier. Read-only staff are bounced before this page renders — and
+  // The write tier. Read-only staff are bounced before this page renders - and
   // the action re-checks anyway, because a page guard does not protect a POST.
   const { partner } = await requirePartnerManager(params.slug);
   assertPartnerFeature(partner, "blog");

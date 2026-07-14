@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 // The Company sidebar. Everything on ronation.live is authored from behind these
-// six links — the /admin dashboard that used to hold the last three is gone.
+// six links - the /admin dashboard that used to hold the last three is gone.
 const links = [
   { label: "Overview", href: "/company" },
   { label: "Events", href: "/company/events" },
   { label: "Door", href: "/company/door" },
   { label: "Blog", href: "/company/blog" },
+  { label: "Merch", href: "/company/merch" },
   { label: "Docs", href: "/company/docs" },
   { label: "Surveys", href: "/company/surveys" },
   { label: "Careers", href: "/company/careers" },

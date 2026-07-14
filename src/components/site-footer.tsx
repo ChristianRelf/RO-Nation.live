@@ -8,6 +8,8 @@ const columns = [
     links: [
       { label: "Upcoming events", href: "/events" },
       { label: "My tickets", href: "/tickets" },
+      // Handed over to merch.ronation.live by the middleware - see the note on `nav`.
+      { label: "Merch", href: "/merch" },
       { label: "Blog", href: "/blog" },
       { label: "How ticketing works", href: "/about#ticketing" },
       { label: "FAQ", href: "/faq" },

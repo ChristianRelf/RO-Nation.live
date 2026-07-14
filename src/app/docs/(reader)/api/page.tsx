@@ -13,7 +13,7 @@ export const metadata = {
 //
 // That file is the contract; this page is the same contract with headings you can
 // scroll and a table you can read. If the two ever drift, /llm.txt wins and this
-// is the bug — so the scopes table below is generated from ALL_SCOPES rather than
+// is the bug - so the scopes table below is generated from ALL_SCOPES rather than
 // typed out, because the one thing that must never be stale is the list of things
 // a key is allowed to do.
 
@@ -22,14 +22,14 @@ const RESPONSE_JSON = `{
   "valid": true,
   "admit": true,
   "reason": "ok",
-  "message": "Admit — VIP — Front Barrier",
+  "message": "Admit - VIP - Front Barrier",
 
   "ticket": {
     "id": "cmrijfyc500029h3m26mh212t",
     "code": "ST-4K9QW2",
     "status": "RESERVED",
     "admission": {
-      "tier": "VIP — Front Barrier",
+      "tier": "VIP - Front Barrier",
       "kind": "VIP",
       "priceRobux": 250,
       "paid": true
@@ -48,7 +48,7 @@ const RESPONSE_JSON = `{
     "title": "THE FIRST RITE",
     "startsAt": "2026-08-03T19:00:00.000Z",
     "doorsAt": "2026-08-03T18:00:00.000Z",
-    "venue": "The Hollow — Main Stage",
+    "venue": "The Hollow - Main Stage",
     "partnerId": "sleeptokenro"
   },
 
@@ -76,13 +76,13 @@ const EVENT_JSON = `{
   "event": {
     "id": "cmr9nedoy0001fgfa4abrsbt2", "slug": "stro-the-first-rite",
     "title": "THE FIRST RITE", "status": "PUBLISHED",
-    "startsAt": "…", "doorsAt": "…", "venue": "The Hollow — Main Stage",
+    "startsAt": "…", "doorsAt": "…", "venue": "The Hollow - Main Stage",
     "capacity": 200, "reserved": 176, "remaining": 24, "partnerId": "sleeptokenro"
   },
   "tiers": [
     { "id": null, "name": "General Admission", "kind": "GA", "priceRobux": 0,
       "remaining": 24, "available": true,  "blockedReason": null },
-    { "id": "cmr9…", "name": "VIP — Front Barrier", "kind": "VIP", "priceRobux": 250,
+    { "id": "cmr9…", "name": "VIP - Front Barrier", "kind": "VIP", "priceRobux": 250,
       "remaining": 0,  "available": false, "blockedReason": "soldout" }
   ]
 }`;
@@ -119,7 +119,7 @@ local function callApi(path, body)
         })
     end)
 
-    -- The network failed. This is NOT "the ticket is bad" — do not turn somebody
+    -- The network failed. This is NOT "the ticket is bad" - do not turn somebody
     -- away because the wifi blinked. Let staff decide, or retry.
     if not ok or not res.Success then
         return nil, "network"
@@ -150,7 +150,7 @@ local function admit(player, code)
         print(player.Name .. " is VIP: " .. data.ticket.admission.tier)
     end
 
-    return true, data.message  -- "Checked in — General Admission"
+    return true, data.message  -- "Checked in - General Admission"
 end`;
 
 const LUAU_GATE = `game.Players.PlayerAdded:Connect(function(player)
@@ -165,7 +165,7 @@ const LUAU_GATE = `game.Players.PlayerAdded:Connect(function(player)
     if err == "network" then return end
 
     if not data.valid then
-        player:Kick("You need a ticket for this show — get one at ronation.live")
+        player:Kick("You need a ticket for this show - get one at ronation.live")
     end
 end)`;
 
@@ -178,14 +178,14 @@ const LUAU_RESERVE = `local function reserveFor(player)
     if err == "network" then return false, "Couldn't reach the ticket system." end
     if not data.issued then return false, data.message end  -- soldout, revoked, past…
 
-    return true, data.ticket.code   -- "RN-4K9QW2" — show it to them
+    return true, data.ticket.code   -- "RN-4K9QW2" - show it to them
 end`;
 
 const LUAU_RECEIPT = `local MarketplaceService = game:GetService("MarketplaceService")
 
 -- productId → the tier it buys. Fill this in from GET /api/v1/events/<id>.
 local TIER_FOR_PRODUCT = {
-    [123456789] = "cmr9tierid…",   -- VIP — Front Barrier
+    [123456789] = "cmr9tierid…",   -- VIP - Front Barrier
 }
 
 MarketplaceService.ProcessReceipt = function(receipt)
@@ -213,7 +213,7 @@ MarketplaceService.ProcessReceipt = function(receipt)
         return Enum.ProductPurchaseDecision.NotProcessedYet
     end
 
-    -- They have their ticket. \`data.created\` is false on a re-delivery — that is
+    -- They have their ticket. \`data.created\` is false on a re-delivery - that is
     -- success, not a duplicate, and it must still be granted or Roblox will keep
     -- sending it forever.
     return Enum.ProductPurchaseDecision.PurchaseGranted
@@ -310,12 +310,12 @@ const VERIFY_REASONS: [string, string, string, string][] = [
     "Real ticket, already used. Do not admit again.",
   ],
   ["cancelled", "false", "false", "Voided, revoked, or the holder cancelled it."],
-  ["not_found", "false", "false", "No such code — or not one of your org's."],
+  ["not_found", "false", "false", "No such code - or not one of your org's."],
   ["wrong_event", "false", "false", "Real ticket, but for a different show."],
 ];
 
 const ISSUE_REASONS: [string, string][] = [
-  ["not_found", "No such show — or not one of yours."],
+  ["not_found", "No such show - or not one of yours."],
   ["unavailable", "The show is not open for tickets (draft, or archived)."],
   ["past", "It has already happened."],
   ["badtier", "No such tier on this show, or it has been deactivated."],
@@ -361,7 +361,7 @@ export default async function ApiDocsPage() {
   return (
     // No `shell` here: the docs layout owns the page frame and the sidebar grid.
     <div className="pb-14">
-      {/* 1 — Title */}
+      {/* 1 - Title */}
       <header className="max-w-3xl">
         <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
           Documentation
@@ -393,7 +393,7 @@ export default async function ApiDocsPage() {
             >
               /llm.txt
             </a>{" "}
-            is the machine-readable copy of this same contract — hand it straight
+            is the machine-readable copy of this same contract - hand it straight
             to an LLM. If the code and that file ever disagree, the code wins and
             the file is a bug.
           </p>
@@ -423,7 +423,7 @@ export default async function ApiDocsPage() {
         </ul>
       </Section>
 
-      {/* 2 — Getting a key */}
+      {/* 2 - Getting a key */}
       <Section title="Getting a key">
         <p className="text-muted">
           A key is the whole of your credentials, and it looks like this:
@@ -433,7 +433,7 @@ export default async function ApiDocsPage() {
 
         <p className="mt-6 text-muted">
           You mint one in your portal, under <span className="text-fg">API keys</span>{" "}
-          — the links above. Minting is a <span className="text-fg">write</span>, so
+          - the links above. Minting is a <span className="text-fg">write</span>, so
           read-only staff cannot do it: on an organisation governed by its own Roblox
           group, that is a rank. Sleep Token&rsquo;s crew read the portal at 249+
           and write at 253+, so the people who can work the door are deliberately not
@@ -445,7 +445,7 @@ export default async function ApiDocsPage() {
         <p className="text-muted">
           A Sleep Token key sees Sleep Token&rsquo;s shows and nothing else.
           A ticket for anybody else&rsquo;s show comes back{" "}
-          <Mono>not_found</Mono> — not &ldquo;forbidden&rdquo;, because whether
+          <Mono>not_found</Mono> - not &ldquo;forbidden&rdquo;, because whether
           somebody else&rsquo;s ticket exists is none of your business, and those
           are the same answer. The scope is read from the key on our side.{" "}
           <span className="text-fg">
@@ -455,28 +455,28 @@ export default async function ApiDocsPage() {
 
         <h3 className="mt-6 text-fg">It carries only the scopes it was minted with.</h3>
         <p className="text-muted">
-          Six of them, one per thing a key can do — listed below. Tick only what the
+          Six of them, one per thing a key can do - listed below. Tick only what the
           key needs: a door scanner with <Mono>TICKETS_REDEEM</Mono> and nothing else,
           if it leaks, cannot be turned into a ticket printer. That is the entire
-          reason scopes exist — one key per job, not one key for everything.
+          reason scopes exist - one key per job, not one key for everything.
         </p>
         <p className="text-muted">
           Calling an endpoint your key has no scope for is a{" "}
           <span className="text-fg">403</span>, never a 401. Your key is fine; it is
           simply not allowed to do that. Scopes are fixed at mint and cannot be
-          edited afterwards, so changing what a key may do means replacing it —
+          edited afterwards, so changing what a key may do means replacing it -
           deliberately.
         </p>
 
         <h3 className="mt-6 text-fg">It is shown once.</h3>
         <p className="text-muted">
-          We store a SHA-256 of the token, not the token, so nobody — including us —
+          We store a SHA-256 of the token, not the token, so nobody - including us -
           can ever read it back to you. Lose it and you mint a new one. There is no
           reveal button, and no support request that produces one.
         </p>
 
         <p className="mt-6 text-muted">
-          Keep it in <span className="text-fg">server</span> scripts only — never a{" "}
+          Keep it in <span className="text-fg">server</span> scripts only - never a{" "}
           <Mono>LocalScript</Mono>, never <Mono>ReplicatedStorage</Mono>, never
           anywhere a player can take a copy. Anybody holding it can do everything it
           was minted with, from anywhere, as you. Revoke it the moment it leaks: the
@@ -486,14 +486,14 @@ export default async function ApiDocsPage() {
         <Note>
           <span className="text-fg">Handed a key that doesn&rsquo;t start with</span>{" "}
           <Mono>rnl_</Mono>? That is <Mono>GAME_API_KEY</Mono>, the original one, and
-          it predates all of this. It is <span className="text-fg">unscoped</span> —
-          every show on the platform, RNL&rsquo;s and every partner&rsquo;s — and it
+          it predates all of this. It is <span className="text-fg">unscoped</span> -
+          every show on the platform, RNL&rsquo;s and every partner&rsquo;s - and it
           holds every scope. It still works, and it cannot be revoked from the portal.
           It is on its way out: mint a scoped key and use that instead.
         </Note>
       </Section>
 
-      {/* 3 — Scopes */}
+      {/* 3 - Scopes */}
       <Section title="The scopes">
         <TableBox minWidth={640}>
           <thead>
@@ -517,7 +517,7 @@ export default async function ApiDocsPage() {
         </TableBox>
       </Section>
 
-      {/* 4 — Endpoints */}
+      {/* 4 - Endpoints */}
       <Section title="The endpoints">
         <TableBox minWidth={720}>
           <thead>
@@ -555,7 +555,7 @@ export default async function ApiDocsPage() {
         </p>
       </Section>
 
-      {/* 5 — Identifying a ticket */}
+      {/* 5 - Identifying a ticket */}
       <Section title="Identifying a ticket">
         <p className="text-muted">
           <Mono>/verify</Mono>, <Mono>/redeem</Mono>, <Mono>/void</Mono> and{" "}
@@ -566,8 +566,8 @@ export default async function ApiDocsPage() {
 
         <h3 className="mt-6 text-fg">Asking by player, not by code</h3>
         <p className="text-muted">
-          Your server already knows who joined — <Mono>Player.UserId</Mono> and{" "}
-          <Mono>Player.Name</Mono> — so it can ask{" "}
+          Your server already knows who joined - <Mono>Player.UserId</Mono> and{" "}
+          <Mono>Player.Name</Mono> - so it can ask{" "}
           <em>&ldquo;does this player hold a ticket for tonight?&rdquo;</em> the
           moment they spawn, without anybody typing anything. That is what{" "}
           <Mono>robloxId</Mono> is for, and it is the one to reach for:{" "}
@@ -577,13 +577,13 @@ export default async function ApiDocsPage() {
           <Mono>username</Mono> exists for the times a human is doing the typing.
           It is resolved against Roblox&rsquo;s own API into a{" "}
           <Mono>robloxId</Mono> before any ticket is looked up, because a username
-          is a label a player can change and an id is not — so somebody who renamed
+          is a label a player can change and an id is not - so somebody who renamed
           the night before the show still walks through their own door. (An id sent
           in the <Mono>username</Mono> field is accepted as-is.)
         </p>
         <p className="mt-3 text-muted">
-          The endpoints that <span className="text-fg">write a new ticket</span> —{" "}
-          <Mono>/reserve</Mono>, <Mono>/gift</Mono>, <Mono>/purchase</Mono> — take{" "}
+          The endpoints that <span className="text-fg">write a new ticket</span> -{" "}
+          <Mono>/reserve</Mono>, <Mono>/gift</Mono>, <Mono>/purchase</Mono> - take{" "}
           <Mono>robloxId</Mono> only, and no username. Resolving a name costs a
           round trip to Roblox that can fail, and a name is a label that can
           change: neither is a thing to hang &ldquo;who gets a ticket&rdquo; on.
@@ -594,7 +594,7 @@ export default async function ApiDocsPage() {
           One person can hold a ticket to every show we run, so their name alone
           does not identify a ticket. Without it you get a <Mono>400</Mono>. A{" "}
           <Mono>code</Mono>, by contrast, identifies exactly one ticket on its own
-          — though you should still send <Mono>eventId</Mono> with it, for the
+          - though you should still send <Mono>eventId</Mono> with it, for the
           reason below.
         </p>
 
@@ -604,7 +604,7 @@ export default async function ApiDocsPage() {
         <h3 className="mt-6 text-fg">Always send eventId if you know it</h3>
         <p className="text-muted">
           Without it, the API can only answer{" "}
-          <em>&ldquo;is this a real ticket&rdquo;</em> — not{" "}
+          <em>&ldquo;is this a real ticket&rdquo;</em> - not{" "}
           <em>&ldquo;is this a real ticket for tonight&rdquo;</em>. A genuine
           ticket for last month&rsquo;s show would come back{" "}
           <Mono>valid: true</Mono>. With <Mono>eventId</Mono>, a ticket for any
@@ -619,17 +619,17 @@ export default async function ApiDocsPage() {
           the ticket with a secret key. If you send it, the response includes{" "}
           <Mono>ticket.sealValid</Mono>. It exists so a crew member can eyeball a{" "}
           <span className="text-fg">printed or downloaded</span> ticket and spot a
-          forgery without a scanner. The database is what actually admits people —
+          forgery without a scanner. The database is what actually admits people -
           you do not need the seal for a normal scan.
         </p>
       </Section>
 
-      {/* 6 — The response */}
+      {/* 6 - The response */}
       <Section title="The response">
         <p className="text-muted">
           Every ticket endpoint returns HTTP 200 with this shape whenever the
           request was understood. Failure to <em>find</em> a ticket is not an HTTP
-          error — it is a 200 with <Mono>valid: false</Mono>. So is a refusal to
+          error - it is a 200 with <Mono>valid: false</Mono>. So is a refusal to
           issue one.
         </p>
         <Code>{RESPONSE_JSON}</Code>
@@ -641,7 +641,7 @@ export default async function ApiDocsPage() {
         <p className="mt-4 text-muted">
           The writing endpoints add one or two fields of their own{" "}
           <span className="text-fg">alongside</span> this shape, never instead of
-          it — <Mono>issued</Mono>, <Mono>created</Mono>, <Mono>voided</Mono>,{" "}
+          it - <Mono>issued</Mono>, <Mono>created</Mono>, <Mono>voided</Mono>,{" "}
           <Mono>banned</Mono>. They are described under each endpoint below.
         </p>
 
@@ -651,20 +651,20 @@ export default async function ApiDocsPage() {
         </p>
         <ul className="mt-3 space-y-2 text-muted">
           <li>
-            <Mono>tier</Mono> — the tier&rsquo;s name as it was{" "}
+            <Mono>tier</Mono> - the tier&rsquo;s name as it was{" "}
             <span className="text-fg">when the ticket was issued</span>
-            (&ldquo;General Admission&rdquo;, &ldquo;VIP — Front Barrier&rdquo;).
+            (&ldquo;General Admission&rdquo;, &ldquo;VIP - Front Barrier&rdquo;).
             It is a snapshot: renaming or deleting a tier afterwards does not
             change what somebody already holds.
           </li>
           <li>
-            <Mono>kind</Mono> — <Mono>&quot;GA&quot;</Mono> or{" "}
+            <Mono>kind</Mono> - <Mono>&quot;GA&quot;</Mono> or{" "}
             <Mono>&quot;VIP&quot;</Mono>. <Mono>VIP</Mono> means it was a priced
             tier. Branch on this to open the VIP room, spawn them on the barrier,
             hand out a badge.
           </li>
           <li>
-            <Mono>priceRobux</Mono> / <Mono>paid</Mono> — what it cost. Free
+            <Mono>priceRobux</Mono> / <Mono>paid</Mono> - what it cost. Free
             tickets are <Mono>0</Mono> / <Mono>false</Mono>.
           </li>
         </ul>
@@ -672,23 +672,23 @@ export default async function ApiDocsPage() {
           Paid (Robux) tiers are <span className="text-fg">switched off</span>{" "}
           platform-wide today, so in practice every live ticket is{" "}
           <Mono>kind: &quot;GA&quot;</Mono>, <Mono>paid: false</Mono>. The field is
-          real and populated — build against it now and the VIP path works the day
+          real and populated - build against it now and the VIP path works the day
           paid tiers are turned on.
         </Note>
       </Section>
 
-      {/* 7 — valid vs admit */}
-      <Callout kind="accent" title="valid vs admit — the one thing to get right">
+      {/* 7 - valid vs admit */}
+      <Callout kind="accent" title="valid vs admit - the one thing to get right">
         <p className="text-fg">
           <span className="font-semibold">Branch on <Mono>admit</Mono>. Never on{" "}
           <Mono>valid</Mono>.</span>
         </p>
         <ul className="mt-3 space-y-1 text-muted">
           <li>
-            <Mono>valid</Mono> — the ticket is real and was not cancelled.
+            <Mono>valid</Mono> - the ticket is real and was not cancelled.
           </li>
           <li>
-            <Mono>admit</Mono> — this person should walk through the door{" "}
+            <Mono>admit</Mono> - this person should walk through the door{" "}
             <span className="text-fg">right now</span>.
           </li>
         </ul>
@@ -701,7 +701,7 @@ export default async function ApiDocsPage() {
         </p>
       </Callout>
 
-      {/* 8 — reason */}
+      {/* 8 - reason */}
       <Section title="reason">
         <TableBox minWidth={640}>
           <thead>
@@ -727,12 +727,12 @@ export default async function ApiDocsPage() {
         </TableBox>
         <p className="mt-4 text-sm text-muted">
           <Mono>message</Mono> is a human sentence for the same thing. Show it to a
-          crew member; do not parse it — it is written for people and may be
+          crew member; do not parse it - it is written for people and may be
           reworded.
         </p>
       </Section>
 
-      {/* 9 — Errors */}
+      {/* 9 - Errors */}
       <Section title="Errors">
         <TableBox minWidth={640}>
           <thead>
@@ -756,11 +756,11 @@ export default async function ApiDocsPage() {
         </TableBox>
         <p className="mt-4 text-sm text-muted">
           A <Mono>403</Mono> is not a reason to re-copy your key. It means the key
-          is fine and does not have that scope — go and mint one that does.
+          is fine and does not have that scope - go and mint one that does.
         </p>
       </Section>
 
-      {/* 10 — Reading the line-up */}
+      {/* 10 - Reading the line-up */}
       <Section title="Reading the line-up">
         <Code>{`GET /api/v1/events            → every published upcoming show your key can see
 GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}</Code>
@@ -779,10 +779,10 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         </p>
         <ul className="mt-3 space-y-2 text-muted">
           <li>
-            <Mono>soldout</Mono> — the tier is full, or the room is.
+            <Mono>soldout</Mono> - the tier is full, or the room is.
           </li>
           <li>
-            <Mono>locked</Mono> — it is priced, and Robux sales are off. Nobody can
+            <Mono>locked</Mono> - it is priced, and Robux sales are off. Nobody can
             buy it today, and taking somebody&rsquo;s money for a ticket that
             cannot be issued is the worst bug in this whole document.
           </li>
@@ -795,15 +795,15 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         </p>
       </Section>
 
-      {/* 11 — Handing out tickets */}
+      {/* 11 - Handing out tickets */}
       <Section title="Handing out tickets">
         <h3 className="text-fg">
-          <Mono>POST /api/v1/tickets/reserve</Mono> — give this player a ticket
+          <Mono>POST /api/v1/tickets/reserve</Mono> - give this player a ticket
         </h3>
         <Code>{RESERVE_JSON}</Code>
         <p className="mt-4 text-muted">
           The player is standing in front of you and wants in. They do{" "}
-          <span className="text-fg">not</span> need an account on ronation.live —
+          <span className="text-fg">not</span> need an account on ronation.live -
           if they have never opened the site in their life, we create one for them
           from their Roblox profile. They have a Roblox account, and that is
           enough.
@@ -825,7 +825,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         </p>
 
         <h3 className="mt-8 text-fg">
-          <Mono>POST /api/v1/tickets/gift</Mono> — X gives Y a ticket
+          <Mono>POST /api/v1/tickets/gift</Mono> - X gives Y a ticket
         </h3>
         <Code>{GIFT_JSON}</Code>
         <p className="mt-4 text-muted">
@@ -836,7 +836,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         </p>
         <p className="mt-3 text-muted">
           A gift <span className="text-fg">may</span> be a priced tier. That is a
-          comp — a free VIP, given away — and no Robux changes hands, which is
+          comp - a free VIP, given away - and no Robux changes hands, which is
           exactly what a giveaway is. It still respects the paid-ticket switch: if
           Robux sales are off for your org, its priced tiers do not exist yet, and
           comping a seat in a tier that isn&rsquo;t supposed to exist is still
@@ -853,7 +853,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           <Mono>
             {'{ "ok": true, "issued": false, "reason": …, "message": … }'}
           </Mono>{" "}
-          — a 200, because the request was understood perfectly and the answer is
+          - a 200, because the request was understood perfectly and the answer is
           no.
         </p>
         <div className="mt-4">
@@ -878,7 +878,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         </div>
       </Section>
 
-      {/* 12 — purchase */}
+      {/* 12 - purchase */}
       <Section title="Selling tickets for Robux">
         <h3 className="text-fg">
           <Mono>POST /api/v1/tickets/purchase</Mono>
@@ -900,7 +900,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
             <span className="text-fg">only</span> witness to it is the{" "}
             <Mono>ProcessReceipt</Mono> handler on your game server. Roblox offers
             no server-to-server call for us to ask{" "}
-            <em>&ldquo;was purchase X really paid for?&rdquo;</em> — so we cannot
+            <em>&ldquo;was purchase X really paid for?&rdquo;</em> - so we cannot
             check. <span className="text-fg">We take your game server&rsquo;s word for it.</span>
           </p>
           <p className="mt-3 text-muted">
@@ -919,7 +919,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         <p className="mt-3 text-muted">
           <Mono>purchaseId</Mono> is Roblox&rsquo;s own <Mono>PurchaseId</Mono>,
           and it is the idempotency key. <Mono>ProcessReceipt</Mono> is explicitly
-          at-least-once — Roblox re-delivers a receipt until your game returns{" "}
+          at-least-once - Roblox re-delivers a receipt until your game returns{" "}
           <Mono>PurchaseGranted</Mono>, and a server that crashes mid-call{" "}
           <span className="text-fg">will</span> send it again. So:
         </p>
@@ -933,7 +933,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           </li>
           <li>
             It is checked <span className="text-fg">before anything else can
-            refuse it</span> — before the show is sold out, before it is past,
+            refuse it</span> - before the show is sold out, before it is past,
             before the tier is deactivated. Somebody who has already been charged
             must never be told they have no ticket because the room filled up while
             their receipt was in flight.
@@ -951,7 +951,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           Return <Mono>Enum.ProductPurchaseDecision.PurchaseGranted</Mono>{" "}
           <span className="text-fg">only</span> once this has answered{" "}
           <Mono>issued: true</Mono>. If it answers <Mono>issued: false</Mono>, do
-          not grant — return <Mono>NotProcessedYet</Mono> and let Roblox
+          not grant - return <Mono>NotProcessedYet</Mono> and let Roblox
           re-deliver.
         </p>
         <p className="mt-3 text-muted">
@@ -963,50 +963,50 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         <Note>
           Paid tiers are switched off platform-wide today, so this endpoint answers{" "}
           <Mono>payments_off</Mono> for every priced tier right now. It is real and
-          it works — build against it, and the day the switch flips, your purchase
+          it works - build against it, and the day the switch flips, your purchase
           path is already correct.
         </Note>
       </Section>
 
-      {/* 13 — void vs revoke */}
+      {/* 13 - void vs revoke */}
       <Section title="Taking a ticket back">
         <p className="text-muted">
-          Both take the same body as <Mono>/verify</Mono> — a <Mono>code</Mono>, or
-          a player + <Mono>eventId</Mono> — plus an optional <Mono>reason</Mono>{" "}
+          Both take the same body as <Mono>/verify</Mono> - a <Mono>code</Mono>, or
+          a player + <Mono>eventId</Mono> - plus an optional <Mono>reason</Mono>{" "}
           and <Mono>byName</Mono>.
         </p>
 
         <h3 className="mt-6 text-fg">
-          <Mono>POST /api/v1/tickets/void</Mono> — cancel it
+          <Mono>POST /api/v1/tickets/void</Mono> - cancel it
         </h3>
         <p className="text-muted">
           Issued to the wrong player. A duplicate. A change of plan. The ticket is
           cancelled and{" "}
           <span className="text-fg">the holder may reserve again immediately</span>
-          , exactly as if they had cancelled it themselves — because voiding is a
+          , exactly as if they had cancelled it themselves - because voiding is a
           statement about the <em>ticket</em>, not the person.
         </p>
 
         <h3 className="mt-6 text-fg">
-          <Mono>POST /api/v1/tickets/revoke</Mono> — cancel it, and bar them
+          <Mono>POST /api/v1/tickets/revoke</Mono> - cancel it, and bar them
         </h3>
         <p className="text-muted">
           Everything <Mono>/void</Mono> does, plus the part that matters: the
           holder is stamped, and <Mono>/reserve</Mono>, <Mono>/gift</Mono> and{" "}
           <Mono>/purchase</Mono> all refuse to hand them another one for this show.
-          Without that, a revoke is a gesture — they click Reserve again and walk
+          Without that, a revoke is a gesture - they click Reserve again and walk
           straight back in.
         </p>
         <p className="mt-3 text-muted">
           The difference is what you are <em>saying</em>. Voiding says &ldquo;this
           ticket is wrong&rdquo;. Revoking says &ldquo;this person is not
           coming&rdquo;. Use the second only when you mean it, and send a{" "}
-          <Mono>reason</Mono> — it is written down, and it is what the crew will
+          <Mono>reason</Mono> - it is written down, and it is what the crew will
           read when this person turns up at the door and asks why.
         </p>
         <p className="mt-3 text-muted">
           It bars them from <span className="text-fg">this show</span>. A standing
-          ban across everything you run is the blacklist, in the portal — a
+          ban across everything you run is the blacklist, in the portal - a
           different question with a different answer.
         </p>
         <p className="mt-3 text-muted">
@@ -1023,13 +1023,13 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
             neither will touch a <Mono>CHECKED_IN</Mono> ticket
           </span>
           : they answer <Mono>voided: false, reason: &quot;checked_in&quot;</Mono>.
-          That person is already in the room — cancelling the record now would not
+          That person is already in the room - cancelling the record now would not
           get them out of it, it would only make the record lie. Whoever asked for
           this wants security, not a database write.
         </p>
       </Section>
 
-      {/* 14 — Luau */}
+      {/* 14 - Luau */}
       <Section title="Luau: the whole thing">
         <p className="text-muted">
           One <Mono>callApi</Mono> helper, because every ticket endpoint answers in
@@ -1066,7 +1066,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           The response&rsquo;s <Mono>holder</Mono> block comes back with the
           canonical <Mono>robloxId</Mono>, <Mono>username</Mono> and{" "}
           <Mono>displayName</Mono> of whoever we matched. Read it before acting on
-          the answer — it is how you confirm the name resolved to the person you
+          the answer - it is how you confirm the name resolved to the person you
           meant.
         </p>
       </Section>
@@ -1158,7 +1158,7 @@ function Td({
   );
 }
 
-/** An aside from llm.txt — the blockquotes. Quieter than a callout. */
+/** An aside from llm.txt - the blockquotes. Quieter than a callout. */
 function Note({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-4 border-l-2 border-line pl-4 text-sm text-muted">
@@ -1192,7 +1192,7 @@ function Callout({
           accent ? "text-accent" : "text-amber-400"
         }`}
       >
-        {accent ? "Read this one" : "Warning — the trust boundary"}
+        {accent ? "Read this one" : "Warning - the trust boundary"}
       </p>
       <h3 className="mt-2 font-display text-xl text-fg">{title}</h3>
       <div className="mt-3">{children}</div>

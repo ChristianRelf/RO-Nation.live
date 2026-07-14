@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 //
 // It is a ROUTE HANDLER rather than a server action on purpose. Server actions
 // cap their request body at 1 MB by default, so a 5 MB image posted through one
-// fails with an opaque error — and raising that limit would raise it for every
+// fails with an opaque error - and raising that limit would raise it for every
 // action in the app, including the ones that should only ever carry a few text
 // fields.
 //
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   // The scope is decided by the GUARD, never by the form field. The field only
   // selects which guard runs; if it names a partner, you must hold write access
   // to THAT partner, and the directory we then write to is the slug the guard
-  // approved — not the string the client sent. Same discipline as the roster
+  // approved - not the string the client sent. Same discipline as the roster
   // actions in actions/portal.ts.
   let scope: string;
   let actor: { robloxId: string; displayName: string };
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ---- The file itself ----------------------------------------------
-  // Images only. This is the door for cover art and thumbnails — everything it
+  // Images only. This is the door for cover art and thumbnails - everything it
   // returns ends up in an <img src>, so it keeps taking images and nothing else,
   // even though the disk underneath now also holds PDFs. Brand assets have their
   // own door: api/uploads/brand.

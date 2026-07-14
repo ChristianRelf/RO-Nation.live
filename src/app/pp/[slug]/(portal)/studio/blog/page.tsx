@@ -72,7 +72,7 @@ export default async function PartnerBlogPage({
                       </StatusBadge>
                     </td>
                     <td className="tnum px-5 py-4 text-muted">
-                      {p.publishedAt ? formatDate(p.publishedAt) : "—"}
+                      {p.publishedAt ? formatDate(p.publishedAt) : "-"}
                     </td>
                     <td className="px-5 py-4 text-right">
                       {canWrite ? (

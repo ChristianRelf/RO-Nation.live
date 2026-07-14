@@ -8,12 +8,12 @@ import { doorCheck, doorRedeem, type DoorState } from "@/app/actions/door";
 //
 // Designed for the actual situation: standing up, one hand, a queue, and a dark
 // room. So the verdict is a single word in the biggest type on the site, colour
-// coded, above everything else — because the person reading it is glancing, not
+// coded, above everything else - because the person reading it is glancing, not
 // studying. The detail sits underneath for when they need it.
 //
 // The input keeps focus and clears itself after every check. A barcode scanner is
 // a keyboard: it types the code and presses Enter. That means a wedge scanner
-// works here with no integration at all — plug it in, click the box once, and it
+// works here with no integration at all - plug it in, click the box once, and it
 // checks a ticket every time somebody scans one.
 
 const VERDICTS: Record<
@@ -48,7 +48,7 @@ const VERDICTS: Record<
 };
 
 export function DoorCheck({
-  /** A partner slug, or "" for RNL's own shows. Authorises nothing — the action re-checks. */
+  /** A partner slug, or "" for RNL's own shows. Authorises nothing - the action re-checks. */
   scope,
   /** Pin the door to one show, so a ticket for another is refused. Optional but wanted. */
   events,
@@ -74,12 +74,12 @@ export function DoorCheck({
 
   // Clear and re-focus after every verdict, so the next scan just works. Without
   // this the scanner types the second code onto the end of the first one and the
-  // door stops dead — which happens at the worst possible moment, mid-queue.
+  // door stops dead - which happens at the worst possible moment, mid-queue.
   useEffect(() => {
     if (!shown) return;
     // The player box is cleared for the same reason: a name left sitting in it
     // would be re-submitted with the NEXT person's scan, and a code plus a name
-    // is a code — so the door would silently ignore what it was just told.
+    // is a code - so the door would silently ignore what it was just told.
     if (playerRef.current) playerRef.current.value = "";
     if (codeRef.current) {
       codeRef.current.value = "";
@@ -109,12 +109,12 @@ export function DoorCheck({
           className="w-full rounded-brand border border-line bg-bg px-4 py-3 text-center font-mono text-xl font-bold uppercase tracking-[0.2em] outline-none transition-colors focus:border-accent"
         />
         <p className="mt-2 text-xs text-faint">
-          Scan the barcode or the QR, or type it in. A USB scanner works here —
+          Scan the barcode or the QR, or type it in. A USB scanner works here -
           it types the code and presses Enter.
         </p>
 
         {/* The no-code door. Somebody always turns up having lost theirs, and the
-            queue does not pause for it — so the crew can look them up by who they
+            queue does not pause for it - so the crew can look them up by who they
             are instead. Needs a show pinned below: a name alone doesn't say which
             night. */}
         <div className="my-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.14em] text-faint">
@@ -135,7 +135,7 @@ export function DoorCheck({
           className="w-full rounded-brand border border-line bg-bg px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
         />
         <p className="mt-2 text-xs text-faint">
-          Looks up the ticket they hold for the show below. A rename is fine — we
+          Looks up the ticket they hold for the show below. A rename is fine - we
           resolve the name against Roblox before we look.
         </p>
 

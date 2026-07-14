@@ -1,4 +1,4 @@
-// RO. Nation LIVE — data model
+// RO. Nation LIVE - data model
 // Postgres via Prisma. Run `prisma db push` to sync, `prisma generate` for the client.
 
 generator client {
@@ -57,12 +57,12 @@ model Event {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  // The partner whose show this is — a slug from lib/partners/registry.ts.
+  // The partner whose show this is - a slug from lib/partners/registry.ts.
   // NULL means it is RO. Nation LIVE's own event. See the note on partnerId in
   // RosterEntry for why this is a plain column and not a foreign key.
   //
   // Every query that lists events MUST filter on this. An event with no filter
-  // leaks a partner's draft line-up onto the RNL site, and — worse — puts RNL's
+  // leaks a partner's draft line-up onto the RNL site, and - worse - puts RNL's
   // events on the partner's. lib/queries.ts takes the scope as a required
   // argument for exactly that reason: there is no "forgot to pass it" default.
   partnerId String?
@@ -78,13 +78,13 @@ model Event {
 // ------------------------------------------------------------------
 // What you can actually get for an event: General Admission, VIP, and so on.
 //
-// An event with NO tiers is not broken — it is read as a single free general
+// An event with NO tiers is not broken - it is read as a single free general
 // admission, which is what every event was before this table existed. See
 // `effectiveTiers` in lib/tickets/pricing.ts: that fallback is what let this
 // ship without backfilling a tier row onto every past event.
 //
 // Prices are in Robux, and ONLY in Robux. There is no second currency and no
-// `currency` column to get wrong — a Roblox event sells to Roblox players. A
+// `currency` column to get wrong - a Roblox event sells to Roblox players. A
 // tier priced above zero cannot actually be issued yet: paid ticketing is behind
 // the kill switch in lib/tickets/pricing.ts, and both the checkout page and the
 // reserve action refuse independently while it is off.
@@ -93,7 +93,7 @@ model TicketTier {
   id          String   @id @default(cuid())
   event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId     String
-  name        String // "General Admission", "VIP — Front Barrier"
+  name        String // "General Admission", "VIP - Front Barrier"
   description String?
   /// One perk per line, listed on the tier card at checkout.
   perks       String[] @default([])
@@ -102,7 +102,7 @@ model TicketTier {
   priceRobux Int @default(0)
 
   /// A cap for THIS tier. 0 = uncapped, though the event's own capacity still
-  /// applies on top — a tier can never oversell the room.
+  /// applies on top - a tier can never oversell the room.
   capacity Int @default(0)
 
   sortOrder Int      @default(0)
@@ -140,13 +140,13 @@ model Ticket {
 
   // Which tier they hold. SetNull, not Cascade: deleting a tier must not delete
   // the tickets people are already holding to a show that is still happening.
-  // They keep their seat — the snapshot below is what still names it.
+  // They keep their seat - the snapshot below is what still names it.
   tier   TicketTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
   tierId String?
 
   // Frozen at issue, and deliberately duplicated from the tier.
   //
-  // Renaming "VIP" to "VIP — Front Barrier", re-pricing it, or deleting it
+  // Renaming "VIP" to "VIP - Front Barrier", re-pricing it, or deleting it
   // outright must not rewrite a ticket somebody already holds: what they bought
   // is what their ticket says, forever. Same reasoning as the denormalised
   // username on SurveyResponse. NULL tierName = the implicit free admission.
@@ -156,7 +156,7 @@ model Ticket {
   // ---- Who gave it to them, if it was not simply taken ------------------
   //
   // NULL for the ordinary case: the holder reserved it themselves on the web.
-  // Set when a ticket was issued to somebody BY somebody — a gift from another
+  // Set when a ticket was issued to somebody BY somebody - a gift from another
   // player, a comp from the crew, an issue from a game server. Display and
   // audit only; it grants nothing and is never read at the door.
   issuedByRobloxId String?
@@ -174,7 +174,7 @@ model Ticket {
   // Revoking sets status = CANCELLED *and* stamps this. It is the ban: the reason
   // they may not have a ticket is the person, not the ticket. Because a Ticket row
   // is unique on (eventId, userId) and cancellation keeps the row, the stamp
-  // survives — and the reserve path refuses to re-issue over it. Un-revoking is
+  // survives - and the reserve path refuses to re-issue over it. Un-revoking is
   // clearing this column, which is why it is a timestamp and not a boolean.
   //
   // It bans them from THIS SHOW, not from the org. A standing ban is the
@@ -199,7 +199,7 @@ model Ticket {
 // A Robux payment, as reported by a Roblox game server.
 //
 // This table exists because we CANNOT verify a Developer Product receipt. Roblox
-// offers no server-to-server endpoint to ask "was purchase X really paid for?" —
+// offers no server-to-server endpoint to ask "was purchase X really paid for?" -
 // the only witness to a purchase is the ProcessReceipt handler running inside the
 // experience, and it tells us. So the trust boundary is the API key: whoever holds
 // a key with `tickets:purchase` can assert that somebody paid, and we believe them.
@@ -208,7 +208,7 @@ model Ticket {
 //
 // What this table CAN do, and the reason it is a table rather than a column, is
 // stop the same payment being honoured twice. `purchaseId` is Roblox's own
-// PurchaseId — a GUID, unique per transaction — and it is the unique key here.
+// PurchaseId - a GUID, unique per transaction - and it is the unique key here.
 // ProcessReceipt is explicitly at-least-once: Roblox re-delivers a receipt until
 // the game returns PurchaseGranted, and a game server that crashes mid-call will
 // send it again. Without this, a re-delivery is a second ticket. With it, the
@@ -218,24 +218,24 @@ model Ticket {
 model TicketPurchase {
   id String @id @default(cuid())
 
-  /// Roblox's PurchaseId from the ProcessReceipt info. The idempotency key —
+  /// Roblox's PurchaseId from the ProcessReceipt info. The idempotency key -
   /// see the note above. This unique constraint IS the double-charge guard.
   purchaseId String @unique
 
   /// The ticket the payment bought. Cascade: a deleted ticket has no payment to
   /// remember, and keeping the row would block the purchaseId forever.
   ///
-  /// NOT unique — see Ticket.purchases. One ticket can be paid for twice, because
+  /// NOT unique - see Ticket.purchases. One ticket can be paid for twice, because
   /// upgrading a tier is a second payment against the same ticket, and a unique
   /// constraint here would reject the upgrade after the player had been charged.
   ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   ticketId String
 
-  /// What Roblox said it cost, as reported. Recorded, never trusted as authority —
+  /// What Roblox said it cost, as reported. Recorded, never trusted as authority -
   /// the ticket's own priceRobux is the tier's price, read from our database.
   robuxSpent Int @default(0)
 
-  /// Which key asserted the payment. NOT an FK — a key may be deleted, and the
+  /// Which key asserted the payment. NOT an FK - a key may be deleted, and the
   /// payment record must outlive it. This is the audit trail for the trust boundary.
   apiKeyId String?
 
@@ -263,7 +263,7 @@ model Career {
   id String @id @default(cuid())
 
   /// A slug from lib/partners/registry.ts, or NULL for RNL's own. Same convention
-  /// as Event.partnerId — and the same rule: every query that LISTS careers must
+  /// as Event.partnerId - and the same rule: every query that LISTS careers must
   /// filter on this, or one org's openings appear on another's site.
   partnerId String?
 
@@ -271,7 +271,7 @@ model Career {
   title        String
   department   String    @default("Events")
   commitment   String    @default("Volunteer") // Volunteer / Paid / Trial
-  location     String    @default("Remote — Roblox")
+  location     String    @default("Remote - Roblox")
   summary      String
   description  String    @db.Text
   requirements String    @db.Text // one requirement per line
@@ -285,12 +285,12 @@ model Career {
   /// different pages, and neither should block the other from existing.
   ///
   /// CAVEAT, and it is a real one: Postgres treats NULLs as distinct, so this
-  /// constraint does NOT stop two RNL rows (partnerId = NULL) sharing a slug — it
+  /// constraint does NOT stop two RNL rows (partnerId = NULL) sharing a slug - it
   /// only binds partner rows, where the column is a real value. RNL's uniqueness
   /// therefore rests on uniqueSlug() in lib/content.ts, which loops until it finds
   /// a free slug in the scope. A partial unique index (WHERE partnerId IS NULL)
   /// would close the gap properly, but the entrypoint runs `prisma db push` on
-  /// every boot, and that makes the database match this schema exactly — it would
+  /// every boot, and that makes the database match this schema exactly - it would
   /// drop a hand-made index silently, every deploy. An enforcement that quietly
   /// disappears is worse than one that is written down.
   @@unique([partnerId, slug])
@@ -326,7 +326,7 @@ model Post {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  /// Scoped per partner, with the same NULL caveat as Career.slug above — read
+  /// Scoped per partner, with the same NULL caveat as Career.slug above - read
   /// that note before relying on this to keep RNL's own slugs unique.
   @@unique([partnerId, slug])
   @@index([partnerId, status, publishedAt])
@@ -335,7 +335,7 @@ model Post {
 
 // ------------------------------------------------------------------
 // Surveys. Built in the Studio, answered at survey.ronation.live/<code>.
-// Respondents sign in with Roblox — one response per account.
+// Respondents sign in with Roblox - one response per account.
 // ------------------------------------------------------------------
 enum SurveyStatus {
   DRAFT // not reachable by anyone
@@ -419,13 +419,13 @@ model SurveyAnswer {
 }
 
 // ------------------------------------------------------------------
-// Roster portals — VIP list & blacklist.
+// Roster portals - VIP list & blacklist.
 //
 //   portal.ronation.live/shasha  → RNL's own lists      (partnerId "shasha")
 //   portal.ronation.live/<slug>  → a partner's lists    (partnerId <slug>)
 //
 // Both lists hold the same shape, keyed on a Roblox player, so they share
-// one model discriminated by `kind` — and every partner's copy of both lists
+// one model discriminated by `kind` - and every partner's copy of both lists
 // shares it too, discriminated by `partnerId`.
 // ------------------------------------------------------------------
 enum RosterKind {
@@ -440,19 +440,19 @@ model RosterEntry {
   //
   // This is a plain scope column, NOT a foreign key, because there is no Partner
   // table to point at: the partner list lives in code (lib/partners/registry.ts)
-  // so that middleware — which runs on the edge, where Prisma cannot — can
+  // so that middleware - which runs on the edge, where Prisma cannot - can
   // resolve a brand from the Host header alone. The registry is the partner
   // table; this column references a slug in it.
   //
   // "shasha" is RNL's own list, and it is safe as a sentinel precisely because
   // the registry's RESERVED set already forbids any partner from taking that
   // slug. It is also the default, which is what backfills the existing SHASHA
-  // rows on the migration that added this column — they predate partners, and
+  // rows on the migration that added this column - they predate partners, and
   // they are all SHASHA's.
   partnerId String @default("shasha")
 
   kind           RosterKind
-  robloxId       String // canonical Roblox user id — resolved server-side
+  robloxId       String // canonical Roblox user id - resolved server-side
   robloxUsername String
   displayName    String
   avatarUrl      String?
@@ -460,7 +460,7 @@ model RosterEntry {
   reason         String     @db.Text
   // The manager who added them. A Roblox user id since the portal moved to
   // Roblox sign-in; rows written before that hold a Discord id. Never joined on
-  // — it is a display/audit trail — so the mixed history is harmless, but don't
+  // - it is a display/audit trail - so the mixed history is harmless, but don't
   // assume you can resolve every one of these against Roblox.
   addedById      String
   addedByName    String
@@ -470,7 +470,7 @@ model RosterEntry {
   updatedAt      DateTime   @updatedAt
 
   // One entry per person per list PER ORG. Scoping the unique key is what lets
-  // two partners hold the same player on their blacklists independently — and
+  // two partners hold the same player on their blacklists independently - and
   // it is a NOT NULL column, so Postgres treats the tuples as comparable. (A
   // nullable partnerId would have silently allowed duplicate RNL rows, since
   // NULLs are never equal to each other in a unique index.)
@@ -490,7 +490,7 @@ enum RosterAction {
 
 model RosterAudit {
   id             String       @id @default(cuid())
-  /// The org whose history this is — see RosterEntry.partnerId.
+  /// The org whose history this is - see RosterEntry.partnerId.
   partnerId      String       @default("shasha")
   action         RosterAction
   kind           RosterKind
@@ -508,7 +508,7 @@ model RosterAudit {
 // ------------------------------------------------------------------
 // Who may use a partner's portal (portal.ronation.live/<slug>).
 //
-// SHASHA answers this from Roblox group rank — "the group IS the allowlist" —
+// SHASHA answers this from Roblox group rank - "the group IS the allowlist" -
 // and that is the right shape when the org and the group are the same thing.
 // A partner is a *different* organisation, so RNL cannot rank them in its own
 // group, and a partner cannot be trusted to hand out access to RNL's
@@ -518,8 +518,8 @@ model RosterAudit {
 // registry grants nobody anything (the registry says so itself); THIS table is
 // the grant. Revoking is deleting a row.
 //
-// A partner MAY additionally point at a Roblox group of their own — see
-// `Partner.robloxGroupId` in the registry — in which case rank in that group
+// A partner MAY additionally point at a Roblox group of their own - see
+// `Partner.robloxGroupId` in the registry - in which case rank in that group
 // tops up the roles below. The rows here always win; they are the floor.
 // ------------------------------------------------------------------
 enum PartnerRole {
@@ -533,9 +533,9 @@ enum PartnerRole {
 
 model PartnerMember {
   id             String      @id @default(cuid())
-  /// A slug from lib/partners/registry.ts. Plain column, not an FK — see RosterEntry.partnerId.
+  /// A slug from lib/partners/registry.ts. Plain column, not an FK - see RosterEntry.partnerId.
   partnerId      String
-  robloxId       String // canonical Roblox user id — resolved server-side
+  robloxId       String // canonical Roblox user id - resolved server-side
   robloxUsername String
   displayName    String
   avatarUrl      String?
@@ -589,7 +589,7 @@ model Application {
 // ------------------------------------------------------------------
 // A partner's editable homepage.
 //
-// Their site used to be hardcoded in app/p/[slug]/page.tsx — the hero, the about
+// Their site used to be hardcoded in app/p/[slug]/page.tsx - the hero, the about
 // panel, the FAQ, all of it in the component. That meant every copy change was a
 // deploy, and a partner could not fix a typo on their own site.
 //
@@ -614,7 +614,7 @@ model PartnerContent {
   aboutBody   String? @db.Text
   aboutNote   String? @db.Text
 
-  /// [{ q, a }] — the accordion on the homepage. Json because it is a list of
+  /// [{ q, a }] - the accordion on the homepage. Json because it is a list of
   /// pairs of arbitrary length, which flat columns model badly. Validated with
   /// zod on the way in (lib/partners/content.ts), never trusted on the way out.
   faq Json?
@@ -628,12 +628,12 @@ model PartnerContent {
 // ------------------------------------------------------------------
 // Uploaded files.
 //
-// The BYTES do not live here — they are written to the uploads volume and served
+// The BYTES do not live here - they are written to the uploads volume and served
 // straight off disk by Caddy (see the Caddyfile and lib/uploads.ts). This is the
 // record ABOUT each file: who put it there, when, and which org it belongs to.
 //
 // It exists for two reasons. An upload is a write to RNL's infrastructure by
-// somebody outside RNL, so it needs to be attributable — `url` alone, pasted into
+// somebody outside RNL, so it needs to be attributable - `url` alone, pasted into
 // an event's thumbnailUrl, records nothing about who uploaded it. And a file with
 // no row is an orphan: nothing lists it, nothing can clean it up, and the only way
 // to find it is to walk the disk.
@@ -649,7 +649,7 @@ model MediaAsset {
   /// Public path: /uploads/<scope>/<id>.<ext>. What goes in thumbnailUrl/coverUrl.
   url String @unique
 
-  /// The name the file had on the uploader's machine. Display only — NEVER used
+  /// The name the file had on the uploader's machine. Display only - NEVER used
   /// to build the path on disk (that would be a directory-traversal hole).
   filename String
 
@@ -666,7 +666,7 @@ model MediaAsset {
 }
 
 // ------------------------------------------------------------------
-// API keys — how a Roblox experience talks to the door.
+// API keys - how a Roblox experience talks to the door.
 //
 // Before this table there was exactly one key, GAME_API_KEY, an env var on the
 // server. That was fine while the only caller was RNL's own game. It stops being
@@ -678,7 +678,7 @@ model MediaAsset {
 // So: a key is a row, it belongs to one organisation, and it carries a list of
 // the things it may do.
 //
-//   partnerId  WHOSE tickets it can see. A registry slug, or NULL for RNL's own —
+//   partnerId  WHOSE tickets it can see. A registry slug, or NULL for RNL's own -
 //              the same convention as Event.partnerId, which is what makes the
 //              scope check a single equality against the event. A key cannot read,
 //              redeem or void a ticket for a show that is not its org's. This is
@@ -690,7 +690,7 @@ model MediaAsset {
 //              tickets; an issue key that leaks cannot void them.
 //
 // The SECRET is not here. `hash` is a SHA-256 of the full token, and the token is
-// shown exactly once, at creation, and never again — losing it means minting a new
+// shown exactly once, at creation, and never again - losing it means minting a new
 // one, which is the correct trade and the one every other API makes. SHA-256 and
 // not bcrypt because the token is 160 bits of CSPRNG output, not a password: there
 // is nothing to brute-force and a slow hash would just tax every request.
@@ -700,19 +700,19 @@ model MediaAsset {
 // and it is safe to print in a UI, a log line or an audit row.
 // ------------------------------------------------------------------
 enum ApiKeyScope {
-  /// GET /api/v1/events, GET /api/v1/events/:id — the line-up, capacity, tiers.
+  /// GET /api/v1/events, GET /api/v1/events/:id - the line-up, capacity, tiers.
   EVENTS_READ
-  /// POST /api/v1/tickets/verify — look, don't touch.
+  /// POST /api/v1/tickets/verify - look, don't touch.
   TICKETS_VERIFY
-  /// POST /api/v1/tickets/redeem — check somebody in at the door.
+  /// POST /api/v1/tickets/redeem - check somebody in at the door.
   TICKETS_REDEEM
-  /// POST /api/v1/tickets/reserve and /gift — hand out a free ticket.
+  /// POST /api/v1/tickets/reserve and /gift - hand out a free ticket.
   TICKETS_ISSUE
-  /// POST /api/v1/tickets/purchase — assert that somebody paid Robux, and issue
+  /// POST /api/v1/tickets/purchase - assert that somebody paid Robux, and issue
   /// the paid ticket. The heaviest scope in the list: nothing on our side can
   /// check the claim. See TicketPurchase.
   TICKETS_PURCHASE
-  /// POST /api/v1/tickets/void and /revoke — take a ticket away.
+  /// POST /api/v1/tickets/void and /revoke - take a ticket away.
   TICKETS_VOID
 }
 
@@ -720,10 +720,10 @@ model ApiKey {
   id String @id @default(cuid())
 
   /// The org this key belongs to: a slug from lib/partners/registry.ts, or NULL
-  /// for RO. Nation LIVE's own. Plain column, not an FK — see RosterEntry.partnerId.
+  /// for RO. Nation LIVE's own. Plain column, not an FK - see RosterEntry.partnerId.
   partnerId String?
 
-  /// What it is for, in the owner's words. "Main experience — door scanner".
+  /// What it is for, in the owner's words. "Main experience - door scanner".
   name String
 
   /// The public half of the token, and the only half we can ever show again.
@@ -734,18 +734,18 @@ model ApiKey {
 
   scopes ApiKeyScope[] @default([])
 
-  /// Who minted it. A Roblox id — the portal user, never the key itself: a key
+  /// Who minted it. A Roblox id - the portal user, never the key itself: a key
   /// cannot mint another key, and there is no endpoint that would let it.
   createdById   String
   createdByName String
 
   /// Touched on use, best-effort and deliberately imprecise (see lib/apikey.ts).
-  /// It answers "is this key still in use, or can I delete it?" — nothing more.
+  /// It answers "is this key still in use, or can I delete it?" - nothing more.
   lastUsedAt DateTime?
 
   /// Revoked keys are kept, not deleted: `keyId` stays claimed, and the audit
   /// trail on TicketPurchase.apiKeyId still resolves to a name. A revoked key
-  /// authenticates nothing — the resolver refuses it before the hash is compared.
+  /// authenticates nothing - the resolver refuses it before the hash is compared.
   revokedAt     DateTime?
   revokedByName String?
 
@@ -757,7 +757,7 @@ model ApiKey {
 }
 
 // ------------------------------------------------------------------
-// Internal guides — portal.ronation.live/docs/guides.
+// Internal guides - portal.ronation.live/docs/guides.
 //
 // Running an event, working the door, how the systems fit together. Authored at
 // /company/docs (requireCompanyUser, rank 245+) and READ by anybody with a door
@@ -768,7 +768,7 @@ model ApiKey {
 // it is RNL's. A nullable scope column "just in case" is not free: it is a filter
 // that every future read has to remember, and the one that forgets is the one
 // that shows a partner somebody else's guide. If a partner library is ever
-// wanted, it is a new decision — not a column somebody left open.
+// wanted, it is a new decision - not a column somebody left open.
 // ------------------------------------------------------------------
 enum GuideStatus {
   DRAFT
@@ -779,7 +779,7 @@ enum GuideStatus {
 model Guide {
   id String @id @default(cuid())
 
-  /// Globally unique — one library, so unlike Post.slug this needs no scope, and
+  /// Globally unique - one library, so unlike Post.slug this needs no scope, and
   /// carries none of the NULL-tuple caveat that comes with one.
   slug    String  @unique
   title   String
@@ -807,13 +807,13 @@ model Guide {
 }
 
 // ------------------------------------------------------------------
-// Brand assets — logos, artwork, guideline PDFs. Uploaded at /company/docs and
+// Brand assets - logos, artwork, guideline PDFs. Uploaded at /company/docs and
 // listed at portal.ronation.live/docs/brandassets.
 //
 // `visibility` decides WHERE THE BYTES LIVE, not merely who sees the row:
 //
 //   PUBLIC    written to UPLOAD_DIR and served by Caddy off the shared volume at
-//             /uploads/rnl/<uuid>.<ext>. A shareable URL is the FEATURE here — a
+//             /uploads/rnl/<uuid>.<ext>. A shareable URL is the FEATURE here - a
 //             partner pasting a logo link into a Discord is the entire point, and
 //             it keeps working when they are signed out, which is when they will
 //             be using it.
@@ -830,7 +830,7 @@ model Guide {
 //
 // It carries its own file pointer rather than an FK to MediaAsset, whose `url` is
 // @unique and documents the PUBLIC path. An internal file has no public path, so
-// pointing at a MediaAsset would mean inventing a fake URL for it — and a fake
+// pointing at a MediaAsset would mean inventing a fake URL for it - and a fake
 // URL is precisely the string somebody later drops into an <img src>.
 // ------------------------------------------------------------------
 enum AssetVisibility {
@@ -847,7 +847,7 @@ model BrandAsset {
   description String?         @db.Text
   visibility  AssetVisibility @default(PUBLIC)
 
-  /// "rnl/<uuid>.pdf" — relative to the root `visibility` selects. Never a URL,
+  /// "rnl/<uuid>.pdf" - relative to the root `visibility` selects. Never a URL,
   /// never absolute, and never built from a name the uploader chose: the stored
   /// name is a fresh UUID (lib/uploads.ts). Resolved against its root with a
   /// prefix check before anything is opened, all the same.
@@ -879,12 +879,12 @@ model BrandAsset {
 //
 // A ticket is a 60-second JWT that authorise.ronation.live hands to another host
 // so that host can mint its own session cookie (lib/sso.ts). It travels in a URL
-// — so it lands in browser history, in a Referer, and quite possibly in somebody's
+// - so it lands in browser history, in a Referer, and quite possibly in somebody's
 // access log. Three things make that survivable, and this table is the third:
 //
 //   • it expires in 60 seconds
 //   • it is bound to ONE audience, so a ticket for the portal is inert anywhere else
-//   • it can be spent exactly ONCE — this table
+//   • it can be spent exactly ONCE - this table
 //
 // The row IS the lock: `jti` is the primary key, so redeeming a ticket is an
 // INSERT, and a replay is a unique-constraint violation rather than a check that
@@ -893,7 +893,7 @@ model BrandAsset {
 // ever holds a minute of traffic.
 // ------------------------------------------------------------------
 model SsoTicket {
-  /// The ticket's jti claim. The primary key, on purpose — see above.
+  /// The ticket's jti claim. The primary key, on purpose - see above.
   jti String @id
 
   expiresAt DateTime
@@ -901,4 +901,98 @@ model SsoTicket {
 
   @@index([expiresAt])
   @@map("sso_tickets")
+}
+
+// ------------------------------------------------------------------
+// The merch shop - merch.ronation.live.
+//
+// RNL sells classic Roblox clothing through its Roblox group. Roblox takes the
+// payment, on Roblox's own catalog page; this shop is a showcase that presents the
+// item properly - on a character you can turn around - and then hands off. There
+// is no cart here and no money, and there must never be: Robux cannot be charged
+// from a website at all (see the note on `robuxTickets` in partners/registry.ts).
+//
+// Each row is HALF SYNCED, HALF CURATED, and the split is the important part:
+//
+//   synced   name, price, description, sale state, thumbnail. Overwritten from
+//            Roblox on every sync. Never hand-edited - it would be silently undone.
+//   curated  slug, collection, order, visible, texture. RNL's, and the sync never
+//            touches them - a re-sync must not un-place a shelf or rot a link.
+//
+// A COLLECTION is not a row. It lives in lib/merch/collections.ts, because the
+// middleware has to resolve a collection's brand on the edge - before Prisma
+// exists - to paint /sleeptoken in Sleep Token's colours. Products need no such
+// thing, so products are rows. That line is the whole reason for the split.
+// ------------------------------------------------------------------
+
+/// What the texture wraps onto. The numbers are Roblox's own assetTypeIds, and the
+/// mapping is not guessable: 11 is a full-body Shirt and 2 is a T-Shirt (a decal on
+/// the torso front). RNL's current merch is all type 11, despite being named "tee".
+enum MerchKind {
+  SHIRT // assetTypeId 11 - torso + both arms
+  TSHIRT // assetTypeId 2  - a decal on the torso's front face only
+  PANTS // assetTypeId 12 - both legs
+}
+
+model MerchProduct {
+  id String @id @default(cuid())
+
+  /// The Roblox catalog asset id - as a STRING, and this is not a style choice.
+  /// Roblox ids passed 2^31 years ago (15340708457 is a live one), so an Int column
+  /// would overflow. Every other Roblox id in this schema is a String for the same
+  /// reason; the ids are opaque names, never arithmetic.
+  assetId String    @unique
+  kind    MerchKind
+
+  // ---- synced from Roblox. Do not hand-edit: the next sync wins. ----
+  name        String
+  description String? @db.Text
+
+  /// Null when Roblox reports no price - an off-sale item, or one sold only inside
+  /// an experience. Nullable rather than 0, because "free" and "not purchasable"
+  /// are different things and a shop that renders the second as the first is lying.
+  priceRobux Int?
+  forSale    Boolean @default(false)
+  limited    Boolean @default(false)
+  sales      Int     @default(0)
+
+  /// A tr.rbxcdn.com URL. These ROTATE - the hash is stamped with a validity window
+  /// (the "180DAY-" prefix on the ones we get today) - so this is a cache, not an
+  /// identifier. Refreshed on every sync, and every reader must tolerate it being
+  /// null or stale rather than rendering a broken image.
+  thumbnailUrl String?
+
+  syncedAt DateTime?
+
+  // ---- curated by RNL. The sync never writes these. ----
+
+  /// The URL segment: /sleeptoken/<slug>. Derived from the name ONCE, on first
+  /// sync, and never re-derived - a shirt renamed on Roblox must not rot a link
+  /// somebody has already pasted into a Discord. Same rule updateGuide follows.
+  slug String @unique
+
+  /// A Collection slug from lib/merch/collections.ts. NULL means unplaced, and an
+  /// unplaced product is invisible no matter what `visible` says - it has no URL to
+  /// be visible at. This is what makes the catalogue curated rather than a dump of
+  /// whatever is in the group.
+  collection String?
+
+  order   Int     @default(0)
+  visible Boolean @default(false)
+
+  /// The classic clothing template, uploaded by RNL - the image the 3D viewer wraps
+  /// onto the character.
+  ///
+  /// It is uploaded rather than fetched because Roblox will not give it to us:
+  /// assetdelivery 401s without a logged-in cookie, and so does the official 3D
+  /// thumbnail. RNL owns this artwork, so the upload is the honest path and the one
+  /// that cannot expire. Null is fine and common - the product page falls back to
+  /// Roblox's flat thumbnail and still sells the shirt.
+  textureUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visible, collection, order])
+  @@map("merch_products")
 }

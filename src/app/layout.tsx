@@ -7,7 +7,7 @@ import "./globals.css";
 // It has to be imported *here*, not in the partner layout, for the same reason
 // the fonts are: identity has to resolve wherever <html> renders, and Next
 // renders its 404 and error boundaries outside your nested layouts. Import it
-// one level down and a partner's 404 comes out in RNL's blue — on their domain.
+// one level down and a partner's 404 comes out in RNL's blue - on their domain.
 // The cost is a few hundred bytes of unused custom properties on RNL's pages;
 // nothing is fetched or painted unless data-brand actually matches.
 import "@/styles/brands/index.css";
@@ -24,12 +24,12 @@ import { fontClassFor } from "@/lib/partners/fonts";
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
   title: {
-    default: `${site.name} — ${site.tagline}`,
+    default: `${site.name} - ${site.tagline}`,
     template: `%s · ${site.name}`,
   },
   description: site.description,
   openGraph: {
-    title: `${site.name} — ${site.tagline}`,
+    title: `${site.name} - ${site.tagline}`,
     description: site.description,
     url: env.siteUrl,
     siteName: site.name,
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   // The SHASHA portal, the survey subdomain and the partner sites are their own
-  // products — they bring their own chrome, so the marketing header/footer is
+  // products - they bring their own chrome, so the marketing header/footer is
   // left off. Both headers are set by middleware, from the request host, and
   // overwritten on every path through it; a client cannot supply either.
   // See src/middleware.ts.
@@ -70,7 +70,8 @@ export default function RootLayout({
     area === "portal" ||
     area === "survey" ||
     area === "partner" ||
-    area === "partner-portal";
+    area === "partner-portal" ||
+    area === "shop";
 
   // data-brand must sit on <html>, not on a wrapper: `body { background-color:
   // var(--bg) }` resolves at body, and a descendant cannot retroactively change

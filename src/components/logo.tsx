@@ -11,7 +11,7 @@ export function Logo({
   return (
     <Link
       href={href}
-      aria-label="RO. Nation LIVE — home"
+      aria-label="RO. Nation LIVE - home"
       className={cn("inline-flex items-center", className)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -17,7 +17,7 @@ const sections = [
   {
     heading: "Respect everyone",
     body: [
-      "No harassment, hate speech, discrimination, threats, or bullying of any kind — toward attendees, performers, or crew. Treat people the way you'd want to be treated on the floor.",
+      "No harassment, hate speech, discrimination, threats, or bullying of any kind - toward attendees, performers, or crew. Treat people the way you'd want to be treated on the floor.",
     ],
   },
   {
@@ -35,7 +35,7 @@ const sections = [
   {
     heading: "Listen to staff",
     body: [
-      "Our moderators and hosts keep events running smoothly. Follow their instructions. They can mute, remove, or ban anyone who breaks these rules — at their discretion and without warning.",
+      "Our moderators and hosts keep events running smoothly. Follow their instructions. They can mute, remove, or ban anyone who breaks these rules - at their discretion and without warning.",
     ],
   },
   {

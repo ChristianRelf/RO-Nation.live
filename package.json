@@ -2,7 +2,7 @@
   "name": "ro-nation-live",
   "version": "1.0.0",
   "private": true,
-  "description": "RO. Nation LIVE — Roblox event management group website (events, careers, ticketing).",
+  "description": "RO. Nation LIVE - Roblox event management group website (events, careers, ticketing).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,12 +21,14 @@
     "react-dom": "18.3.1",
     "react-markdown": "^9.1.0",
     "remark-gfm": "^4.0.1",
+    "three": "^0.169.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
     "@types/node": "20.16.11",
     "@types/react": "18.3.11",
     "@types/react-dom": "18.3.0",
+    "@types/three": "^0.169.0",
     "autoprefixer": "10.4.20",
     "postcss": "8.4.47",
     "prisma": "5.22.0",

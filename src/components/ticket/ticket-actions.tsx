@@ -8,7 +8,7 @@ import { fireConfetti } from "./celebrate";
 // Activate and cancel.
 //
 // Neither navigates anywhere. They revalidate, and the ticket behind them
-// re-renders in place — the stub unseals, or the ticket comes back stamped VOID.
+// re-renders in place - the stub unseals, or the ticket comes back stamped VOID.
 // That is partly because a Server Action must not redirect on a partner host
 // (see app/actions/tickets.ts), and partly because it is simply the better
 // answer: the thing you just changed is the thing already on your screen.

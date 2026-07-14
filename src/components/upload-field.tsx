@@ -5,8 +5,8 @@ import { useRef, useState } from "react";
 // An image field: pick a file, it uploads, and the resulting URL lands in the
 // form as `name`.
 //
-// The value posted with the form is still a plain string in a plain input —
-// exactly what thumbnailUrl/coverUrl already were — so nothing downstream
+// The value posted with the form is still a plain string in a plain input -
+// exactly what thumbnailUrl/coverUrl already were - so nothing downstream
 // changes: the server actions, lib/content.ts and the database all keep seeing a
 // URL. The file goes up out-of-band to /api/uploads, before the form is
 // submitted, and only the URL it returns rides along with the submit.
@@ -15,7 +15,7 @@ import { useRef, useState } from "react";
 // action's body caps at 1 MB, so a 5 MB image posted through one fails on the way
 // in. See the note in app/api/uploads/route.ts.
 //
-// Pasting a URL by hand still works — the text input is right there, and remote
+// Pasting a URL by hand still works - the text input is right there, and remote
 // URLs (or a file in /public) are perfectly valid values.
 
 export function UploadField({
@@ -25,7 +25,7 @@ export function UploadField({
   partner,
   hint,
 }: {
-  /** The form field the URL is written into — "thumbnailUrl", "coverUrl". */
+  /** The form field the URL is written into - "thumbnailUrl", "coverUrl". */
   name: string;
   label: string;
   defaultValue?: string | null;
@@ -65,7 +65,7 @@ export function UploadField({
       }
       setUrl(data.url);
     } catch {
-      setError("That didn't upload — check your connection and try again.");
+      setError("That didn't upload - check your connection and try again.");
     } finally {
       setBusy(false);
       // Let the same file be picked again after a failure. Without this, choosing

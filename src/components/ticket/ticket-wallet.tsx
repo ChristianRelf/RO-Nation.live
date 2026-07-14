@@ -4,7 +4,7 @@ import { ticketUrl } from "@/lib/origin";
 import { ticketBrand } from "@/lib/tickets/brand";
 import { TicketStub } from "./ticket-stub";
 
-// The wallet. Every ticket carries its OWN brand mark, not the site's — RNL's
+// The wallet. Every ticket carries its OWN brand mark, not the site's - RNL's
 // wallet can hold a Sleep Token ticket, and when it does, the stub says ST
 // and the badge in the middle of its QR says ST. A ticket looks like the show it
 // admits you to, wherever you happen to be looking at it from.

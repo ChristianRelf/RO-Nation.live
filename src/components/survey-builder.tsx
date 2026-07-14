@@ -54,7 +54,7 @@ export function SurveyBuilder({
   survey?: Survey;
   questions?: SurveyQuestion[];
   error?: string;
-  /** Someone has already answered — questions are frozen. */
+  /** Someone has already answered - questions are frozen. */
   locked?: boolean;
 }) {
   const [items, setItems] = useState<Draft[]>(() =>
@@ -123,7 +123,7 @@ export function SurveyBuilder({
 
       {locked ? (
         <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-sm text-amber-200">
-          People have already answered this survey, so the questions are locked —
+          People have already answered this survey, so the questions are locked -
           changing them now would break the results. You can still edit the
           title, description and status.
         </p>
@@ -136,7 +136,7 @@ export function SurveyBuilder({
             name="title"
             required
             defaultValue={survey?.title}
-            placeholder="Midnight Frequency — how did we do?"
+            placeholder="Midnight Frequency - how did we do?"
             className={inputClass}
           />
         </div>
@@ -159,9 +159,9 @@ export function SurveyBuilder({
             defaultValue={survey?.status ?? "DRAFT"}
             className={inputClass}
           >
-            <option value="DRAFT">Draft — nobody can open it</option>
-            <option value="OPEN">Open — accepting responses</option>
-            <option value="CLOSED">Closed — link says it&apos;s finished</option>
+            <option value="DRAFT">Draft - nobody can open it</option>
+            <option value="OPEN">Open - accepting responses</option>
+            <option value="CLOSED">Closed - link says it&apos;s finished</option>
           </select>
         </div>
       </div>
@@ -241,7 +241,7 @@ export function SurveyBuilder({
                   >
                     {TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
-                        {t.label} — {t.hint}
+                        {t.label} - {t.hint}
                       </option>
                     ))}
                   </select>

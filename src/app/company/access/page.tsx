@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 // The unauthorised landing page for the Company. It sits OUTSIDE the guarded
 // (dash) group, so it can explain the situation without the guarded pages ever
-// being rendered — see the comment in (dash)/layout.tsx.
+// being rendered - see the comment in (dash)/layout.tsx.
 export default async function CompanyAccessPage() {
   const access = await getCompanyAccess();
   if (access.state === "allowed") redirect("/company");
@@ -32,7 +32,7 @@ export default async function CompanyAccessPage() {
             <>
               <h1 className="display mt-4 text-5xl">Company</h1>
               <p className="mt-3 text-muted">
-                Events, the blog, surveys, careers and applications — all of
+                Events, the blog, surveys, careers and applications - all of
                 ronation.live. Sign in with the Roblox account that holds your
                 rank in the group.
               </p>

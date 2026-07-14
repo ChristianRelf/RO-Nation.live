@@ -17,7 +17,7 @@ import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 
 // A partner's own shows.
 //
-// /company is RNL's tool, and it is pinned to RNL's events (partnerId: null) —
+// /company is RNL's tool, and it is pinned to RNL's events (partnerId: null) -
 // so without this file, a partner's shows would exist in the database with nobody
 // able to edit them. This is the other half of that boundary: the partner's crew
 // manages their own line-up, and only theirs.
@@ -31,7 +31,7 @@ import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 
 function refresh(slug: string) {
   // The studio list (internal route), and the public pages the change is now
-  // visible on. All internal — revalidatePath does not know about the pretty
+  // visible on. All internal - revalidatePath does not know about the pretty
   // hostnames. See lib/partners/urls.ts.
   revalidatePath(partnerPortalRoute(slug, "/studio/events"));
   revalidatePath(partnerSiteRoute(slug));

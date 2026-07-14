@@ -24,14 +24,14 @@ import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 // Every write to ronation.live's own content: events, blog, surveys, careers,
 // applications, attendees. One module, because there is now one door.
 //
-// There used to be two — /admin (a shared password) and /studio (a group rank) —
+// There used to be two - /admin (a shared password) and /studio (a group rank) -
 // with near-identical event CRUD in each, and a bug living in exactly the gap
 // between them: the Studio's writes revalidated both dashboards, the admin's
 // revalidated only its own, so an admin edit left the Studio's list stale.
 // Merging them deletes that class of bug rather than fixing this instance of it.
 //
 // Every action re-checks the rank server-side. The UI hiding a button is not a
-// permission, and neither is having loaded this page a minute ago — a demotion
+// permission, and neither is having loaded this page a minute ago - a demotion
 // lands within the group-membership cache TTL.
 
 function refreshEvents() {
@@ -76,7 +76,7 @@ export async function createEvent(formData: FormData) {
 // affects zero rows instead of throwing.
 //
 // Rank in RNL's group is what gets you in here, and by itself it says nothing
-// about a partner's shows — without this, a company user could edit or delete a
+// about a partner's shows - without this, a company user could edit or delete a
 // Sleep Token show by pasting its id into the URL. Staff ranked 250+ genuinely
 // may touch a partner's shows, but they do it through that partner's own portal,
 // where the guard has authorised them FOR that partner. Passing one guard is not
@@ -98,7 +98,7 @@ export async function updateEvent(formData: FormData) {
   });
   // Gated on the same check the event write just made: the tier sync matches on
   // eventId alone, so without this a company user could rewrite a partner's tiers
-  // by pasting their event id — the exact hole `partnerId: null` above closes.
+  // by pasting their event id - the exact hole `partnerId: null` above closes.
   if (count > 0) await syncEventTiers(id, tiers);
 
   refreshEvents();
@@ -155,7 +155,7 @@ export async function createPost(formData: FormData) {
       ...data,
       slug,
       // RNL's own. Everything this module writes is pinned to null, and every
-      // list it reads filters on it — a partner's posts belong to their studio.
+      // list it reads filters on it - a partner's posts belong to their studio.
       partnerId: null,
       publishedAt: resolvePublishedAt(data.status),
       authorRobloxId: user.robloxId,
@@ -214,7 +214,7 @@ function readCareer(form: FormData) {
     title: s(form, "title"),
     department: s(form, "department") || "Events",
     commitment: s(form, "commitment") || "Volunteer",
-    location: s(form, "location") || "Remote — Roblox",
+    location: s(form, "location") || "Remote - Roblox",
     summary: s(form, "summary"),
     description: s(form, "description"),
     requirements: s(form, "requirements"),
@@ -301,7 +301,7 @@ const QuestionSchema = z
   })
   .transform((q) => ({
     ...q,
-    // Options are meaningless on the other types — drop them so they can't
+    // Options are meaningless on the other types - drop them so they can't
     // linger after someone switches a question's type in the builder.
     options: q.type === "CHOICE" || q.type === "CHECKBOXES" ? q.options : [],
   }))

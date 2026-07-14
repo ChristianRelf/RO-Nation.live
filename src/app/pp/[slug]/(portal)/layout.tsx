@@ -9,8 +9,8 @@ import { PortalFooter } from "@/components/portal-footer";
 export const dynamic = "force-dynamic";
 
 // The partner's portal, at portal.ronation.live/<slug> (rewritten here by the
-// middleware). Same tool as SHASHA — the roster pages under this layout are
-// literally the same components — pointed at the partner's own lists.
+// middleware). Same tool as SHASHA - the roster pages under this layout are
+// literally the same components - pointed at the partner's own lists.
 
 export async function generateMetadata({
   params,
@@ -41,7 +41,7 @@ export default async function PartnerPortalLayout({
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
 
-  // Chrome only. This does NOT protect the pages beneath it — each one guards
+  // Chrome only. This does NOT protect the pages beneath it - each one guards
   // itself, because a layout redirect still ships the page's RSC payload. See
   // the note on requirePartnerUser() in lib/partners/guard.ts.
   const user = await getPartnerUser(partner.slug);
@@ -54,8 +54,8 @@ export default async function PartnerPortalLayout({
       <PortalNav
         brand={partner.name}
         basePath={partnerPortalPath(partner.slug)}
-        // Every partner has a studio — at minimum they can edit their homepage
-        // — so this is always on. Which SECTIONS it offers is what the registry's
+        // Every partner has a studio - at minimum they can edit their homepage
+        // - so this is always on. Which SECTIONS it offers is what the registry's
         // features decide, inside the studio layout.
         doorLink={partnerHasFeature(partner, "events")}
         studioLink

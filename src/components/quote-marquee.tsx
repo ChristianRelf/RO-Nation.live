@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-// Voices from the floor, drifting past. Built exactly like EventTicker — two
+// Voices from the floor, drifting past. Built exactly like EventTicker - two
 // identical strips side by side, each sliding left by its own full width, so the
 // loop restarts on identical pixels and the seam never shows. See that file for
 // the full note on why -100% and not -50%.

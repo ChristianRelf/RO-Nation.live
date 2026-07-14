@@ -8,10 +8,10 @@ import { PortalFooter } from "@/components/portal-footer";
 // It names the host and nothing else. No links to the tools behind it: whoever
 // belongs here already knows the path they want, and everyone else is better
 // told "this is not for you" than handed a map. That is also why /docs is not
-// mentioned — the API docs are the companion to a key, and a visitor without one
+// mentioned - the API docs are the companion to a key, and a visitor without one
 // has no reason to know they exist.
 //
-// Reached by rewrite from `/` on the portal host — see src/middleware.ts.
+// Reached by rewrite from `/` on the portal host - see src/middleware.ts.
 
 export const metadata: Metadata = {
   title: "Backstage portal",

@@ -32,7 +32,7 @@ export function SurveyLink({ code }: { code: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard blocked (insecure origin, denied permission) — the link is
+      // Clipboard blocked (insecure origin, denied permission) - the link is
       // right there to copy by hand.
     }
   }

@@ -8,7 +8,7 @@ export type EventWithCount = Event & { ticketsCount: number };
  * Whose events to look at: a partner slug, or null for RO. Nation LIVE's own.
  *
  * Every query below takes this as its FIRST argument, and none of them defaults
- * it. An unscoped event query is not one that fails — it is one that puts a
+ * it. An unscoped event query is not one that fails - it is one that puts a
  * partner's shows on RNL's homepage and RNL's shows on the partner's, and looks
  * perfectly healthy doing it. Making the scope impossible to omit is what keeps
  * that from happening the next time somebody adds a query to this file.
@@ -84,7 +84,7 @@ export async function getFeaturedEvent(
 }
 
 /**
- * Slugs are globally unique, so this *could* find the event without the scope —
+ * Slugs are globally unique, so this *could* find the event without the scope -
  * which is precisely the trap. Fetch by slug, then reject anything belonging to
  * another org. Without that second check,
  * sleeptokenro.ronation.live/events/<an-rnl-slug> renders an RNL show in Sleep

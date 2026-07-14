@@ -17,7 +17,7 @@ function sanitizeReturn(v: string | null) {
   return "/tickets";
 }
 
-// "Sign in with Roblox" — the link every login page in the app still points at.
+// "Sign in with Roblox" - the link every login page in the app still points at.
 //
 // It used to run the OAuth round trip on whatever host it was called on, which is
 // why every host needed its own registered redirect_uri. Now it does that on ONE

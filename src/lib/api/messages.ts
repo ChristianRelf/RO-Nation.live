@@ -3,7 +3,7 @@ import type { IssueReason } from "@/lib/tickets/issue";
 
 // The sentence that goes with each refusal.
 //
-// `reason` is the machine's answer and never changes — branch on that. `message`
+// `reason` is the machine's answer and never changes - branch on that. `message`
 // is the same answer for a person, and it is written to be shown to whoever is
 // standing there: on a GUI in the experience, in a crew member's chat, in a log a
 // human will read at 2am. It may be reworded at any time. Do not parse it.
@@ -25,11 +25,11 @@ export const ISSUE_MESSAGES: Record<Exclude<IssueReason, "ok">, string> = {
   payments_off: "Paid tickets aren't switched on. That tier can't be issued to anybody.",
   payment_required:
     "That tier costs Robux. Prompt the Developer Product, then call /purchase from ProcessReceipt.",
-  not_purchasable: "That tier is free — don't charge for it. Use /reserve.",
+  not_purchasable: "That tier is free - don't charge for it. Use /reserve.",
 };
 
 export const VOID_MESSAGES = {
   not_found: "No ticket to void.",
   checked_in:
-    "They are already inside. A checked-in ticket cannot be voided — the door has already let them through, and cancelling the record now would only make it lie.",
+    "They are already inside. A checked-in ticket cannot be voided - the door has already let them through, and cancelling the record now would only make it lie.",
 } as const;

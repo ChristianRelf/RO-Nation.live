@@ -4,7 +4,7 @@ import { prisma } from "./db";
 
 // Every function here takes the scope as its FIRST argument, and none of them
 // has a default. That is deliberate: an unscoped roster query does not fail
-// loudly and it does not come back empty — it comes back with *another
+// loudly and it does not come back empty - it comes back with *another
 // organisation's blacklist*, looking for all the world like it worked. Making
 // the scope impossible to forget is the only version of this that stays safe
 // as the code grows.

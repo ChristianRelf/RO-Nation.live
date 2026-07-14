@@ -18,7 +18,7 @@ export default async function DocsBrandAssetsPage() {
         <p className="mt-4 text-sm text-muted">
           Logos, artwork and the guidelines. Anything marked{" "}
           <span className="font-semibold text-fg">internal</span> is served only to
-          somebody signed in here — its link will not work for anybody else, so
+          somebody signed in here - its link will not work for anybody else, so
           send the file, not the URL.
         </p>
       </header>
@@ -48,7 +48,7 @@ export default async function DocsBrandAssetsPage() {
                         // A plain <img>, not next/image: these are arbitrary
                         // uploads, and an internal one is behind /files/<id>,
                         // which the optimiser cannot fetch on the reader's behalf
-                        // anyway — it has no session.
+                        // anyway - it has no session.
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={href}

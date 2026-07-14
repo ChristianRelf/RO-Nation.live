@@ -14,7 +14,7 @@ export function ApplyForm({
   applied,
   error,
   closed,
-  /** "We reply to everyone in the Discord." — the org's own promise. */
+  /** "We reply to everyone in the Discord." - the org's own promise. */
   note,
 }: {
   career: { id: string; slug: string };
@@ -33,7 +33,7 @@ export function ApplyForm({
 
       {applied ? (
         <div className="mt-5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-          Application received — thank you! Keep an eye on your Roblox DMs.
+          Application received - thank you! Keep an eye on your Roblox DMs.
         </div>
       ) : closed ? (
         <div className="mt-5 rounded-xl border border-line bg-bg px-4 py-3 text-sm text-muted">

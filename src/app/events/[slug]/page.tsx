@@ -33,7 +33,7 @@ export async function generateMetadata({
 }
 
 const reserveErrors: Record<string, string> = {
-  soldout: "This event just sold out — no spots left.",
+  soldout: "This event just sold out - no spots left.",
   past: "This event has already taken place.",
   unavailable: "This event isn't available for reservations.",
 };
@@ -63,7 +63,7 @@ export default async function EventPage({
 
   const offers = await offersForEvent(event);
   const available = anyAvailable(offers);
-  // Nothing on sale, but nothing sold out either — every tier is priced in Robux
+  // Nothing on sale, but nothing sold out either - every tier is priced in Robux
   // and Robux sales are off. That is not "sold out", and saying so would be a lie
   // to anyone still hoping to get in.
   const notOnSale =
@@ -196,7 +196,7 @@ export default async function EventPage({
               ) : hasTicket ? (
                 <div className="space-y-3">
                   <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
-                    You&apos;re going — ticket{" "}
+                    You&apos;re going - ticket{" "}
                     <span className="font-mono font-semibold">
                       {myTicket!.code}
                     </span>

@@ -18,7 +18,7 @@ import {
 
 // A partner's own blog, careers, applications and homepage copy.
 //
-// The sibling of partner-events.ts, and it follows exactly the same contract —
+// The sibling of partner-events.ts, and it follows exactly the same contract -
 // which is worth stating once here rather than re-deriving at each function:
 //
 //   The scope arrives in the form body and authorizes NOTHING. It only selects
@@ -27,7 +27,7 @@ import {
 //   this one.
 //
 //   Every write matches on { id, partnerId } TOGETHER, using the *Many form. A
-//   manager of one partner who pastes another's post id matches zero rows — not
+//   manager of one partner who pastes another's post id matches zero rows - not
 //   an error, not a silent edit of somebody else's content.
 //
 //   assertPartnerFeature() runs on the ACTION, not just the page. The page is
@@ -123,7 +123,7 @@ function readCareer(form: FormData) {
     title: s(form, "title"),
     department: s(form, "department") || "Crew",
     commitment: s(form, "commitment") || "Volunteer",
-    location: s(form, "location") || "Remote — Roblox",
+    location: s(form, "location") || "Remote - Roblox",
     summary: s(form, "summary"),
     description: s(form, "description"),
     requirements: s(form, "requirements"),
@@ -214,13 +214,13 @@ export async function updatePartnerContent(formData: FormData) {
   const base = partnerPortalPath(partner.slug, "/studio/content");
 
   // The FAQ is posted as one hidden JSON field, like the survey builder's
-  // questions — a list of pairs doesn't map onto flat form fields. null means it
+  // questions - a list of pairs doesn't map onto flat form fields. null means it
   // failed to parse, which must NOT be saved as "no questions": that would wipe
   // a partner's accordion because of a bug in the editor.
   const faq = parseFaq(s(formData, "faq"));
   if (faq === null) redirect(`${base}?error=faq`);
 
-  // Empty string means "leave this out", and has to survive the round trip — so
+  // Empty string means "leave this out", and has to survive the round trip - so
   // the columns are written as null rather than "" and the page's fallbacks
   // (lib/partners/content.ts) can tell the two apart.
   const orNull = (key: string) => s(formData, key) || null;

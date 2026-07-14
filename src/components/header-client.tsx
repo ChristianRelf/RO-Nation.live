@@ -21,7 +21,7 @@ export function HeaderClient({
   /**
    * Signed in with Roblox and ranked high enough in the group for /company.
    *
-   * Presentation only. The link is a convenience, not a permission — /company
+   * Presentation only. The link is a convenience, not a permission - /company
    * re-reads the rank on every page and every write.
    */
   canCompany: boolean;

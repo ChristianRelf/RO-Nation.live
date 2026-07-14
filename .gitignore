@@ -20,7 +20,7 @@ next-env.d.ts
 .env*.local
 
 # uploaded files (dev). In production these live on Docker volumes, not in the
-# source tree — see docker-compose.yml. private-uploads holds the gated brand
+# source tree - see docker-compose.yml. private-uploads holds the gated brand
 # assets, which is doubly a reason not to commit one by accident.
 /uploads
 /private-uploads

@@ -26,7 +26,7 @@ export default async function EditPartnerCareerPage({
   const { partner } = await requirePartnerManager(params.slug);
   assertPartnerFeature(partner, "careers");
 
-  // Matched on the partner as well as the id — another org's role 404s here.
+  // Matched on the partner as well as the id - another org's role 404s here.
   const career = await prisma.career.findFirst({
     where: { id: params.id, partnerId: partner.slug },
   });

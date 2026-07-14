@@ -30,7 +30,7 @@ export default async function EditPartnerShowPage({
   assertPartnerFeature(partner, "events");
 
   // Matched on the partner as well as the id, so another org's event id in the
-  // URL is a 404 here rather than an editable form — the write action would
+  // URL is a 404 here rather than an editable form - the write action would
   // refuse it anyway, but the form should never render for it in the first place.
   const event = await prisma.event.findFirst({
     where: { id: params.id, partnerId: partner.slug },

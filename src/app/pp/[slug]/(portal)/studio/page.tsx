@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Studio" };
 
 // The studio's front page: what you have, and the quickest way to add to it.
 //
-// Read tier — any member of the partner can see this. The write buttons are
+// Read tier - any member of the partner can see this. The write buttons are
 // hidden from read-only staff, but that is courtesy: the pages and actions they
 // point at guard themselves.
 
@@ -149,7 +149,7 @@ function Card({
 }: {
   href: string;
   label: string;
-  /** null renders the tile without a number — not every section counts to something. */
+  /** null renders the tile without a number - not every section counts to something. */
   value: number | null;
   note: string;
   cta?: string;

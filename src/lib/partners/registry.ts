@@ -1,7 +1,7 @@
 // The partner registry.
 //
 // This module is the single source of truth for which partner sites exist. It
-// is deliberately *pure data* — no prisma, no server-only imports, no env — for
+// is deliberately *pure data* - no prisma, no server-only imports, no env - for
 // one hard reason: middleware runs on the edge, where Prisma cannot, and the
 // middleware has to know from the Host header alone which brand a request
 // belongs to. It is also why partner theming is config-in-code rather than
@@ -15,10 +15,10 @@
 export type PartnerFeature = "events" | "blog" | "careers" | "surveys";
 
 export type Partner = {
-  /** The subdomain, the `partnerId` scope column, and the `data-brand` value — one string, three jobs. */
+  /** The subdomain, the `partnerId` scope column, and the `data-brand` value - one string, three jobs. */
   slug: string;
   name: string;
-  /** Shown where `name` is too long to sit on one line — nav, footer, ticket stubs. */
+  /** Shown where `name` is too long to sit on one line - nav, footer, ticket stubs. */
   shortName: string;
   tagline: string;
   description: string;
@@ -41,7 +41,7 @@ export type Partner = {
    * /public, or an uploaded /uploads/… image.
    *
    * Leave it out and the ticket falls back to the lettered badge plus the name in
-   * type, which is what a partner with no artwork gets — and looks deliberate
+   * type, which is what a partner with no artwork gets - and looks deliberate
    * rather than unfinished. See lib/tickets/brand.ts.
    */
   logoUrl?: string;
@@ -49,25 +49,25 @@ export type Partner = {
    * The big emblem the homepage hero is built around. Optional, and the page is
    * designed to be right without it.
    *
-   * It is drawn ENORMOUS and dim, behind the type, bled off the edges — so it
+   * It is drawn ENORMOUS and dim, behind the type, bled off the edges - so it
    * wants to be a single centred device (a crest, a seal, a sigil) on a
    * transparent background, not a photograph and not a lockup with words in it.
    * Type set over its own wordmark is a mess at any opacity.
    *
    * A partner's editable `heroImageUrl` (PartnerContent, set in their studio)
-   * overrides this when present — the registry is the default, the studio is the
+   * overrides this when present - the registry is the default, the studio is the
    * override, so a partner can put a poster behind the hero for one tour without
    * a deploy.
    */
   crestUrl?: string;
   /**
-   * Artwork behind the WHOLE site — fixed, every page, every section, with the
+   * Artwork behind the WHOLE site - fixed, every page, every section, with the
    * content sliding over it. See components/partner/backdrop.tsx.
    *
    * When this is set the hero's own `crestUrl` is suppressed, and that is on
    * purpose: two enormous emblems stacked on one screen is not twice the
-   * atmosphere, it is mush. Set ONE of them. The backdrop is the bigger gesture —
-   * it carries the entire site rather than the top of one page — so it wins.
+   * atmosphere, it is mush. Set ONE of them. The backdrop is the bigger gesture -
+   * it carries the entire site rather than the top of one page - so it wins.
    *
    * It is drawn dark and behind a scrim, because every word on the site is set on
    * top of it. Pick an image that survives that: a single subject with room around
@@ -77,8 +77,8 @@ export type Partner = {
   /**
    * The stand-in image for a show this partner hasn't made a poster for yet.
    *
-   * Not cosmetic. The shared EventCard's default is RNL's placeholder — electric
-   * blue, with RNL's own wordmark across it — so a partner who leaves this unset
+   * Not cosmetic. The shared EventCard's default is RNL's placeholder - electric
+   * blue, with RNL's own wordmark across it - so a partner who leaves this unset
    * gets a shows page with somebody else's name printed over every one of their
    * events. Set it for any partner whose brand is not RNL's.
    */
@@ -90,19 +90,19 @@ export type Partner = {
    *
    * This is the SECOND key, not the switch. Paid ticketing is off globally
    * (ROBUX_TICKETS_ENABLED, default false) because Robux cannot be charged from
-   * a website at all — a real payment happens inside the Roblox experience, via
+   * a website at all - a real payment happens inside the Roblox experience, via
    * a Developer Product and a ProcessReceipt handler that does not exist yet.
    * Until it does, a paid ticket could be sold and never honoured.
    *
    * So this flag on its own sells nothing. It records which partners have agreed
    * to take money, so that the day the master switch flips, it flips only for
-   * them — and not for every partner who happened to be in this file. See
+   * them - and not for every partner who happened to be in this file. See
    * robuxSalesAllowed() in lib/tickets/pricing.ts, which needs both.
    */
   robuxTickets?: boolean;
   /**
    * The partner's public Roblox group, linked from their site. Presentation
-   * only — it grants NOTHING. `governance` below is what grants.
+   * only - it grants NOTHING. `governance` below is what grants.
    */
   robloxGroupUrl?: string;
   /**
@@ -113,7 +113,7 @@ export type Partner = {
    * not own a partner's group: turning this on hands the partner's own group admins
    * the power to grant access to RNL infrastructure by promoting somebody, and RNL
    * cannot see it happen. That is a real transfer of trust, and it should be a
-   * decision somebody makes on purpose, per partner — which is why it is a field
+   * decision somebody makes on purpose, per partner - which is why it is a field
    * here rather than a rank in env.ts.
    *
    * What it CANNOT do is take access away. Rank tops the member rows UP; the rows
@@ -121,7 +121,7 @@ export type Partner = {
    * their portal by demoting people in a group RNL does not control, and RNL's own
    * 250+ override still opens every partner portal regardless of any of this.
    *
-   *   staffRank    read the portal — the lists, the door.
+   *   staffRank    read the portal - the lists, the door.
    *   managerRank  write: edit the roster, the studio, and mint API keys.
    *
    * Roblox ranks run 0–255 (owner is always 255), so the owner always clears both.
@@ -134,7 +134,7 @@ export type Partner = {
     /** Rank at or above this writes. Must be >= staffRank. */
     managerRank: number;
   };
-  /** The browser chrome colour. The one colour TS has to know — it duplicates --bg, which is unavoidable: `viewport` is a JS export. */
+  /** The browser chrome colour. The one colour TS has to know - it duplicates --bg, which is unavoidable: `viewport` is a JS export. */
   themeColor: string;
   /** Confetti is drawn to a <canvas>, so it can't read a CSS variable. It is the one visual value that genuinely belongs here. */
   confetti: readonly string[];
@@ -147,7 +147,7 @@ export type Partner = {
  * Adding one here does NOT finish the job: it also needs PartnerMember rows (so
  * somebody can actually sign in to its portal), a brand stylesheet at
  * src/styles/brands/<slug>.css, an entry in fonts.ts, and a host in the
- * Caddyfile (added only once DNS resolves — Caddy asks Let's Encrypt for a
+ * Caddyfile (added only once DNS resolves - Caddy asks Let's Encrypt for a
  * certificate the moment you reload it).
  */
 export const PARTNERS: readonly Partner[] = [
@@ -157,10 +157,10 @@ export const PARTNERS: readonly Partner[] = [
     shortName: "STRO",
     tagline: "Roblox tribute shows",
     description:
-      "Sleep Token stages tribute shows inside Roblox — full production, live crowd, free tickets. A fan project, built by fans, produced with RO. Nation LIVE.",
+      "Sleep Token stages tribute shows inside Roblox - full production, live crowd, free tickets. A fan project, built by fans, produced with RO. Nation LIVE.",
     // This one is not optional. The name references a real band who have nothing
     // to do with this, the site sits on an RNL subdomain, and RNL's name is in
-    // the footer — so the page has to say what it is, in plain words, without
+    // the footer - so the page has to say what it is, in plain words, without
     // being hunted for.
     disclaimer:
       "Sleep Token is an unofficial, fan-run Roblox event series. It is not affiliated with, endorsed by, or connected to the band Sleep Token, their management or their label. No official music, artwork or branding is used.",
@@ -169,7 +169,7 @@ export const PARTNERS: readonly Partner[] = [
     // the reason the disclaimer above is now load-bearing rather than a
     // formality: a site carrying the real wings and the real crest is one a
     // visitor could mistake for the band's own, and the disclaimer is the only
-    // thing that stops them. It is rendered plainly on every page — see
+    // thing that stops them. It is rendered plainly on every page - see
     // components/partner/partner-footer.tsx. Do not shrink it, grey it out, or
     // move it below the fold.
     //
@@ -178,7 +178,7 @@ export const PARTNERS: readonly Partner[] = [
     logoUrl: "/brand/sleeptokenro/mark.png",
     crestUrl: "/brand/sleeptokenro/crest.png",
     // Behind the whole site, fixed, with the page sliding over it. It suppresses
-    // the hero crest above — see the field's note on the type for why.
+    // the hero crest above - see the field's note on the type for why.
     //
     // This one is a PHOTOGRAPH, not line art, and the backdrop is tuned for that:
     // it is desaturated and dropped well back, because a full-colour image at the
@@ -188,15 +188,15 @@ export const PARTNERS: readonly Partner[] = [
     eventPlaceholderUrl: "/brand/sleeptokenro/event-placeholder.svg",
     // Sleep Token run their own crew out of their own group, so their portal
     // ranks off it rather than off a member row per person. RNL still holds the
-    // floor (PartnerMember rows) and the 250+ override — see the note on
+    // floor (PartnerMember rows) and the 250+ override - see the note on
     // `governance` above for exactly what this does and does not hand over.
     governance: {
       groupId: "636922593",
-      staffRank: 249, // 249+ — read the lists, work the door
-      managerRank: 253, // 253+ — write, and mint API keys
+      staffRank: 249, // 249+ - read the lists, work the door
+      managerRank: 253, // 253+ - write, and mint API keys
     },
     robloxGroupUrl: "https://www.roblox.com/communities/636922593",
-    // Shows, their own blog, and their own crew applications. Not surveys —
+    // Shows, their own blog, and their own crew applications. Not surveys -
     // survey.ronation.live is still RNL-global and has no partner scope yet, so
     // switching it on here would hand them a feature that does not exist.
     features: ["events", "blog", "careers"],
@@ -205,11 +205,11 @@ export const PARTNERS: readonly Partner[] = [
     // master switch is off, so their paid tiers render locked and the reserve
     // action refuses them. Nothing is charged to anybody today.
     robuxTickets: true,
-    // Duplicates --bg-rgb in styles/brands/sleeptokenro.css by necessity — the
+    // Duplicates --bg-rgb in styles/brands/sleeptokenro.css by necessity - the
     // browser chrome colour is a JS export and cannot read a CSS variable. If one
     // moves, move the other.
     themeColor: "#060605",
-    // Bone and dim gold — the brand's own accent, matched to the palette below.
+    // Bone and dim gold - the brand's own accent, matched to the palette below.
     confetti: ["#b09254", "#d8c9a8", "#8e7742", "#ece9e1"],
     active: true,
   },
@@ -219,7 +219,7 @@ export const PARTNERS: readonly Partner[] = [
  * Names a partner slug may never take.
  *
  * A partner is served internally from /p/<slug>, so a slug can't actually
- * collide with a top-level route — but the slug is also a subdomain, and
+ * collide with a top-level route - but the slug is also a subdomain, and
  * portal.ronation.live/<slug> is the partner's portal. Both of those namespaces
  * are shared with RNL's own. Checked at module load, so a bad slug fails the
  * build rather than quietly shadowing a real route.
@@ -231,8 +231,16 @@ const RESERVED = new Set([
   "portal",
   "survey",
   // The sign-in host. A partner slugged "authorise" would take the subdomain that
-  // mints every session in the system — which is as bad as it sounds.
+  // mints every session in the system - which is as bad as it sounds.
   "authorise",
+  // The shop. Both names, because both are hosts: merch.ronation.live serves it and
+  // shop.ronation.live redirects to it. This is the same exposure "docs" and "files"
+  // have, and it is the worst instance of it: partnerByHost() is the FIRST branch in
+  // the middleware and matches on the leading DNS label, so a partner slugged "merch"
+  // would swallow the entire storefront - every collection, every product - before a
+  // single line of shop code ran.
+  "merch",
+  "shop",
   "api",
   "p",
   "pp",
@@ -250,7 +258,7 @@ const RESERVED = new Set([
   // portal.ronation.live/docs outright.
   "docs",
   // Same exposure, and it matters more: /files serves the gated brand assets, so
-  // a partner slugged "files" would not merely shadow a route — it would take
+  // a partner slugged "files" would not merely shadow a route - it would take
   // over the one path whose whole job is to check a session before handing out
   // a file.
   "files",
@@ -294,7 +302,7 @@ for (const p of PARTNERS) {
     if (gov.managerRank < gov.staffRank) {
       throw new Error(
         `Partner "${p.slug}": governance.managerRank (${gov.managerRank}) is below ` +
-          `staffRank (${gov.staffRank}) — that would make every reader a writer.`,
+          `staffRank (${gov.staffRank}) - that would make every reader a writer.`,
       );
     }
     for (const [name, rank] of [

@@ -12,7 +12,7 @@ export default async function CompanyOverviewPage() {
 
   const [events, published, posts, drafts, surveys, responses] =
     await Promise.all([
-      // RNL's own — a partner's events are counted in their portal, not here.
+      // RNL's own - a partner's events are counted in their portal, not here.
       prisma.event.count({ where: { partnerId: null } }),
       prisma.event.count({ where: { partnerId: null, status: "PUBLISHED" } }),
       prisma.post.count(),

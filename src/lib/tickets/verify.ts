@@ -14,7 +14,7 @@ import { ticketSeal } from "./seal";
 //
 //   SCOPE IS NOT OPTIONAL. A ticket is valid FOR A SHOW. Looking one up by code
 //   alone and answering "valid: true" is how a ticket for last month's event opens
-//   tonight's door — the code is real, the ticket is real, and the answer is still
+//   tonight's door - the code is real, the ticket is real, and the answer is still
 //   wrong. Pass `eventId` whenever you know it, and this refuses a mismatch.
 //
 //   THE TIER IS READ FROM THE TICKET, not from the tier row it points at. The tier
@@ -44,7 +44,7 @@ export type VerifyResult = {
    * Should the door let them through RIGHT NOW?
    *
    * Deliberately separate from `valid`. An already-checked-in ticket is perfectly
-   * valid and must NOT admit a second person — that is the whole point of
+   * valid and must NOT admit a second person - that is the whole point of
    * redeeming. The game should branch on this, not on `valid`.
    */
   admit: boolean;
@@ -65,8 +65,8 @@ export type VerifyResult = {
     /**
      * Only present when the caller SENT a seal to be checked.
      *
-     * true  — it matches; the printed ticket is genuine.
-     * false — it does not; treat the ticket as forged and look at it properly.
+     * true  - it matches; the printed ticket is genuine.
+     * false - it does not; treat the ticket as forged and look at it properly.
      */
     sealValid?: boolean;
   };
@@ -101,27 +101,27 @@ export type LookupInput = {
   /** With `eventId`, the other way to find a ticket: who is standing here. */
   robloxId?: string | null;
   /**
-   * The same question asked by name — "chrxs_dev". Also needs `eventId`.
+   * The same question asked by name - "chrxs_dev". Also needs `eventId`.
    *
    * Resolved to a robloxId before anything is looked up. See resolveHolderId():
    * a username is a label a player can change, not an identity.
    */
   username?: string | null;
-  /** The show this door belongs to. Pass it whenever you know it — see above. */
+  /** The show this door belongs to. Pass it whenever you know it - see above. */
   eventId?: string | null;
   /** The seal printed on the ticket, if the crew typed it in. Optional. */
   seal?: string | null;
   /**
    * Restrict to one org's shows: a partner slug, or null for RNL's own.
    *
-   * `undefined` means "don't scope" — the game API, which is keyed per
+   * `undefined` means "don't scope" - the game API, which is keyed per
    * deployment. The WEB door always passes it, so a partner's crew cannot look up
    * a ticket for a show that isn't theirs.
    */
   scope?: string | null;
 };
 
-/** Neither identifier given — the caller has not asked a question we can answer. */
+/** Neither identifier given - the caller has not asked a question we can answer. */
 export const BAD_REQUEST = "bad_request" as const;
 
 export async function checkTicket(
@@ -235,12 +235,12 @@ export async function checkTicket(
     valid: true,
     admit: true,
     reason: "ok",
-    message: `Admit — ${admission.tier}`,
+    message: `Admit - ${admission.tier}`,
   };
 }
 
 /**
- * Turn what somebody typed — "chrxs_dev", "@chrxs_dev", or an id — into a robloxId.
+ * Turn what somebody typed - "chrxs_dev", "@chrxs_dev", or an id - into a robloxId.
  *
  * A USERNAME IS NOT AN IDENTITY. A player can rename tomorrow, and the copy we
  * stored when they signed in is only true as of the day they signed in. So the
@@ -286,7 +286,7 @@ async function lookupByHolder(robloxId: string, eventId: string) {
  *
  * IDEMPOTENT, and it has to be: a scanner double-fires, a crew member taps twice,
  * a flaky connection retries. Redeeming an already-redeemed ticket does not error
- * and does not move `checkedInAt` — it comes back with admit:false and
+ * and does not move `checkedInAt` - it comes back with admit:false and
  * reason:"already_checked_in", which is the door's cue to stop the second person.
  *
  * The write is conditional on the row still being RESERVED, so two simultaneous
@@ -324,7 +324,7 @@ export async function redeemTicket(
     ...result,
     admit: true,
     reason: "ok",
-    message: `Checked in — ${result.ticket.admission.tier}`,
+    message: `Checked in - ${result.ticket.admission.tier}`,
     ticket: {
       ...result.ticket,
       status: "CHECKED_IN",

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * The section strip inside a partner's studio.
  *
- * Every link is built from `basePath` (the PUBLIC path on the portal host —
+ * Every link is built from `basePath` (the PUBLIC path on the portal host -
  * /sleeptokenro/studio, not the internal /pp/... route Next renders), and the
  * sections shown are the ones the registry actually gave this partner. A feature
  * they don't have has no route: the pages 404 rather than hiding a link, so this

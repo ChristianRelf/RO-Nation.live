@@ -3,7 +3,7 @@ import type { BrandAsset, Guide } from "@prisma/client";
 import { prisma } from "./db";
 import { UPLOAD_URL_PREFIX } from "./uploads";
 
-// Shared reads for the docs — the authoring side at /company/docs and the reading
+// Shared reads for the docs - the authoring side at /company/docs and the reading
 // side at portal.ronation.live/docs both come through here, so the two cannot
 // disagree about what a section is or which guides are live.
 
@@ -54,7 +54,7 @@ export async function publishedGuidesBySection(): Promise<
 /**
  * Where an asset is fetched from.
  *
- * The ONLY function that turns a BrandAsset row into a URL — so there is exactly
+ * The ONLY function that turns a BrandAsset row into a URL - so there is exactly
  * one place in the codebase that can get the PUBLIC/INTERNAL split wrong, and it
  * is three lines long. Anything that wants to link, embed or preview an asset
  * comes through here; nothing builds `/uploads/...` from a storagePath by hand.
@@ -64,7 +64,7 @@ export function brandAssetHref(
 ): string {
   return asset.visibility === "INTERNAL"
     ? `/files/${asset.id}` // streamed by app/files/[id], session checked
-    : `${UPLOAD_URL_PREFIX}/${asset.storagePath}`; // /uploads/... — served by Caddy
+    : `${UPLOAD_URL_PREFIX}/${asset.storagePath}`; // /uploads/... - served by Caddy
 }
 
 /** Every asset, grouped by category, in display order. */

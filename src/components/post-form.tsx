@@ -23,7 +23,7 @@ export function PostForm({
    * The partner whose post this is, when a partner's studio renders this form.
    * Omitted by /company, whose actions don't read it.
    *
-   * Safe to carry in the body: the action does not trust it for authorization —
+   * Safe to carry in the body: the action does not trust it for authorization -
    * it re-reads the caller's grant on that partner. Same contract as EventForm.
    */
   scope?: string;
@@ -51,7 +51,7 @@ export function PostForm({
           />
           {post ? (
             <p className="mt-1.5 text-xs text-faint">
-              URL: <code className="font-mono">/blog/{post.slug}</code> — this
+              URL: <code className="font-mono">/blog/{post.slug}</code> - this
               stays put if you retitle, so shared links keep working.
             </p>
           ) : null}

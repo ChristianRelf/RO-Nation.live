@@ -3,7 +3,7 @@
 // This replaces the decorative "QR-shaped" mark the tickets used to carry, which
 // was a hash sprayed into a grid and scanned as nothing at all. A ticket is the
 // one artefact a person actually points a camera at, so the mark on it has to be
-// the real thing — ISO/IEC 18004, the same standard every phone camera decodes.
+// the real thing - ISO/IEC 18004, the same standard every phone camera decodes.
 //
 // Why write it rather than install `qrcode`:
 //   - It is ~200 lines of a fully specified standard, and it is verifiable: the
@@ -16,7 +16,7 @@
 //
 // Why level H (30% recovery) and not the smaller, denser levels: the ticket
 // punches a brand badge through the middle of the mark. H is what buys back the
-// modules that badge covers — see components/ticket/ticket-qr.tsx, which sizes
+// modules that badge covers - see components/ticket/ticket-qr.tsx, which sizes
 // the badge against the budget H gives it.
 //
 // Only versions 1–10 are supported, which at level H tops out at 119 bytes. A
@@ -48,7 +48,7 @@ const BLOCKS_H: readonly (readonly [number, number, number, number, number])[] =
 
 /** Centre coordinates of the alignment patterns, per version. */
 const ALIGN: readonly (readonly number[])[] = [
-  [], //  v1 — none
+  [], //  v1 - none
   [6, 18], //  v2
   [6, 22], //  v3
   [6, 26], //  v4
@@ -95,7 +95,7 @@ function generatorPoly(degree: number) {
   return poly;
 }
 
-/** The Reed-Solomon remainder — i.e. the error-correction codewords. */
+/** The Reed-Solomon remainder - i.e. the error-correction codewords. */
 function eccFor(data: readonly number[], ecLen: number) {
   const gen = generatorPoly(ecLen);
   const rem = new Array<number>(ecLen).fill(0);
@@ -156,7 +156,7 @@ function encodeData(bytes: Uint8Array, version: number) {
   return words;
 }
 
-/** Split into blocks, add ECC to each, then interleave — as the spec requires. */
+/** Split into blocks, add ECC to each, then interleave - as the spec requires. */
 function interleave(data: readonly number[], version: number) {
   const [ecLen, b1, d1, b2, d2] = BLOCKS_H[version - 1];
   const blockCount = b1 + b2;
@@ -350,7 +350,7 @@ class Builder {
     const m = this.modules;
     let score = 0;
 
-    // Rule 1 — runs of five or more same-coloured modules in a line.
+    // Rule 1 - runs of five or more same-coloured modules in a line.
     const runs = (get: (a: number, b: number) => boolean) => {
       for (let a = 0; a < n; a++) {
         let run = 1;
@@ -368,7 +368,7 @@ class Builder {
     runs((y, x) => m[y][x]);
     runs((x, y) => m[y][x]);
 
-    // Rule 2 — every 2×2 block of one colour.
+    // Rule 2 - every 2×2 block of one colour.
     for (let y = 0; y < n - 1; y++) {
       for (let x = 0; x < n - 1; x++) {
         const c = m[y][x];
@@ -378,7 +378,7 @@ class Builder {
       }
     }
 
-    // Rule 3 — the finder-lookalike 1:1:3:1:1 pattern with four light modules
+    // Rule 3 - the finder-lookalike 1:1:3:1:1 pattern with four light modules
     // on either side, which is what actually confuses a scanner.
     const FINDER = [true, false, true, true, true, false, true];
     const LIGHT4 = [false, false, false, false];
@@ -401,7 +401,7 @@ class Builder {
       }
     }
 
-    // Rule 4 — deviation from a 50/50 dark ratio.
+    // Rule 4 - deviation from a 50/50 dark ratio.
     let dark = 0;
     for (const row of m) for (const c of row) if (c) dark++;
     const percent = (dark * 100) / (n * n);
@@ -412,7 +412,7 @@ class Builder {
 }
 
 /**
- * Encode `text` and return the module grid — `true` is a dark module.
+ * Encode `text` and return the module grid - `true` is a dark module.
  *
  * The grid carries NO quiet zone. That is the renderer's job, and it is not
  * optional: without four light modules of margin the mark is undecodable no
@@ -440,7 +440,7 @@ export function qrMatrix(text: string): boolean[][] {
     }
   }
 
-  // Unreachable — the loop always runs — but it is what makes the return type
+  // Unreachable - the loop always runs - but it is what makes the return type
   // honest without a non-null assertion.
   if (!best) throw new Error("QR: no mask produced a matrix");
   return best;

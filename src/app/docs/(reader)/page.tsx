@@ -4,7 +4,7 @@ import { requireDocsReader } from "@/lib/docs-guard";
 export const dynamic = "force-dynamic";
 
 // The docs index. Guides and brand assets are for anybody with a door; the API
-// reference is only shown to somebody who could hold a key — see lib/docs-guard.
+// reference is only shown to somebody who could hold a key - see lib/docs-guard.
 
 export default async function DocsIndexPage({
   searchParams,
@@ -49,13 +49,13 @@ export default async function DocsIndexPage({
         <h1 className="display mt-3 text-4xl sm:text-5xl">Docs</h1>
         <p className="mt-4 text-sm text-muted">
           Everything RNL staff and partner crew need to run a show on this
-          platform. Not public — don&apos;t forward these links.
+          platform. Not public - don&apos;t forward these links.
         </p>
       </header>
 
       {keysNotice ? (
         <p className="mt-8 border border-line bg-surface px-4 py-3 text-sm text-muted">
-          The Ticket API reference is for people who can mint an API key — a
+          The Ticket API reference is for people who can mint an API key - a
           manager of an organisation on the platform. Everything else here is
           open to you.
         </p>

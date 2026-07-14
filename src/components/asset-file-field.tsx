@@ -6,13 +6,13 @@ import { formatBytes } from "@/lib/format";
 /**
  * The file picker for a brand asset.
  *
- * Not UploadField: that one is for pictures — it previews an image, it posts to
+ * Not UploadField: that one is for pictures - it previews an image, it posts to
  * /api/uploads, and what it writes into the form is a URL. A brand asset may be a
  * 20 MB PDF that has no URL at all (an INTERNAL one is never served from a path),
  * so what this writes into the form is the four facts the action needs to file it:
  * where it was stored, what it was called, what it is, and how big.
  *
- * All four are re-checked server-side — see createBrandAsset in actions/docs.ts.
+ * All four are re-checked server-side - see createBrandAsset in actions/docs.ts.
  * They are in the form because the file was uploaded before the form was
  * submitted, not because they are trusted.
  */
@@ -62,7 +62,7 @@ export function AssetFileField({
         size: data.size ?? 0,
       });
     } catch {
-      setError("That didn't upload — check your connection and try again.");
+      setError("That didn't upload - check your connection and try again.");
     } finally {
       setBusy(false);
     }

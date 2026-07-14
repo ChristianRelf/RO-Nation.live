@@ -3,7 +3,7 @@ import { LegalDoc, robloxNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Roblox Integration — Privacy Policy",
+  title: "Roblox Integration - Privacy Policy",
   description:
     "What data RO. Nation LIVE receives from Roblox when you sign in, why we hold it, and how to have it deleted.",
 };
@@ -21,7 +21,7 @@ const sections = [
     body: [
       "We use Roblox's official OAuth 2.0 sign-in with the 'openid' and 'profile' scopes. Roblox sends us only your basic public profile: your Roblox user ID, your username, your display name, your avatar image, and a link to your profile.",
       "We never see or receive your Roblox password. We do not receive your email address, your date of birth, your friends list, your messages, your Robux balance, or any other account details.",
-      "We cannot act on your behalf on Roblox. The sign-in is read-only identification — it gives us no ability to change anything on your Roblox account.",
+      "We cannot act on your behalf on Roblox. The sign-in is read-only identification - it gives us no ability to change anything on your Roblox account.",
     ],
   },
   {
@@ -29,8 +29,8 @@ const sections = [
     body: [
       "Account: your Roblox user ID, username, display name and avatar. We store these so we can create your account here, show you your tickets, and greet you by name.",
       "Tickets: which event a ticket is for, its unique ticket code, and timestamps for when you reserved it, accepted the ticket terms, activated it, and were checked in at the door.",
-      "Applications: if you apply for a role, whatever you type into the application form — such as your Roblox username, Discord handle, timezone, portfolio link and message.",
-      "Event access lists: our staff maintain a VIP list and a blacklist of Roblox players. If a member of staff adds you to one of these, we store your Roblox user ID, username, display name and avatar, the labels applied to you, and the reason recorded by the staff member. This information is looked up from Roblox's public user and thumbnail APIs — it does not require you to have signed in here.",
+      "Applications: if you apply for a role, whatever you type into the application form - such as your Roblox username, Discord handle, timezone, portfolio link and message.",
+      "Event access lists: our staff maintain a VIP list and a blacklist of Roblox players. If a member of staff adds you to one of these, we store your Roblox user ID, username, display name and avatar, the labels applied to you, and the reason recorded by the staff member. This information is looked up from Roblox's public user and thumbnail APIs - it does not require you to have signed in here.",
       "We do not collect payment information. All of our tickets are free.",
     ],
   },
@@ -85,7 +85,7 @@ const sections = [
 export default function RobloxPrivacyPage() {
   return (
     <LegalDoc
-      title="Roblox Integration — Privacy Policy"
+      title="Roblox Integration - Privacy Policy"
       updated="12 July 2026"
       currentHref="/legal/roblox/privacy"
       nav={robloxNav}

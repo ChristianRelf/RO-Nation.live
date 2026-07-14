@@ -9,7 +9,7 @@ import { DoorCheck } from "@/components/ticket/door-check";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Door" };
 
-// A partner's door. Every member of their crew can work it — including read-only
+// A partner's door. Every member of their crew can work it - including read-only
 // STAFF, deliberately: working the door IS that role's job, and admitting somebody
 // is not editing the line-up. See the note in app/actions/door.ts.
 
@@ -43,7 +43,7 @@ export default async function PartnerDoorPage({
         <h1 className="display mt-3 text-5xl">Door</h1>
         <p className="mt-2 max-w-xl text-sm text-muted">
           Check a ticket and check somebody in. Scan the barcode or the QR with a
-          USB scanner, or type the code — it&apos;s the same check the game makes
+          USB scanner, or type the code - it&apos;s the same check the game makes
           at the door.
         </p>
       </div>

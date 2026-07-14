@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Add-to-list form. The Roblox user is picked from a live lookup rather than
- * typed free-hand, so an entry can't end up pinned to a misspelled name — the
+ * typed free-hand, so an entry can't end up pinned to a misspelled name - the
  * server re-resolves the id on submit regardless.
  *
  * `scope` says which org's list this is (see lib/portal-scope.ts). It travels as
@@ -69,14 +69,14 @@ export function RosterAddForm({
           label={isVip ? "Roles" : "Tags"}
           hint={
             isVip
-              ? "e.g. vip+, artist, partner — press Enter after each"
-              : "e.g. exploiting, harassment — press Enter after each"
+              ? "e.g. vip+, artist, partner - press Enter after each"
+              : "e.g. exploiting, harassment - press Enter after each"
           }
         >
           <TagInput tags={tags} onChange={setTags} />
         </Field>
 
-        <Field label="Reason" hint="Required — kept in the history log.">
+        <Field label="Reason" hint="Required - kept in the history log.">
           <textarea
             name="reason"
             required

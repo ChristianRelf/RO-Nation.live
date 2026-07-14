@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  * This MUST redirect rather than render a "no access" screen in place of
  * `children`. In the App Router a page segment renders and is serialised into
  * the RSC payload independently of whether its layout chooses to render
- * `children` — so swapping the UI would still ship the page's data (draft
+ * `children` - so swapping the UI would still ship the page's data (draft
  * events, post bodies) to someone who isn't allowed to see it. redirect()
  * aborts the whole route render, which is the only thing that actually withholds
  * it. The unauthorised messaging lives at /company/access instead.

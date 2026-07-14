@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 // Serves /uploads/* IN DEVELOPMENT ONLY.
 //
 // In production Caddy matches /uploads/* off the volume before the request ever
-// reaches Next (see the Caddyfile), so this handler is dead code there — it
+// reaches Next (see the Caddyfile), so this handler is dead code there - it
 // exists because `npm run dev` has no Caddy in front of it, and without it every
 // image you upload locally 404s.
 //
@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 //   nosniff   the browser must honour the Content-Type below rather than
 //             sniffing the bytes and deciding an image is really HTML.
 //   sandbox   an SVG navigated to directly executes its scripts in the origin it
-//             is served from — which is RNL's. `sandbox` drops it into an opaque
+//             is served from - which is RNL's. `sandbox` drops it into an opaque
 //             origin, so a hostile SVG cannot touch a cookie or call an API.
 
 const TYPES: Record<string, string> = {
@@ -29,14 +29,14 @@ const TYPES: Record<string, string> = {
   ".gif": "image/gif",
   ".webp": "image/webp",
   ".svg": "image/svg+xml",
-  // Public brand assets. Caddy already serves these in production — it types by
-  // extension off the volume — so without this line they 404 in dev only, which
+  // Public brand assets. Caddy already serves these in production - it types by
+  // extension off the volume - so without this line they 404 in dev only, which
   // is exactly the kind of difference that gets found on the day of a show.
   //
   // Note the sandbox CSP below applies here too: Chrome will not run its PDF
   // viewer inside a sandboxed document, so a public PDF downloads rather than
   // previewing. That is a fine outcome for a brand guideline, and the header is
-  // not negotiable — it is what stops a hostile SVG on this same volume executing
+  // not negotiable - it is what stops a hostile SVG on this same volume executing
   // on RNL's origin.
   ".pdf": "application/pdf",
 };

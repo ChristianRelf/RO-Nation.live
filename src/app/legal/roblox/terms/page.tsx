@@ -3,7 +3,7 @@ import { LegalDoc, robloxNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Roblox Integration — Terms of Service",
+  title: "Roblox Integration - Terms of Service",
   description:
     "The terms that govern signing in with Roblox and using RO. Nation LIVE tickets and events.",
 };
@@ -26,7 +26,7 @@ const sections = [
   {
     heading: "Signing in",
     body: [
-      "We use Roblox's official OAuth 2.0 sign-in. We never ask for, receive, or store your Roblox password, and we will never ask you for it — anyone who does is not us.",
+      "We use Roblox's official OAuth 2.0 sign-in. We never ask for, receive, or store your Roblox password, and we will never ask you for it - anyone who does is not us.",
       "You must sign in with your own Roblox account. Do not use someone else's account, and do not let someone else use yours to obtain a ticket.",
       "You are responsible for keeping your Roblox account secure. Anything done through a signed-in session is treated as done by you.",
     ],
@@ -43,7 +43,7 @@ const sections = [
     heading: "Event access and removal",
     body: [
       "We maintain a VIP list and a blacklist of Roblox players in order to run our events safely.",
-      "We may refuse entry to, remove from an event, or bar any player who breaks the Roblox Community Standards or our Code of Conduct — including harassment, exploiting, disruption, or attempting to circumvent ticketing.",
+      "We may refuse entry to, remove from an event, or bar any player who breaks the Roblox Community Standards or our Code of Conduct - including harassment, exploiting, disruption, or attempting to circumvent ticketing.",
       "If you believe you have been barred in error, contact us and we will review it.",
     ],
   },
@@ -85,7 +85,7 @@ const sections = [
 export default function RobloxTermsPage() {
   return (
     <LegalDoc
-      title="Roblox Integration — Terms of Service"
+      title="Roblox Integration - Terms of Service"
       updated="12 July 2026"
       currentHref="/legal/roblox/terms"
       nav={robloxNav}

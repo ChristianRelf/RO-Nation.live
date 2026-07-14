@@ -22,7 +22,7 @@ export default async function TicketDetailPage({
 
   // Found by ID, not by code.
   //
-  // The code is the thing this page WITHHOLDS until the holder activates — so it
+  // The code is the thing this page WITHHOLDS until the holder activates - so it
   // cannot also be the thing in the address bar. Addressing the ticket by its own
   // opaque id is what makes the seal real rather than decorative: before you
   // activate, the code exists nowhere on the page, nowhere in the URL, and

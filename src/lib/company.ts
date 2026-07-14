@@ -6,18 +6,18 @@ import { getGroupMembership, type GroupMembership } from "./roblox-group";
 
 // Who can use the Company (/company): anyone signed in with Roblox who holds
 // rank COMPANY_MIN_RANK or above in RNL's group. This is the ONLY door onto
-// ronation.live's own content — events, blog, surveys, careers, applications.
+// ronation.live's own content - events, blog, surveys, careers, applications.
 //
 // It replaced a shared username+password admin login. That was one secret, held
 // by several people, that rotated never and told the audit log nothing about who
 // had actually pressed the button. A rank is per-person, revoked by demotion,
 // and every write is now attributable to a Roblox account.
 //
-// Rank is read from Roblox (briefly cached), never from the session cookie — so
+// Rank is read from Roblox (briefly cached), never from the session cookie - so
 // a demotion takes effect on its own, without the person having to sign out.
 //
 // This deliberately mirrors lib/shasha.ts. Two gates, same shape, one place to
-// learn — rather than a second, differently-shaped auth system.
+// learn - rather than a second, differently-shaped auth system.
 
 export type CompanyUser = UserSession & {
   rank: number;
@@ -55,7 +55,7 @@ export async function getCompanyUser(): Promise<CompanyUser | null> {
 
 /**
  * Guard for Company pages and server actions. Every guarded page must call this
- * itself before reading data — see the note on the page guards in lib/session.ts
+ * itself before reading data - see the note on the page guards in lib/session.ts
  * for why a layout guard alone leaks the page's RSC payload.
  */
 export async function requireCompanyUser(): Promise<CompanyUser> {

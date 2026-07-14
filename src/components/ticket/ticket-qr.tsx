@@ -1,13 +1,13 @@
 import { qrMatrix } from "@/lib/qr";
 
-// The entry mark on a ticket. A REAL QR code — point a phone at it and it opens
+// The entry mark on a ticket. A REAL QR code - point a phone at it and it opens
 // the ticket. The thing this replaced was a hash sprayed into a grid: it looked
 // like a QR and scanned as nothing.
 //
 // Two rules here are not style, they are the difference between a mark that
 // works and one that only photographs well:
 //
-//   1. DARK INK ON CREAM PAPER, always — never the brand accent. Decoders need
+//   1. DARK INK ON CREAM PAPER, always - never the brand accent. Decoders need
 //      contrast, and a brand accent is not required to be dark: Sleep Token's
 //      is dim gold, which on their near-black site would be a gold-on-black QR
 //      that no phone can read. `--paper-ink` on `--paper` is near-black on cream
@@ -21,11 +21,11 @@ import { qrMatrix } from "@/lib/qr";
 // Rendering is one <path> for every data module, with corners rounded only where
 // they are actually exposed, so runs of modules melt into rounded ribbons instead
 // of reading as a bag of loose dots. Pure, synchronous, no dependency, no canvas
-// — it renders inside a server component, several to a page.
+// - it renders inside a server component, several to a page.
 
 const QUIET = 4;
 
-/** Trim float noise out of the path data — this string ships to every client. */
+/** Trim float noise out of the path data - this string ships to every client. */
 const f = (v: number) => Number(v.toFixed(3)).toString();
 
 /** A unit cell, rounded only on the corners given a radius. */
@@ -63,7 +63,7 @@ function Eye({ x, y, ink, paper }: { x: number; y: number; ink: string; paper: s
 }
 
 export function TicketQR({
-  /** What the QR actually encodes — the ticket's own URL. */
+  /** What the QR actually encodes - the ticket's own URL. */
   value,
   size = 200,
   /** The letters punched into the centre badge. A partner's ticket carries theirs. */
@@ -85,7 +85,7 @@ export function TicketQR({
   // back. This is measured, not assumed: blanking a centred hole and decoding,
   // a 37×37 mark survives up to a 16-module hole (19% of its area) and fails at
   // 17. A badge of ~20% of the width, plus a one-module gutter, is a hole of
-  // ~7% — a 3× margin on the point where it breaks, which is the room needed for
+  // ~7% - a 3× margin on the point where it breaks, which is the room needed for
   // a real camera at a real angle in a dark room.
   const badge = Math.round(n * 0.2) | 1; // odd, so it centres on a module
   const hole = badge + 2;
@@ -98,7 +98,7 @@ export function TicketQR({
   const isHole = (x: number, y: number) =>
     x >= holeStart && x < holeEnd && y >= holeStart && y < holeEnd;
 
-  // "Painted" — a module that this loop actually draws. Finder and badge modules
+  // "Painted" - a module that this loop actually draws. Finder and badge modules
   // are excluded, so neighbouring cells round against them as if they were blank,
   // which is exactly how they look.
   const on = (x: number, y: number) =>
@@ -119,7 +119,7 @@ export function TicketQR({
       const down = on(x, y + 1);
       const left = on(x - 1, y);
       const right = on(x + 1, y);
-      // A corner is exposed — and so rounded — only where both of its edges are.
+      // A corner is exposed - and so rounded - only where both of its edges are.
       parts.push(
         cell(
           x + QUIET,
@@ -147,7 +147,7 @@ export function TicketQR({
       aria-label={`QR code for ticket ${mark}`}
       shapeRendering="geometricPrecision"
     >
-      {/* The paper. This rect IS the quiet zone — it must reach the viewBox edge. */}
+      {/* The paper. This rect IS the quiet zone - it must reach the viewBox edge. */}
       <rect width={span} height={span} fill={paper} />
 
       <path d={parts.join("")} fill={ink} />

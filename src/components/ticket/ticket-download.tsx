@@ -4,7 +4,7 @@ import { useState } from "react";
 import { barcodeBars } from "@/lib/tickets/barcode";
 import { qrMatrix } from "@/lib/qr";
 
-// "Download ticket" — draws the ticket to a canvas and hands back a PNG.
+// "Download ticket" - draws the ticket to a canvas and hands back a PNG.
 //
 // It is drawn, not screenshotted. The tempting approach is to serialise the DOM
 // into an SVG <foreignObject> and rasterise that, and it half-works until it
@@ -15,8 +15,8 @@ import { qrMatrix } from "@/lib/qr";
 // everybody and can be made any size we like (it renders at 2×, so it survives
 // being opened on a phone and pinched).
 //
-// The two marks come from the SAME encoders the on-screen ticket uses —
-// lib/tickets/barcode.ts and lib/qr.ts — so the downloaded ticket physically
+// The two marks come from the SAME encoders the on-screen ticket uses -
+// lib/tickets/barcode.ts and lib/qr.ts - so the downloaded ticket physically
 // cannot encode a different code from the one on the page. A second, "just for
 // the PNG" barcode implementation is how you end up with a printout that scans to
 // somebody else's ticket.
@@ -69,7 +69,7 @@ export type DownloadTicket = {
   brandLogo: string | null;
   /** The ticket's opaque reference. */
   reference: string;
-  /** The security seal — see lib/tickets/seal.ts. */
+  /** The security seal - see lib/tickets/seal.ts. */
   seal: string;
   ticketUrl: string;
 };
@@ -79,7 +79,7 @@ export type DownloadTicket = {
  *
  * It resolves to null on failure rather than rejecting, and the caller falls back
  * to the lettered badge. A logo that 404s must cost you the logo, not the whole
- * download — the point of the button is to hand somebody their ticket.
+ * download - the point of the button is to hand somebody their ticket.
  *
  * crossOrigin is set because an uploaded logo could be served from another origin
  * one day, and a canvas that has drawn a cross-origin image without CORS is
@@ -103,7 +103,7 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
     setBusy(true);
     try {
       // The display face is loaded by next/font. Without waiting, the first click
-      // can rasterise the fallback — the ticket renders in Arial and looks like a
+      // can rasterise the fallback - the ticket renders in Arial and looks like a
       // different product.
       if ("fonts" in document) await document.fonts.ready;
 
@@ -192,7 +192,7 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
       ctx.fillRect(RAIL, 0, W - RAIL - STUB, barH);
 
       if (logo) {
-        // Fixed height, width from the logo's own aspect ratio — so a wide
+        // Fixed height, width from the logo's own aspect ratio - so a wide
         // wordmark and a square one both sit on the bar without being squashed.
         const logoH = 22;
         const logoW = (logo.width / logo.height) * logoH;
@@ -255,7 +255,7 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
         ctx.fillText(fit(ctx, value, (W - RAIL - STUB - 60) / 3), x, 248);
       });
 
-      // The reference and the seal, printed together and low — the same pair the
+      // The reference and the seal, printed together and low - the same pair the
       // on-screen ticket carries, in the same place.
       ctx.globalAlpha = 0.15;
       ctx.fillRect(bx, 282, W - RAIL - STUB - 48, 1);
@@ -293,7 +293,7 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
       const qx = W - STUB + (STUB - qrSize) / 2;
       const qy = 58;
 
-      // The quiet zone is part of the mark, and it is FOUR MODULES — not "a bit of
+      // The quiet zone is part of the mark, and it is FOUR MODULES - not "a bit of
       // padding that looks right". A QR butted up against other ink does not decode,
       // and the card is cream anyway, so this rect only matters at the edges.
       const quiet = cell * 4;

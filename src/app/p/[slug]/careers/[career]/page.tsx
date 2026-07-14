@@ -10,7 +10,7 @@ import { ApplyForm } from "@/components/apply-form";
 
 export const dynamic = "force-dynamic";
 
-// [career], not [slug] — the partner already owns [slug] one level up, and Next
+// [career], not [slug] - the partner already owns [slug] one level up, and Next
 // forbids two names at the same position.
 
 type Params = {
@@ -81,7 +81,7 @@ export default async function PartnerCareerPage({
               <ul className="mt-5 space-y-3">
                 {requirements.map((r, i) => (
                   <li key={i} className="flex gap-3 text-muted">
-                    <span className="mt-1 shrink-0 text-accent">—</span>
+                    <span className="mt-1 shrink-0 text-accent">-</span>
                     <span className="leading-relaxed">{r}</span>
                   </li>
                 ))}

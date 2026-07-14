@@ -1,6 +1,6 @@
 // Ticket tiers and what they cost.
 //
-// Deliberately PURE — no prisma, no env, no "server-only". The checkout page
+// Deliberately PURE - no prisma, no env, no "server-only". The checkout page
 // (server) and the tier picker (client) both need to agree on what a tier costs,
 // whether it is sold out and whether it is purchasable at all, and the only way
 // two renderers cannot disagree is if they run the same code.
@@ -24,7 +24,7 @@ export function formatRobux(amount: number) {
   return `${amount.toLocaleString("en-GB")} R$`;
 }
 
-/** "Free" or "250 R$" — the one place a price becomes words. */
+/** "Free" or "250 R$" - the one place a price becomes words. */
 export function priceLabel(priceRobux: number) {
   return priceRobux > 0 ? formatRobux(priceRobux) : "Free";
 }
@@ -34,13 +34,13 @@ export function priceLabel(priceRobux: number) {
  *
  * Two locks, and BOTH must be open:
  *
- *   1. `masterSwitch` — ROBUX_TICKETS_ENABLED, off by default. Robux cannot be
+ *   1. `masterSwitch` - ROBUX_TICKETS_ENABLED, off by default. Robux cannot be
  *      charged from a website; a real payment happens inside the experience via
  *      a Developer Product and ProcessReceipt. Until that pipeline exists, no
  *      paid ticket can be honoured, so none may be issued. This is the switch
  *      that stays off.
  *
- *   2. `partner.robuxTickets` — which partners are even allowed to price in
+ *   2. `partner.robuxTickets` - which partners are even allowed to price in
  *      Robux once (1) is open. A slug in the registry grants nothing on its own;
  *      this is the grant. RNL's own events (partner === null) are governed by
  *      the master switch alone.
@@ -96,7 +96,7 @@ type TierRow = {
   active: boolean;
 };
 
-/** The tiers on sale, in display order — or the implicit one if there are none. */
+/** The tiers on sale, in display order - or the implicit one if there are none. */
 export function effectiveTiers(rows: readonly TierRow[]): Tier[] {
   const live = rows
     .filter((t) => t.active)
@@ -177,7 +177,7 @@ export function anyAvailable(offers: readonly TierOffer[]) {
   return offers.some((o) => !o.blockedReason);
 }
 
-/** "Free", "From 250 R$", "250 R$" — the price line on an event card. */
+/** "Free", "From 250 R$", "250 R$" - the price line on an event card. */
 export function fromPriceLabel(offers: readonly TierOffer[]) {
   const sellable = offers.filter((o) => !o.soldOut);
   const pool = sellable.length ? sellable : offers;
@@ -189,5 +189,5 @@ export function fromPriceLabel(offers: readonly TierOffer[]) {
 
   if (low === 0 && high === 0) return "Free";
   if (low === high) return formatRobux(low);
-  return low === 0 ? "Free — paid tiers" : `From ${formatRobux(low)}`;
+  return low === 0 ? "Free - paid tiers" : `From ${formatRobux(low)}`;
 }

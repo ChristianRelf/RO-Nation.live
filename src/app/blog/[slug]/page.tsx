@@ -9,7 +9,7 @@ import { Prose } from "@/components/prose";
 export const dynamic = "force-dynamic";
 
 // null = RNL's own. Scoped, so a partner's post is not reachable at
-// ronation.live/blog/<slug> even when the slug is known — drafts and archived
+// ronation.live/blog/<slug> even when the slug is known - drafts and archived
 // posts are not public either, whatever URL you have.
 async function getPost(slug: string) {
   return getPostBySlug(null, slug);

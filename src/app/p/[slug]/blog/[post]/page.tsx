@@ -77,7 +77,7 @@ export default async function PartnerPostPage({ params }: Params) {
       ) : null}
 
       {/* Was toLines(), which split on EVERY newline and turned one soft-wrapped
-          paragraph into a stack of separate <p>s — while RNL's blog split on blank
+          paragraph into a stack of separate <p>s - while RNL's blog split on blank
           lines and got it right. Both now go through the same renderer, so the two
           sites cannot disagree about what a post looks like again. */}
       <Prose content={post.body} className="mt-10 max-w-2xl" />

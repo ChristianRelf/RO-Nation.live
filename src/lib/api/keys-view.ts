@@ -7,7 +7,7 @@ import type { KeyRow } from "@/components/portal/api-keys";
 // Load an org's keys for the portal.
 //
 // Shared by /shasha/keys and /<slug>/keys, which are the same page pointed at a
-// different org — exactly as the roster pages already are.
+// different org - exactly as the roster pages already are.
 //
 // It selects the fields the panel renders and, pointedly, NOT `hash`. There is
 // nothing to be learned from a SHA-256 of a key and no reason for one to travel to
@@ -36,7 +36,7 @@ export async function loadApiKeys(scopeId: string): Promise<KeyRow[]> {
   // Dates are formatted HERE, on the server, and cross the boundary as strings.
   // A Date sent to a client component is re-formatted in the visitor's own locale
   // and timezone, so two people looking at the same key would read two different
-  // "last used" times — and the one who is wrong has no way to know it.
+  // "last used" times - and the one who is wrong has no way to know it.
   return keys.map((k) => ({
     ...k,
     createdAt: formatDateTime(k.createdAt),

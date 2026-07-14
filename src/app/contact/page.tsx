@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch with RO. Nation LIVE — bookings, partnerships, press and support.",
+    "Get in touch with RO. Nation LIVE - bookings, partnerships, press and support.",
 };
 
 const channels = [
@@ -33,7 +33,7 @@ const channels = [
 const faqs = [
   {
     q: "Are tickets really free?",
-    a: "Yes. Every RO. Nation LIVE ticket is free — you just need a Roblox account to reserve one so we can verify you at the door.",
+    a: "Yes. Every RO. Nation LIVE ticket is free - you just need a Roblox account to reserve one so we can verify you at the door.",
   },
   {
     q: "Can you produce an event for my group?",
@@ -44,7 +44,7 @@ const faqs = [
     a: "Check the Careers page for open roles and apply directly. We open new positions before every season.",
   },
   {
-    q: "I reserved a ticket but can't get in — help?",
+    q: "I reserved a ticket but can't get in - help?",
     a: "Make sure you're signed in with the same Roblox account you reserved with. Still stuck? Drop a message in the Discord support channel.",
   },
 ];
@@ -110,8 +110,8 @@ export default function ContactPage() {
             Book RO. Nation LIVE
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-black/70">
-            Tell us what you&apos;re planning — a launch party, a tournament, a
-            full festival — and we&apos;ll make it happen.
+            Tell us what you&apos;re planning - a launch party, a tournament, a
+            full festival - and we&apos;ll make it happen.
           </p>
           <a
             href={site.socials.discord}

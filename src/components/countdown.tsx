@@ -28,7 +28,7 @@ export function Countdown({
   className,
   compact,
 }: {
-  /** ISO string — a Date can't cross the server/client boundary. */
+  /** ISO string - a Date can't cross the server/client boundary. */
   target: string;
   className?: string;
   compact?: boolean;

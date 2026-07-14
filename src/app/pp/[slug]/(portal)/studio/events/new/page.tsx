@@ -19,7 +19,7 @@ export default async function NewPartnerShowPage({
   params: { slug: string };
   searchParams: { error?: string };
 }) {
-  // Managers only. The page guards itself rather than leaning on the layout —
+  // Managers only. The page guards itself rather than leaning on the layout -
   // see the note on requirePartnerUser() in lib/partners/guard.ts.
   const { partner } = await requirePartnerManager(params.slug);
   assertPartnerFeature(partner, "events");

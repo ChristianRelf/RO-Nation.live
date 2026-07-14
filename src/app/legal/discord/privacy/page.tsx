@@ -3,7 +3,7 @@ import { LegalDoc, discordNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Discord Integration — Privacy Policy",
+  title: "Discord Integration - Privacy Policy",
   description:
     "What data RO. Nation LIVE receives from Discord when staff sign in to the SHASHA portal, and how it is used.",
 };
@@ -13,7 +13,7 @@ const sections = [
     heading: "Who we are, and what this covers",
     body: [
       `${site.name} is a Roblox event management group. This policy covers our Discord integration specifically: the "Sign in with Discord" button on our staff portal.`,
-      "The Discord sign-in exists for one purpose — to identify members of our staff so they can access an internal tool. It is not a public login, and it is not used anywhere else on our website.",
+      "The Discord sign-in exists for one purpose - to identify members of our staff so they can access an internal tool. It is not a public login, and it is not used anywhere else on our website.",
       "We are an independent group. We are not affiliated with, endorsed by, or sponsored by Discord Inc. Discord's own Privacy Policy governs your use of Discord itself.",
     ],
   },
@@ -75,7 +75,7 @@ const sections = [
 export default function DiscordPrivacyPage() {
   return (
     <LegalDoc
-      title="Discord Integration — Privacy Policy"
+      title="Discord Integration - Privacy Policy"
       updated="12 July 2026"
       currentHref="/legal/discord/privacy"
       nav={discordNav}

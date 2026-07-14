@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Docs" };
 
 // The authoring side of portal.ronation.live/docs. Written here, on the main
-// site, by RNL — read there, on the portal, by staff and partner crew.
+// site, by RNL - read there, on the portal, by staff and partner crew.
 
 export default async function CompanyDocsPage() {
   await requireCompanyUser();
@@ -24,7 +24,7 @@ export default async function CompanyDocsPage() {
     <div>
       <AdminHeader
         title="Docs"
-        subtitle="The backstage handbook. Read on portal.ronation.live/docs by anybody with a portal door — including read-only staff."
+        subtitle="The backstage handbook. Read on portal.ronation.live/docs by anybody with a portal door - including read-only staff."
       />
 
       <div className="grid gap-4 sm:grid-cols-2">

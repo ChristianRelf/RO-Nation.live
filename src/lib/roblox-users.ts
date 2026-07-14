@@ -100,7 +100,7 @@ export async function resolveRobloxUser(
 
 /**
  * Typeahead search by partial username. Roblox's keyword search is rate-limited
- * and occasionally unavailable, so we fall back to an exact-username lookup —
+ * and occasionally unavailable, so we fall back to an exact-username lookup -
  * meaning the picker still works even when search is down.
  */
 export async function searchRobloxUsers(
@@ -115,7 +115,7 @@ export async function searchRobloxUsers(
     return exact ? [exact] : [];
   }
 
-  // Roblox only accepts a limit of 10/25/50/100 — ask for 10 and trim.
+  // Roblox only accepts a limit of 10/25/50/100 - ask for 10 and trim.
   const results = await getJson<{
     data: { id: number; name: string; displayName: string }[];
   }>(`${USERS_API}/users/search?keyword=${encodeURIComponent(query)}&limit=10`);

@@ -4,7 +4,7 @@ import { PortalFooter } from "@/components/portal-footer";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Sign in — RO. Nation LIVE",
+  title: "Sign in - RO. Nation LIVE",
   robots: { index: false, follow: false },
 };
 
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 //
 // Nobody should ever see it in the normal run of things: the sign-in flow passes
 // straight through this host in two redirects, and if it is working you are gone
-// before anything renders. It exists for the times it doesn't work — a cancelled
-// Roblox prompt, an expired link — because those failures happen HERE, and the
+// before anything renders. It exists for the times it doesn't work - a cancelled
+// Roblox prompt, an expired link - because those failures happen HERE, and the
 // /shasha and /docs login pages this app would otherwise send you back to do not
 // exist on this host.
 //
@@ -39,7 +39,7 @@ export default function AuthorisePage({
   const message = searchParams.error ? ERRORS[searchParams.error] : null;
 
   // Where they were headed when it went wrong, so there is a way back. Validated
-  // against the same allowlist the ticket mint uses — this ends up in an href, and
+  // against the same allowlist the ticket mint uses - this ends up in an href, and
   // an unchecked `to` would make this page an open redirect that lives on the
   // sign-in host, which is precisely where a phishing link would want to live.
   const back =
@@ -77,7 +77,7 @@ export default function AuthorisePage({
               <>
                 <p className="mt-4 text-sm text-muted">
                   This is where signing in happens for RO. Nation LIVE. There is
-                  nothing to do here — start from the page you actually wanted, and
+                  nothing to do here - start from the page you actually wanted, and
                   it will send you through.
                 </p>
                 <a

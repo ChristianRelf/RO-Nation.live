@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-// useFormState, not React 19's useActionState — this app is on React 18, where
+// useFormState, not React 19's useActionState - this app is on React 18, where
 // that export does not exist. It compiles either way and fails in the browser.
 import { useFormState, useFormStatus } from "react-dom";
 import type { ApiKeyScope } from "@prisma/client";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // The API keys panel, shared by SHASHA and every partner portal.
 //
 // The one thing this screen has to get right is the moment a key is minted. The
-// token exists in exactly one place — the response to the form POST — and after
+// token exists in exactly one place - the response to the form POST - and after
 // this render it is gone forever, because all we keep is a SHA-256 of it. So the
 // reveal is a panel that has to be dismissed, not a line of text in a table that
 // scrolls away while somebody is looking at their other monitor.
@@ -35,7 +35,7 @@ export function ApiKeysPanel({
   scopeLabels,
   allScopes,
 }: {
-  /** The portal id — "shasha", or a partner slug. Bound into the actions. */
+  /** The portal id - "shasha", or a partner slug. Bound into the actions. */
   scopeId: string;
   orgName: string;
   keys: KeyRow[];
@@ -66,7 +66,7 @@ export function ApiKeysPanel({
           <div>
             <h2 className="display text-xl">Keys</h2>
             <p className="text-sm text-muted">
-              A key lets a Roblox experience talk to {orgName}&rsquo;s tickets — and only{" "}
+              A key lets a Roblox experience talk to {orgName}&rsquo;s tickets - and only{" "}
               {orgName}&rsquo;s. It can never see another organisation&rsquo;s shows.
             </p>
           </div>
@@ -89,7 +89,7 @@ export function ApiKeysPanel({
                 name="name"
                 required
                 maxLength={80}
-                placeholder="Main experience — door scanner"
+                placeholder="Main experience - door scanner"
                 className="w-full border border-line bg-bg px-3 py-2 text-sm"
               />
               <span className="block text-xs text-faint">
@@ -186,7 +186,7 @@ function Submit() {
  * The one and only sighting of the token.
  *
  * Deliberately loud, deliberately not dismissible by accident, and deliberately
- * says WHY it will not be shown again — "for security" teaches nobody anything,
+ * says WHY it will not be shown again - "for security" teaches nobody anything,
  * and somebody who understands that we genuinely cannot retrieve it will actually
  * copy it now rather than assume they can come back for it.
  */
@@ -196,11 +196,11 @@ function NewKey({ token, name }: { token: string; name: string }) {
   return (
     <div className="border-2 border-accent bg-accent/5 p-5">
       <p className="text-xs font-bold uppercase tracking-kicker text-accent">
-        {name} — copy it now
+        {name} - copy it now
       </p>
       <p className="mt-2 text-sm text-muted">
         This is the only time this key will ever be shown. We keep a hash of it, not
-        the key, so nobody — including us — can read it back to you. Lose it and you
+        the key, so nobody - including us - can read it back to you. Lose it and you
         mint a new one.
       </p>
 
@@ -223,7 +223,7 @@ function NewKey({ token, name }: { token: string; name: string }) {
       </div>
 
       <p className="mt-3 text-xs text-faint">
-        Put it in your game&rsquo;s server scripts only — never in a LocalScript, and
+        Put it in your game&rsquo;s server scripts only - never in a LocalScript, and
         never in a place anybody can take a copy of. Anyone holding it can do
         everything you ticked.
       </p>
@@ -291,7 +291,7 @@ function KeyCard({
         Minted by {row.createdByName} · {row.createdAt}
         {" · "}
         {/* "Never used" is the useful thing to say about a key somebody is about
-            to delete — it means nothing is pointing at it and it is safe to go. */}
+            to delete - it means nothing is pointing at it and it is safe to go. */}
         {row.lastUsedAt ? `last used ${row.lastUsedAt}` : "never used"}
         {revoked && row.revokedByName ? ` · revoked by ${row.revokedByName}` : ""}
       </p>

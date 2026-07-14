@@ -25,7 +25,7 @@ export default async function PartnerApplicationsPage({
   assertPartnerFeature(partner, "careers");
 
   // Scoped by partnerId, which the application inherited from the role it was
-  // submitted against — so this inbox is only ever this partner's.
+  // submitted against - so this inbox is only ever this partner's.
   const applications = await prisma.application.findMany({
     where: { partnerId: partner.slug },
     orderBy: { createdAt: "desc" },

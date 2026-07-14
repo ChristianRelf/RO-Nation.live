@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Door" };
 
 // The manual door for RNL's own shows.
 //
-// Guarded here AND in the action, because a page guard does not protect a POST —
+// Guarded here AND in the action, because a page guard does not protect a POST -
 // see the note on the page guards in lib/session.ts.
 
 export default async function CompanyDoorPage() {

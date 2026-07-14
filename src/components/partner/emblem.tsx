@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // walking straight past the thing that has to go with it.
 
 /**
- * The partner's logo mark — the small one, for a header or a byline.
+ * The partner's logo mark - the small one, for a header or a byline.
  *
  * Falls back to nothing (not to a broken image, and not to a placeholder box):
  * a partner with no mark has a wordmark instead, and the header renders that. See
@@ -48,11 +48,11 @@ export function PartnerMark({
  *
  * It is a BACKDROP, and the type sits on top of it, so it is deliberately drawn
  * far darker than looks right in isolation. A crest you can comfortably read every
- * line of is a crest that is competing with the headline in front of it — this is
+ * line of is a crest that is competing with the headline in front of it - this is
  * meant to be *glimpsed*, the way a thing is glimpsed in a dark room.
  *
  * `src` is passed in rather than read from the partner, because the partner's
- * editable heroImageUrl overrides the registry's crest — see the hero.
+ * editable heroImageUrl overrides the registry's crest - see the hero.
  */
 export function HeroCrest({ src }: { src: string }) {
   return (
@@ -94,7 +94,7 @@ export function HeroCrest({ src }: { src: string }) {
  * A partner whose name references a real-world act carries one, and on a site that
  * now carries that act's actual marks it is the ONLY thing telling a visitor whose
  * site they are on. So it is rendered at readable size, in readable colour, in the
- * flow of the page — never a tooltip, never 10px grey-on-grey, never behind a
+ * flow of the page - never a tooltip, never 10px grey-on-grey, never behind a
  * "legal" link somebody has to go looking for.
  *
  * If a future redesign finds it inconvenient, that is the disclaimer working.

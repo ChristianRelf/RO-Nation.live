@@ -20,7 +20,7 @@ import { anyAvailable } from "@/lib/tickets/pricing";
 
 export const dynamic = "force-dynamic";
 
-// The dynamic segment is [event], not [slug] — [slug] is already taken by the
+// The dynamic segment is [event], not [slug] - [slug] is already taken by the
 // partner one level up, and Next forbids two different names for the same
 // position in a route. The visitor never sees either: the pretty URL is
 // sleeptokenro.ronation.live/events/<event>.
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 const reserveErrors: Record<string, string> = {
-  soldout: "This show just sold out — no spots left.",
+  soldout: "This show just sold out - no spots left.",
   past: "This show has already taken place.",
   unavailable: "This show isn't available for reservations.",
 };
@@ -77,7 +77,7 @@ export default async function PartnerEventPage({
 
   const offers = await offersForEvent(event);
   const available = anyAvailable(offers);
-  // Nothing on sale, but nothing sold out either — every tier is priced in Robux
+  // Nothing on sale, but nothing sold out either - every tier is priced in Robux
   // and Robux sales are off. That is not "sold out", and saying so would be a lie
   // to anyone still hoping to get in.
   const notOnSale =
@@ -89,7 +89,7 @@ export default async function PartnerEventPage({
 
   return (
     <article>
-      {/* Banner. No key art yet, so the title carries it — over the grid and a
+      {/* Banner. No key art yet, so the title carries it - over the grid and a
           pool of accent, the same CSS-only atmosphere as the home page. */}
       <div className="relative overflow-hidden border-b border-line">
         <div className="hairline-grid pointer-events-none absolute inset-0 opacity-40" />
@@ -225,7 +225,7 @@ export default async function PartnerEventPage({
               ) : hasTicket ? (
                 <div className="space-y-3">
                   <div className="border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
-                    You&apos;re going — ticket{" "}
+                    You&apos;re going - ticket{" "}
                     <span className="font-mono font-semibold">
                       {myTicket!.code}
                     </span>

@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Guides" };
 export default async function DocsGuidesPage() {
   await requireDocsReader();
 
-  // Published only — the filter lives in lib/docs.ts, because it is the one thing
+  // Published only - the filter lives in lib/docs.ts, because it is the one thing
   // standing between an unfinished guide and every reader on the platform.
   const sections = await publishedGuidesBySection();
 

@@ -29,13 +29,13 @@ export function EventForm({
   action: (formData: FormData) => void;
   event?: Event;
   error?: string;
-  /** Where "Cancel" goes — /company and every partner portal share this form. */
+  /** Where "Cancel" goes - /company and every partner portal share this form. */
   cancelHref?: string;
   /**
    * The partner whose show this is, when the form is used in a partner portal.
    * Omitted by RNL's own tools, whose actions don't read it.
    *
-   * Safe to carry in the body: the action does not trust it for authorization —
+   * Safe to carry in the body: the action does not trust it for authorization -
    * it re-reads the caller's grant on that partner from the database. See
    * app/actions/partner-events.ts.
    */
@@ -98,7 +98,7 @@ export function EventForm({
             <input
               name="venue"
               defaultValue={event?.venue ?? ""}
-              placeholder="The Vault — Main Stage"
+              placeholder="The Vault - Main Stage"
               className={inputClass}
             />
           </div>
@@ -176,7 +176,7 @@ export function EventForm({
       <div className="card space-y-5 p-6">
         <h3 className="font-display text-lg">Artwork &amp; visibility</h3>
         {/* `scope` is the partner slug when a partner portal renders this form, and
-            undefined in /company — which is exactly what the upload route wants to
+            undefined in /company - which is exactly what the upload route wants to
             know. It authorises nothing; the route re-checks it. */}
         <UploadField
           name="thumbnailUrl"

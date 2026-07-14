@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No file." }, { status: 400 });
   }
 
-  // The one thing the client decides here — and it decides which DISK the bytes
+  // The one thing the client decides here - and it decides which DISK the bytes
   // land on, so it is compared against the enum and nothing else. Anything that
   // is not exactly "INTERNAL" is public, which is the safe way round to fail: a
   // typo makes a logo public, not a guideline.
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest) {
 function refuse(saved: { error: string; limit?: number }) {
   const message =
     saved.error === "too-large"
-      ? // The cap depends on what the bytes turned out to be — 25 MB for a PDF,
-        // 5 MB for an image — so name the one that was actually broken.
+      ? // The cap depends on what the bytes turned out to be - 25 MB for a PDF,
+        // 5 MB for an image - so name the one that was actually broken.
         `That file is over ${Math.round((saved.limit ?? MAX_UPLOAD_BYTES) / 1024 / 1024)} MB.`
       : saved.error === "empty"
         ? "That file is empty."
@@ -97,7 +97,7 @@ function refuse(saved: { error: string; limit?: number }) {
 /**
  * What the form needs to file the thing we just stored.
  *
- * These ride back through the browser as hidden inputs, so they are forgeable —
+ * These ride back through the browser as hidden inputs, so they are forgeable -
  * and they are NOT trusted when they return. createBrandAsset re-validates the
  * shape of storagePath, resolves it inside its root, and takes the real size from
  * disk. See app/actions/docs.ts.

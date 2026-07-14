@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Events",
   description:
-    "Upcoming and past RO. Nation LIVE events — shows, showcases, tournaments and festivals inside Roblox.",
+    "Upcoming and past RO. Nation LIVE events - shows, showcases, tournaments and festivals inside Roblox.",
 };
 
 export default async function EventsPage() {

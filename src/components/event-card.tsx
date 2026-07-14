@@ -38,7 +38,7 @@ export function EventCard({
    * The image for a show with no artwork yet.
    *
    * It is a prop, and not simply the constant above, because the default is
-   * RNL-BRANDED — blue, with RNL's wordmark across it. On a partner's site that
+   * RNL-BRANDED - blue, with RNL's wordmark across it. On a partner's site that
    * is not just off-palette, it is another organisation's name printed over their
    * show, and a partner with no posters up yet had a page full of them.
    *

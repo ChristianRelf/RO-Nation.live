@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 // The preview is not a nicety. Markdown is a language where a missing blank line
 // silently changes the output, and the only way a writer finds that out otherwise
 // is by publishing and looking at the live site. It renders through the SAME
-// <Prose> the post itself uses — the same parser, the same styles — so what the
+// <Prose> the post itself uses - the same parser, the same styles - so what the
 // preview shows is what the page will show, rather than an approximation that is
 // right until it isn't.
 //
@@ -68,7 +68,7 @@ export function MarkdownField({
         </div>
       </div>
 
-      {/* The textarea is never unmounted — only hidden. Unmounting it would drop
+      {/* The textarea is never unmounted - only hidden. Unmounting it would drop
           it from the form, and a submit from the preview tab would post an empty
           body. It would also lose the cursor position and the undo history every
           time somebody peeked at the preview. */}

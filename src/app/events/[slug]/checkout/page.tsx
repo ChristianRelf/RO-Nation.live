@@ -21,14 +21,14 @@ export const metadata: Metadata = {
 // runs the reservation (components/ticket/checkout-processing.tsx).
 //
 // Everything below is re-validated even though the previous page already did it.
-// The query string is not evidence of anything — it is just a URL somebody can
-// type — so `?tier=<someone-else's-tier>&agreed=1` has to fail here rather than
+// The query string is not evidence of anything - it is just a URL somebody can
+// type - so `?tier=<someone-else's-tier>&agreed=1` has to fail here rather than
 // be believed. Belt and braces: the reservation action then re-resolves the tier
 // against the event and re-checks the Robux gate a third time, under the row lock.
 //
 // This page is also where a Robux purchase will live. A payment is a round trip
 // through Roblox, not a form submit, so it needs a page of its own to come back
-// to — and that is this one.
+// to - and that is this one.
 
 export default async function CheckoutPage({
   params,
@@ -50,7 +50,7 @@ export default async function CheckoutPage({
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
   // Already holding one? Don't put them through a purchase animation for a ticket
-  // they already have — show them the ticket.
+  // they already have - show them the ticket.
   const existing = await prisma.ticket.findUnique({
     where: { eventId_userId: { eventId: event.id, userId: session.uid } },
   });
@@ -73,7 +73,7 @@ export default async function CheckoutPage({
     redirect(`${reserveHref}?error=tier_soldout`);
   }
   // A priced tier while Robux is off. The reserve step already rendered it locked,
-  // and the action would refuse it anyway — this is the middle of the three walls,
+  // and the action would refuse it anyway - this is the middle of the three walls,
   // and it is the one that keeps a hand-typed URL out of the payment flow that
   // doesn't exist yet.
   if (offer.blockedReason === "locked") {
@@ -82,7 +82,7 @@ export default async function CheckoutPage({
 
   return (
     <div className="relative min-h-[70vh]">
-      {/* The page under the modal. Deliberately quiet — it is a backdrop, and it
+      {/* The page under the modal. Deliberately quiet - it is a backdrop, and it
           is what you would see for the half-second before the dialog paints. */}
       <div className="shell flex min-h-[70vh] flex-col items-center justify-center py-20 text-center">
         <p className="kicker text-accent">Checkout</p>

@@ -8,7 +8,7 @@ import { UploadField } from "@/components/upload-field";
 //
 // The FAQ is the only awkward part: it is a list of pairs of arbitrary length,
 // which flat form fields model badly. So it is edited in React and posted as ONE
-// hidden JSON field — the same trick the survey builder uses for its questions,
+// hidden JSON field - the same trick the survey builder uses for its questions,
 // and the server re-validates it with zod either way (lib/partners/content.ts).
 
 const inputClass =
@@ -159,7 +159,7 @@ export function PartnerContentForm({
           />
           <p className="mt-1.5 text-xs text-faint">
             The quieter line under the body. This is <em>not</em> your legal
-            disclaimer — that one is set by RNL and always shows in your footer.
+            disclaimer - that one is set by RNL and always shows in your footer.
           </p>
         </div>
       </div>

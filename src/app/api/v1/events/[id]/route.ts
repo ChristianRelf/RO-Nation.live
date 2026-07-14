@@ -7,18 +7,18 @@ import { buildOffers, effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pr
 
 export const dynamic = "force-dynamic";
 
-// GET /api/v1/events/<id> — one show, in full: the doors, the room, the tiers.
+// GET /api/v1/events/<id> - one show, in full: the doors, the room, the tiers.
 //
 // Auth: x-api-key: <key>        scope: EVENTS_READ
 //
 // This is what a game server reads before it offers anybody anything. The list
 // endpoint says a show exists; this says what is actually on sale in it, right
-// now, with live counts — which tier ids to pass to /reserve and /purchase, what
+// now, with live counts - which tier ids to pass to /reserve and /purchase, what
 // each costs, and how many are left.
 //
 // `available: false` on a tier means DO NOT PROMPT FOR IT. `blockedReason` says
 // why: "soldout" (the room or the tier is full) or "locked" (it is priced, and
-// Robux sales are off — so nobody can buy it today, and taking somebody's money
+// Robux sales are off - so nobody can buy it today, and taking somebody's money
 // for it would be taking money for a ticket that cannot be issued).
 //
 // The same buildOffers() the website's checkout renders from, so the game and the
@@ -43,7 +43,7 @@ export async function GET(
     include: { tiers: true },
   });
 
-  // Not there, or not this key's org's — one answer for both. A partner has no
+  // Not there, or not this key's org's - one answer for both. A partner has no
   // business learning that somebody else's show exists by the shape of the error.
   const missing = NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (!event) return missing;
@@ -57,7 +57,7 @@ export async function GET(
   // both directions: the scope check above already means the only key that can
   // reach this event belongs to the org that owns it, so hiding their own draft
   // from their own crew (who are trying to test the show before it opens) protects
-  // nobody — and the condition it was actually written with only ever fired for the
+  // nobody - and the condition it was actually written with only ever fired for the
   // unscoped root key, which is the one caller that should see everything.
   //
   // Nothing leaks: `status` is in the response, so the caller knows exactly what
@@ -108,7 +108,7 @@ export async function GET(
       partnerId,
     },
     tiers: offers.map((t) => ({
-      // null on the implicit tier — an event nobody configured tiers for is one
+      // null on the implicit tier - an event nobody configured tiers for is one
       // free General Admission. Send `tierId: null` (or leave it out) to take it.
       id: t.id,
       name: t.name,

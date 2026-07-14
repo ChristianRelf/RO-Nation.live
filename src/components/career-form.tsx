@@ -15,11 +15,11 @@ export function CareerForm({
   action: (formData: FormData) => void;
   career?: Career;
   error?: string;
-  /** Where "Cancel" goes — /company and every partner studio share this form. */
+  /** Where "Cancel" goes - /company and every partner studio share this form. */
   cancelHref?: string;
   /**
    * The partner whose role this is, when a partner's studio renders the form.
-   * Omitted by /company. Authorises nothing — the action re-reads the grant.
+   * Omitted by /company. Authorises nothing - the action re-reads the grant.
    */
   scope?: string;
 }) {
@@ -80,7 +80,7 @@ export function CareerForm({
             <label className={labelClass}>Location</label>
             <input
               name="location"
-              defaultValue={career?.location ?? "Remote — Roblox"}
+              defaultValue={career?.location ?? "Remote - Roblox"}
               className={inputClass}
             />
           </div>
@@ -91,7 +91,7 @@ export function CareerForm({
             name="summary"
             required
             defaultValue={career?.summary}
-            placeholder="Be the voice of the show — run the crowd and keep the energy up."
+            placeholder="Be the voice of the show - run the crowd and keep the energy up."
             className={inputClass}
           />
         </div>

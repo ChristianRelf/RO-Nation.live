@@ -4,8 +4,8 @@ import { priceLabel } from "@/lib/tickets/pricing";
 import { TicketQR } from "./ticket-qr";
 import type { TicketArtStatus } from "./ticket-art";
 
-// The wallet row. The same object as TicketArt — punched notches, perforated
-// seam, cream stub — shrunk to a list item, so a ticket looks like the same
+// The wallet row. The same object as TicketArt - punched notches, perforated
+// seam, cream stub - shrunk to a list item, so a ticket looks like the same
 // ticket whether it is in the wallet or open on the table.
 //
 // The QR here is small and real. It is a preview, not the thing you present at

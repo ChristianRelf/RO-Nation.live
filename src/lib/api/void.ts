@@ -6,7 +6,7 @@ import { VOID_MESSAGES } from "./messages";
 import { voidTicket } from "@/lib/tickets/issue";
 import { BAD_REQUEST, checkTicket } from "@/lib/tickets/verify";
 
-// /void and /revoke, which are the same request with one bit flipped — so they are
+// /void and /revoke, which are the same request with one bit flipped - so they are
 // one handler, and the bit is the argument.
 //
 // The difference is in what happens NEXT, not in what happens now. Both cancel the
@@ -19,7 +19,7 @@ export async function handleVoid(req: Request, ban: boolean) {
 
   const body = await readJson(req);
 
-  // Find it exactly as /verify would — same body, same scope, same rules. A
+  // Find it exactly as /verify would - same body, same scope, same rules. A
   // partner's key cannot void a ticket it cannot see, and "cannot see" and "does
   // not exist" are the same answer.
   const found = await checkTicket(lookupFrom(body, auth.caller));
@@ -42,7 +42,7 @@ export async function handleVoid(req: Request, ban: boolean) {
     ban,
     reason: str(body.reason),
     // Who is doing this, in the audit trail. The key's own name, unless the caller
-    // names a person — a crew member in a staff GUI is more useful than "Door
+    // names a person - a crew member in a staff GUI is more useful than "Door
     // scanner (key)", and neither can be forged into any authority: this string is
     // written down and shown, never checked against anything.
     actorName: str(body.byName) ?? auth.caller.name,
@@ -65,7 +65,7 @@ export async function handleVoid(req: Request, ban: boolean) {
     voided: true,
     /** True when the holder is now barred from taking another for this show. */
     banned: outcome.banned,
-    /** True when it was ALREADY cancelled. The call still succeeded — it is idempotent. */
+    /** True when it was ALREADY cancelled. The call still succeeded - it is idempotent. */
     alreadyVoid: outcome.alreadyVoid,
   });
 }

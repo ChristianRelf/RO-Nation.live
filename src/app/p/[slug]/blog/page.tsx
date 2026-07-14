@@ -76,7 +76,7 @@ export default async function PartnerBlogIndex({
         <div className="card grid place-items-center px-6 py-20 text-center">
           <p className="display text-3xl">Nothing written yet</p>
           <p className="mt-3 max-w-sm text-muted">
-            Check back — the first post will land here.
+            Check back - the first post will land here.
           </p>
         </div>
       )}

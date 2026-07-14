@@ -2,7 +2,7 @@ import Link from "next/link";
 import { site } from "@/lib/site";
 
 // Slim footer for the SHASHA portal. The full marketing footer would be noise in
-// a staff tool, but the OAuth policy links belong somewhere visible — Discord and
+// a staff tool, but the OAuth policy links belong somewhere visible - Discord and
 // Roblox both expect them to be reachable from the app they gate.
 const links = [
   { label: "Discord policy", href: "/legal/discord/privacy" },

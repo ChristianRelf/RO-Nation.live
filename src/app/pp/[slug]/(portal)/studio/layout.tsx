@@ -16,13 +16,13 @@ export const metadata: Metadata = {
 
 // A partner's studio: where they author their own site.
 //
-// This is CHROME ONLY. It does not guard the pages beneath it — each one calls
+// This is CHROME ONLY. It does not guard the pages beneath it - each one calls
 // requirePartnerUser/requirePartnerManager and assertPartnerFeature itself, for
 // the reason spelled out in lib/partners/guard.ts: a layout that redirects still
 // ships the page's RSC payload in the body of the 307 it bounced you with.
 //
 // The section list is built from the registry's `features`, so a partner without
-// the blog feature has no Blog tab — and, more importantly, no /studio/blog route
+// the blog feature has no Blog tab - and, more importantly, no /studio/blog route
 // to reach anyway.
 
 /** The tabs this partner actually has. Mirrors the routes that exist. */

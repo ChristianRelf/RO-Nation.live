@@ -5,14 +5,14 @@ import { toLines } from "@/lib/utils";
 
 // Reading the tier editor's payload back, and persisting it.
 //
-// The editor posts one JSON field. Everything in it is attacker-controlled — an
-// id, a price, a capacity — so none of it is used as given: it goes through the
+// The editor posts one JSON field. Everything in it is attacker-controlled - an
+// id, a price, a capacity - so none of it is used as given: it goes through the
 // schema below, and every write is matched on { id, eventId } TOGETHER, so a tier
 // id belonging to another event matches zero rows instead of being quietly
 // re-parented. Same rule the roster and partner-event actions follow.
 
 const TierInput = z.object({
-  // Present on a tier that already exists. Never trusted to be this event's —
+  // Present on a tier that already exists. Never trusted to be this event's -
   // see the updateMany below.
   id: z.string().optional(),
   name: z.string().trim().min(1).max(60),
@@ -30,7 +30,7 @@ export type TierWrite = z.infer<typeof TierInput>;
 /**
  * Parse the editor's field.
  *
- * `[]` is a legitimate answer — it means "no tiers", i.e. the implicit free
+ * `[]` is a legitimate answer - it means "no tiers", i.e. the implicit free
  * admission. NULL is a validation failure: missing field, bad JSON, or a row
  * that doesn't fit the schema.
  *

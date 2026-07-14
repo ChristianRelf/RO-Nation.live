@@ -3,11 +3,11 @@
 // The Roblox group everything ranks against: RO. Nation LIVE.
 // https://www.roblox.com/communities/33033115/RoNation-Live
 //
-// Every door into the organisation is a rank in this one group — /company, the
+// Every door into the organisation is a rank in this one group - /company, the
 // SHASHA portal, and the override that opens every partner portal. There is no
 // allowlist to maintain anywhere: promoting somebody IS the grant, demoting them
 // IS the revocation, and rank is re-read from Roblox on every request (cached
-// five minutes — see lib/roblox-group.ts). Each gate can be pointed at a
+// five minutes - see lib/roblox-group.ts). Each gate can be pointed at a
 // different group if RNL ever splits, but they share one by default.
 const GROUP_ID = process.env.ROBLOX_GROUP_ID || "33033115";
 
@@ -38,8 +38,8 @@ export const env = {
   // Robux cannot be charged from a website. A real payment is a Developer
   // Product prompted inside the Roblox experience, confirmed by a ProcessReceipt
   // handler on the game server calling back here. None of that is built. Ticket
-  // *tiers* can already carry a Robux price — that is the option, and partners
-  // can configure it today — but with this false, a priced tier renders locked at
+  // *tiers* can already carry a Robux price - that is the option, and partners
+  // can configure it today - but with this false, a priced tier renders locked at
   // checkout and app/actions/tickets.ts refuses to issue one. Both checks are
   // independent on purpose: the UI one is courtesy, the action one is the wall.
   //
@@ -51,7 +51,7 @@ export const env = {
   //
   // Three doors, one group, nested thresholds:
   //
-  //   200+  SHASHA portal, read only — search the VIP list and the blacklist
+  //   200+  SHASHA portal, read only - search the VIP list and the blacklist
   //   245+  SHASHA writes, AND /company: all of ronation.live
   //   250+  every partner portal and their studio, as an owner-equivalent
   //
@@ -62,7 +62,7 @@ export const env = {
 
   // ---- The Company (/company) --------------------------------------
   // RNL's own site: events, blog, surveys, careers, applications, attendees.
-  // One door — the /admin password login this replaced is gone.
+  // One door - the /admin password login this replaced is gone.
   company: {
     groupId: process.env.COMPANY_GROUP_ID || GROUP_ID,
     minRank: Number(process.env.COMPANY_MIN_RANK ?? 245),
@@ -73,8 +73,8 @@ export const env = {
   // This is the OTHER way in: RNL staff at this rank hold owner-equivalent
   // access to EVERY partner, with no row and nothing to revoke by hand.
   //
-  // It is the most powerful grant in the system — it reaches into organisations
-  // RNL does not own — so it deliberately sits above /company rather than
+  // It is the most powerful grant in the system - it reaches into organisations
+  // RNL does not own - so it deliberately sits above /company rather than
   // alongside it. See the override in lib/partners/guard.ts.
   partners: {
     groupId: process.env.PARTNERS_GROUP_ID || GROUP_ID,
@@ -88,6 +88,21 @@ export const env = {
     minRank: Number(process.env.SHASHA_MIN_RANK ?? 200),
     /** Add, edit and remove people. */
     managerRank: Number(process.env.SHASHA_MANAGER_RANK ?? 245),
+  },
+
+  // ---- The merch shop (merch.ronation.live) ------------------------
+  // The group whose STORE the shop lists. The same group as the one above today,
+  // and still its own entry rather than a reuse of `company.groupId` - because the
+  // two mean entirely different things and only coincidentally share a number.
+  //
+  // Every other groupId here answers "what rank does this person hold?" and is a
+  // security boundary. This one answers "whose shop are we showing?" and grants
+  // nothing whatsoever: point it at a group RNL does not own and the worst that
+  // happens is the shop lists somebody else's shirts. If RNL ever moves its store
+  // to a second group, this is the one line that moves - and nobody has to work out
+  // whether changing it also hands out staff access.
+  merch: {
+    groupId: process.env.MERCH_GROUP_ID || GROUP_ID,
   },
 };
 

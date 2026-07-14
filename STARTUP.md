@@ -1,11 +1,11 @@
-# Startup guide — RO. Nation LIVE
+# Startup guide - RO. Nation LIVE
 
 Zero to running, then zero to live. Follow it top to bottom the first time.
 
 There are two things in this repo, and they run from **one app, one container**:
 
-- the **public site** — `ronation.live` (events, careers, tickets)
-- the **SHASHA staff portal** — `portal.ronation.live/shasha` (VIP list, blacklist)
+- the **public site** - `ronation.live` (events, careers, tickets)
+- the **SHASHA staff portal** - `portal.ronation.live/shasha` (VIP list, blacklist)
 
 | Part                | Where                        | Who gets in                             |
 | ------------------- | ---------------------------- | --------------------------------------- |
@@ -20,12 +20,12 @@ There are two things in this repo, and they run from **one app, one container**:
 
 ---
 
-## Part 1 — Run it on your machine
+## Part 1 - Run it on your machine
 
 ### What you need
 
-- **Node 20+** — <https://nodejs.org>
-- **Docker Desktop** — <https://www.docker.com/products/docker-desktop> (used for the database)
+- **Node 20+** - <https://nodejs.org>
+- **Docker Desktop** - <https://www.docker.com/products/docker-desktop> (used for the database)
 
 Check both are alive:
 
@@ -46,7 +46,7 @@ npm install
 cp .env.example .env
 ```
 
-Nothing needs filling in yet — the defaults are enough to boot. You'll add the
+Nothing needs filling in yet - the defaults are enough to boot. You'll add the
 Discord keys in Part 2.
 
 ### 3. Start the database
@@ -60,7 +60,7 @@ This runs Postgres in the background on port **5433** (matching `DATABASE_URL` i
 
 > Start `db` specifically, not the whole stack. `docker compose up -d` on its own
 > would also start Caddy, which exists to fetch real HTTPS certificates for
-> `ronation.live` — pointless on your laptop, since that name doesn't resolve to
+> `ronation.live` - pointless on your laptop, since that name doesn't resolve to
 > it. Locally you run the app with `npm run dev` over plain http instead.
 
 ### 4. Create the tables + demo content
@@ -80,7 +80,7 @@ Open <http://localhost:3000>. Locally, **both** the site and the portal are serv
 from the same address, so:
 
 - Site → <http://localhost:3000>
-- Company → <http://localhost:3000/company> (needs a real Roblox sign-in and rank 245+ — see Part 3b)
+- Company → <http://localhost:3000/company> (needs a real Roblox sign-in and rank 245+ - see Part 3b)
 - Portal → <http://localhost:3000/shasha> (needs Part 2 first)
 - Health → <http://localhost:3000/api/health> → `{"ok":true,"db":"up"}`
 
@@ -92,7 +92,7 @@ Stop the server with `Ctrl+C`. Stop the database with `docker compose stop db`.
 
 ---
 
-## Part 2 — Turn on the SHASHA portal
+## Part 2 - Turn on the SHASHA portal
 
 The portal is Discord-gated and **allowlist-only**: a valid Discord login is not
 enough on its own. You have to do this once, even for local development.
@@ -101,7 +101,7 @@ enough on its own. You have to do this once, even for local development.
 
 1. Go to <https://discord.com/developers/applications> → **New Application**.
 2. Open **OAuth2** in the sidebar.
-3. Under **Redirects**, click *Add Redirect* and paste — exactly, no trailing slash:
+3. Under **Redirects**, click *Add Redirect* and paste - exactly, no trailing slash:
 
    ```text
    https://portal.ronation.live/api/auth/discord/callback
@@ -144,23 +144,23 @@ Restart the dev server (`Ctrl+C`, then `npm run dev`) and open
 ### 4. Managing access later
 
 Access is re-checked from these variables on **every single request**. Delete
-someone's ID and they lose access immediately — no waiting for a session to
+someone's ID and they lose access immediately - no waiting for a session to
 expire. Edit `.env`, then `docker compose up -d` on the server to apply it.
 
 ---
 
-## Part 3 — Using the portal
+## Part 3 - Using the portal
 
 | Page                | What it's for                                                     |
 | ------------------- | ----------------------------------------------------------------- |
-| `/shasha`           | Search **both** lists at once — username, Roblox ID, role, reason |
-| `/shasha/vip`       | The VIP list — add, edit, remove                                   |
-| `/shasha/blacklist` | The blacklist — same                                               |
+| `/shasha`           | Search **both** lists at once - username, Roblox ID, role, reason |
+| `/shasha/vip`       | The VIP list - add, edit, remove                                   |
+| `/shasha/blacklist` | The blacklist - same                                               |
 | `/shasha/audit`     | Who changed what, when, and why                                    |
 
 **Adding someone:** start typing a Roblox username (or paste a user ID) in the
 add form and pick the right account from the live search results. Give them any
-roles/tags you like — they're free-form, up to 8 — and a reason, which is
+roles/tags you like - they're free-form, up to 8 - and a reason, which is
 required and is kept in the history log.
 
 The server re-checks the Roblox account against Roblox before saving, so an entry
@@ -172,10 +172,10 @@ edit/remove buttons.
 
 ---
 
-## Part 3b — The Company (everything on ronation.live)
+## Part 3b - The Company (everything on ronation.live)
 
 `/company` is the one door onto RNL's own site. It replaced the old `/studio`
-**and** the password-protected `/admin` — both of those paths now just redirect
+**and** the password-protected `/admin` - both of those paths now just redirect
 here, so old links still work.
 
 Anyone who signs in with Roblox and holds rank **245 or above** in the group gets
@@ -188,13 +188,13 @@ COMPANY_MIN_RANK="245"
 
 **To give someone access, promote them in the Roblox group.** To take it away,
 demote them. Rank is read from Roblox on each visit (cached for ~5 minutes), so
-it takes effect on its own — no config change, no redeploy, and no need for them
+it takes effect on its own - no config change, no redeploy, and no need for them
 to sign out and back in.
 
 | Page                    | What it's for                                              |
 | ----------------------- | ---------------------------------------------------------- |
 | `/company`              | Overview, with counts and quick links                      |
-| `/company/events`       | Create, edit, publish events — and check people in         |
+| `/company/events`       | Create, edit, publish events - and check people in         |
 | `/company/blog`         | Write posts. Drafts stay hidden; published ones hit `/blog` |
 | `/company/surveys`      | Build surveys, watch results land, export them as CSV      |
 | `/company/careers`      | Post roles                                                 |
@@ -205,13 +205,13 @@ Ranked members see a **Company** link in their account menu once signed in.
 ### Partner studios
 
 A partner (Sleep Token) runs their own site from
-`portal.ronation.live/<slug>/studio` — their shows and ticket pricing, their blog,
+`portal.ronation.live/<slug>/studio` - their shows and ticket pricing, their blog,
 their careers and applications, and the words on their homepage. Their crew get in
 via a `PartnerMember` row (seeded from `STRO_OWNER_ROBLOX_ID`).
 
 **Rank 250+ in RNL's group opens every partner's portal and studio**, with no row
-needed. That is the most powerful grant in the system — it reaches into orgs RNL
-doesn't own — so it sits at the top of the ladder.
+needed. That is the most powerful grant in the system - it reaches into orgs RNL
+doesn't own - so it sits at the top of the ladder.
 
 ### Surveys
 
@@ -222,12 +222,12 @@ https://survey.ronation.live/ZX8P9-VWZ3UG7-3FV
 ```
 
 Set it to **Open** and share that. People sign in with Roblox and answer **once**
-— the one-per-account rule is enforced by the database, not just the UI. Question
+- the one-per-account rule is enforced by the database, not just the UI. Question
 types are short text, long text, multiple choice, checkboxes, a 1–5 rating and
 yes/no, and any question can be marked required.
 
 - **Draft** surveys 404, so an unfinished link gives nothing away.
-- Once someone has answered, the **questions lock** — changing them would silently
+- Once someone has answered, the **questions lock** - changing them would silently
   change what the existing results mean. Title, intro and status stay editable.
 - **Closed** surveys say so, and a form left open in a stale tab is rejected on
   submit rather than sneaking a late answer in.
@@ -236,7 +236,7 @@ yes/no, and any question can be marked required.
 
 ---
 
-## Part 4 — Deploy it live
+## Part 4 - Deploy it live
 
 ### 1. DNS
 
@@ -248,7 +248,7 @@ portal.ronation.live.   A   <your server IP>
 survey.ronation.live.   A   <your server IP>
 ```
 
-Same server, same container — none of these are separate deployments. The app
+Same server, same container - none of these are separate deployments. The app
 works out which one you're on from the hostname: `portal.*` serves the staff
 portal, `survey.*` serves surveys, anything else serves the public site.
 
@@ -260,7 +260,7 @@ cd ronation
 cp .env.example .env
 ```
 
-### 3. Fill in `.env` — the production version
+### 3. Fill in `.env` - the production version
 
 Generate real secrets (don't reuse the dev ones):
 
@@ -294,7 +294,7 @@ docker compose up -d --build
 
 On boot the container creates any missing database tables and seeds starter
 content automatically, so there is no separate migration step. **This is also how
-you ship a schema change** — pull, `docker compose up -d --build`, done.
+you ship a schema change** - pull, `docker compose up -d --build`, done.
 
 > **Don't run `npm` commands on the server.** `npm run db:push`, `npm run seed`
 > and `npm run dev` are for your own machine. On the server everything happens
@@ -320,10 +320,10 @@ docker compose ps
 
 The `db` line must show `127.0.0.1:5433->5432/tcp`. If it shows `0.0.0.0:5433`,
 you're running an old `docker-compose.override.yml` and **Postgres is open to the
-internet** — published Docker ports bypass `ufw`. Pull the latest code and run
+internet** - published Docker ports bypass `ufw`. Pull the latest code and run
 `docker compose up -d` to rebind it, then set a real `POSTGRES_PASSWORD` in `.env`.
 
-### 6. HTTPS — it's already done
+### 6. HTTPS - it's already done
 
 There's a **Caddy** container in `docker-compose.yml`. It gets Let's Encrypt
 certificates for both hostnames on first boot, renews them on its own, and
@@ -332,7 +332,7 @@ redirects `http://` to `https://`. No certbot, no cron job, no renewal script.
 You only need three things to be true:
 
 **a. All three names point at this server.** Verify with `dig +short ronation.live`,
-`dig +short portal.ronation.live` and `dig +short survey.ronation.live` — each
+`dig +short portal.ronation.live` and `dig +short survey.ronation.live` - each
 should print the server's IP. A name that doesn't resolve will fail issuance.
 
 **b. Ports 80 and 443 are open and free.** Certificate issuance uses port 80, so
@@ -343,7 +343,7 @@ sudo ss -tlnp | grep -E ':80 |:443 '   # must be empty (or already caddy)
 sudo ufw allow 80,443/tcp              # if ufw is on
 ```
 
-If nginx or Apache is already sitting on port 80, Caddy can't start — stop it
+If nginx or Apache is already sitting on port 80, Caddy can't start - stop it
 first (`sudo systemctl disable --now nginx`).
 
 **c. Your hostnames are in `.env`:**
@@ -363,7 +363,7 @@ docker compose logs -f caddy     # look for "certificate obtained successfully"
 ```
 
 First issuance takes a few seconds per hostname. If it fails, Caddy retries with
-a backoff — read the log, fix the cause (almost always DNS or a blocked port 80),
+a backoff - read the log, fix the cause (almost always DNS or a blocked port 80),
 and it'll pick itself up.
 
 > **Don't wipe the `caddy-data` volume.** Your certificates live there. Let's
@@ -375,7 +375,7 @@ and it'll pick itself up.
 Go back to the Discord app (Part 2) and make sure
 `https://portal.ronation.live/api/auth/discord/callback` is in the Redirects list.
 
-For Roblox, register **both** of these — sign-in has to work on the main site and
+For Roblox, register **both** of these - sign-in has to work on the main site and
 on the survey subdomain, and the session cookie a sign-in creates is scoped to
 whichever hostname issued it:
 
@@ -424,13 +424,13 @@ docker compose exec db pg_dump -U ronation ronation > backup-$(date +%F).sql
 
 **`Can't reach database server at localhost:5433` (P1001)**
 The database isn't running. `docker compose up -d db`, wait a few seconds, retry.
-Confirm it's up and which port it's on with `docker ps` — you want to see
+Confirm it's up and which port it's on with `docker ps` - you want to see
 `0.0.0.0:5433->5432/tcp`.
 
-**`Can't reach database server at localhost:5432` (P1001) — note the 5432**
+**`Can't reach database server at localhost:5432` (P1001) - note the 5432**
 Nothing listens on 5432; the database publishes on **5433**. Either:
 
-- **You ran `npm run db:push` on the server.** Don't — the container applies the
+- **You ran `npm run db:push` on the server.** Don't - the container applies the
   schema itself. Use `docker compose up -d --build` instead. (Host Prisma reads
   `.env` and dials `localhost`; the app dials `db:5432` internally and is fine.)
 
@@ -442,28 +442,28 @@ Nothing listens on 5432; the database publishes on **5433**. Either:
   ```
 
 **Caddy won't start: "address already in use"**
-Something else owns port 80 or 443 — usually a system nginx or Apache. Find it
+Something else owns port 80 or 443 - usually a system nginx or Apache. Find it
 with `sudo ss -tlnp | grep -E ':80 |:443 '` and stop it
 (`sudo systemctl disable --now nginx`), then `docker compose up -d`.
 
 **No certificate / browser warns the site is insecure**
 Read `docker compose logs caddy`. The usual causes, in order of likelihood:
 
-- DNS doesn't point here yet (`dig +short ronation.live` — is that this server?)
+- DNS doesn't point here yet (`dig +short ronation.live` - is that this server?)
 - Port 80 is blocked upstream (cloud firewall, `ufw`), so the ACME challenge
   can't complete. Certificate issuance needs **80**, not just 443.
-- You're hitting the server by IP rather than by hostname — certificates are
+- You're hitting the server by IP rather than by hostname - certificates are
   issued per name, so use the domain.
 
 **Certificates stopped renewing / rate-limit errors**
 Renewal is automatic at ~30 days remaining. If you see "too many certificates
-already issued", you've re-issued more than 5 times in a week — most often by
+already issued", you've re-issued more than 5 times in a week - most often by
 deleting the `caddy-data` volume. Wait it out; the existing cert keeps working.
 
 **Portal says "That Discord account isn't on the SHASHA access list"**
 The Discord ID you signed in with isn't in `DISCORD_MANAGER_IDS` or
 `DISCORD_STAFF_IDS`. Copy the ID again (Developer Mode → right-click → Copy User
-ID) — it's a long number, not your username. Then `docker compose up -d` to apply.
+ID) - it's a long number, not your username. Then `docker compose up -d` to apply.
 
 **Portal login page warns "No managers are configured yet"**
 `DISCORD_MANAGER_IDS` is empty. Nobody can get in until you set it.
@@ -474,11 +474,11 @@ vs `https`, a trailing slash, or `www.`.
 
 **`portal.ronation.live` shows the public site**
 DNS hasn't propagated, or your reverse proxy isn't routing the subdomain to port
-3000. Confirm with `curl -H "Host: portal.ronation.live" localhost:3000/shasha` —
+3000. Confirm with `curl -H "Host: portal.ronation.live" localhost:3000/shasha` -
 it should redirect to `/shasha/login`.
 
 **Everything on the portal bounces to the main site**
-The hostname has to *start with* `portal.` — that's what the app keys off.
+The hostname has to *start with* `portal.` - that's what the app keys off.
 
 **Changed `.env` and nothing happened**
 Environment variables are read at container start. `docker compose up -d`.

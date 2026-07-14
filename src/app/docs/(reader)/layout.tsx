@@ -16,14 +16,14 @@ export default async function DocsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // This resolves the reader because the NAV needs them — a name, an avatar, and
+  // This resolves the reader because the NAV needs them - a name, an avatar, and
   // whether to show the API link. The redirect below is a courtesy, not the lock:
   // a page segment renders in parallel with its layout and is serialised into the
   // RSC payload either way, so a layout-only guard still ships the page's body in
   // the 307 it bounced you with. See lib/session.ts.
   //
-  // Every page under here calls requireDocsReader() — or requireDocsUser(), on
-  // /docs/api — itself. That is the lock.
+  // Every page under here calls requireDocsReader() - or requireDocsUser(), on
+  // /docs/api - itself. That is the lock.
   const reader = await getDocsReader();
   if (!reader) redirect("/docs/login");
 

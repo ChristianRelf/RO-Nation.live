@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Sign in" };
 const errors: Record<string, string> = {
   "not-configured": "Roblox sign-in isn't configured on this server yet.",
   denied: "Sign-in was cancelled.",
-  state: "Your sign-in session expired — please try again.",
+  state: "Your sign-in session expired - please try again.",
   exchange: "We couldn't complete Roblox sign-in. Please try again.",
   disabled: "Dev login is disabled on this server.",
 };
@@ -40,7 +40,7 @@ export default async function AccountPage({
             <p className="mt-4 text-muted">
               {session
                 ? "Your tickets are tied to your Roblox account so we can verify you at the door in-experience."
-                : "Sign in with Roblox to reserve tickets. We only read your username and avatar — never your password."}
+                : "Sign in with Roblox to reserve tickets. We only read your username and avatar - never your password."}
             </p>
           </div>
 

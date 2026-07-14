@@ -10,7 +10,7 @@ export async function SiteHeader() {
   // cached per user for a few minutes, so this isn't a Roblox round-trip on
   // every page render.
   //
-  // It is presentation ONLY — showing the link is not granting anything, and
+  // It is presentation ONLY - showing the link is not granting anything, and
   // hiding it is not withholding anything. /company re-checks the rank itself on
   // every page and every write (lib/company.ts).
   const membership = session

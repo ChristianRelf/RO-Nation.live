@@ -11,7 +11,7 @@ import { requireScopeManager, SHASHA_SCOPE } from "@/lib/portal-scope";
 // Every action re-guards. A server action is a public HTTP endpoint wearing a
 // function's clothes: the page that renders the form having checked who you are
 // means nothing at all to a POST that never loaded the page. requireScopeManager()
-// is what actually stops somebody minting a key for an org they do not run — and
+// is what actually stops somebody minting a key for an org they do not run - and
 // it is called first, before a single field of the form is read.
 //
 // The org is a ROUTE parameter, not a form field, and it is checked rather than
@@ -22,7 +22,7 @@ import { requireScopeManager, SHASHA_SCOPE } from "@/lib/portal-scope";
 /**
  * A portal id ("shasha", "sleeptokenro") → the `partnerId` a key is stamped with.
  *
- * SHASHA is RNL, and RNL's own events carry `partnerId: null` — the same NULL that
+ * SHASHA is RNL, and RNL's own events carry `partnerId: null` - the same NULL that
  * Event.partnerId uses. That mapping is the reason a key's scope can be compared
  * to an event's partner with a single equality and no special cases.
  */
@@ -35,7 +35,7 @@ export type MintState =
   | null;
 
 /**
- * Mint a key, and hand back the token — ONCE.
+ * Mint a key, and hand back the token - ONCE.
  *
  * The token is returned in the action's result and never stored in a readable
  * form, so this is the only moment in its life it can be seen. The UI has to make
@@ -79,7 +79,7 @@ export async function createApiKey(
 /**
  * Revoke a key. It stops authenticating on the very next request.
  *
- * The row is KEPT, not deleted — a revoked key still has to resolve to a name in
+ * The row is KEPT, not deleted - a revoked key still has to resolve to a name in
  * an audit trail (TicketPurchase.apiKeyId points at it), and its keyId must stay
  * claimed so it can never be minted again.
  *

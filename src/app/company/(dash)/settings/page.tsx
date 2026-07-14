@@ -40,7 +40,7 @@ local function admit(player)
 
 	local data = HttpService:JSONDecode(res.Body)
 
-	-- Branch on \`admit\`, never on \`valid\` — an already-used ticket is still
+	-- Branch on \`admit\`, never on \`valid\` - an already-used ticket is still
 	-- a valid one, and it must not let a second person through.
 	if data.admit then
 		if data.ticket.admission.kind == "VIP" then
@@ -61,7 +61,7 @@ export default async function SettingsPage() {
   const script = luau.replace("%SITE%", base);
 
   // The portal is a subdomain of whatever host we are actually on, so this is
-  // right in dev (http://portal.localhost:3000) and in production alike — the same
+  // right in dev (http://portal.localhost:3000) and in production alike - the same
   // reason the middleware derives everything from the Host header rather than an
   // env var. Keys and the API docs both live over there.
   const portalOrigin = base.replace(/^(https?:\/\/)/, "$1portal.");
@@ -89,7 +89,7 @@ export default async function SettingsPage() {
           label="Root API key (legacy)"
           ok={!env.gameApiKey}
           okText="Retired"
-          badText="Set — unscoped"
+          badText="Set - unscoped"
           invert
         />
         <StatusTile
@@ -117,10 +117,10 @@ export default async function SettingsPage() {
           <code className="font-mono text-fg">openid profile</code>:
         </p>
         <Code>{`${base}/api/auth/roblox/callback`}</Code>
-        <Row label="Client ID" value={env.roblox.clientId || "— add ROBLOX_CLIENT_ID —"} />
+        <Row label="Client ID" value={env.roblox.clientId || "- add ROBLOX_CLIENT_ID -"} />
         <Row
           label="Client secret"
-          value={robloxConfigured ? "•••••••• (set)" : "— add ROBLOX_CLIENT_SECRET —"}
+          value={robloxConfigured ? "•••••••• (set)" : "- add ROBLOX_CLIENT_SECRET -"}
         />
       </Section>
 
@@ -141,7 +141,7 @@ export default async function SettingsPage() {
           >
             portal.ronation.live/shasha/keys
           </a>
-          . A key belongs to one org and can do only what it was granted — a door
+          . A key belongs to one org and can do only what it was granted - a door
           scanner that leaks cannot be turned into a ticket printer. Partners mint
           their own, in their own portal, and theirs can never see RNL&apos;s shows.
         </p>
@@ -178,7 +178,7 @@ export default async function SettingsPage() {
               <EndpointRow
                 method="POST"
                 path="/api/v1/tickets/purchase"
-                desc="They paid Robux — issue the paid ticket"
+                desc="They paid Robux - issue the paid ticket"
               />
               <EndpointRow
                 method="POST"
@@ -203,14 +203,14 @@ export default async function SettingsPage() {
   -d '{"code":"RN-AB12CD"}'`}</Code>
 
         <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted">
-          Roblox (Luau) — kick players without a ticket
+          Roblox (Luau) - kick players without a ticket
         </p>
         <Code>{script}</Code>
 
         <p className="mt-4 text-sm text-muted">
-          The full contract — every endpoint, every field, every{" "}
+          The full contract - every endpoint, every field, every{" "}
           <code className="font-mono text-fg">reason</code>, and working Luau for
-          the door and for ProcessReceipt — is at{" "}
+          the door and for ProcessReceipt - is at{" "}
           <a
             href={`${portalOrigin}/docs/api`}
             className="text-accent hover:text-fg"
@@ -234,7 +234,7 @@ export default async function SettingsPage() {
       <Section title="The manual door">
         <p className="text-muted">
           Every scanner dies mid-queue eventually. Crew can check a ticket and
-          check somebody in by hand, from a browser — the{" "}
+          check somebody in by hand, from a browser - the{" "}
           <a href="/company/door" className="text-accent hover:text-fg">
             Door
           </a>{" "}
@@ -264,7 +264,7 @@ export default async function SettingsPage() {
           value={`Rank ${env.shasha.minRank}+ to read, ${env.shasha.managerRank}+ to write`}
         />
         <p className="mt-2 text-sm text-muted">
-          There is no account list and no password to rotate — a rank in the group
+          There is no account list and no password to rotate - a rank in the group
           IS the grant, and a demotion IS the revocation. Rank is re-read from
           Roblox on every request, so a change lands within a few minutes.
         </p>

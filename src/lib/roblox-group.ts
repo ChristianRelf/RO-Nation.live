@@ -17,17 +17,17 @@ export type GroupMembership = {
 
 // Rank is checked on page renders and on every write, so it is cached briefly
 // per user rather than hitting Roblox each time. A promotion or demotion takes
-// effect within TTL_MS — quick enough to be fair, cheap enough to be sane.
+// effect within TTL_MS - quick enough to be fair, cheap enough to be sane.
 const TTL_MS = 5 * 60 * 1000;
 const cache = new Map<string, { at: number; value: GroupMembership | null }>();
 
-/** Cached per group as well as per user — the two gates may point at different groups. */
+/** Cached per group as well as per user - the two gates may point at different groups. */
 const cacheKey = (groupId: string, robloxId: string) => `${groupId}:${robloxId}`;
 
 /**
  * The user's role in a group, or null if they aren't in it.
  *
- * A network failure returns null (no access) rather than throwing — the gate
+ * A network failure returns null (no access) rather than throwing - the gate
  * fails closed, never open. Failures are deliberately NOT cached, so a blip at
  * Roblox locks someone out for one request rather than for the whole TTL.
  */

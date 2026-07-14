@@ -15,13 +15,13 @@ export const metadata: Metadata = { title: "Sign in" };
 // chrome and palette instead of RNL's. The load-bearing one: the OAuth round
 // trip has to start and finish on the host the cookie is scoped to, and the
 // middleware only serves /account here by way of the /p/<slug> rewrite. A
-// visitor bounced to ronation.live/account would come back signed in — to the
+// visitor bounced to ronation.live/account would come back signed in - to the
 // wrong host.
 
 const errors: Record<string, string> = {
   "not-configured": "Roblox sign-in isn't configured on this server yet.",
   denied: "Sign-in was cancelled.",
-  state: "Your sign-in session expired — please try again.",
+  state: "Your sign-in session expired - please try again.",
   exchange: "We couldn't complete Roblox sign-in. Please try again.",
   disabled: "Dev login is disabled on this server.",
 };
@@ -38,8 +38,8 @@ export default async function PartnerAccountPage({
 
   const session = await getUserSession();
 
-  // Only ever a path on this host. Anything else — "//evil.example", an absolute
-  // URL — is an open redirect wearing a login page as a disguise.
+  // Only ever a path on this host. Anything else - "//evil.example", an absolute
+  // URL - is an open redirect wearing a login page as a disguise.
   const raw = searchParams.returnTo ?? "";
   const returnTo =
     raw.startsWith("/") && !raw.startsWith("//") ? raw : "/tickets";
@@ -60,7 +60,7 @@ export default async function PartnerAccountPage({
             <p className="mt-4 text-muted">
               {session
                 ? "Your tickets are tied to your Roblox account, so we can verify you at the door in-experience."
-                : "Sign in with Roblox to reserve a free ticket. We only read your username and avatar — never your password."}
+                : "Sign in with Roblox to reserve a free ticket. We only read your username and avatar - never your password."}
             </p>
           </div>
 

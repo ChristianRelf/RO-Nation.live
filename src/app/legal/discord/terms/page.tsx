@@ -3,7 +3,7 @@ import { LegalDoc, discordNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Discord Integration — Terms of Service",
+  title: "Discord Integration - Terms of Service",
   description:
     "The terms that govern signing in with Discord and using the RO. Nation LIVE staff portal.",
 };
@@ -34,7 +34,7 @@ const sections = [
   {
     heading: "Signing in",
     body: [
-      "We use Discord's official OAuth 2.0 sign-in and request only the 'identify' scope. We never ask for, receive, or store your Discord password, and we will never ask you for it — anyone who does is not us.",
+      "We use Discord's official OAuth 2.0 sign-in and request only the 'identify' scope. We never ask for, receive, or store your Discord password, and we will never ask you for it - anyone who does is not us.",
       "Sign in with your own Discord account, and do not share your session with anyone. Anything done through a signed-in session is treated as done by you, and is recorded against your name.",
     ],
   },
@@ -78,7 +78,7 @@ const sections = [
 export default function DiscordTermsPage() {
   return (
     <LegalDoc
-      title="Discord Integration — Terms of Service"
+      title="Discord Integration - Terms of Service"
       updated="12 July 2026"
       currentHref="/legal/discord/terms"
       nav={discordNav}

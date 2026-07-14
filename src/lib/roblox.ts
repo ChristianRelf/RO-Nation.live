@@ -11,7 +11,7 @@ export const REDIRECT_PATH = "/api/auth/roblox/callback";
  * The callback URL for the host the user is actually on.
  *
  * Sign-in has to work on survey.ronation.live as well as the main site, and the
- * session cookie it sets is scoped to whichever host issued it — so the round
+ * session cookie it sets is scoped to whichever host issued it - so the round
  * trip must start and finish on the same origin. Every host used this way needs
  * its callback URL registered in the Roblox OAuth app.
  */
@@ -32,17 +32,17 @@ export function redirectUri() {
  * explanation of what went wrong.
  *
  * A partner adds a third case. On the portal host, a failed sign-in headed for
- * /sleeptokenro/vip belongs at /sleeptokenro/login — /account is not served
+ * /sleeptokenro/vip belongs at /sleeptokenro/login - /account is not served
  * there either, so the default would strand them exactly the same way.
  *
  * The partner-site host is not a case: its paths are /events, /tickets and
  * /account, none of which can collide with a slug (the registry RESERVEs those
- * names), so a failure there falls through to /account — which on that host is
+ * names), so a failure there falls through to /account - which on that host is
  * the partner's own sign-in page.
  */
 export function failPath(returnTo: string) {
   // A sign-in that failed ON the front door. Its returnTo is the SSO authorize
-  // URL it was going to resume, and none of the pages below exist on that host —
+  // URL it was going to resume, and none of the pages below exist on that host -
   // authorise.ronation.live serves one page, and it is the one that can explain
   // this. (The `to` origin is still in that URL, so the page can offer a way back
   // to where they started; see app/authorise/page.tsx.)

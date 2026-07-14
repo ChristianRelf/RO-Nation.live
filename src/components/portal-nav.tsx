@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  *
  * Every link is built from `basePath`, so the same nav serves /shasha and
  * /sleeptokenro without knowing which it is. Note these are the PUBLIC paths on
- * the portal host, not the internal /pp/<slug> routes Next actually renders —
+ * the portal host, not the internal /pp/<slug> routes Next actually renders -
  * see lib/partners/urls.ts.
  */
 export function PortalNav({
@@ -20,23 +20,23 @@ export function PortalNav({
   keysLink = false,
   user,
 }: {
-  /** Wordmark in the top-left — "SHASHA", "Sleep Token". */
+  /** Wordmark in the top-left - "SHASHA", "Sleep Token". */
   brand: string;
   /** "/shasha" or "/<partner-slug>". */
   basePath: string;
   /**
-   * Partners author their own site from here — shows, blog, careers, homepage
+   * Partners author their own site from here - shows, blog, careers, homepage
    * copy. SHASHA does not: RNL's content is /company's job, and SHASHA has no
    * /studio route to point at. So this is off unless a partner turns it on.
    */
   studioLink?: boolean;
   /**
-   * The manual ticket check. Only for an org that HAS shows — SHASHA has none,
+   * The manual ticket check. Only for an org that HAS shows - SHASHA has none,
    * and a partner without the events feature has no tickets to check.
    */
   doorLink?: boolean;
   /**
-   * API keys. Managers only — the page itself refuses read-only staff, and a nav
+   * API keys. Managers only - the page itself refuses read-only staff, and a nav
    * item that bounces you is worse than no nav item. Hiding it is courtesy;
    * requireScopeManager() in the page is the actual lock.
    */
@@ -46,7 +46,7 @@ export function PortalNav({
     // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
     // profile had, which can be nothing. Discord always handed us a default one.
     avatarUrl?: string;
-    /** Shown under the name — "Management", "Read only", "Owner". */
+    /** Shown under the name - "Management", "Read only", "Owner". */
     roleLabel: string;
     /** Drives the accent treatment on that label. */
     canWrite: boolean;

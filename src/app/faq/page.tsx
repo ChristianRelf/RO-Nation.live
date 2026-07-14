@@ -16,7 +16,7 @@ const groups = [
     faqs: [
       {
         q: "Are tickets really free?",
-        a: "Yes. Every RO. Nation LIVE ticket is free — you just need a Roblox account to reserve one so we can verify you at the door.",
+        a: "Yes. Every RO. Nation LIVE ticket is free - you just need a Roblox account to reserve one so we can verify you at the door.",
       },
       {
         q: "How do I get a ticket?",
@@ -28,10 +28,10 @@ const groups = [
       },
       {
         q: "Can I give my ticket to a friend?",
-        a: "No — tickets are tied to your Roblox account and can't be transferred or sold. Everyone needs to reserve their own free ticket.",
+        a: "No - tickets are tied to your Roblox account and can't be transferred or sold. Everyone needs to reserve their own free ticket.",
       },
       {
-        q: "I reserved a ticket but can't get in — help?",
+        q: "I reserved a ticket but can't get in - help?",
         a: "Make sure you're signed in with the same Roblox account you reserved with. Still stuck? Drop a message in the Discord support channel.",
       },
     ],
@@ -60,7 +60,7 @@ const groups = [
     faqs: [
       {
         q: "Where do events take place?",
-        a: "Inside Roblox experiences we build and run. Each event page links to the experience — join when doors open.",
+        a: "Inside Roblox experiences we build and run. Each event page links to the experience - join when doors open.",
       },
       {
         q: "What if an event is cancelled or rescheduled?",

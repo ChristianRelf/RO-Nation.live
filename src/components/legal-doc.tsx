@@ -5,7 +5,7 @@ import { cn, slugify } from "@/lib/utils";
 // Shared layout for the legal documents so they stay visually consistent and
 // DRY. Each legal page just supplies a `sections` array.
 //
-// A section is paragraphs, optionally followed by a bulleted list — because the
+// A section is paragraphs, optionally followed by a bulleted list - because the
 // honest answer to "what data do you hold?" is a list, and a list crammed into a
 // paragraph is how a policy stops being read.
 //
@@ -27,18 +27,18 @@ const legalNav = [
   { label: "Code of Conduct", href: "/legal/code-of-conduct" },
 ];
 
-// The Roblox and Discord OAuth integrations have their own pair of documents —
+// The Roblox and Discord OAuth integrations have their own pair of documents -
 // these are the URLs handed to Roblox and Discord when registering the apps, so
 // they cross-link to each other rather than to the site-wide docs.
 export const robloxNav = [
-  { label: "Roblox — Privacy", href: "/legal/roblox/privacy" },
-  { label: "Roblox — Terms", href: "/legal/roblox/terms" },
+  { label: "Roblox - Privacy", href: "/legal/roblox/privacy" },
+  { label: "Roblox - Terms", href: "/legal/roblox/terms" },
   { label: "Site policies", href: "/legal/privacy" },
 ];
 
 export const discordNav = [
-  { label: "Discord — Privacy", href: "/legal/discord/privacy" },
-  { label: "Discord — Terms", href: "/legal/discord/terms" },
+  { label: "Discord - Privacy", href: "/legal/discord/privacy" },
+  { label: "Discord - Terms", href: "/legal/discord/terms" },
   { label: "Site policies", href: "/legal/privacy" },
 ];
 

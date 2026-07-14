@@ -19,7 +19,7 @@ import {
   uniqueSlug,
 } from "@/lib/content";
 
-// The docs are authored here — on the main site, from /company — and read on the
+// The docs are authored here - on the main site, from /company - and read on the
 // portal host at /docs. Same Next app, two hosts; nothing about the write path
 // cares which host the reader is on.
 //
@@ -30,7 +30,7 @@ import {
 function refreshGuides(slug?: string) {
   revalidatePath("/company/docs");
   revalidatePath("/company/docs/guides");
-  // The reader's pages are all force-dynamic — they read a session cookie, so
+  // The reader's pages are all force-dynamic - they read a session cookie, so
   // they cannot be cached and there is nothing here to bust. These two lines are
   // here for the day one of them isn't.
   revalidatePath("/docs/guides");
@@ -114,13 +114,13 @@ const ASSETS = "/company/docs/assets";
 /**
  * Take a file the upload route has already written, and file it.
  *
- * The four fields describing that file — storagePath, filename, mime, size — come
+ * The four fields describing that file - storagePath, filename, mime, size - come
  * back through the browser as hidden inputs, so they are forgeable. That is
  * tolerable (this caller already holds rank 245 and can write whatever they like
  * through this UI) but it is not a reason to store them unchecked:
  *
  *   • storagePath must match the shape this app generates, and must resolve INSIDE
- *     the root its visibility selects — so it can never name ../../.env.
+ *     the root its visibility selects - so it can never name ../../.env.
  *   • the file must actually exist, and its size is read FROM DISK. A client's
  *     byte count is decoration.
  *   • mime is checked against the set the uploader accepts, because it is what
@@ -149,7 +149,7 @@ export async function createBrandAsset(formData: FormData) {
   const target = resolveInRoot(root, storagePath);
   if (!target) redirect(`${ASSETS}?error=file`);
 
-  // The real size, from the real file. Also proves it is there — a row pointing
+  // The real size, from the real file. Also proves it is there - a row pointing
   // at nothing would render as a download link that 404s.
   let size: number;
   try {
@@ -185,7 +185,7 @@ export async function createBrandAsset(formData: FormData) {
  *
  * `visibility` is deliberately NOT editable, and the form shows it as a read-only
  * pill saying so. It decides which VOLUME the bytes are on, and the two are
- * different Docker volumes — so "changing" it is a copy across devices (fs.rename
+ * different Docker volumes - so "changing" it is a copy across devices (fs.rename
  * throws EXDEV), and a half-finished one strands the file with a row that says it
  * is somewhere it isn't. To change it, re-upload it.
  */
@@ -220,7 +220,7 @@ export async function deleteBrandAsset(formData: FormData) {
   if (!asset) redirect(ASSETS);
 
   // INTERNAL: delete the bytes as well. A gated file that nothing lists is
-  // exactly the file you want gone — nobody can find it to clean it up later, and
+  // exactly the file you want gone - nobody can find it to clean it up later, and
   // it is the kind of file (an unreleased poster, a guideline draft) whose whole
   // value was that it was not lying around.
   //

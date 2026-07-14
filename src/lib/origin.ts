@@ -5,11 +5,11 @@ import { env } from "./env";
 
 // The origin a request actually arrived on. The app answers on several hosts
 // (ronation.live, portal.ronation.live, survey.ronation.live) and OAuth
-// redirects have to come back to the one the user started on — sessions are
+// redirects have to come back to the one the user started on - sessions are
 // cookies, and cookies are scoped per host.
 
 /**
- * Note `.localhost` — a partner site in dev is <slug>.localhost:3000, and the
+ * Note `.localhost` - a partner site in dev is <slug>.localhost:3000, and the
  * obvious `host.startsWith("localhost")` does NOT match it. Getting this wrong
  * calls a local partner host remote and builds every URL for it as https://,
  * which is not a cosmetic slip: it is the wrong ORIGIN, so the Roblox callback
@@ -46,7 +46,7 @@ export function requestOrigin(req: NextRequest) {
 /**
  * The same thing, for a server component, which has no NextRequest to hand.
  *
- * Reading headers() opts the route out of static rendering — every page that
+ * Reading headers() opts the route out of static rendering - every page that
  * calls this is already `force-dynamic`, because a ticket is per-person anyway.
  */
 export function currentOrigin() {
@@ -56,11 +56,11 @@ export function currentOrigin() {
 }
 
 /**
- * The absolute URL a ticket's QR encodes — on the host the holder is actually
+ * The absolute URL a ticket's QR encodes - on the host the holder is actually
  * on, which is what keeps a Sleep Token ticket pointing at Sleep Token.
  *
  * It takes the ticket's opaque ID, not its code. The code is withheld until the
- * holder activates, so it must not appear in the URL either — see the note on the
+ * holder activates, so it must not appear in the URL either - see the note on the
  * lookup in app/tickets/[id]/page.tsx.
  *
  * `<slug>.ronation.live/tickets/<id>` is a real, working URL: the middleware

@@ -1,6 +1,6 @@
 # Automatic HTTPS for RO. Nation LIVE.
 #
-# Caddy obtains and renews Let's Encrypt certificates by itself — there is no
+# Caddy obtains and renews Let's Encrypt certificates by itself - there is no
 # certbot, no cron job, and no renewal hook to maintain. It also redirects all
 # HTTP traffic to HTTPS automatically.
 #
@@ -12,45 +12,53 @@
 # below must already resolve to it.
 {
 	# Let's Encrypt emails this address before a cert expires. Renewal is
-	# automatic either way — set ACME_EMAIL in .env to get the warnings.
+	# automatic either way - set ACME_EMAIL in .env to get the warnings.
 	email {$ACME_EMAIL:admin@ronation.live}
 }
 
 # authorise.ronation.live is the sign-in host: it runs the ONE Roblox OAuth round
 # trip and hands every other host a ticket (src/lib/sso.ts). It must be on this
 # line and it must resolve, or nobody can sign in to anything. It is also the only
-# redirect_uri Roblox knows about — so adding a NEW subdomain from here on needs a
+# redirect_uri Roblox knows about - so adding a NEW subdomain from here on needs a
 # DNS record, a name on this line, and an entry in the allowlist in lib/sso.ts,
 # and nothing whatsoever in the Roblox OAuth app.
 #
-# Adding a partner host: append it to the site address line below — but only
+# Adding a partner host: append it to the site address line below - but only
 # once its DNS record already resolves to this server. Caddy asks Let's Encrypt
 # for a certificate the moment you reload it, and a failed issuance still counts
 # against the 5-per-domain-per-week limit.
 #
+# The shop answers on TWO names, and this is the one place that is not obvious:
+#   merch.ronation.live   serves it.
+#   shop.ronation.live    301s to merch, and serves nothing else, ever.
+# Both need a DNS record and both need a certificate - a redirect still has to be
+# spoken over HTTPS, so a `shop` host that resolves but is absent from this line
+# fails with a TLS error rather than forwarding. The redirect itself is the app's
+# (src/middleware.ts), not Caddy's, so there is one place that decision lives.
+#
 # Partner hosts live at the end of the line, one per partner:
 #   sleeptokenro.ronation.live   → Sleep Token   (registry slug "sleeptokenro")
 #
-# The slug in lib/partners/registry.ts and the first label here MUST match — the
+# The slug in lib/partners/registry.ts and the first label here MUST match - the
 # app resolves the brand from the Host header alone, so a name that is live in
 # DNS but absent from the registry serves RNL's site on the partner's domain,
 # and a slug in the registry with no host here is simply unreachable.
-{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live}, {$AUTHORISE_HOST:authorise.ronation.live}, {$STRO_HOST:sleeptokenro.ronation.live} {
+{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live}, {$AUTHORISE_HOST:authorise.ronation.live}, {$MERCH_HOST:merch.ronation.live}, {$SHOP_HOST:shop.ronation.live}, {$STRO_HOST:sleeptokenro.ronation.live} {
 	encode zstd gzip
 
 	# These are set by the app's middleware, from the Host header, and read by the
 	# root layout to decide which brand a page renders in. A client must never be
-	# able to supply its own — strip them on the way in. The middleware also
+	# able to supply its own - strip them on the way in. The middleware also
 	# overwrites both unconditionally; this is the second lock on the same door.
 	request_header -X-Ron-Brand
 	request_header -X-Ron-Area
 
-	# Uploaded images, served straight off the shared volume — they never touch
+	# Uploaded images, served straight off the shared volume - they never touch
 	# Next. This block must come BEFORE the reverse_proxy below; handle_path strips
 	# the /uploads prefix, so /uploads/rnl/x.png reads /srv/uploads/rnl/x.png.
 	#
 	# The two headers are load-bearing, not hygiene. Everything under here was
-	# uploaded by a human — RNL staff or a partner's manager — and SVG is an
+	# uploaded by a human - RNL staff or a partner's manager - and SVG is an
 	# accepted image type that can carry <script>. An <img src> never runs it, but
 	# a browser NAVIGATED to the file would, on RNL's own origin, with RNL's
 	# cookies. `sandbox` drops the document into an opaque origin so that script
@@ -67,7 +75,7 @@
 	# One upstream serves every name: the app reads the Host header to decide
 	# whether you get the public site, the SHASHA portal, a survey or a partner's
 	# site, and Caddy passes the original Host through untouched. `web` is the
-	# service name on the Docker network — not localhost, which inside this
+	# service name on the Docker network - not localhost, which inside this
 	# container would be Caddy.
 	reverse_proxy web:3000
 

@@ -6,7 +6,7 @@ import { ISSUE_MESSAGES } from "@/lib/api/messages";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/v1/tickets/reserve — hand a player a ticket, from inside the game.
+// POST /api/v1/tickets/reserve - hand a player a ticket, from inside the game.
 //
 // Auth:  x-api-key: <key>          scope: TICKETS_ISSUE
 // Body:  { robloxId, eventId, tierId? }
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 // The player is standing in front of you and wants in. They do not have to open a
 // website first: they have a Roblox account, and that is enough. If they have
 // never signed in to ronation.live in their life, a User row is created for them
-// here, from their Roblox profile — see resolveHolderUserId().
+// here, from their Roblox profile - see resolveHolderUserId().
 //
 // FREE TIERS ONLY. A priced tier comes back `payment_required`, because a ticket
 // somebody has to pay for is bought through /purchase, from a ProcessReceipt
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   // No username fallback, and that is deliberate: this WRITES. A username is a
   // label a player can change, and resolving one costs a round trip to Roblox that
-  // can fail — neither is a thing to hang "who gets a ticket" on. The game server
+  // can fail - neither is a thing to hang "who gets a ticket" on. The game server
   // has Player.UserId. Use it.
   if (!robloxId || !eventId) {
     return badRequest("provide `robloxId` and `eventId`");
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         event: null,
         holder: null,
       },
-      // A refusal is not an HTTP error — the request was understood perfectly, and
+      // A refusal is not an HTTP error - the request was understood perfectly, and
       // the answer is no. Same rule as /verify: 200 with a reason, so a Luau
       // integration branches on the body rather than on the status code.
       { status: 200 },

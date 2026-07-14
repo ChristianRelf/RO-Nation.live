@@ -14,7 +14,7 @@ const labelClass =
  * Client-side, because `visibility` has to be known BEFORE the file is uploaded:
  * it decides which disk the upload route writes to, so the radio has to be able
  * to tell AssetFileField what it currently is. (This is also why it cannot be
- * changed afterwards — see updateBrandAsset in actions/docs.ts.)
+ * changed afterwards - see updateBrandAsset in actions/docs.ts.)
  */
 export function BrandAssetForm({
   action,
@@ -86,7 +86,7 @@ export function BrandAssetForm({
               {
                 value: "PUBLIC",
                 title: "Public",
-                body: "Anyone with the link can open it, signed out. Right for logos and press art — a shareable URL is the point.",
+                body: "Anyone with the link can open it, signed out. Right for logos and press art - a shareable URL is the point.",
               },
               {
                 value: "INTERNAL",
@@ -117,13 +117,13 @@ export function BrandAssetForm({
           ))}
         </div>
         <p className="mt-2 text-xs text-faint">
-          This can&apos;t be changed later — it decides where the file is stored.
+          This can&apos;t be changed later - it decides where the file is stored.
           To change it, re-upload the file.
         </p>
       </fieldset>
 
       {/* Keyed on visibility so switching it clears any file already uploaded
-          under the other one — that file is on the wrong disk now. */}
+          under the other one - that file is on the wrong disk now. */}
       <AssetFileField key={visibility} visibility={visibility} />
 
       <div>

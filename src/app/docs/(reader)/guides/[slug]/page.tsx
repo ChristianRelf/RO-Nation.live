@@ -15,7 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   // No guard here, and none needed: a title is all this reads, and the page below
   // refuses to render a word of the body without one. Metadata for a guide that
-  // does not exist — or is still a draft — comes out as the fallback.
+  // does not exist - or is still a draft - comes out as the fallback.
   const guide = await prisma.guide.findFirst({
     where: { slug: params.slug, status: "PUBLISHED" },
     select: { title: true },
@@ -30,7 +30,7 @@ export default async function DocsGuidePage({
 }) {
   await requireDocsReader();
 
-  // PUBLISHED, not just "by slug". A draft is not a page with a harder URL — it
+  // PUBLISHED, not just "by slug". A draft is not a page with a harder URL - it
   // is not a page at all, and guessing its slug must not turn it into one.
   const guide = await prisma.guide.findFirst({
     where: { slug: params.slug, status: "PUBLISHED" },

@@ -1,18 +1,18 @@
 // A Live-Nation-style scrolling marquee on a bold accent band. Pure CSS, no JS.
 //
 // The band is filled with the brand accent, so everything drawn on it is
-// `accent-ink` — the ink that is readable on that fill. On RNL that is white;
+// `accent-ink` - the ink that is readable on that fill. On RNL that is white;
 // on a brand with a light accent it flips to near-black. The hairline is the
 // page background, which fences the band off from the page whichever way round
 // the two are.
 //
 // Two identical strips sit side by side, and each slides left by its own full
 // width. By the time the first has gone, the second is sitting exactly where the
-// first began — so the loop restarts on identical pixels and the seam is
+// first began - so the loop restarts on identical pixels and the seam is
 // invisible.
 //
 // `min-w-full` makes each strip at least as wide as the band, so the pair always
-// spans at least two screens and no blank can scroll into view — even with one
+// spans at least two screens and no blank can scroll into view - even with one
 // event, or none.
 //
 // Spacing: `justify-around` gives every item equal space either side, and the

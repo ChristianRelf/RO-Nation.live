@@ -2,9 +2,9 @@ import { priceLabel, type TierOffer } from "@/lib/tickets/pricing";
 
 // The line-up of what's on sale, on the event page's reserve panel.
 //
-// Renders NOTHING for an event that just has the implicit free admission — which
+// Renders NOTHING for an event that just has the implicit free admission - which
 // is every event that predates tiers. Adding tiers to the schema should not make
-// a plain free show suddenly grow a price list that says "General Admission —
+// a plain free show suddenly grow a price list that says "General Admission -
 // Free" at it.
 
 export function TierSummary({ offers }: { offers: TierOffer[] }) {

@@ -4,7 +4,7 @@ set -e
 # Wait for Postgres to accept connections.
 #
 # This is a CONNECTIVITY probe, and it is deliberately separate from the schema
-# push below. They used to be the same step — `until prisma db push` — which
+# push below. They used to be the same step - `until prisma db push` - which
 # quietly conflated two very different failures: "the database isn't up yet"
 # (retrying fixes it) and "Prisma refused this migration" (retrying never fixes
 # it). A refusal would loop 15 times and then exit claiming the database was
@@ -18,11 +18,11 @@ until echo 'SELECT 1;' | npx prisma db execute --schema=prisma/schema.prisma --s
     echo "✗ Database not reachable after 15 attempts. Exiting."
     exit 1
   fi
-  echo "  not ready yet — retrying in 3s ($retries/15)..."
+  echo "  not ready yet - retrying in 3s ($retries/15)..."
   sleep 3
 done
 
-# Push the schema. ONCE — no retry loop. The database is reachable by now, so a
+# Push the schema. ONCE - no retry loop. The database is reachable by now, so a
 # failure here is a real schema problem and the error is the useful part: it is
 # printed, and the container stops instead of masking it behind a retry counter.
 #
@@ -30,12 +30,12 @@ done
 # an entrypoint: it would hand every future deploy blanket permission to drop a
 # column or a table in production, silently, because a schema edit happened to
 # imply one. A migration that genuinely needs it is a migration a human should
-# be looking at — see README, "Applying a destructive schema change".
+# be looking at - see README, "Applying a destructive schema change".
 echo "→ Applying database schema..."
 if ! npx prisma db push --skip-generate; then
   echo ""
   echo "✗ Prisma refused to apply the schema (see the error above)."
-  echo "  This is NOT a connectivity problem — the database answered fine."
+  echo "  This is NOT a connectivity problem - the database answered fine."
   echo "  If the warning is about adding a constraint, verify there are no"
   echo "  conflicting rows and then apply it once, by hand:"
   echo ""

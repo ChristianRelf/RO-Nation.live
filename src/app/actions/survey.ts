@@ -24,7 +24,7 @@ function readAnswer(
 
   switch (q.type) {
     case QuestionType.CHECKBOXES: {
-      // Only options the question actually offers — never trust the posted list.
+      // Only options the question actually offers - never trust the posted list.
       const picked = form
         .getAll(field)
         .map((v) => String(v))
@@ -105,7 +105,7 @@ export async function submitSurveyResponse(formData: FormData) {
     });
   } catch (err) {
     // The @@unique([surveyId, userId]) is what actually enforces one response
-    // per account — two tabs submitting at once both pass the earlier check.
+    // per account - two tabs submitting at once both pass the earlier check.
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === "P2002"

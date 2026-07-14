@@ -16,7 +16,7 @@ function sanitizeReturn(v?: string) {
 }
 
 export async function GET(req: NextRequest) {
-  // Same host the sign-in began on — see the login route.
+  // Same host the sign-in began on - see the login route.
   const origin = requestOrigin(req);
   const params = req.nextUrl.searchParams;
   const code = params.get("code");
