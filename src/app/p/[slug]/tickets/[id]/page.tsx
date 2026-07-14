@@ -8,6 +8,7 @@ import { TicketDetail } from "@/components/ticket/ticket-detail";
 import { ticketBrand } from "@/lib/tickets/brand";
 import { ticketSeal } from "@/lib/tickets/seal";
 import { ticketUrl } from "@/lib/origin";
+import { venueMapFor } from "@/lib/venue/form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Ticket" };
@@ -50,10 +51,27 @@ export default async function PartnerTicketDetailPage({
 
   const brand = ticketBrand(partner.slug);
 
+  // Only for a ticket that holds a seat, and scoped to THIS partner's maps. See RNL's copy
+  // of this page for the long note.
+  const holdsASeat = Boolean(ticket.seatKey || ticket.sectionKey);
+  const map =
+    holdsASeat && ticket.event.venueMapId
+      ? await venueMapFor(ticket.event.venueMapId, partner.slug)
+      : null;
+
   return (
     <TicketDetail
       ticket={ticket}
       event={ticket.event}
+      seatMap={
+        map?.layout
+          ? {
+              layout: map.layout,
+              seatKey: ticket.seatKey,
+              sectionKey: ticket.sectionKey,
+            }
+          : undefined
+      }
       holder={session.displayName}
       brandMark={brand.mark}
       brandName={brand.name}

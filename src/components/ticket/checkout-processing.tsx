@@ -74,6 +74,11 @@ const ERRORS: Record<string, string> = {
   past: "This show has already taken place.",
   unavailable: "This show isn't available for reservations.",
   not_found: "This show isn't available for reservations.",
+  // The two seating refusals. Both send them back to the MAP, not to the tier list - the
+  // thing that went wrong was the chair, and the chair is chosen there.
+  bad_intent: "That seat hold is no longer valid. Pick your seat again.",
+  seat_taken:
+    "The last seats in that tier went while you were checking out. Pick another tier.",
 };
 
 export function CheckoutProcessing({
@@ -87,6 +92,16 @@ export function CheckoutProcessing({
   ticketBase,
   /** Back to the reserve step, if it goes wrong. */
   reserveHref,
+  /**
+   * The seat hold, on a seated show. "" when there is nothing to hold.
+   *
+   * The checkout page has already proved this is a live hold of theirs (holdIsSpendable),
+   * and the ACTION proves it again under the row lock. It is carried, never trusted - the
+   * file this component posts to says the same about the tier id sitting next to it.
+   */
+  intentToken = "",
+  /** Back to the seat map, when the show has one. The right retry for a seat failure. */
+  seatsHref,
 }: {
   eventId: string;
   tierId: string;
@@ -96,6 +111,8 @@ export function CheckoutProcessing({
   price: string;
   ticketBase: string;
   reserveHref: string;
+  intentToken?: string;
+  seatsHref?: string;
 }) {
   const [stage, setStage] = useState(0);
   const [issued, setIssued] = useState(false);
@@ -127,6 +144,10 @@ export function CheckoutProcessing({
       // The terms were accepted on the reserve step to get here. The ACTION still demands
       // this field, so the acceptance is re-asserted rather than assumed.
       form.set("terms", "on");
+      // The seat they have been holding since they clicked it on the map. Spending it here
+      // is what turns a hold into a chair. Empty on an unseated show - the action reads
+      // that as "no hold", which is what every show that exists today is.
+      form.set("intent", intentToken);
 
       reservation.current = reserveTicket(null, form);
     }
@@ -147,7 +168,7 @@ export function CheckoutProcessing({
       if (!alive) return;
 
       if (!result.ok) {
-        setError(ERRORS[result.error] ?? "Something went wrong. Try again.");
+        setError(result.error);
         return;
       }
 
@@ -160,13 +181,15 @@ export function CheckoutProcessing({
       setLeaving(true);
       window.location.assign(`${ticketBase}/${result.id}?issued=1`);
     })().catch(() => {
-      if (alive) setError("Something went wrong. Try again.");
+      // A CODE, not a sentence - `error` holds a reason now, because the retry link depends
+      // on which reason it is. "unknown" is in neither map, so both fall back.
+      if (alive) setError("unknown");
     });
 
     return () => {
       alive = false;
     };
-  }, [eventId, tierId, ticketBase]);
+  }, [eventId, tierId, ticketBase, intentToken]);
 
   // Take the reader with us. Without this a screen-reader user is left wherever they were
   // on the page underneath, listening to a dialog they were never moved into.
@@ -179,9 +202,19 @@ export function CheckoutProcessing({
   // whole-show sell-out - landed back on a blank form and had to pick all over again. The
   // reserve page ignores a tier that is no longer available, so this is safe even when the
   // failure WAS the tier.
-  const retryHref = tierId
-    ? `${reserveHref}?tier=${encodeURIComponent(tierId)}`
-    : reserveHref;
+  //
+  // A SEAT failure goes back to the seat map instead, because that is where the thing that
+  // went wrong is chosen. `bad_intent` is a dead hold and `seat_taken` is a full tier - and
+  // sending either of them back to the tier list would make the buyer re-accept the terms to
+  // reach a map they were one click away from.
+  const seatFailed = error === "bad_intent" || error === "seat_taken";
+
+  const retryHref =
+    seatFailed && seatsHref
+      ? seatsHref
+      : tierId
+        ? `${reserveHref}?tier=${encodeURIComponent(tierId)}`
+        : reserveHref;
 
   const label = leaving
     ? "Opening your ticket…"
@@ -203,9 +236,11 @@ export function CheckoutProcessing({
           <>
             <p className="kicker text-red-400">Order failed</p>
             <h1 className="display mt-4 text-3xl">We couldn&apos;t finish that</h1>
-            <p className="mt-3 text-sm text-muted">{error}</p>
+            <p className="mt-3 text-sm text-muted">
+              {ERRORS[error] ?? "Something went wrong. Try again."}
+            </p>
             <a href={retryHref} className="btn btn-accent mt-7 w-full">
-              Back to checkout
+              {seatFailed && seatsHref ? "Back to the seat map" : "Back to checkout"}
             </a>
             <a
               href={`/events/${eventSlug}`}

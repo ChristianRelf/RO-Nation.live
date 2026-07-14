@@ -1121,6 +1121,19 @@ enum ApiKeyScope {
   TICKETS_PURCHASE
   /// POST /api/v1/tickets/void and /revoke - take a ticket away.
   TICKETS_VOID
+
+  /// POST + DELETE + GET /api/v1/intents - HOLD a seat while a player decides.
+  ///
+  /// Its own scope, and deliberately NOT folded into TICKETS_PURCHASE - which is the
+  /// obvious place to put it and the wrong one. TICKETS_PURCHASE's whole warning is that
+  /// it can ASSERT A PAYMENT nothing on our side can check: "only give this to a place you
+  /// would trust with your own Robux". Holding a chair for ten minutes cannot take a penny
+  /// off anybody.
+  ///
+  /// So a lobby board, a walk-up booth or a seat-map kiosk - anything that needs to keep a
+  /// chair warm while somebody makes up their mind - gets THIS, and never the scope that
+  /// could mint itself a free VIP ticket.
+  INTENTS_WRITE
 }
 
 model ApiKey {

@@ -34,6 +34,15 @@ export function TicketArt({
   venue,
   tierName,
   priceRobux,
+  /**
+   * "Balcony Left · Row K · Seat 12". Null on an unseated show, which is most of them -
+   * and an unseated ticket is then printed exactly as it was before seating existed.
+   *
+   * FROZEN at issue (Ticket.seatLabel), never recomputed. The section's name on the night
+   * they bought is the name on their ticket forever, whatever the map is renamed to - the
+   * same contract as `tierName` sitting beside it.
+   */
+  seatLabel,
   holder,
   status,
   brandMark,
@@ -69,6 +78,7 @@ export function TicketArt({
   venue?: string | null;
   tierName: string;
   priceRobux: number;
+  seatLabel?: string | null;
   holder: string;
   status: TicketArtStatus;
   brandMark: string;
@@ -187,6 +197,27 @@ export function TicketArt({
                 </>
               ) : null}
             </div>
+
+            {/* WHERE YOU SIT.
+                A line of its own, in display type, and NOT a fifth cell in the grid below -
+                a real ticket prints the block, the row and the seat big enough to find in
+                the dark with a phone torch, because that is the one thing on the card its
+                holder is going to be squinting at. It also mirrors the door, which shows
+                the same string in the same weight: the steward and the holder are then
+                looking at one fact, not two renderings of it.
+
+                Absent on an unseated show, which leaves that ticket byte-for-byte as it
+                was printed before any of this existed. */}
+            {seatLabel ? (
+              <div className="mt-4 border-t border-paper-ink/15 pt-4">
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-paper-ink/45">
+                  Seat
+                </p>
+                <p className="display mt-1 text-2xl leading-tight text-paper-ink">
+                  {seatLabel}
+                </p>
+              </div>
+            ) : null}
 
             {/* What you hold, and who holds it. Two columns, not four: a tier is
                 named by whoever set it up ("VIP - Front Barrier"), and four columns

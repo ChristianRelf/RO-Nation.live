@@ -163,9 +163,58 @@ export function EventForm({
             />
           </div>
         </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label className={labelClass}>Place ID</label>
+            <input
+              name="placeId"
+              inputMode="numeric"
+              defaultValue={event?.placeId ?? ""}
+              placeholder="1234567890"
+              className={inputClass}
+            />
+            {/* Two columns, not one URL parsed at use time. The URL above is what a human
+                clicks; this is what a deep link is BUILT from, and scraping the id back
+                out of a pasted link works right up until one arrives with a tracking
+                query string on the end. See the note on Event.placeId. */}
+            <p className="mt-1 text-xs text-faint">
+              The number in the experience URL. Used to deep-link a buyer straight into the
+              show.
+            </p>
+          </div>
+          <div>
+            <label className={labelClass}>Seating</label>
+            <select
+              name="seatMode"
+              defaultValue={event?.seatMode ?? "NONE"}
+              className={inputClass}
+            >
+              <option value="NONE">General admission (no map)</option>
+              <option value="SECTION">Pick a section</option>
+              <option value="SEAT">Pick a seat</option>
+            </select>
+            {/* The map is drawn on the event's own Venue page, and drawing it is NOT what
+                puts seats on sale - this select is. Leave it on NONE and the picker is
+                skipped outright, which is exactly what keeps every existing show
+                untouched. */}
+            <p className="mt-1 text-xs text-faint">
+              Anything but general admission needs a venue drawn on this show&apos;s Venue
+              page — and nobody is offered a seat until this is set.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <TierEditor initial={tiers} robuxEnabled={robuxEnabled} />
+      {/* `scope` decides which verify action the editor calls, and `eventId` lets it ignore
+          THIS event's own tiers when it checks whether a game pass is already spoken for -
+          a tier that has already saved its pass is not colliding with itself. Neither is
+          authority: the action re-proves the caller's grant on the scope they name. */}
+      <TierEditor
+        initial={tiers}
+        robuxEnabled={robuxEnabled}
+        eventId={event?.id ?? ""}
+        scope={scope ?? ""}
+      />
 
       <div className="card space-y-5 p-6">
         <h3 className="font-display text-lg">Artwork &amp; visibility</h3>

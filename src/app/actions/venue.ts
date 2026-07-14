@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCompanyUser } from "@/lib/company";
 import { requirePartnerManager } from "@/lib/partners/guard";
-import { partnerPortalPath } from "@/lib/partners/urls";
+import { partnerPortalPath, partnerPortalRoute } from "@/lib/partners/urls";
 import {
   cloneTemplateOnto,
   createVenueMap,
@@ -127,7 +127,12 @@ export async function savePartnerVenue(formData: FormData) {
     );
   }
 
-  revalidatePath(partnerPortalPath(partner.slug, "/studio/venues"));
+  // revalidatePath takes the INTERNAL route (/pp/<slug>/…), never the public one the
+  // browser is on. `base` is the public path and is right for the redirect below - hand it
+  // to revalidatePath instead and it matches no route, throws nothing, and the venue list
+  // simply keeps serving the layout you just replaced. See lib/partners/urls.ts.
+  revalidatePath(partnerPortalRoute(partner.slug, "/studio/venues"));
+  revalidatePath(partnerPortalRoute(partner.slug, `/studio/venues/${id}/edit`));
   redirect(base);
 }
 
@@ -147,7 +152,7 @@ export async function createPartnerVenue(formData: FormData) {
     actorName: user.username,
   });
 
-  revalidatePath(base);
+  revalidatePath(partnerPortalRoute(partner.slug, "/studio/venues"));
   redirect(`${base}/${map.id}/edit`);
 }
 
@@ -170,7 +175,8 @@ export async function attachPartnerVenue(formData: FormData) {
     actorName: user.username,
   });
 
-  revalidatePath(`${base}/${eventId}/edit`);
+  revalidatePath(partnerPortalRoute(partner.slug, `/studio/events/${eventId}/edit`));
+  revalidatePath(partnerPortalRoute(partner.slug, `/studio/events/${eventId}/venue`));
   redirect(
     result.ok ? `${base}/${eventId}/venue` : `${base}/${eventId}/edit?error=venue`,
   );

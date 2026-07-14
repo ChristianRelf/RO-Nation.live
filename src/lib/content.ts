@@ -1,5 +1,5 @@
 import "server-only";
-import { EventStatus, GuideStatus, PostStatus } from "@prisma/client";
+import { EventStatus, GuideStatus, PostStatus, SeatMode } from "@prisma/client";
 import { prisma } from "./db";
 import { slugify } from "./utils";
 
@@ -78,6 +78,20 @@ export async function uniqueSlug(
   }
 }
 
+/**
+ * The seating mode, or NONE.
+ *
+ * Checked against the enum rather than cast to it. Both writers spread this straight into
+ * Prisma, so a value that is not a member reaches the database as a bad enum and throws -
+ * and the request that arrives with `seatMode=SEATT` is a forged one, which is not worth a
+ * 500 for the sake of. NONE is the safe end of the range: a show that falls back to general
+ * admission sells tickets, a show that throws sells none.
+ */
+function readSeatMode(form: FormData): SeatMode {
+  const raw = s(form, "seatMode");
+  return raw in SeatMode ? (raw as SeatMode) : SeatMode.NONE;
+}
+
 export function readEventForm(form: FormData) {
   return {
     title: s(form, "title"),
@@ -85,6 +99,12 @@ export function readEventForm(form: FormData) {
     category: s(form, "category") || "Live Show",
     venue: s(form, "venue") || null,
     placeUrl: s(form, "placeUrl") || null,
+    // Digits or nothing. This is the id a deep link is BUILT from, and it is a separate
+    // column from placeUrl on purpose - see the note on Event.placeId. A pasted URL is
+    // therefore NOT quietly scraped for an id: an id we made up out of a tracking query
+    // string builds a link that goes silently nowhere, which is worse than an empty field
+    // the promoter can see is empty.
+    placeId: /^\d+$/.test(s(form, "placeId")) ? s(form, "placeId") : null,
     thumbnailUrl: s(form, "thumbnailUrl") || null,
     description: s(form, "description"),
     startsAt: parseDate(s(form, "startsAt")),
@@ -92,6 +112,8 @@ export function readEventForm(form: FormData) {
     endsAt: parseDate(s(form, "endsAt")),
     capacity: Math.max(0, parseInt(s(form, "capacity") || "0", 10) || 0),
     status: (s(form, "status") as EventStatus) || EventStatus.DRAFT,
+    // Drawing a map does not put seats on sale. THIS does. See SeatMode in the schema.
+    seatMode: readSeatMode(form),
     featured: form.get("featured") === "on",
   };
 }

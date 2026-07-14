@@ -2,6 +2,8 @@ import Link from "next/link";
 import { formatDate, formatDateTime, isPast } from "@/lib/format";
 import { ticketCalendarHref } from "@/lib/tickets/ics";
 import { priceLabel } from "@/lib/tickets/pricing";
+import type { VenueLayout } from "@/lib/venue/schema";
+import { VenueMap } from "@/components/venue/venue-map";
 import { Celebrate } from "./celebrate";
 import { ActivateButton, CancelButton } from "./ticket-actions";
 import { TicketArt } from "./ticket-art";
@@ -20,6 +22,26 @@ type Ticket = {
   checkedInAt: Date | null;
   tierName: string | null;
   priceRobux: number;
+  /** Frozen at issue. Null on an unseated show - which is most of them. */
+  seatLabel: string | null;
+};
+
+/**
+ * Where the seat IS, drawn.
+ *
+ * The third reader of `<VenueMap>` - the designer draws with it, the picker sells with it,
+ * and this shows you what you bought. One renderer, three surfaces, which is the whole
+ * reason venue-map.tsx exists: a stub that drew its own map would eventually draw a chair
+ * in a place the picker never offered.
+ *
+ * Undefined on an unseated show, and on a seated one whose map has since been deleted -
+ * the ticket still knows its `seatLabel`, so it still SAYS where they sit. The picture is
+ * the bonus, not the fact.
+ */
+type SeatMap = {
+  layout: VenueLayout;
+  seatKey: string | null;
+  sectionKey: string | null;
 };
 
 type Event = {
@@ -37,6 +59,7 @@ type Event = {
 export function TicketDetail({
   ticket,
   event,
+  seatMap,
   holder,
   brandMark,
   brandName,
@@ -47,6 +70,7 @@ export function TicketDetail({
 }: {
   ticket: Ticket;
   event: Event;
+  seatMap?: SeatMap;
   holder: string;
   brandMark: string;
   brandName: string;
@@ -127,6 +151,7 @@ export function TicketDetail({
             venue={event.venue}
             tierName={tierName}
             priceRobux={ticket.priceRobux}
+            seatLabel={ticket.seatLabel}
             holder={holder}
             status={ticket.status}
             brandMark={brandMark}
@@ -140,6 +165,38 @@ export function TicketDetail({
             ticketUrl={ticketUrl}
             revealed={revealed}
           />
+
+          {/* ---- Where you're sitting ----
+              The map, with their own chair lit up. It is drawn by the SAME component the
+              designer drew the room with and the picker sold it with, focused on their
+              section so the chairs are actually visible - at the overview a single seat in
+              a 2,000-seat room is a dot you cannot find.
+
+              Note what is NOT passed: `taken` and `held`. Whose ticket sits in the chair
+              next to yours is nobody's business but theirs, and a stub is not a live
+              availability view - it is a picture of where YOU are. */}
+          {seatMap ? (
+            <div className="card mt-6 overflow-hidden p-4 sm:p-5">
+              <div className="flex items-baseline justify-between gap-4">
+                <p className="text-[11px] font-bold uppercase tracking-kicker text-accent">
+                  Where you&apos;re sitting
+                </p>
+                {ticket.seatLabel ? (
+                  <p className="min-w-0 truncate text-sm font-semibold text-fg">
+                    {ticket.seatLabel}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="mt-4 aspect-[10/7] w-full">
+                <VenueMap
+                  layout={seatMap.layout}
+                  selected={seatMap.seatKey}
+                  focused={seatMap.sectionKey}
+                />
+              </div>
+            </div>
+          ) : null}
 
           {/* Under the card, on the page rather than printed on the ticket: the
               things that would clutter a real stub but that a holder still wants
@@ -260,6 +317,9 @@ export function TicketDetail({
               mono={revealed}
             />
             <Row label="Admission" value={tierName} />
+            {ticket.seatLabel ? (
+              <Row label="Seat" value={ticket.seatLabel} />
+            ) : null}
             <Row label="Paid" value={priceLabel(ticket.priceRobux)} />
             <Row label="Holder" value={holder} />
             <Row label="Issued by" value={brandName} />

@@ -29,8 +29,13 @@ export const metadata: Metadata = {
 function studioSections(partner: Partner) {
   return [
     { label: "Overview", href: "" },
+    // Venues ride on the `events` feature - a partner who cannot run shows has no use for
+    // a room to put one in, and the venue pages assert the same feature.
     ...(partnerHasFeature(partner, "events")
-      ? [{ label: "Shows", href: "/events" }]
+      ? [
+          { label: "Shows", href: "/events" },
+          { label: "Venues", href: "/venues" },
+        ]
       : []),
     ...(partnerHasFeature(partner, "blog")
       ? [{ label: "Blog", href: "/blog" }]

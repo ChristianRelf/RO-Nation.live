@@ -30,7 +30,16 @@ export default async function CompanyEditEventPage({
 
   return (
     <div>
-      <AdminHeader title="Edit event" subtitle={event.title} />
+      {/* The only way into the designer. The route existed and nothing linked to it, which
+          made the map a feature you had to already know the URL of. */}
+      <AdminHeader
+        title="Edit event"
+        subtitle={event.title}
+        action={{
+          label: event.venueMapId ? "Venue & seating" : "+ Add a venue",
+          href: `/company/events/${event.id}/venue`,
+        }}
+      />
       <EventForm
         action={updateEvent}
         event={event}

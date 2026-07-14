@@ -33,6 +33,7 @@ export function TicketStub({
   venue,
   tierName,
   priceRobux,
+  seatLabel,
   status,
   activated,
   brandMark,
@@ -45,6 +46,8 @@ export function TicketStub({
   venue?: string | null;
   tierName: string;
   priceRobux: number;
+  /** Where they sit. Null on an unseated show - the row then reads exactly as before. */
+  seatLabel?: string | null;
   status: TicketArtStatus;
   activated: boolean;
   brandMark: string;
@@ -104,6 +107,16 @@ export function TicketStub({
                 {priceLabel(priceRobux)}
               </span>
             </p>
+
+            {/* The seat, in the wallet. Its own line rather than a third item on the one
+                above: "General Admission · Free · Balcony Left · Row K · Seat 12" truncates
+                to nonsense on a phone, and the seat is the half you opened the wallet to
+                check. */}
+            {seatLabel ? (
+              <p className="mt-0.5 truncate text-xs font-semibold text-fg">
+                {seatLabel}
+              </p>
+            ) : null}
           </div>
         </div>
 

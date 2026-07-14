@@ -81,3 +81,28 @@ export function str(v: unknown): string | null {
   if (typeof v === "number" && Number.isFinite(v)) return String(v);
   return null;
 }
+
+/**
+ * An id OR a slug -> the real event id. Null if there is no such show.
+ *
+ * The read endpoints have always taken either, because a game server is configured BY HAND
+ * and "stro-the-first-rite" is a great deal easier to not get wrong than a cuid. The write
+ * side (issueTicket, createPurchaseIntent) takes the id and only the id - it is the
+ * authority, and it should not be in the business of guessing what you meant.
+ *
+ * The gap between those two facts is a trap, and it is a 2am one: a booth configured with a
+ * slug reads the line-up, reads the seat map, draws the room perfectly - and then 404s the
+ * moment somebody tries to hold a chair. So the routes close it here, once, rather than each
+ * of them either remembering or not.
+ */
+export async function resolveEventId(key: string | null): Promise<string | null> {
+  if (!key) return null;
+
+  const { prisma } = await import("@/lib/db");
+  const event = await prisma.event.findFirst({
+    where: { OR: [{ id: key }, { slug: key }] },
+    select: { id: true },
+  });
+
+  return event?.id ?? null;
+}

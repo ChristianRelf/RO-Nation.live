@@ -1,5 +1,6 @@
 import "server-only";
 import type { IssueReason } from "@/lib/tickets/issue";
+import type { IntentReason } from "@/lib/tickets/intents";
 
 // The sentence that goes with each refusal.
 //
@@ -48,6 +49,32 @@ export const ISSUE_MESSAGES: Record<Exclude<IssueReason, "ok">, string> = {
 
   seat_taken:
     "That seat has gone and there's nothing left in that tier to move them to. If they have already been charged, this one needs a refund by hand.",
+};
+
+/** Why a hold could not be taken. Same contract: branch on `reason`, show `message`. */
+export const INTENT_MESSAGES: Record<IntentReason, string> = {
+  not_found: "No such show.",
+  unavailable: "This show isn't open for tickets.",
+  past: "This show has already happened.",
+  badtier: "That ticket type isn't available for this show.",
+  no_player: "Roblox doesn't know that player.",
+  revoked: "This player's ticket for this show was revoked. They cannot get another.",
+  already_holds: "They already have a ticket for this show. One per player, per show.",
+  soldout: "This show is sold out - there is nothing left to hold.",
+  tier_soldout: "That tier is sold out.",
+
+  // The one that costs money if you get it wrong. There is nothing left in this tier to move
+  // them to, so DO NOT PROMPT the purchase - a player who pays now cannot be given a seat.
+  seat_taken:
+    "Every seat in that tier has gone. Do not prompt for payment - there is nothing to sell them. Offer another tier.",
+
+  payments_off: "Paid tickets aren't switched on. That tier can't be sold to anybody.",
+  unsellable:
+    "That tier is priced but has no Developer Product and no game pass, so nobody can buy it anywhere. It is misconfigured, not sold out - tell the organisers.",
+  bad_rail:
+    "That tier has no Developer Product, so it cannot be bought inside the experience. It may still be on sale on the website.",
+  cannot_gift:
+    "A game pass cannot be bought for somebody else - it lands in the buyer's inventory. Gift with a Developer Product instead.",
 };
 
 export const VOID_MESSAGES = {

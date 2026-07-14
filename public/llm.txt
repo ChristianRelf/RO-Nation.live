@@ -103,20 +103,34 @@ moving it onto a scoped key is the single best thing you can do to it.
 
 ## The endpoints
 
-| Endpoint                        | Writes? | Scope              | Use it for                              |
-| ------------------------------- | ------- | ------------------ | --------------------------------------- |
-| `GET  /api/v1/events`           | No      | `EVENTS_READ`      | What shows are coming up?               |
-| `GET  /api/v1/events/<id>`      | No      | `EVENTS_READ`      | One show: doors, room, tiers, seats left |
-| `POST /api/v1/tickets/verify`   | No      | `TICKETS_VERIFY`   | Is this ticket good, and what is it?    |
-| `POST /api/v1/tickets/redeem`   | Yes     | `TICKETS_REDEEM`   | Let them in, and burn the ticket.       |
-| `POST /api/v1/tickets/reserve`  | Yes     | `TICKETS_ISSUE`    | Give this player a free ticket.         |
-| `POST /api/v1/tickets/gift`     | Yes     | `TICKETS_ISSUE`    | X gives Y a ticket.                     |
-| `POST /api/v1/tickets/purchase` | Yes     | `TICKETS_PURCHASE` | They paid Robux. Issue the paid ticket. |
-| `POST /api/v1/tickets/void`     | Yes     | `TICKETS_VOID`     | Cancel a ticket. They may reserve again.|
-| `POST /api/v1/tickets/revoke`   | Yes     | `TICKETS_VOID`     | Cancel it, and bar them from this show. |
+| Endpoint                                   | Writes? | Scope              | Use it for                              |
+| ------------------------------------------ | ------- | ------------------ | --------------------------------------- |
+| `GET  /api/v1/events`                      | No      | `EVENTS_READ`      | What shows are coming up?               |
+| `GET  /api/v1/events/<id>`                 | No      | `EVENTS_READ`      | One show: doors, room, tiers, seats left |
+| `GET  /api/v1/events/<id>/seats`           | No      | `EVENTS_READ`      | Which seats are gone, live. Poll this.  |
+| `GET  /api/v1/players/<robloxId>/tickets`  | No      | `TICKETS_VERIFY`   | What does this player already hold?     |
+| `POST /api/v1/intents`                     | Yes     | `INTENTS_WRITE`    | **Hold a seat** while they decide.      |
+| `GET  /api/v1/intents/<token>`             | No      | `EVENTS_READ`      | What is this token? (reads `launchData`) |
+| `DELETE /api/v1/intents/<token>`           | Yes     | `INTENTS_WRITE`    | They said no. Give the seat back.       |
+| `POST /api/v1/tickets/verify`              | No      | `TICKETS_VERIFY`   | Is this ticket good, and what is it?    |
+| `POST /api/v1/tickets/redeem`              | Yes     | `TICKETS_REDEEM`   | Let them in, and burn the ticket.       |
+| `POST /api/v1/tickets/reserve`             | Yes     | `TICKETS_ISSUE`    | Give this player a free ticket.         |
+| `POST /api/v1/tickets/gift`                | Yes     | `TICKETS_ISSUE`    | X gives Y a ticket.                     |
+| `POST /api/v1/tickets/purchase`            | Yes     | `TICKETS_PURCHASE` | They paid Robux. Issue the paid ticket. |
+| `POST /api/v1/tickets/void`                | Yes     | `TICKETS_VOID`     | Cancel a ticket. They may reserve again.|
+| `POST /api/v1/tickets/revoke`              | Yes     | `TICKETS_VOID`     | Cancel it, and bar them from this show. |
 
 Every ticket endpoint returns the **same response shape**. That is deliberate: you
 parse one shape in Luau, not nine.
+
+**`eventId` is the id OR the slug, everywhere.** Keep one constant in your game and hand it
+to everything - `"midnight-frequency"` is a great deal easier to not get wrong at 2am than
+`"cmr9nedoy0001fgfa4abrsbt2"`, and both work on every endpoint that takes an event.
+
+**`INTENTS_WRITE` is deliberately not `TICKETS_PURCHASE`.** Holding a chair cannot take a
+penny off anybody; asserting a payment can. A lobby board or a seat map should be able to do
+the first without being able to do the second, so they are two scopes and you should hand out
+the smaller one.
 
 ---
 
@@ -466,6 +480,157 @@ refund, not an error message.
 
 ---
 
+## Seating, and the hold
+
+Most shows are general admission and none of this applies to them: `seatMode` is `NONE`,
+there is no map, and every endpoint behaves exactly as it did before seating existed. **If
+you are integrating against an unseated show you can skip this entire section.**
+
+A show with `seatMode` of `SECTION` or `SEAT` sells a *place*, and that changes one thing:
+
+> **You cannot sell a numbered seat to somebody who never said which seat.**
+
+So there is a step before the money: you **hold** the chair, and then you sell it.
+
+### Why a hold has to exist
+
+Between "I'll take row K seat 12" and `ProcessReceipt` firing, there is a Roblox purchase
+prompt. Seconds, if they are quick. A minute if they go and check their balance.
+
+With no hold, a second booth in a second server sees that chair as free for the whole of
+that minute, sells it, and **exactly one of the two people who paid Robux gets it**. The
+other has to be refunded by hand, by a human, who first has to work out that it happened.
+
+The hold is what closes that window. It lasts **ten minutes**.
+
+### The three calls
+
+```
+POST   /api/v1/intents            hold a seat        INTENTS_WRITE
+DELETE /api/v1/intents/<token>    they said no       INTENTS_WRITE
+GET    /api/v1/intents/<token>    what is this?      EVENTS_READ
+```
+
+**`POST /api/v1/intents`**
+
+```json
+{ "robloxId": "12345", "eventId": "midnight-frequency", "tierId": "cmr9…", "seatKey": "A1-K12" }
+```
+
+```json
+{
+  "ok": true,
+  "held": true,
+  "intent": {
+    "token": "9f3c…",
+    "expiresAt": "2026-07-14T20:10:00.000Z",
+    "priceRobux": 250,
+    "devProductId": "123456789",
+    "seatKey": "A1-K12",
+    "sectionKey": "A1",
+    "seatLabel": "VIP Front · Row K · Seat 12"
+  }
+}
+```
+
+Three things about that response:
+
+1. **`seatKey` is the seat they GOT, not the seat you asked for.** If somebody took it half a
+   second ago they are quietly moved to the next best seat in the same tier. **Render what
+   comes back.** Never render what you sent.
+2. **`devProductId` is what to prompt.** Read it here rather than keeping your own map of
+   tier → product; yours drifts the first time somebody re-makes a product.
+3. Omit `seatKey` entirely and you get **best available** in that tier. That is not a
+   fallback, it is a feature - it is exactly what the "Best available" button on the website
+   does, and it runs the same code.
+
+`held: false` means no seat was taken. `reason` says why; `seat_taken` is the one to respect
+above all others - **do not prompt for payment**, there is nothing left in that tier to sell.
+
+### Selling it
+
+`POST /api/v1/tickets/purchase` now takes **`intentToken`**, and on a seated show it is
+**required**. Without it we do not know which chair they bought, and refusing is the only
+honest answer.
+
+Unseated shows are unchanged: the token stays optional, and every booth that works today
+keeps working untouched.
+
+> **An expired hold is not a refusal.** They have already been charged - the money moved on a
+> screen we do not control - so an expiry costs them **the seat they picked, not the ticket
+> they paid for**. They fall back to the best available chair in the same tier and the
+> purchase goes through. The only true refusal is `seat_taken`: the whole tier is gone, and
+> that is the one case that needs a refund by hand.
+
+### Giving the seat back
+
+Call `DELETE /api/v1/intents/<token>` from `PromptProductPurchaseFinished` when
+`wasPurchased == false`. Nothing breaks if you never do - the hold dies on its own - but
+calling it means the next player sees the chair **now** instead of staring at a seat nobody
+wants for ten minutes.
+
+### The map
+
+`GET /api/v1/events/<id>?include=venue` gives you the room: every section, its rows, and the
+**anchor**.
+
+The anchor is one affine transform for the whole map - `origin` (in studs), `scale`, `yaw` -
+and that is what turns the 2D drawing into your 3D room. There is deliberately **not** a
+transform per section: six hand-typed floats per block, in a 2D editor, with no way to see
+whether they are right, *will* be wrong. One anchor is a thing a human can check.
+
+`anchor: null` means the promoter never told us where the room is. Build the map flat, and do
+not try to spawn anybody at their chair.
+
+**Fetch the layout ONCE**, at startup. It does not change. Then poll:
+
+`GET /api/v1/events/<id>/seats` - which chairs are gone, live. It is tiny, and it answers
+**304 Not Modified** if you send back `If-None-Match`, so an idle show costs you nothing.
+
+```json
+{ "ok": true, "seatMode": "SEAT",
+  "taken": ["A1-K12", "A1-K13"],
+  "held":  ["A1-J4"],
+  "sections": [{ "key": "PIT", "taken": 240, "capacity": 500 }] }
+```
+
+`taken` is sold. `held` is somebody mid-purchase - draw it differently if you like, but **do
+not offer it**. If their hold expires the seat simply reappears as free.
+
+### Starting on the web, finishing in the game
+
+A buyer on the website gets a deep link:
+
+```
+roblox.com/games/start?placeId=<event.placeId>&launchData=<intent token>
+```
+
+Your game reads it back with `player:GetJoinData().LaunchData`, and then asks us what it
+means:
+
+```
+GET /api/v1/intents/<token>
+```
+
+You get the show, the tier, the seat, and `ticketId` if it has already been spent - which is
+how you know to show them their ticket instead of selling them a second one.
+
+### What the player already holds
+
+```
+GET /api/v1/players/<robloxId>/tickets?eventId=<id>
+```
+
+The booth's opening question, and there was no way to ask it before. Three answers, three
+different things to do:
+
+- **nothing** → sell them a ticket.
+- **GA** → *offer them the upgrade*. This is the sale that otherwise never happens: they have
+  no idea VIP is still available, and you have no way to know you are talking to a GA holder.
+- **VIP** → let them in. Don't try to sell them anything.
+
+---
+
 ## Taking a ticket back
 
 Both take the same body as `/verify` - a `code`, or a player + `eventId` - plus an
@@ -642,6 +807,146 @@ MarketplaceService.ProcessReceipt = function(receipt)
     -- success, not a duplicate, and it must still be granted or Roblox will keep
     -- sending it forever.
     return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+```
+
+### A walk-up booth, with seats
+
+The whole thing. A player touches the booth, sees what they already hold, picks a seat, pays,
+and sits in it.
+
+```lua
+local MarketplaceService = game:GetService("MarketplaceService")
+
+local EVENT_ID = "midnight-frequency"
+
+-- The map NEVER changes. Fetch it once; poll /seats for what has gone.
+local venue          -- layout: sections, rows, anchor
+local heldByPlayer = {}   -- [userId] = { token = …, seatKey = …, tierId = … }
+local tierForProduct = {} -- [productId] = tierId   ← built from the API, not by hand
+
+local function loadEvent()
+    local data = callApi("GET", "/api/v1/events/" .. EVENT_ID .. "?include=venue")
+    venue = data.venue and data.venue.layout or nil
+
+    for _, tier in ipairs(data.tiers) do
+        if tier.devProductId then
+            tierForProduct[tonumber(tier.devProductId)] = tier.id
+        end
+    end
+
+    return data.event.seatMode   -- "NONE" | "SECTION" | "SEAT"
+end
+
+-- What is gone. Cheap, and it 304s - keep the ETag and hand it back.
+local etag
+local function refreshSeats()
+    local data, newEtag = callApi("GET",
+        "/api/v1/events/" .. EVENT_ID .. "/seats", nil, etag)
+    if not data then return end          -- 304: nothing changed, keep what you have
+    etag = newEtag
+    return data.taken, data.held         -- draw `held` differently. Do NOT offer it.
+end
+
+-- They picked a chair.
+local function holdSeat(player, tierId, seatKey)
+    local data = callApi("POST", "/api/v1/intents", {
+        robloxId = tostring(player.UserId),
+        eventId  = EVENT_ID,
+        tierId   = tierId,
+        seatKey  = seatKey,          -- omit for best available
+    })
+
+    if not data.held then
+        -- seat_taken means the TIER is empty. Do not prompt for payment: there is
+        -- nothing to sell them. Every other reason is worth showing as-is.
+        return nil, data.message
+    end
+
+    heldByPlayer[player.UserId] = {
+        token  = data.intent.token,
+        seatKey = data.intent.seatKey,   -- ← what they GOT. Not what you asked for.
+        tierId = tierId,
+    }
+
+    -- Free tier? There is nothing to pay. Take the ticket and stop.
+    if not data.intent.devProductId then
+        local t = callApi("POST", "/api/v1/tickets/reserve", {
+            robloxId    = tostring(player.UserId),
+            eventId     = EVENT_ID,
+            tierId      = tierId,
+            intentToken = data.intent.token,
+        })
+        heldByPlayer[player.UserId] = nil
+        return t.ticket, t.message
+    end
+
+    MarketplaceService:PromptProductPurchase(player, tonumber(data.intent.devProductId))
+    return data.intent   -- show them: "Holding " .. data.intent.seatLabel
+end
+
+-- They dismissed the prompt. Give the chair back NOW, not in ten minutes.
+MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, _, wasPurchased)
+    if wasPurchased then return end
+
+    local held = heldByPlayer[userId]
+    if not held then return end
+
+    callApi("DELETE", "/api/v1/intents/" .. held.token)
+    heldByPlayer[userId] = nil
+end)
+
+-- They paid.
+MarketplaceService.ProcessReceipt = function(receipt)
+    local tierId = tierForProduct[receipt.ProductId]
+    if not tierId then
+        return Enum.ProductPurchaseDecision.NotProcessedYet   -- not ours; don't grant it
+    end
+
+    local held = heldByPlayer[receipt.PlayerId]
+
+    local data, err = callApi("POST", "/api/v1/tickets/purchase", {
+        purchaseId  = receipt.PurchaseId,           -- the idempotency key. Non-negotiable.
+        robloxId    = tostring(receipt.PlayerId),
+        eventId     = EVENT_ID,
+        tierId      = tierId,
+        robuxSpent  = receipt.CurrencySpent,
+        placeId     = tostring(receipt.PlaceIdWherePurchased),
+        productId   = tostring(receipt.ProductId),
+
+        -- REQUIRED on a seated show. If their hold expired while they were paying,
+        -- send it anyway: an expired hold is not a refusal, and they will simply be
+        -- given the best seat left in the tier rather than losing their ticket.
+        intentToken = held and held.token or nil,
+    })
+
+    if err == "network" or not data or not data.issued then
+        -- Roblox re-delivers the receipt, and /purchase is idempotent, so the retry
+        -- settles it safely. NEVER grant a receipt we did not confirm.
+        return Enum.ProductPurchaseDecision.NotProcessedYet
+    end
+
+    heldByPlayer[receipt.PlayerId] = nil
+
+    -- data.ticket.seat.label  → "VIP Front · Row K · Seat 12"
+    -- data.ticket.seat.world  → {x, y, z} in studs, if the promoter anchored the map.
+    --                           Spawn them there.
+    return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+
+-- The booth's opening question.
+local function greet(player)
+    local mine = callApi("GET",
+        "/api/v1/players/" .. player.UserId .. "/tickets?eventId=" .. EVENT_ID)
+
+    local ticket = mine.tickets[1]
+    if not ticket then
+        return "browse"                       -- sell them something
+    elseif ticket.kind == "GA" then
+        return "upgrade", ticket              -- ← the sale that otherwise never happens
+    else
+        return "admit", ticket
+    end
 end
 ```
 

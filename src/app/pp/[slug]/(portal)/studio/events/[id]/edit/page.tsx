@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import {
@@ -50,16 +51,23 @@ export default async function EditPartnerShowPage({
           <p className="mt-2 text-sm text-muted">{event.title}</p>
         </div>
 
-        <form action={deletePartnerEvent} className="shrink-0">
-          <input type="hidden" name="scope" value={partner.slug} />
-          <input type="hidden" name="id" value={event.id} />
-          <ConfirmButton
-            message={`Delete "${event.title}"? Every ticket reserved for it goes too. This cannot be undone.`}
-            className="border border-line px-4 py-2.5 text-xs font-semibold text-muted transition-colors hover:border-red-500/40 hover:text-red-400"
-          >
-            Delete show
-          </ConfirmButton>
-        </form>
+        <div className="flex shrink-0 items-center gap-3">
+          {/* The only way into the designer - the route existed and nothing linked to it. */}
+          <Link href={`${base}/${event.id}/venue`} className="btn btn-ghost">
+            {event.venueMapId ? "Venue & seating" : "+ Add a venue"}
+          </Link>
+
+          <form action={deletePartnerEvent}>
+            <input type="hidden" name="scope" value={partner.slug} />
+            <input type="hidden" name="id" value={event.id} />
+            <ConfirmButton
+              message={`Delete "${event.title}"? Every ticket reserved for it goes too. This cannot be undone.`}
+              className="border border-line px-4 py-2.5 text-xs font-semibold text-muted transition-colors hover:border-red-500/40 hover:text-red-400"
+            >
+              Delete show
+            </ConfirmButton>
+          </form>
+        </div>
       </div>
 
       <EventForm

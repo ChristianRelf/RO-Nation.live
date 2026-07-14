@@ -1,9 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { emptyLayout, type Shape, type ShapeKind, type VenueLayout } from "@/lib/venue/schema";
-import { seatCapacity, totalSeats } from "@/lib/venue/seats";
+import {
+  emptyLayout,
+  type Geom,
+  type Shape,
+  type ShapeKind,
+  type VenueLayout,
+} from "@/lib/venue/schema";
+import { bounds, seatCapacity, totalSeats } from "@/lib/venue/seats";
 import { VenueMap } from "./venue-map";
 import { ShapeInspector } from "./shape-inspector";
 
@@ -35,7 +41,66 @@ const TOOLS: { kind: ShapeKind; label: string; hint: string }[] = [
 
 type Tool = "select" | ShapeKind;
 
+/**
+ * WHAT you draw is one question; WHAT SHAPE it is, is another.
+ *
+ * Two knobs rather than eighteen buttons. Every kind can be any of the three geometries -
+ * a curved balcony is a seated section drawn as a polygon, a circular pit is a standing area
+ * drawn as an ellipse - and schema.ts and venue-map.tsx have supported all three since the
+ * day they were written. Only the designer could not draw them.
+ */
+type GeomKind = "rect" | "ellipse" | "polygon";
+
+const GEOMS: { kind: GeomKind; label: string; hint: string }[] = [
+  { kind: "rect", label: "▭", hint: "Rectangle. Drag to draw." },
+  { kind: "ellipse", label: "◯", hint: "Ellipse. Drag to draw. A round pit, an island stage." },
+  {
+    kind: "polygon",
+    label: "⬠",
+    hint: "Polygon. Click each corner; double-click or press Enter to close. A curved balcony is about 20 points.",
+  },
+];
+
 const HISTORY_CAP = 50;
+
+// ---- Moving a drawn shape --------------------------------------------------
+//
+// Three geometries, three ways to be moved, and no way around writing all three - a rect has
+// an origin, an ellipse has a centre, and a polygon has neither.
+
+function translate(g: Geom, dx: number, dy: number): Geom {
+  if (g.type === "rect") return { ...g, x: g.x + dx, y: g.y + dy };
+  if (g.type === "ellipse") return { ...g, cx: g.cx + dx, cy: g.cy + dy };
+  return { ...g, points: g.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
+}
+
+/**
+ * Resize to a new bounding box, keeping the TOP-LEFT where it is.
+ *
+ * The polygon case SCALES its points rather than nudging them, which is the only sane
+ * reading of "drag the corner of this balcony": the shape keeps its silhouette and changes
+ * size. Guarded against a zero-width box, because dividing by it turns every point into NaN
+ * and the shape vanishes with no way to get it back except undo.
+ */
+function resize(g: Geom, w: number, h: number): Geom {
+  const b = bounds(g);
+
+  if (g.type === "rect") return { ...g, w, h };
+
+  if (g.type === "ellipse") {
+    return { ...g, rx: w / 2, ry: h / 2, cx: b.x + w / 2, cy: b.y + h / 2 };
+  }
+
+  const sx = b.w > 0 ? w / b.w : 1;
+  const sy = b.h > 0 ? h / b.h : 1;
+  return {
+    ...g,
+    points: g.points.map((p) => ({
+      x: b.x + (p.x - b.x) * sx,
+      y: b.y + (p.y - b.y) * sy,
+    })),
+  };
+}
 
 /** A key nobody has used yet. Uppercase alphanumeric - see SECTION_KEY in venue/schema.ts. */
 function freshKey(layout: VenueLayout, kind: ShapeKind) {
@@ -80,13 +145,39 @@ export function VenueDesigner({
 
   const [layout, setLayout] = useState<VenueLayout>(initial ?? emptyLayout());
   const [tool, setTool] = useState<Tool>("select");
+  const [geomKind, setGeomKind] = useState<GeomKind>("rect");
   const [active, setActive] = useState<string | null>(null);
   const [drawing, setDrawing] = useState<{ x: number; y: number } | null>(null);
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [poly, setPoly] = useState<{ x: number; y: number }[]>([]);
+
+  /**
+   * A shape being dragged, and the geometry it had BEFORE the drag started.
+   *
+   * The original is kept rather than accumulating deltas frame by frame, because
+   * accumulating rounds against the grid on every mousemove and a shape dragged slowly
+   * across the canvas would arrive somewhere its own arithmetic invented.
+   */
+  const [drag, setDrag] = useState<{
+    key: string;
+    mode: "move" | "resize";
+    from: { x: number; y: number };
+    geom: Geom;
+  } | null>(null);
 
   const past = useRef<VenueLayout[]>([]);
   const future = useRef<VenueLayout[]>([]);
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  /**
+   * The layout as it was when the drag began - pushed onto the undo stack when the drag
+   * ENDS, and not before.
+   *
+   * A drag is ONE edit. Committing on every mousemove would push sixty layouts a second onto
+   * the history and undo would walk back through the drag one pixel at a time, which is not
+   * undo - it is a replay.
+   */
+  const beforeDrag = useRef<VenueLayout | null>(null);
 
   const commit = useCallback((next: VenueLayout) => {
     setLayout((prev) => {
@@ -157,6 +248,33 @@ export function VenueDesigner({
     setTool("select");
   };
 
+  /** Finish the polygon in progress. Needs three points - two is a line, and zod says no. */
+  const closePolygon = useCallback(() => {
+    if (tool === "select" || poly.length < 3) return;
+    addShape(tool as ShapeKind, { type: "polygon", points: poly });
+    setPoly([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool, poly, layout]);
+
+  // Enter closes the polygon; Escape abandons it. Without Escape, a half-drawn shape can
+  // only be got rid of by placing it and deleting it, which is a silly thing to make
+  // somebody do.
+  useEffect(() => {
+    if (!poly.length) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        closePolygon();
+      } else if (e.key === "Escape") {
+        setPoly([]);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [poly, closePolygon]);
+
   const onMouseDown = (e: React.MouseEvent) => {
     if (tool === "select") return;
     const p = toLocal(e);
@@ -166,10 +284,33 @@ export function VenueDesigner({
       addShape("LABEL", { type: "rect", x: p.x, y: p.y, w: 80, h: 20, rotation: 0 });
       return;
     }
+
+    // A polygon is CLICKED, not dragged - one point per click, closed with Enter or a
+    // double-click. Dragging cannot express it: a curved balcony is twenty points, and no
+    // amount of dragging a rubber band will ever produce one.
+    if (geomKind === "polygon") {
+      setPoly((pts) => [...pts, p]);
+      return;
+    }
+
     setDrawing(p);
   };
 
   const onMouseUp = (e: React.MouseEvent) => {
+    // A drag that was moving or resizing an existing shape. The layout is already correct -
+    // it has been updated on every mousemove - so all that is left is to record the ONE
+    // history entry the whole drag is worth.
+    if (drag) {
+      const before = beforeDrag.current;
+      if (before) {
+        past.current = [...past.current.slice(-HISTORY_CAP + 1), before];
+        future.current = [];
+      }
+      setDrag(null);
+      beforeDrag.current = null;
+      return;
+    }
+
     if (!drawing || tool === "select") return;
     const p = toLocal(e);
     setDrawing(null);
@@ -177,21 +318,75 @@ export function VenueDesigner({
 
     const x = Math.min(drawing.x, p.x);
     const y = Math.min(drawing.y, p.y);
-    const w = Math.abs(p.x - drawing.x);
-    const h = Math.abs(p.y - drawing.y);
+    const w = Math.max(Math.abs(p.x - drawing.x), layout.grid * 6);
+    const h = Math.max(Math.abs(p.y - drawing.y), layout.grid * 4);
 
     // A click, not a drag. Give them a default-sized block rather than a zero-area shape
     // that zod will reject and that they cannot see to delete.
-    const rect = {
-      type: "rect" as const,
-      x,
-      y,
-      w: Math.max(w, layout.grid * 6),
-      h: Math.max(h, layout.grid * 4),
-      rotation: 0,
-    };
+    addShape(
+      tool as ShapeKind,
+      geomKind === "ellipse"
+        ? {
+            type: "ellipse",
+            cx: x + w / 2,
+            cy: y + h / 2,
+            rx: w / 2,
+            ry: h / 2,
+            rotation: 0,
+          }
+        : { type: "rect", x, y, w, h, rotation: 0 },
+    );
+  };
 
-    addShape(tool as ShapeKind, rect);
+  /** Grab a drawn shape. `mode` is which corner they took hold of. */
+  const onShapeDown = (
+    e: React.MouseEvent,
+    shape: Shape,
+    mode: "move" | "resize",
+  ) => {
+    // Without this the canvas below starts drawing a NEW shape underneath the one they are
+    // dragging, and they end up with a stack of accidental rectangles.
+    e.stopPropagation();
+
+    const p = toLocal(e);
+    if (!p) return;
+
+    setActive(shape.key);
+    beforeDrag.current = layout;
+    setDrag({ key: shape.key, mode, from: p, geom: shape.geom });
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    const p = toLocal(e);
+    if (!p) return;
+
+    // The rubber band, and the line running out to the next polygon point.
+    if (drawing || poly.length) setCursor(p);
+
+    if (!drag) return;
+
+    const dx = p.x - drag.from.x;
+    const dy = p.y - drag.from.y;
+
+    const b = bounds(drag.geom);
+    const next =
+      drag.mode === "move"
+        ? translate(drag.geom, dx, dy)
+        : resize(
+            drag.geom,
+            // Never smaller than one grid square. A shape dragged to zero width is a shape
+            // you cannot see, cannot click, and cannot get back.
+            Math.max(layout.grid, b.w + dx),
+            Math.max(layout.grid, b.h + dy),
+          );
+
+    // setLayout, NOT commit - the history entry is written once, at mouseup. See beforeDrag.
+    setLayout((l) => ({
+      ...l,
+      shapes: l.shapes.map((s) =>
+        s.key === drag.key ? ({ ...s, geom: next } as Shape) : s,
+      ),
+    }));
   };
 
   const patch = (key: string, next: Partial<Shape>) =>
@@ -292,6 +487,25 @@ export function VenueDesigner({
 
             <span className="mx-1 h-5 w-px bg-line" />
 
+            {/* The SHAPE, which is a different question from the KIND. A curved balcony is a
+                seated section drawn as a polygon; a round pit is a standing area drawn as an
+                ellipse. Two knobs, not eighteen buttons. */}
+            {GEOMS.map((g) => (
+              <ToolButton
+                key={g.kind}
+                on={geomKind === g.kind}
+                onClick={() => {
+                  setGeomKind(g.kind);
+                  setPoly([]);
+                }}
+                label={g.label}
+                title={g.hint}
+                disabled={tool === "select"}
+              />
+            ))}
+
+            <span className="mx-1 h-5 w-px bg-line" />
+
             <ToolButton onClick={undo} label="Undo" disabled={!past.current.length} />
             <ToolButton onClick={redo} label="Redo" disabled={!future.current.length} />
           </div>
@@ -326,32 +540,112 @@ export function VenueDesigner({
               className="absolute inset-0 h-full w-full"
               onMouseDown={onMouseDown}
               onMouseUp={onMouseUp}
+              onMouseMove={onMouseMove}
+              // A pointer that leaves the canvas mid-drag would otherwise leave the shape
+              // stuck to it: no mouseup ever arrives, and the next move - anywhere on the
+              // page - is still dragging.
+              onMouseLeave={() => {
+                if (drag) onMouseUp({} as React.MouseEvent);
+                setDrawing(null);
+                setCursor(null);
+              }}
+              onDoubleClick={closePolygon}
               style={{ cursor: tool === "select" ? "default" : "crosshair" }}
             >
               {tool === "select"
                 ? layout.shapes.map((s) => {
                     const b = boundsOf(s);
+                    const isActive = active === s.key;
+
                     return (
-                      <rect
-                        key={s.key}
-                        x={b.x}
-                        y={b.y}
-                        width={b.w}
-                        height={b.h}
-                        fill="transparent"
-                        className="cursor-pointer"
-                        onClick={() => setActive(s.key)}
-                      />
+                      <g key={s.key}>
+                        {/* The body. Grab it anywhere to move it. */}
+                        <rect
+                          x={b.x}
+                          y={b.y}
+                          width={b.w}
+                          height={b.h}
+                          fill="transparent"
+                          style={{ cursor: drag ? "grabbing" : "grab" }}
+                          onMouseDown={(e) => onShapeDown(e, s, "move")}
+                        />
+
+                        {/* The resize handle, on the selected shape only - a canvas with a
+                            grab handle on every block is a canvas you cannot click. */}
+                        {isActive ? (
+                          <rect
+                            x={b.x + b.w - layout.grid / 2}
+                            y={b.y + b.h - layout.grid / 2}
+                            width={layout.grid}
+                            height={layout.grid}
+                            fill="rgb(var(--accent-rgb))"
+                            stroke="rgb(var(--bg-rgb))"
+                            strokeWidth={1}
+                            style={{ cursor: "nwse-resize" }}
+                            onMouseDown={(e) => onShapeDown(e, s, "resize")}
+                          />
+                        ) : null}
+                      </g>
                     );
                   })
                 : null}
+
+              {/* The rubber band. There was none, so drawing a block was an act of faith. */}
+              {drawing && cursor && geomKind !== "polygon" ? (
+                geomKind === "ellipse" ? (
+                  <ellipse
+                    cx={(drawing.x + cursor.x) / 2}
+                    cy={(drawing.y + cursor.y) / 2}
+                    rx={Math.abs(cursor.x - drawing.x) / 2}
+                    ry={Math.abs(cursor.y - drawing.y) / 2}
+                    fill="rgb(var(--accent-rgb) / 0.15)"
+                    stroke="rgb(var(--accent-rgb))"
+                    strokeDasharray="4 3"
+                  />
+                ) : (
+                  <rect
+                    x={Math.min(drawing.x, cursor.x)}
+                    y={Math.min(drawing.y, cursor.y)}
+                    width={Math.abs(cursor.x - drawing.x)}
+                    height={Math.abs(cursor.y - drawing.y)}
+                    fill="rgb(var(--accent-rgb) / 0.15)"
+                    stroke="rgb(var(--accent-rgb))"
+                    strokeDasharray="4 3"
+                  />
+                )
+              ) : null}
+
+              {/* The polygon in progress: the points so far, and a line out to the cursor. */}
+              {poly.length ? (
+                <>
+                  <polyline
+                    points={[...poly, cursor ?? poly[poly.length - 1]]
+                      .map((p) => `${p.x},${p.y}`)
+                      .join(" ")}
+                    fill="rgb(var(--accent-rgb) / 0.12)"
+                    stroke="rgb(var(--accent-rgb))"
+                    strokeDasharray="4 3"
+                  />
+                  {poly.map((p, i) => (
+                    <circle
+                      key={i}
+                      cx={p.x}
+                      cy={p.y}
+                      r={layout.grid / 3}
+                      fill="rgb(var(--accent-rgb))"
+                    />
+                  ))}
+                </>
+              ) : null}
             </svg>
           </div>
 
           <p className="text-xs text-faint">
             {tool === "select"
-              ? "Click a shape to edit it. Pick a tool above to draw a new one."
-              : "Drag on the canvas to draw."}
+              ? "Click a shape to move it. Drag the corner handle to resize. Pick a tool above to draw a new one."
+              : geomKind === "polygon"
+                ? `Click each corner. ${poly.length >= 3 ? "Double-click or press Enter to close it" : "Three points minimum"} · Esc to start over.`
+                : "Drag on the canvas to draw."}
           </p>
         </div>
 
@@ -465,17 +759,16 @@ export function VenueDesigner({
   );
 }
 
+/**
+ * The box a shape sits in.
+ *
+ * Was a hand-written copy of bounds() in lib/venue/seats.ts - the same three cases, the same
+ * arithmetic, written out twice. It is one call now, for the reason seats.ts states at the
+ * top of itself: two implementations of one fact agree right up until somebody changes one of
+ * them, and then the designer's idea of where a shape is stops matching the allocator's.
+ */
 function boundsOf(s: Shape) {
-  const g = s.geom;
-  if (g.type === "rect") return { x: g.x, y: g.y, w: g.w, h: g.h };
-  if (g.type === "ellipse") {
-    return { x: g.cx - g.rx, y: g.cy - g.ry, w: g.rx * 2, h: g.ry * 2 };
-  }
-  const xs = g.points.map((p) => p.x);
-  const ys = g.points.map((p) => p.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+  return bounds(s.geom);
 }
 
 function ToolButton({

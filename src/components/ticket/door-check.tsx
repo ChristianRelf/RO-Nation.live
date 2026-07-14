@@ -181,6 +181,23 @@ export function DoorCheck({
           </p>
           <p className="mt-3 text-lg text-fg">{result.message}</p>
 
+          {/* WHERE DO I SEND THEM.
+              On a seated show this is the only thing the steward actually needs after
+              "admit", and it is the question the queue is waiting on - so it is a line of
+              its own, in type you can read at arm's length in the dark, ABOVE the detail
+              grid rather than a fourth cell inside it. It renders on a seated ticket and on
+              no other, so an unseated door looks exactly as it did before this existed. */}
+          {result.ticket?.seat ? (
+            <div className="mt-6 rounded-brand border border-line bg-bg/50 px-5 py-4">
+              <p className="text-[11px] font-bold uppercase tracking-kicker text-faint">
+                Seat them at
+              </p>
+              <p className="display mt-1.5 text-3xl leading-tight text-fg sm:text-4xl">
+                {result.ticket.seat.label}
+              </p>
+            </div>
+          ) : null}
+
           {result.ticket ? (
             <>
               <dl className="mt-8 grid gap-x-8 gap-y-5 border-t border-line pt-6 sm:grid-cols-2">

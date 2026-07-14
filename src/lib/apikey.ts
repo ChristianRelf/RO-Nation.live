@@ -88,6 +88,7 @@ export const ALL_SCOPES: readonly ApiKeyScope[] = [
   "TICKETS_VERIFY",
   "TICKETS_REDEEM",
   "TICKETS_ISSUE",
+  "INTENTS_WRITE",
   "TICKETS_PURCHASE",
   "TICKETS_VOID",
 ];
@@ -112,6 +113,11 @@ export const SCOPE_LABELS: Record<
   TICKETS_ISSUE: {
     title: "Issue tickets",
     detail: "Reserve and gift free tickets from inside the experience.",
+  },
+  INTENTS_WRITE: {
+    title: "Hold seats",
+    detail:
+      "Reserve a seat for ten minutes while a player decides. It cannot issue a ticket and it cannot take any money - this is the scope a walk-up booth or a seat map needs, and it is deliberately not the one below.",
   },
   TICKETS_PURCHASE: {
     title: "Sell tickets for Robux",

@@ -25,6 +25,7 @@ const ERRORS: Record<string, string> = {
   payment_required:
     "Paid tiers are bought inside the experience, not here. Join the show and buy it in-game.",
   revoked: "Your ticket for this show was revoked. Contact the organisers.",
+  unavailable: "We couldn't load the seat map for this show. Try again shortly.",
 };
 
 export default async function PartnerReservePage({
@@ -102,14 +103,24 @@ export default async function PartnerReservePage({
 
       <section className="shell py-10">
         {/* Bare paths, because the browser is already on the partner's host and
-            the middleware rewrites from there - see lib/partners/urls.ts. */}
+            the middleware rewrites from there - see lib/partners/urls.ts.
+
+            A SEATED show goes via the seat picker, and that is the whole of the wiring:
+            this form is a plain GET, so where it points is where "Continue" goes. The
+            picker then hands the SAME query string on to checkout with a hold token added.
+            A show with seatMode NONE - which is every show that exists today - points
+            straight at checkout and is untouched. */}
         <CheckoutForm
           eventTitle={event.title}
           startsAt={event.startsAt}
           venue={event.venue}
           offers={offers}
           terms={terms}
-          checkoutHref={`/events/${event.slug}/checkout`}
+          checkoutHref={
+            event.seatMode === "NONE"
+              ? `/events/${event.slug}/checkout`
+              : `/events/${event.slug}/seats`
+          }
           preferTier={searchParams.tier}
           error={searchParams.error ? ERRORS[searchParams.error] : undefined}
         />

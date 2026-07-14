@@ -1,6 +1,6 @@
 # Robux payments + Ticketmaster-style seating — build state
 
-Working notes for picking this up on another machine. Written 2026-07-14.
+Working notes. Written 2026-07-14. **All six phases are built.**
 
 Plan this implements: `~/.claude/plans/plan-a-a-way-crispy-metcalfe.md` (laptop only — the
 substance is reproduced below, so you don't need it).
@@ -13,13 +13,35 @@ substance is reproduced below, so you don't need it).
 |---|---|
 | **0 — schema + pure venue libs** | ✅ done, verified (34 checks) |
 | **1 — the ticketing authority** | ✅ done, verified against real Postgres (43 checks + a 40-way race) |
-| **2 — the venue designer** | 🚧 **in progress** — company side written, partner mirror + event-form wiring left |
-| **3 — seat picker (free tickets)** | ⬜ not started — *this is the milestone* |
-| **4 — Game Pass rail** | ⬜ lib is written; consent route + checkout UI left |
-| **5 — Game API (the hub)** | ⬜ not started |
-| **6 — door + stub show the seat** | ⬜ not started |
+| **2 — the venue designer** | ✅ done, incl. drag/resize + polygon & ellipse tools |
+| **3 — seat picker (free tickets)** | ✅ done, verified |
+| **4 — Game Pass rail** | ✅ done — consent, checkout, tier verify |
+| **5 — Game API (the hub)** | ✅ done, **verified over HTTP against a real server (31 checks)** |
+| **6 — door + stub show the seat** | ✅ done |
 
-`npx tsc --noEmit` passes clean at every commit. Do not break that.
+`npx tsc --noEmit` passes clean and `npx next build` compiles. Do not break either.
+
+**Verified 2026-07-14 against a real Postgres: 22 library checks + 31 HTTP checks, all green.**
+That includes a 12-way race on one chair (exactly one winner, no chair sold twice, the losers
+routed elsewhere rather than refused).
+
+### What is actually true now
+
+- A promoter can **draw a room**, assign tiers to sections, and put it on a show.
+- A buyer can **pick a seat**, hold it for ten minutes, and check out. Free tickets today.
+- A buyer can **pay Robux on the web** via a game pass, and we can *prove* they paid.
+- A **game server can run its own ticket booth** — hold a seat, prompt a product, settle the
+  receipt — without RNL writing a line of Luau for it.
+- The **door** says where to sit; the **ticket** says it too, and draws the map.
+
+### The one thing that is switched OFF
+
+`ROBUX_TICKETS_ENABLED` and `ROBUX_GAMEPASS_ENABLED` are both **false**. Everything on the
+paid rails is built and refuses to take a penny until both are on (and, for a partner, until
+their `robuxTickets` flag is on too — three keys, see `gamePassSalesAllowed`). Free seated
+tickets work today with the switches off, which is exactly the order this was meant to ship
+in: the entire hold/allocate/expire machine has now run at real concurrency with **zero refund
+risk**.
 
 ---
 
@@ -178,76 +200,182 @@ see; get it wrong and a buyer pays and we can't verify), `globals.css` (seat/tie
   strings as equal but NULLs as distinct), and `syncEventTiers` now returns
   `SyncTiersResult` so a duplicate pass id is a sentence, not a 500. Both callers updated.
 
-**Left to do:**
+**Also written (2026-07-14):**
 
-1. **Partner mirror** of the venue routes:
-   `src/app/pp/[slug]/(portal)/studio/venues/{page,new/page,[id]/edit/page}.tsx` and
-   `.../studio/events/[id]/venue/page.tsx`. Copy the company ones; swap
-   `requireCompanyUser()` → `requirePartnerManager(slug)` and `saveCompanyVenue` →
-   `savePartnerVenue`, pass `scope={slug}`. Note `PartnerUser` **is** the session (spread), so
-   it's `user.partner`, not `{ partner, user }`.
-2. **`event-form.tsx`** gains `seatMode` (select) and `placeId` (text). `readEventForm()` in
-   `src/lib/content.ts` must read both, or the designer is drawn and nobody is ever offered a
-   seat off it.
-3. **Nav**: add "Venues" to `src/components/company-nav.tsx` (under "The shows") and the
-   partner studio nav.
-4. **Drag-to-move / resize** an existing shape. Right now you can draw, select, edit numerically
-   and reorder, but not drag a drawn block around. Add pointer-drag on the select layer in
-   `venue-designer.tsx` (the repo's only drag precedent is `src/components/shop/rail.tsx`).
-5. **Polygon + ellipse tools** — `schema.ts` and `venue-map.tsx` fully support both; the
-   *designer* currently only draws rects. Polygon = click points, Enter/dbl-click to close.
+- **Partner mirror** — `src/app/pp/[slug]/(portal)/studio/venues/{page,new/page,[id]/edit/page}.tsx`
+  and `.../studio/events/[id]/venue/page.tsx`. Gated on the **`events` feature** (a partner who
+  can't run shows has no use for a room), and scoped to `partner.slug` throughout, so RNL's
+  templates and every other partner's 404 rather than render an Edit button that would fail.
+- **`event-form.tsx`** — `seatMode` (select) and `placeId` (text). `readEventForm()` reads both.
+  `seatMode` is **validated against the enum, not cast to it** (a forged `seatMode=SEATT` would
+  otherwise reach Postgres as a bad enum and 500); `placeId` is **digits or nothing** — a pasted
+  URL is *not* scraped for an id, because an id guessed out of a tracking query string builds a
+  deep link that goes silently nowhere.
+- **Nav** — "Venues" in `company-nav.tsx` (under "The shows") and in the partner studio nav.
+- **The link into the designer.** `…/events/[id]/venue` existed and *nothing linked to it* — the
+  whole feature was a URL you had to already know. Both event edit pages now have the button.
 
----
+**Two bugs found and fixed while doing it:**
 
-## Phase 3 — the seat picker  ← **do this next, it's the milestone**
+1. **`actions/venue.ts` revalidated the PUBLIC partner path.** `revalidatePath(partnerPortalPath(…))`
+   → must be `partnerPortalRoute(…)` (the internal `/pp/<slug>/…` route Next actually renders).
+   The public path **matches no route, throws nothing**, and the venue list simply keeps serving
+   the layout you just replaced. `lib/partners/urls.ts` warns about exactly this in its header;
+   every other partner action gets it right. Fixed in all three partner venue actions.
+2. **The Prisma client on this machine was stale** — `venueMap`, `SeatMode` and the Roblox token
+   columns were all missing from it, so `tsc` reported ~30 phantom errors. `npx prisma generate`.
+   On Windows it fails with `EPERM … query_engine-windows.dll.node` **if a dev server is running**
+   — kill it first. That is the whole of that mystery.
 
-**Ship seating on FREE tickets before any money moves.** A free seated ticket still needs a
-hold, so this exercises the entire new machine — intent creation under the lock, allocation,
-expiry, best-available fallback, the countdown — at real concurrency with **zero refund risk**.
-Build Robux first and the day you discover the hold logic races is the day someone has paid.
+**The designer's ergonomics, now done:**
 
-- `src/app/events/[slug]/seats/page.tsx` + `src/app/p/[slug]/events/[event]/seats/page.tsx`.
-  Sits between reserve and checkout. **Skipped entirely when `seatMode === NONE`**, so every
-  existing show is untouched.
-- `src/components/venue/seat-picker.tsx` — **the Ticketmaster surface.** Two-pane: `<VenueMap>`
-  left (hover-highlight, dim non-matching, click a section to zoom in and reveal the grid),
-  price/tier legend + sorted available-section list right, bidirectional hover. "Best available"
-  must call the same `bestAvailableOrder()` the server uses, or the button promises a seat the
-  server won't give.
-- `src/components/venue/hold-bar.tsx` — sticky selection bar + countdown to `expiresAt`. Reuse
-  `src/components/countdown.tsx` (takes a `target` Date).
-- `src/app/actions/purchase.ts` — `createIntent`, `releaseHold`.
-- `checkout/page.tsx` takes `?intent=<token>`, re-validated server-side (*the query string is
-  not evidence* — that file already says so).
-- `checkout-processing.tsx` passes `intentToken` through to `reserveTicket`. **The action
-  already accepts it** (`formData.get("intent")`); the staged animation, the promise-in-a-ref
-  guard and the hard `location.assign` are all unchanged — that file's own comment predicted
-  this.
+- **Drag to move, drag the corner to resize.** The whole drag is **one** undo entry — committing
+  on every `mousemove` would push sixty layouts a second onto the history, and undo would walk
+  back through the drag one pixel at a time, which is not undo, it is a replay. So the layout
+  before the drag is held in a ref and pushed once, on mouseup.
+- **Polygon and ellipse tools.** `schema.ts` and `venue-map.tsx` supported all three geometries
+  from the day they were written; only the designer couldn't draw them. It is now **two knobs —
+  the kind, and the shape** — rather than eighteen buttons: a curved balcony is a seated section
+  drawn as a polygon; a round pit is a standing area drawn as an ellipse. Polygon = click each
+  corner, Enter or double-click to close, Esc to abandon. There is a rubber band now, too —
+  drawing a block used to be an act of faith.
+- `boundsOf()` in the designer was a **hand-copied duplicate** of `bounds()` in `venue/seats.ts` —
+  same three cases, same arithmetic, written out twice. It delegates now. Two implementations of
+  one fact agree right up until somebody changes one of them, and then the designer's idea of
+  where a shape is stops matching the allocator's.
 
 ---
 
-## Phase 4 — the Game Pass rail
+## Phase 3 — the seat picker ✅
 
-Lib is done (`roblox-gamepass.ts`, `roblox-tokens.ts`, `roblox.ts` scopes). Left:
+**Shipped on FREE tickets, before any money moves** — which was the whole point of the ordering.
+The entire new machine (holds under the lock, allocation, expiry, best-available fallback, the
+countdown) is now exercised at real concurrency with **zero refund risk**.
 
-- `src/app/api/auth/roblox/consent/route.ts` — kick off **incremental consent** from any host.
-  Default sign-in stays `openid profile`, so free-ticket users never see an extra permission;
-  a paid game-pass checkout asks for `user.inventory-item:read offline_access`.
-  It must run through `sso.ts` on `authorise.ronation.live` (the only registered redirect) and
-  must **force** the Roblox round trip even when a session exists — a session proves who they
-  are, not what they consented to.
-- `src/app/api/auth/roblox/{login,callback}/route.ts` — carry a `grant` param; the callback
-  calls `saveGrant()`.
-- `src/components/ticket/gamepass-checkout.tsx` — create intent → `window.open(gamePassUrl(id))`
-  (fall back to a link if the popup is blocked) → poll on an interval **and on
-  `visibilitychange`** (them coming back to our tab *is* the signal).
-  **Roblox's inventory lags a purchase by seconds**: poll us every 2s, ask Roblox at most every
-  4s (guarded by `PurchaseIntent.checkedAt`, in the DB so a refresh can't reset it), and after
-  ~2 min stop auto-polling and show a manual "I've paid — check again".
-  **Never say "payment failed"** — say "waiting for Roblox". `not_paid` is not a failure.
-- `tier-editor.tsx` — `gamePassId` + `devProductId` fields (**the form already posts them**) and
-  a **Verify pass** button → `gamePassDetails()` → warn on price mismatch, `forSale === false`,
-  and "already on another tier".
+**The flow, and where the wiring actually lives:**
+
+reserve → **seats** → checkout → ticket
+
+- **`reserve/page.tsx` (both copies) chooses the next step, and that is the ENTIRE routing
+  change.** `CheckoutForm` is a plain GET form, so where it points is where "Continue" goes:
+  `seatMode === "NONE"` → `/checkout` (every show that exists today, byte-for-byte untouched),
+  anything else → `/seats`. The form itself was not modified.
+- **`src/lib/venue/picker.ts`** — `seatPickerFor()`, the one place that answers *"is there a seat
+  to pick?"*, and it answers it with **resolveSeat's own decision tree**, in resolveSeat's order.
+  The picker must be shown **iff** the allocator would give this person a seat, or you get an
+  empty map with a dead Continue button (shown when it shouldn't be) or a buyer who is never
+  offered a chair (skipped when it shouldn't be). The subtle case is the third one:
+  **an unmapped tier skips the map**, because an unmapped tier sells as GA exactly as it does
+  today — that's what lets a promoter map two of three tiers and have the third keep working.
+  A map that won't *parse* is `broken` → refuse, never "no map, sell it as GA".
+- **`seat-picker.tsx`** — the surface. Two-pane, bidirectional hover, click a block to zoom in
+  and reveal its chairs (only the focused section mounts seats — the one perf rule).
+  **The hold is taken the moment they click a seat, not at Continue.** That is what `intents.ts`
+  is built for: its "one live hold per person" rule *cancels* your previous hold rather than
+  refusing the new one, precisely so swapping K12 for K13 doesn't leave you holding both.
+- **"Best available" sends NO seat key.** SEATING.md used to say it "must call the same
+  `bestAvailableOrder()` the server uses" — it does something stronger: it doesn't call it at
+  all. `resolveSeat` reads a null seat as "give them the best available" and walks that order
+  under the lock, against the live taken set. A client-side copy could only ever be a second
+  opinion, and a second opinion eventually disagrees.
+- **`hold-bar.tsx`** — sticky bar, mm:ss, `onExpire`. **It does NOT reuse `countdown.tsx`,
+  and can't:** that component renders four cells (days/hrs/min/sec) because it counts down to a
+  *show*, and when it hits zero it announces **"DOORS ARE OPEN"** — which, on a hold that has
+  just expired and taken the buyer's seat with it, means the exact opposite of what happened.
+- **`src/app/actions/purchase.ts`** — `createIntent`, `releaseHold`. Neither decides anything;
+  neither redirects (a server action's `redirect()` doesn't run the middleware — see the top of
+  `actions/tickets.ts`), so they return and the client navigates.
+- **`checkout/page.tsx` (both copies)** — takes `?intent=`, and **requires one when there is a
+  seat to be had** (you cannot sell a numbered chair to somebody who never said which chair;
+  without this a bookmarked checkout URL walks straight past the map). Validated by
+  `holdIsSpendable()`, which is **issueTicket's checklist minus expiry**:
+
+  > **An expired hold is deliberately let through.** `issueTicket` doesn't check `expiresAt`
+  > either, and says why at length: an expiry costs them **the seat they picked, not the ticket
+  > they came for** — it falls back to the best available chair in the same tier. Refusing an
+  > expired token at the page would reintroduce, one page earlier, the exact failure that
+  > fallback exists to prevent. `userId` **is** checked, and that's the one addition.
+
+- **`checkout-processing.tsx`** — passes `intentToken` through to `reserveTicket` (the action
+  already accepted it). The staged animation, the promise-in-a-ref guard and the hard
+  `location.assign` are unchanged, exactly as that file's own comment predicted. It now holds an
+  error **code** rather than a sentence, because a *seat* failure (`bad_intent`, `seat_taken`)
+  must retry back to **the map**, not to the tier list — otherwise the buyer re-accepts the
+  terms to reach a screen they were one click from.
+
+**Verified against real Postgres on 2026-07-14 — 26 checks, all passing** (script in the session
+scratchpad, `check-seating.ts`; rewrite or ignore):
+
+1. `seatPickerFor` — mapped tier gets the picker; **unmapped tier skips**; `NONE` skips; no map
+   skips; **an unreadable map is `broken`, not "sell the room again"**.
+2. The whole path — hold the seat you clicked, `holdIsSpendable` passes it, spend it, and
+   **the ticket carries the seat you actually picked**, label frozen on.
+3. `holdIsSpendable` refuses **somebody else's** hold, the **wrong tier**, and a garbage token —
+   and **accepts an expired one**, per the rule above.
+4. Expiry — hold, expire, let someone else take the chair, then claim: **she still gets a ticket,
+   on a different seat.**
+5. Changing your mind — two picks in a row leaves her holding **exactly one** seat, the first is
+   `CANCELLED`, and "Change" gives it back at once.
+6. **The race** — 12 buyers, one chair, `Promise.all`: exactly one holds it, **no chair held
+   twice**, the rest are **routed elsewhere rather than refused** until the tier genuinely runs
+   out, and only then is it `seat_taken`.
+
+---
+
+## Phase 4 — the Game Pass rail ✅
+
+**Built. Switched off** (`ROBUX_GAMEPASS_ENABLED=false`), and it refuses to hold a seat for a
+sale that cannot happen until it is on.
+
+- **`src/app/api/auth/roblox/consent/route.ts`** — incremental consent, from any host.
+  **It never looks at the session, and that is the entire point:** the SSO front door
+  short-circuits when you already have one, which is right for signing in and *wrong* here —
+  **a session proves who they are, it does not prove what they consented to.** Reuse the
+  short-circuit and a signed-in buyer with no grant is bounced home with nothing asked and
+  nothing stored, the checkout finds no grant, and the button appears to do nothing at all,
+  forever, in a loop, with no error anywhere. So it always goes to Roblox.
+  It borrows `authorise.ronation.live`'s redirect (the only one Roblox knows) exactly as the
+  login route does, and lands back via `/api/auth/sso/authorize`, so the buyer returns to the
+  host they started on *with a session*.
+- **The grant needs no cookie and no ticket to cross hosts.** `saveGrant()` writes it to the
+  **User row**, and every host reads it back by user id. That is why a partner's checkout can
+  use a grant obtained on RNL's front door with no new secret anywhere.
+- **`callback/route.ts`** — reads a `ron_oauth_grant` cookie (set by the consent route, *not*
+  a query flag: what we persist is not a decision that comes from the address bar) and calls
+  `saveGrant()`. It already refuses to store a grant with **no refresh token** — `offline_access`
+  missing means the access token dies in 15 minutes, and recording that as a grant would make
+  `hasInventoryGrant()` start lying within the hour.
+- **`src/components/ticket/gamepass-checkout.tsx`** — the rule this file exists to obey:
+
+  > **NEVER SAY "PAYMENT FAILED".**
+  >
+  > Roblox's inventory **lags a purchase by seconds**. For the whole time a buyer is walking
+  > back to our tab, the honest answer to "do they own the pass?" is *not yet* — and "not yet"
+  > is `owns: false`, the same shape as "they never bought it". Render that as an error and you
+  > have told somebody who is 500 Robux down that they did not pay, at the exact moment they
+  > are most alarmed by it. `waiting` is a **spinner**, always.
+
+  Polls us every 2s **and on `visibilitychange`** (them coming back to our tab *is* the signal,
+  and it beats the next tick by up to two seconds). Gives up auto-polling after 2 min and shows
+  a manual "I've paid — check again". `needs_consent` is a **button**; `unavailable` is a
+  **wait**; neither is "you didn't pay".
+- **`startGamePass` / `claimGamePass`** in `app/actions/purchase.ts`. `startGamePass` **reads the
+  buyer's existing free hold, proves it is theirs, and takes the seat off it server-side** —
+  the seat is never re-sent by the client — then switches the rail. `createPurchaseIntent`
+  cancels the old hold and takes the new one *in the same transaction, under the same lock*, so
+  **the chair is never released back into the room, not for an instant.**
+- **The Roblox poll limit is a compare-and-swap on `PurchaseIntent.checkedAt`**, in the database,
+  not a ref on the client — so a refresh or a second tab cannot reset it. `updateMany` with
+  `checkedAt < cutoff` in the WHERE: whoever wins does the Roblox call, everybody else is told
+  to wait. **Verified** with two concurrent claims: exactly one wins.
+- **`tier-editor.tsx`** — the pass/product fields, which **did not exist** (the server has read
+  `gamePassId`/`devProductId` since Phase 2; there was simply no UI to type one in, so the rail
+  was unusable), plus **Verify pass** → `gamePassDetails()`. It warns on a wrong id, on
+  `forSale: false`, on a price mismatch, and — the expensive one — on **"already on another
+  tier"**: a pass is owned *forever*, so pasting last month's onto this month's show lets every
+  one of last month's buyers walk in free, verified, waved through by our own ownership check
+  doing exactly what it was built to do. `TicketTier.gamePassId` is `@unique` to stop it; this
+  button is that constraint asked politely, before the promoter has typed out a whole show.
 
 ---
 
@@ -257,39 +385,67 @@ Lib is done (`roblox-gamepass.ts`, `roblox-tokens.ts`, `roblox.ts` scopes). Left
 is an API complete enough to build an in-experience hub against **without RNL writing any Luau
 for you.** What's missing today:
 
-| The booth must… | Today |
+| The booth must… | Now |
 |---|---|
 | List shows / tiers / prices | ✅ |
-| Render a seat map **in 3D** | ❌ needs `layout` + world anchor |
-| Know which seats are gone, live | ❌ **missing** |
-| **Hold** a seat while the player decides | ❌ **missing — without this two booths sell the same chair** |
-| Know **which product to prompt** | ❌ needs `devProductId` (now on the tier) |
-| Know what the player already holds | ❌ no by-player lookup |
-| Settle the receipt | ✅ |
+| Render a seat map **in 3D** | ✅ `GET /events/[id]?include=venue` — layout + world anchor |
+| Know which seats are gone, live | ✅ `GET /events/[id]/seats` |
+| **Hold** a seat while the player decides | ✅ `POST /intents` |
+| Know **which product to prompt** | ✅ `devProductId` on every tier |
+| Know what the player already holds | ✅ `GET /players/[robloxId]/tickets` |
+| Settle the receipt | ✅ (now takes `intentToken`) |
 
-New endpoints:
-- `GET /api/v1/events/[id]/seats` — live availability. **Must be cheap** (a booth polls it):
-  compact form, **ETag + `If-None-Match`** so an idle booth costs a 304.
-- `POST /api/v1/intents` — *the missing primitive.* Scope **`INTENTS_WRITE`** (a new scope — do
-  **not** overload `TICKETS_PURCHASE`, whose whole warning is that it can assert payment;
-  holding a seat cannot). Body `{robloxId, eventId, tierId, seatKey?}` → `{token, expiresAt,
-  priceRobux, devProductId, seatLabel}`. The game then calls `PromptProductPurchase`.
-- `DELETE /api/v1/intents/[token]` — release on a dismissed prompt
-  (`PromptProductPurchaseFinished` with `wasPurchased == false`).
-- `GET /api/v1/intents/[token]` — resolve a `launchData` token, so a buy that started on the web
-  finishes in-game.
-- `GET /api/v1/players/[robloxId]/tickets?eventId=` — "you have GA — upgrade to VIP?"
+**New endpoints** — all four verified over HTTP against a running server:
 
-Changed:
-- `GET /api/v1/events/[id]` — `seatMode`, `sections[]`, per-tier product ids, and the full
-  `layout` **behind `?include=venue`** (a lobby board polling every 10s doesn't need 40KB of
-  polygons).
-- `POST /api/v1/tickets/purchase` — accepts `intentToken`; **REQUIRED when `seatMode !== NONE`**
-  (you cannot sell a numbered seat on the word of a game server with no idea which seat).
-  Stays optional for unseated shows, so today's booth keeps working untouched.
+- **`GET /api/v1/events/[id]/seats`** — live availability. A booth polls it, so it is compact
+  (seat keys, nothing else — the caller already has the layout, which never changes) and it
+  **answers 304** to `If-None-Match`. An idle show costs a hash and an empty body. The ETag is
+  over the **answer**, never a timestamp: two reads that say the same thing must produce the
+  same tag, or the 304 never fires and the header is decoration.
+- **`POST /api/v1/intents`** — *the missing primitive.* Scope **`INTENTS_WRITE`**, a new one,
+  and deliberately **not** `TICKETS_PURCHASE`: that scope's whole warning is that it can assert
+  a payment nothing on our side can check. **Holding a chair cannot take a penny off anybody.**
+  A lobby board should be able to hold seats without also being able to mint itself a free VIP
+  ticket.
+- **`DELETE /api/v1/intents/[token]`** — release on a dismissed prompt. Releasing twice is
+  **not** an error: a dismissal arriving after the purchase landed is an ordinary race.
+- **`GET /api/v1/intents/[token]`** — resolve a `launchData` token, so a buy that started on the
+  web finishes in-game. Returns `ticketId` if it has already been spent, which is how the game
+  knows to show them their ticket instead of selling a second one.
+- **`GET /api/v1/players/[robloxId]/tickets?eventId=`** — the booth's opening question, and there
+  was no way to ask it. `nothing` → sell; **`GA` → offer the upgrade** (the sale that otherwise
+  never happens — they don't know VIP is left, and the booth can't tell it's talking to a GA
+  holder); `VIP` → let them in. Never returns the **code**: this answers a question about a
+  player, it does not hand over the thing that gets them through a door.
 
-`public/llm.txt` is the real contract — it gets the two rails, the intent lifecycle,
-`GetJoinData().LaunchData`, the world anchor, and a **complete walk-up booth recipe in Luau**.
+**Changed:**
+
+- `GET /api/v1/events/[id]` — `seatMode`, `sections[]`, per-tier `devProductId`/`gamePassId`, and
+  the full `layout` **behind `?include=venue`** (a lobby board polling every 10s does not need
+  40KB of polygons; the map is also the one thing that never changes, so fetch it once).
+- `POST /api/v1/tickets/purchase` — takes `intentToken`, **required when `seatMode !== NONE`**,
+  refused *before* `issueTicket` with a sentence that says what to do instead. Unseated shows are
+  untouched. `/tickets/reserve` takes one too, but **optionally** — the asymmetry is money: on
+  `/purchase`, guessing a seat means somebody has already paid for a chair nobody agreed on;
+  on `/reserve` the worst case is a free ticket in a seat they didn't choose.
+
+### The bug this phase found
+
+**`eventId` was an id on the write endpoints and an id-*or-slug* on the reads.** The events
+endpoints have always accepted either ("a game server is configured by hand, and
+`stro-the-first-rite` is easier to not get wrong than a cuid") — but `issueTicket` and
+`createPurchaseIntent` look up by **id only**. So a booth configured with a slug would list the
+line-up, read the seat map, draw the room perfectly… and then **404 the moment somebody tried to
+hold a chair**. Caught by the HTTP checks, and it would have been a 2am discovery otherwise.
+
+Closed with `resolveEventId()` in `lib/api/guard.ts`, used by `/intents`, `/reserve` and
+`/purchase`. **The authority still takes the id and only the id** — it should not be in the
+business of guessing what you meant; the *routes* do the resolving. `llm.txt` now says plainly:
+**one constant, and it works everywhere.**
+
+`public/llm.txt` is the real contract, and it now carries the two rails, the intent lifecycle,
+`GetJoinData().LaunchData`, the world anchor, and a **complete walk-up booth in Luau** — greet a
+player, show what they hold, hold a seat, prompt, settle the receipt, release on a dismissal.
 
 **Not blocked, not built:** opening RNL to outside organisers needs partners to become a **DB
 table** (`registry.ts` is code *on purpose* — middleware runs on the edge where Prisma can't
@@ -298,10 +454,28 @@ argument, so nothing makes that day harder.
 
 ---
 
-## Phase 6 — the door
+## Phase 6 — the door ✅
 
-**No new server code.** The seat rides in the standard `ticketEnvelope`, so `/verify` and
-`/redeem` already carry it. Just surface it in `door-check.tsx` and on the ticket stub.
+**No new server code, exactly as predicted** — the seat already rode in the standard
+`ticketEnvelope`, so `/verify` and `/redeem` were carrying it and nothing was looking.
+
+- **`door-check.tsx`** — "Seat them at **Balcony Left · Row K · Seat 12**", in type you can read
+  at arm's length in a dark room, **above** the detail grid rather than as a fourth cell inside
+  it. On a seated show it is the only thing the steward needs after "admit", and it is what the
+  queue is waiting on. Renders on a seated ticket and on no other.
+- **`ticket-art.tsx`** — the seat, printed big, on its own line. A real ticket prints the block,
+  the row and the seat large enough to find with a phone torch. Same string, same weight as the
+  door: the steward and the holder look at **one fact**, not two renderings of it.
+- **`ticket-detail.tsx`** — draws the map with **their own chair lit up**, using the same
+  `<VenueMap>` the designer drew the room with and the picker sold it with. That is the third
+  reader, and it is why one renderer exists. Note what is *not* passed to it: `taken` and `held`.
+  Whose ticket is in the chair next to yours is nobody's business but theirs, and a stub is not a
+  live availability view.
+- **`ticket-stub.tsx`** — the seat in the wallet, on its own line (crammed onto the tier line it
+  truncates to nonsense on a phone, and the seat is the half you opened the wallet to check).
+- The map is fetched **only for a ticket that actually holds a seat**, so every unseated ticket
+  page costs exactly what it did before seating existed. `seatLabel` is frozen on the row, so a
+  map that has since been deleted costs the *picture*, never the *fact*.
 
 ---
 
@@ -327,15 +501,31 @@ npx prisma db push && npx prisma generate
 npx tsc --noEmit
 ```
 
-The two check scripts I drove Phase 0/1 with are in the scratchpad (they'll be gone on the
-desktop — rewrite or ignore). What they assert, and what any replacement must:
+**This works — it is what every phase has been verified on** (2026-07-14, on the laptop, no
+Docker). Three things that will bite:
+
+- **`prisma generate` fails with `EPERM … query_engine-windows.dll.node` while a dev server is
+  running.** Kill it, generate, restart. A stale client is also why `tsc` may greet you with
+  thirty errors about `prisma.venueMap` and `SeatMode` not existing — the schema is fine, the
+  *client* is old. Generate before you believe any of them.
+- A check script must live **in the repo root** (not the scratchpad) to resolve the `@/…` paths,
+  and is run with `npx tsx --conditions=react-server <file>.ts`. Delete it afterwards.
+- **Killing a `next start` by its shell does not kill the server.** The Node process survives and
+  keeps the port — so the next `next start` fails with `EADDRINUSE` and you carry on testing the
+  **old build**, which is a green run that proves nothing. Kill it **by port**
+  (`Get-NetTCPConnection -LocalPort <p>` → `Stop-Process`). This genuinely happened, and it hid a
+  real bug for a whole cycle.
+
+### The scripts (in the session scratchpad — rewrite or ignore)
+
+**`check-seating.ts`** — 22 library checks, and **`check-api.ts`** — 31 HTTP checks against a
+real `next start`. Both passed on 2026-07-14. What they assert, and what any replacement must:
 
 1. **The bricking bug** — reserve a seat, cancel, re-reserve **the same seat**. Must succeed. If
    `seatKey` wasn't nulled it fails on the unique index, which is exactly the failure the test
    exists to catch.
-2. **The race** — 40 buyers, 20 chairs, `Promise.all`. Exactly 20 tickets, **no chair sold
-   twice**, the other 20 get `seat_taken`. Then have all 40 demand the *same* seat: exactly one
-   gets it, the rest are **routed elsewhere, not refused**.
+2. **The race** — many buyers, one chair, `Promise.all`: exactly one gets it, **no chair held
+   twice**, and the rest are **routed elsewhere, not refused**, until the tier genuinely runs out.
 3. **Expired hold** — expire it, let someone else take the chair, then claim. They must still get
    a ticket, on a *different* seat.
 4. **Own-hold / own-ticket** — hold a seat then buy it (mustn't block itself); hold GA then
@@ -344,8 +534,16 @@ desktop — rewrite or ignore). What they assert, and what any replacement must:
    re-claim → ticket restored, still one payment row.
 6. **Regression** — an unseated show must be byte-identically unaffected: no seat, `seat: null`
    at the door, many tickets coexisting with `NULL seatKey`.
+7. **The picker's decision tree** — an *unmapped tier* skips the map (it sells as GA, exactly as
+   today); an *unreadable* map refuses rather than reselling the room.
+8. **The poll limiter** is a compare-and-swap: two concurrent claims, exactly one asks Roblox.
+9. **The API, over HTTP** — the 304, the hold, the release, `launchData`, the by-player lookup,
+   and `intentToken` being demanded on a seated purchase.
 
-All of the above passed on 2026-07-14.
+> **A green test that proves nothing is worse than a red one.** `check-api.ts` first ran against
+> seats that `check-seating.ts`'s race was *still holding*, and "the map shows it held" went green
+> for entirely the wrong reason. It now clears the event's intents and tickets before it starts.
+> If you rewrite these, keep that.
 
 ---
 
@@ -361,6 +559,21 @@ ROBUX_GAMEPASS_ENABLED=false    # the THIRD key — see env.ts. Needs the OAuth 
 ```
 
 There is **no `.env`** in this checkout — copy `.env.example`.
+
+### Turning the paid rails on, when the day comes
+
+1. Add `user.inventory-item:read` and **`offline_access`** to the Roblox OAuth app. Leave
+   `offline_access` out and Roblox issues **no refresh token**, the grant dies in fifteen
+   minutes, and the rail breaks *hours later* with nothing on any screen to say why.
+2. `ROBUX_TICKETS_ENABLED=true` (the master switch).
+3. `ROBUX_GAMEPASS_ENABLED=true` (the third key — it exists *because* step 1 is a thing the
+   other two switches cannot possibly know about).
+4. For a **partner**, also set `robuxTickets: true` on their entry in `partners/registry.ts`.
+   The master switch alone must never start charging a partner's visitors who never signed up
+   for it — that is why `gamePassSalesAllowed()` reads all three.
+5. On each priced tier: paste the **game pass id** and press **Verify pass**. It will tell you
+   if the pass is off-sale, priced differently, or — the expensive one — **already on another
+   tier**.
 
 ---
 

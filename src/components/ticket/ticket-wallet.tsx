@@ -16,6 +16,8 @@ type WalletTicket = {
   activatedAt: Date | null;
   tierName: string | null;
   priceRobux: number;
+  /** Frozen at issue. Null on an unseated show. See Ticket.seatLabel. */
+  seatLabel: string | null;
   event: {
     title: string;
     slug: string;
@@ -55,6 +57,7 @@ export function TicketWallet({
         venue={t.event.venue}
         tierName={t.tierName ?? "General Admission"}
         priceRobux={t.priceRobux}
+        seatLabel={t.seatLabel}
         status={t.status}
         activated={Boolean(t.activatedAt)}
         brandMark={brand.mark}
