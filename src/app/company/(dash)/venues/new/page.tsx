@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminHeader } from "@/components/admin-ui";
+import { VenuePresetPicker } from "@/components/venue/venue-preset-picker";
 import { requireCompanyUser } from "@/lib/company";
 import { createCompanyVenue } from "@/app/actions/venue";
 
@@ -20,7 +21,7 @@ export default async function NewCompanyVenuePage({
     <div>
       <AdminHeader title="New venue" subtitle="Name it, then draw it." />
 
-      <form action={createCompanyVenue} className="card max-w-lg space-y-4 p-6">
+      <form action={createCompanyVenue} className="card max-w-3xl space-y-5 p-6">
         {searchParams.error === "required" ? (
           <p className="rounded-brand border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-xs text-red-200">
             A venue needs a name.
@@ -40,6 +41,8 @@ export default async function NewCompanyVenuePage({
             The room, not the show. You&apos;ll reuse this for every gig that happens here.
           </p>
         </div>
+
+        <VenuePresetPicker />
 
         <div className="flex gap-3">
           <button type="submit" className="btn btn-accent">

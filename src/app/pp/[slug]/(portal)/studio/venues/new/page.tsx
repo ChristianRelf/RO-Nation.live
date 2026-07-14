@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { VenuePresetPicker } from "@/components/venue/venue-preset-picker";
 import {
   assertPartnerFeature,
   requirePartnerManager,
@@ -34,7 +35,7 @@ export default async function NewPartnerVenuePage({
         <p className="mt-2 text-sm text-muted">Name it, then draw it.</p>
       </div>
 
-      <form action={createPartnerVenue} className="card max-w-lg space-y-4 p-6">
+      <form action={createPartnerVenue} className="card max-w-3xl space-y-5 p-6">
         {/* Carried in the body, and it authorises nothing - the action re-reads this
             caller's grant on this partner from the database before it writes a row. */}
         <input type="hidden" name="scope" value={partner.slug} />
@@ -58,6 +59,8 @@ export default async function NewPartnerVenuePage({
             The room, not the show. You&apos;ll reuse this for every gig that happens here.
           </p>
         </div>
+
+        <VenuePresetPicker />
 
         <div className="flex gap-3">
           <button type="submit" className="btn btn-accent">

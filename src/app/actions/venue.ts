@@ -11,6 +11,7 @@ import {
   readVenueForm,
   saveVenueLayout,
 } from "@/lib/venue/form";
+import { presetLayout } from "@/lib/venue/presets";
 
 // Venue maps, for RNL and for every partner.
 //
@@ -64,9 +65,14 @@ export async function createCompanyVenue(formData: FormData) {
   const name = s(formData, "name").trim();
   if (!name) redirect("/company/venues/new?error=required");
 
+  // A preset id, resolved to a room server-side - never geometry from the form. An unknown
+  // id (or none) is `undefined`, and createVenueMap starts you on an empty canvas.
+  const preset = presetLayout(s(formData, "preset")) ?? undefined;
+
   const map = await createVenueMap({
     scope: null,
     name,
+    layout: preset,
     actorId: user.robloxId,
     actorName: user.username,
   });
@@ -145,9 +151,13 @@ export async function createPartnerVenue(formData: FormData) {
   const base = partnerPortalPath(partner.slug, "/studio/venues");
   if (!name) redirect(`${base}/new?error=required`);
 
+  // A preset id, resolved server-side; see the note on createCompanyVenue.
+  const preset = presetLayout(s(formData, "preset")) ?? undefined;
+
   const map = await createVenueMap({
     scope: partner.slug,
     name,
+    layout: preset,
     actorId: user.robloxId,
     actorName: user.username,
   });
