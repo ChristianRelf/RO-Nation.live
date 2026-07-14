@@ -31,6 +31,10 @@ import { brandForCollection } from "@/lib/merch/collections";
  */
 const PORTAL_PATHS = [
   "/shasha",
+  // The backstage launcher - every door a signed-in person holds, in one place. It lives
+  // on the portal host and nowhere else (the main site redirects it here, below). See
+  // app/hub/page.tsx.
+  "/hub",
   // The internal docs - guides, brand assets, the API reference. They live on the
   // PORTAL host and nowhere else, because everything under here is for staff and
   // partner crew; the pages guard on exactly that (lib/docs-guard.ts). Without
@@ -201,6 +205,7 @@ function areaFor(path: string) {
   if (
     path.startsWith("/shasha") ||
     path === "/portal" ||
+    path === "/hub" ||
     path === "/authorise" ||
     path === "/docs" ||
     path.startsWith("/docs/")
@@ -550,6 +555,7 @@ export function middleware(req: NextRequest) {
   if (
     pathname === "/shasha" ||
     pathname.startsWith("/shasha/") ||
+    pathname === "/hub" ||
     pathname === "/docs" ||
     pathname.startsWith("/docs/") ||
     pathname === "/files" ||

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PortalFooter } from "@/components/portal-footer";
 
 // The front door of portal.ronation.live. It used to redirect straight to
@@ -39,6 +40,13 @@ export default function PortalHomePage() {
             <p className="mt-3 text-sm text-faint">
               If you were sent here, you were sent a link. Use that.
             </p>
+
+            {/* The one door that is safe to show everyone: the hub itself decides what you
+                may open, and greets a signed-out visitor with a sign-in rather than a wall. */}
+            <Link href="/hub" className="btn btn-accent mt-8">
+              Open your hub →
+            </Link>
+
             <p className="mt-10 text-xs text-faint">
               Looking for shows and tickets?{" "}
               <a

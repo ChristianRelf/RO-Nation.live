@@ -64,6 +64,10 @@ export function PortalNav({
   const pathname = usePathname();
 
   const links = [
+    // The launcher above every portal. Always shown: anyone in a portal holds at least
+    // this one door, and it is how you cross from one org's tools to another's without
+    // retyping a URL. An absolute portal-host path, so it is right from a partner portal too.
+    { label: "◈ Hub", href: "/hub" },
     { label: "Overview", href: basePath },
     ...(doorLink ? [{ label: "Door", href: `${basePath}/door` }] : []),
     ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),

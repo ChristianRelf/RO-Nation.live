@@ -244,6 +244,10 @@ const RESERVED = new Set([
   "api",
   "p",
   "pp",
+  // The backstage launcher on the portal host. Same exposure as "shasha" and "docs":
+  // the middleware tries the partner rewrite BEFORE it checks PORTAL_PATHS, so a partner
+  // slugged "hub" would swallow portal.ronation.live/hub outright.
+  "hub",
   // every existing top-level route
   "events",
   "blog",
