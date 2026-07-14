@@ -10,6 +10,29 @@
 #
 # For this to work: ports 80 and 443 must be open on the server, and both names
 # below must already resolve to it.
+#
+# ---- EDITING THIS FILE IS NOT ENOUGH. RELOAD CADDY. -------------------------
+#
+# This file is BIND-MOUNTED into the container (docker-compose.yml). Docker Compose
+# decides whether to recreate a container by comparing its DEFINITION - image, env,
+# ports, the list of volumes - and the CONTENTS of a bind-mounted file are not part
+# of that. So `docker compose up -d`, even with `--build`, leaves Caddy running on
+# the config it loaded when it last started, and a hostname added here is simply
+# never seen.
+#
+# The failure is not a 404, which is what you would go looking for. Caddy has no
+# certificate for the new name, so it ABORTS THE TLS HANDSHAKE - the browser says
+# ERR_SSL_PROTOCOL_ERROR, and `openssl s_client` says "no peer certificate
+# available". Port 80 still answers and still 308s to HTTPS (it does that for any
+# host, even one Caddy has never heard of), which makes it look like the config
+# took. It did not.
+#
+# After changing the address line, ALWAYS:
+#
+#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+#
+# It is zero-downtime, and it is when Caddy asks Let's Encrypt for the new
+# certificate. `docker compose restart caddy` works too, with a blip.
 {
 	# Let's Encrypt emails this address before a cert expires. Renewal is
 	# automatic either way - set ACME_EMAIL in .env to get the warnings.

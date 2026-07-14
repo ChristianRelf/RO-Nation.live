@@ -101,6 +101,15 @@ services:
       # The sign-in host. Caddy must terminate TLS for it or nobody can sign in to
       # anything - see the note at the top of the Caddyfile.
       AUTHORISE_HOST: ${AUTHORISE_HOST:-authorise.ronation.live}
+      # The shop. TWO names, and both need a certificate: merch serves it and shop 301s
+      # to merch (src/middleware.ts) - and a redirect still has to be spoken over HTTPS,
+      # so a `shop` host with no cert fails with a TLS error instead of forwarding.
+      #
+      # Same trap as STRO_HOST above, which is why that comment is there: the Caddyfile
+      # defaults these on its address line, so leaving them out of here works - right up
+      # until somebody sets MERCH_HOST in .env and finds it silently ignored.
+      MERCH_HOST: ${MERCH_HOST:-merch.ronation.live}
+      SHOP_HOST: ${SHOP_HOST:-shop.ronation.live}
       # The Caddyfile reads this on its address line. It has a default there, so
       # the omission was invisible - but STRO_HOST in .env was being ignored.
       STRO_HOST: ${STRO_HOST:-sleeptokenro.ronation.live}
