@@ -32,20 +32,39 @@ export const env = {
   allowDevLogin: process.env.ALLOW_DEV_LOGIN === "true",
 
   // ---- Paid ticketing (Robux) --------------------------------------
-  // The master switch for selling tickets for Robux. OFF, and it must stay off
-  // until the in-experience purchase pipeline exists.
   //
-  // Robux cannot be charged from a website. A real payment is a Developer
-  // Product prompted inside the Roblox experience, confirmed by a ProcessReceipt
-  // handler on the game server calling back here. None of that is built. Ticket
-  // *tiers* can already carry a Robux price - that is the option, and partners
-  // can configure it today - but with this false, a priced tier renders locked at
-  // checkout and app/actions/tickets.ts refuses to issue one. Both checks are
-  // independent on purpose: the UI one is courtesy, the action one is the wall.
+  // THE MASTER SWITCH. May this site sell a ticket for Robux at all? Off by default.
   //
-  // Opt-in is deliberately "true" and nothing else, so an empty or missing value
-  // can never read as on.
+  // It is the first of the keys in lib/tickets/pricing.ts, and it is not the only one:
+  // a partner additionally needs `robuxTickets` in the registry, so that flipping this
+  // by itself cannot start charging a partner's visitors who never signed up for it.
+  //
+  // Ticket *tiers* can carry a Robux price whatever this says - that is the option, and
+  // partners can configure it today. With this false, a priced tier renders locked at
+  // checkout and lib/tickets/issue.ts refuses to issue one. Both checks are independent
+  // on purpose: the UI one is courtesy, the one under the row lock is the wall.
+  //
+  // Opt-in is deliberately "true" and nothing else, so an empty or missing value can
+  // never read as on.
   robuxTickets: process.env.ROBUX_TICKETS_ENABLED === "true",
+
+  // THE GAME PASS KEY. A third switch, on top of the two above, guarding the one rail
+  // that has a prerequisite outside this codebase.
+  //
+  // A game pass is bought on roblox.com in a browser, and afterwards we verify it by
+  // asking Roblox's Open Cloud whether the buyer owns it - using THEIR OAuth grant. That
+  // requires the Roblox OAuth application to be registered with the
+  // `user.inventory-item:read` and `offline_access` scopes.
+  //
+  // If it is not, the failure is the bad kind: the buyer goes to Roblox, pays real
+  // Robux, comes back, and we cannot look. They are charged and they have no ticket.
+  // Neither of the other two switches can possibly detect that, which is why this is a
+  // key of its own rather than a line in one of them - and why it stays off until
+  // somebody has actually been and configured the OAuth app.
+  //
+  // Off, the DEV PRODUCT rail still works; the web checkout simply does not offer to
+  // sell anything. That is the failure you want.
+  robuxGamePass: process.env.ROBUX_GAMEPASS_ENABLED === "true",
 
   // ---- The rank ladder ---------------------------------------------
   //

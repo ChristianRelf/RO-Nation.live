@@ -81,15 +81,50 @@ export async function pkceChallenge(verifier: string) {
   return base64url(new Uint8Array(digest));
 }
 
+// ---- Scopes ---------------------------------------------------------------
+//
+// Sign-in asks for `openid profile` and NOTHING ELSE, and that is a deliberate,
+// defended line. Somebody who only ever takes a free ticket must never be shown a
+// permission prompt asking to read their inventory - they would, quite rightly,
+// wonder what a gig website wants with it, and some of them would say no and leave.
+//
+// The inventory scope is asked for LATER, and only from the one place that genuinely
+// needs it: a buyer reaching a PAID checkout on a game-pass tier, at which point
+// "may we check that you bought the ticket?" is a question that answers itself. That
+// is what "incremental consent" means, and it is the entire reason these are two
+// constants rather than one.
+
+/** Ordinary sign-in. What almost every session in the system is. */
+export const BASE_SCOPES = ["openid", "profile"] as const;
+
+/**
+ * The paid-checkout grant.
+ *
+ * `user.inventory-item:read` is what lets us ask Roblox whether they own the pass -
+ * the check that makes the game-pass rail verifiable, and the whole reason it exists.
+ *
+ * `offline_access` is what makes Roblox issue a REFRESH TOKEN at all, and without it
+ * this rail simply does not work: an access token lasts fifteen minutes, and a buyer
+ * who comes back to their ticket tomorrow would find us unable to look anything up.
+ * It is easy to leave out, and the failure it causes turns up hours later.
+ */
+export const INVENTORY_SCOPES = [
+  ...BASE_SCOPES,
+  "user.inventory-item:read",
+  "offline_access",
+] as const;
+
 export function buildAuthorizeUrl(params: {
   state: string;
   challenge: string;
   redirectUri?: string;
+  /** Defaults to BASE_SCOPES. Pass INVENTORY_SCOPES to ask for the paid grant. */
+  scopes?: readonly string[];
 }) {
   const url = new URL(env.roblox.authorizeUrl);
   url.searchParams.set("client_id", env.roblox.clientId);
   url.searchParams.set("redirect_uri", params.redirectUri ?? redirectUri());
-  url.searchParams.set("scope", "openid profile");
+  url.searchParams.set("scope", (params.scopes ?? BASE_SCOPES).join(" "));
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", params.state);
   url.searchParams.set("code_challenge", params.challenge);
@@ -102,7 +137,52 @@ export type RobloxTokens = {
   token_type: string;
   expires_in: number;
   id_token?: string;
+
+  /**
+   * Only present when `offline_access` was asked for - so it is absent on every
+   * ordinary sign-in, which is correct and not a bug to go hunting for.
+   *
+   * Roblox ROTATES these: spending one invalidates it and hands back a new one. That
+   * makes refreshing a compare-and-swap rather than an update, and getting it wrong
+   * permanently breaks a person's grant. See accessTokenFor() in lib/roblox-tokens.ts.
+   */
+  refresh_token?: string;
+
+  /** Space-separated. What they ACTUALLY granted, which may be less than we asked. */
+  scope?: string;
 };
+
+/**
+ * Spend a refresh token for a fresh access token.
+ *
+ * The response carries a NEW refresh token and the one passed in is now dead. The
+ * caller must store both halves or lose the grant - which is why the only caller is
+ * lib/roblox-tokens.ts, and why it does it under a compare-and-swap.
+ */
+export async function refreshTokens(
+  refreshToken: string,
+): Promise<RobloxTokens | null> {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: env.roblox.clientId,
+    client_secret: env.roblox.clientSecret,
+  });
+
+  const res = await fetch(env.roblox.tokenUrl, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body,
+    cache: "no-store",
+  });
+
+  // NULL, not a throw. A refresh fails for two completely different reasons - Roblox is
+  // having a bad minute (retry later), or the person revoked the grant (never retry) -
+  // and the caller has to tell a buyer one of "hang on" or "please reconnect". Neither
+  // sentence is written by an exception. The caller decides; see roblox-tokens.ts.
+  if (!res.ok) return null;
+  return res.json();
+}
 
 export async function exchangeCode(
   code: string,

@@ -1,6 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { resolveRobloxUser } from "@/lib/roblox-users";
+import { seatWorld } from "@/lib/venue/anchor";
+import { parseLayout } from "@/lib/venue/schema";
+import { parseSeatKey, sectionSeats } from "@/lib/venue/seats";
 import { ticketSeal } from "./seal";
 
 // The one place that decides whether a ticket gets somebody through the door.
@@ -37,6 +40,34 @@ export type Admission = {
   paid: boolean;
 };
 
+/**
+ * Where they are sitting or standing. Null on an unseated show, which is most of them.
+ *
+ * The two halves come from two different places, and the split is the same one this file
+ * already makes for the tier:
+ *
+ *   label   FROZEN. Read off the ticket, where it was written at issue. It is what they
+ *           BOUGHT, and it stays true even if the section is renamed or the map is
+ *           redrawn tomorrow - exactly like `admission.tier`.
+ *
+ *   world   LIVE. Read off the event's current map. It is a physical fact about where
+ *           the chair is standing in the Roblox place TODAY, and if the venue has been
+ *           re-anchored since they bought, the new position is the correct one - the
+ *           frozen one would spawn them where the room used to be.
+ *
+ * Null `world` is ordinary: it means the map has no anchor, so nobody has said where this
+ * venue is in the world. The web does not care. Only the game does.
+ */
+export type Seat = {
+  /** "A1-K12". Null in SECTION mode - you bought the pit, not a chair in it. */
+  key: string | null;
+  sectionKey: string | null;
+  /** "Block A1 · Row K · Seat 12". What the stub says and the door reads out. */
+  label: string;
+  /** Roblox studs. Null when the venue has never been placed in the world. */
+  world: { x: number; y: number; z: number } | null;
+};
+
 export type VerifyResult = {
   /** The ticket exists and has not been cancelled. */
   valid: boolean;
@@ -60,6 +91,8 @@ export type VerifyResult = {
     activatedAt: Date | null;
     checkedIn: boolean;
     checkedInAt: Date | null;
+    /** Where they sit. Null on an unseated show. */
+    seat: Seat | null;
     /** The seal printed on the ticket. See lib/tickets/seal.ts. */
     seal: string;
     /**
@@ -124,6 +157,62 @@ export type LookupInput = {
 /** Neither identifier given - the caller has not asked a question we can answer. */
 export const BAD_REQUEST = "bad_request" as const;
 
+/**
+ * Where this ticket sits, if anywhere.
+ *
+ * ONE extra query, and ONLY for a ticket that actually holds a seat - which is nought
+ * events out of every one that exists today, and every door check on them is therefore
+ * byte-for-byte as cheap as it was before this feature landed. That is not an
+ * optimisation, it is the promise: adding seating must not make the door slower for a
+ * show that has no seats.
+ *
+ * The `label` comes off the TICKET (frozen at issue). The `world` comes off the EVENT's
+ * current map (live). See the note on Seat for why those two are deliberately different
+ * ages - the label is what they bought, the world is where the chair physically is now.
+ */
+async function seatFor(ticket: {
+  eventId: string;
+  seatKey: string | null;
+  sectionKey: string | null;
+  seatLabel: string | null;
+}): Promise<Seat | null> {
+  if (!ticket.seatKey && !ticket.sectionKey) return null;
+
+  const base: Seat = {
+    key: ticket.seatKey,
+    sectionKey: ticket.sectionKey,
+    // Frozen. A ticket that somehow has a seat but no label still has to say SOMETHING
+    // at the door, and the raw key beats an empty string a steward has to guess at.
+    label: ticket.seatLabel ?? ticket.seatKey ?? ticket.sectionKey ?? "",
+    world: null,
+  };
+
+  const event = await prisma.event.findUnique({
+    where: { id: ticket.eventId },
+    select: { venueMap: { select: { layout: true } } },
+  });
+
+  const layout = event?.venueMap ? parseLayout(event.venueMap.layout) : null;
+  if (!layout?.anchor) return base;
+
+  // A standing area has no chair to stand at, so it has no point - the section is a
+  // region, not a coordinate. The game can read the section's own polygon off the map if
+  // it wants to put them somewhere inside it.
+  if (!ticket.seatKey) return base;
+
+  const parsed = parseSeatKey(ticket.seatKey);
+  const section = layout.shapes.find((s) => s.key === parsed?.sectionKey);
+  if (!parsed || !section || section.kind !== "SEATED_SECTION") return base;
+
+  // Re-derive the seat's position from the LIVE map, rather than storing it on the ticket.
+  // If the venue has been re-anchored since they bought, this is the chair's real position
+  // today - and a stored one would spawn them where the room used to be.
+  const found = sectionSeats(section).find((s) => s.key === ticket.seatKey);
+  if (!found) return base;
+
+  return { ...base, world: seatWorld(layout, found.cx, found.cy) };
+}
+
 export async function checkTicket(
   input: LookupInput,
 ): Promise<VerifyResult | typeof BAD_REQUEST> {
@@ -176,6 +265,8 @@ export async function checkTicket(
     paid: priceRobux > 0,
   };
 
+  const seat = await seatFor(ticket);
+
   const seal = ticketSeal(ticket.id, ticket.code);
   const sealValid = input.seal
     ? input.seal.trim().toUpperCase() === seal
@@ -191,6 +282,7 @@ export async function checkTicket(
       activatedAt: ticket.activatedAt,
       checkedIn: ticket.status === "CHECKED_IN",
       checkedInAt: ticket.checkedInAt,
+      seat,
       seal,
       ...(sealValid === undefined ? {} : { sealValid }),
     },

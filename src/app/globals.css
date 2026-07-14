@@ -30,6 +30,48 @@
   --accent-ink-rgb: 255 255 255;
   --paper-ink-rgb: 15 15 15;
 
+  /* ---- The venue map ----------------------------------------------------
+     Seats, sections and the stage. Channels, like everything above, because a
+     seat map is drawn in SVG - and SVG, unlike canvas, can read a custom
+     property straight out of a fill: fill="rgb(var(--seat-free-rgb))". That is
+     why there is no colour resolution step anywhere in the map components, and
+     why the whole thing themes for a partner for free.
+
+     (The canvas ticket in components/ticket/ticket-download.tsx CANNOT do this -
+     it has to resolve the properties by hand at draw time, which is what
+     cssColor() in that file is for. Do not copy that helper into the map. It is
+     the workaround for a limitation SVG does not have.)
+
+     STATE colours - what a seat IS. */
+  --seat-free-rgb: 122 162 255; /* unclaimed. Tier colour usually overrides. */
+  --seat-taken-rgb: 70 68 64; /* sold. Deliberately dead and low-contrast. */
+  --seat-held-rgb: 214 158 46; /* somebody else is mid-checkout. Amber = wait. */
+  --seat-selected-rgb: 255 255 255; /* yours, right now. The brightest thing on the map. */
+
+  /* Structure. The stage is not a section and must never look like one - it is
+     the thing everybody is facing, and if it reads as buyable somebody will
+     click it. */
+  --stage-rgb: 236 233 225;
+  --venue-line-rgb: 255 255 255;
+  --venue-line-alpha: 0.14;
+
+  /* PRICE-BAND colours - what a seat COSTS. This is the Ticketmaster idea: a
+     seat's colour tells you its price before you have read a single word.
+
+     A categorical ramp, so it is deliberately NOT all derived from --accent-rgb:
+     six tints of one hue is a gradient, not a legend, and a buyer cannot tell
+     150 R$ from 400 R$ by squinting at two similar blues. They must be
+     *distinguishable*, which means different hues.
+
+     They are still channels, so a brand that hates them overrides them - and a
+     brand with only two tiers only ever sees the first two. */
+  --seat-tier-1-rgb: 90 200 160;
+  --seat-tier-2-rgb: 90 150 255;
+  --seat-tier-3-rgb: 175 130 255;
+  --seat-tier-4-rgb: 240 140 90;
+  --seat-tier-5-rgb: 235 100 140;
+  --seat-tier-6-rgb: 220 200 90;
+
   /* Hairlines. Split into a channel + alphas so a brand can tint its rules
      (bone rather than white) without restating every alpha that uses them. */
   --line-rgb: 255 255 255;

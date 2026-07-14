@@ -1,11 +1,19 @@
 import "server-only";
+import type { PurchaseIntent } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { isPast } from "@/lib/format";
 import { partnerBySlug } from "@/lib/partners/registry";
 import { resolveRobloxUser } from "@/lib/roblox-users";
+import { gamePassPurchaseId, ownsGamePass } from "@/lib/roblox-gamepass";
 import { generateTicketCode } from "@/lib/utils";
-import { effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pricing";
+import {
+  effectiveTiers,
+  gamePassSalesAllowed,
+  robuxSalesAllowed,
+} from "@/lib/tickets/pricing";
+import { resolveSeat, type SeatAssignment } from "@/lib/tickets/seating";
+import { parseLayout } from "@/lib/venue/schema";
 
 // The one place that decides whether somebody GETS a ticket.
 //
@@ -31,10 +39,16 @@ import { effectiveTiers, robuxSalesAllowed } from "@/lib/tickets/pricing";
 //             hands: that is what a comp is. It is recorded on the ticket
 //             (issuedBy…) so a VIP nobody paid for is never a mystery.
 //
-//   purchase  Somebody PAID for it, in Robux, inside the experience. See the long
-//             note on TicketPurchase in schema.prisma - we cannot verify the
-//             payment and we are not pretending to. What we can do, and do, is
-//             refuse to honour the same PurchaseId twice.
+//   purchase  Somebody PAID for it, in Robux, inside the experience, as a Developer
+//             Product. See the long note on TicketPurchase in schema.prisma - we
+//             cannot verify that payment and we are not pretending to. What we can
+//             do, and do, is refuse to honour the same PurchaseId twice.
+//
+//   game_pass Somebody PAID for it, in Robux, on roblox.com, in a browser - and this
+//             is the one we can CHECK. A game pass is bought on Roblox's own site and
+//             its ownership is readable back over Open Cloud, with the buyer's own
+//             OAuth grant. So this mode does not believe anybody: it asks Roblox, and
+//             the answer is the authority. See lib/roblox-gamepass.ts.
 
 export type IssueReason =
   | "ok"
@@ -56,7 +70,51 @@ export type IssueReason =
   /** A priced tier, reached by a path that collects no money. Use /purchase. */
   | "payment_required"
   /** /purchase, but the tier is free. Nothing to pay for - do not charge them. */
-  | "not_purchasable";
+  | "not_purchasable"
+
+  // ---- The hold, and the rail that can be checked ------------------------
+
+  /** No such hold; someone else's; another show's; another tier's; already spent. */
+  | "bad_intent"
+
+  /**
+   * The game-pass rail: Roblox says they do not own it.
+   *
+   * NOT AN ERROR, and the checkout must never render it as one. Roblox's inventory
+   * lags a purchase by seconds, so this is the ordinary answer for the whole time a
+   * buyer is walking back to our tab. It means "not yet". The UI says "waiting for
+   * Roblox" and polls; it does not say "payment failed", because that is a lie that
+   * would make people pay twice.
+   */
+  | "not_paid"
+
+  /**
+   * We could not ASK Roblox. Their 5xx, a timeout, a rotted grant.
+   *
+   * Kept apart from `not_paid` with some determination, because collapsing the two is
+   * exactly the bug lib/merch/roblox.ts documents having shipped once already (a
+   * rate-limited fetch that looked like "not clothing", and a shop that quietly lost a
+   * shirt). Here the same collapse tells somebody who has just spent 500 Robux that
+   * they did not pay. One means WAIT. The other means WE ARE BROKEN.
+   */
+  | "verify_unavailable"
+
+  /**
+   * They have never granted `user.inventory-item:read` - or they revoked it.
+   *
+   * A species of verify_unavailable whose fix is a BUTTON rather than a spinner, which
+   * is the entire reason it is a separate word.
+   */
+  | "needs_consent"
+
+  /**
+   * The seat is gone and the tier has nothing to fall back to.
+   *
+   * When a fallback exists we take it silently - an expired hold costs you the chair
+   * you picked, not the ticket you paid for. This fires ONLY when the whole tier is
+   * full, which makes it the one and only manual-refund case in the system.
+   */
+  | "seat_taken";
 
 export type IssueOutcome =
   | {
@@ -79,7 +137,7 @@ const fail = (reason: Exclude<IssueReason, "ok">) =>
 
 /** How the ticket is being handed over. See the note above. */
 export type IssueMode =
-  | { kind: "reserve" }
+  | { kind: "reserve"; intentToken?: string | null }
   | {
       kind: "gift";
       /** Who gave it. A Roblox id - a player, or a crew member. */
@@ -95,7 +153,30 @@ export type IssueMode =
       productId?: string | null;
       /** The key that asserted the payment. The audit trail for that assertion. */
       apiKeyId?: string | null;
-    };
+      /**
+       * The hold this receipt settles, when the buy started on the web (or at a booth
+       * that took a seat first).
+       *
+       * REQUIRED on a seated show, and refused without it - you cannot sell a numbered
+       * seat on the word of a game server that has no idea which seat. Optional on an
+       * unseated one, so every existing in-experience and at-the-door flow keeps
+       * working exactly as it does today.
+       */
+      intentToken?: string | null;
+    }
+  /**
+   * The game-pass rail. The only one on this list we can VERIFY.
+   *
+   * Look at what it carries: a token, and NOTHING else. Not the pass id, not the price,
+   * not the seat, not the buyer. Every one of those is re-read from the database inside
+   * this function - the tier's own gamePassId, the intent's own beneficiaryUserId and
+   * seatKey - and that is not tidiness, it is the security property.
+   *
+   * A caller who could NAME the pass could name a pass they already own, and walk out
+   * with a free VIP ticket, verified, with our own ownership check waving them through.
+   * So the caller names a hold, and the hold names everything else.
+   */
+  | { kind: "game_pass"; intentToken: string };
 
 export type IssueInput = {
   eventId: string;
@@ -126,6 +207,18 @@ const isPurchaseReplay = (err: any) =>
 
 const isDuplicateUser = (err: any) =>
   err?.code === "P2002" && err?.meta?.target?.includes?.("robloxId");
+
+/**
+ * Two tickets tried to take the same chair.
+ *
+ * The event row lock is what is supposed to make this impossible, and both of them
+ * queued on it, so this firing at all means some future code path issued a ticket
+ * WITHOUT taking the lock. @@unique([eventId, seatKey]) then catches what the lock was
+ * meant to - which is precisely why the constraint exists as well as the lock, and not
+ * instead of it.
+ */
+const isSeatCollision = (err: any) =>
+  err?.code === "P2002" && err?.meta?.target?.includes?.("seatKey");
 
 /**
  * Find, or create, the User row a ticket will hang off.
@@ -184,6 +277,65 @@ async function resolveHolderUserId(
 }
 
 /**
+ * Have we already honoured this payment - and is the ticket it bought still alive?
+ *
+ * The second half of that question is new, and it is a BUG FIX with a real victim.
+ *
+ * This check used to hand back `settled.ticketId` without looking at it. On the
+ * Developer Product rail that is very nearly safe: a purchaseId is a fresh GUID per
+ * transaction, and ProcessReceipt re-delivers within minutes, so the ticket is still
+ * warm.
+ *
+ * The GAME PASS rail breaks that assumption completely. Its idempotency key is
+ * `gp:<passId>:<robloxId>` - see gamePassPurchaseId() - because a pass is owned
+ * FOREVER and can therefore be honoured exactly once. Which means the very first thing
+ * that happens when a holder cancels their ticket and comes back is: they hit this
+ * branch, and get handed the CANCELLED ticket they just threw away. Every time. With no
+ * way out, because the payment can never be re-made - Roblox will not sell them the
+ * pass twice.
+ *
+ * So: re-read the ticket.
+ *
+ *   alive      hand it back. The ProcessReceipt retry, working as designed.
+ *   revoked    refuse. They were thrown off this show BY NAME, and a payment does not
+ *              buy that back - see the revoke note further down.
+ *   cancelled  RESTORE it. They paid; they get a ticket. Fall through into the ordinary
+ *              flow, which re-activates the row and re-allocates a seat - but remember
+ *              NOT to write a second TicketPurchase against money that changed hands
+ *              once.
+ */
+async function settleExisting(purchaseId: string): Promise<
+  | { done: true; outcome: IssueOutcome; restore?: never }
+  | { done: false; restore: boolean }
+> {
+  const settled = await prisma.ticketPurchase.findUnique({
+    where: { purchaseId },
+    select: { ticketId: true },
+  });
+  if (!settled) return { done: false, restore: false };
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: settled.ticketId },
+    select: { id: true, status: true, revokedAt: true },
+  });
+
+  if (ticket && ticket.status !== "CANCELLED") {
+    return {
+      done: true,
+      outcome: { ok: true, ticketId: ticket.id, existing: true },
+    };
+  }
+
+  if (ticket?.revokedAt) {
+    return { done: true, outcome: fail("revoked") };
+  }
+
+  // Paid for, then cancelled - or the ticket row is gone entirely. Rebuild it, and do
+  // not charge them again on the way.
+  return { done: false, restore: true };
+}
+
+/**
  * Issue a ticket.
  *
  * Every refusal is a `reason`, never a throw - the callers are a form and a game
@@ -202,17 +354,27 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
   // By then the show may be sold out, or past, or the tier deactivated - and none
   // of that is a reason to tell somebody who has already been charged that they
   // have no ticket. They have one. Hand it back.
+  //
+  // `skipPurchaseRow` is what the settle check hands forward: a payment we have
+  // ALREADY written a TicketPurchase row for must not get a second one when the
+  // ticket it bought is rebuilt below.
+  let skipPurchaseRow = false;
+
   if (mode.kind === "purchase") {
-    const settled = await prisma.ticketPurchase.findUnique({
-      where: { purchaseId: mode.purchaseId },
-      select: { ticketId: true },
-    });
-    if (settled) return { ok: true, ticketId: settled.ticketId, existing: true };
+    const settled = await settleExisting(mode.purchaseId);
+    if (settled.done) return settled.outcome;
+    skipPurchaseRow = settled.restore;
   }
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { id: true, partnerId: true, tiers: true },
+    select: {
+      id: true,
+      partnerId: true,
+      tiers: true,
+      seatMode: true,
+      venueMap: { select: { layout: true } },
+    },
   });
   if (!event) return fail("not_found");
 
@@ -241,24 +403,161 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
     // VIP seat to a tier that is not supposed to exist yet is still a VIP seat.
     if (!robuxAllowed) return fail("payments_off");
 
-    // A priced tier reached by a path that collects nothing. The website's
-    // checkout lands here, and the answer is: this is bought in the experience,
-    // through /purchase, because Robux cannot be charged from a web page.
-    //
-    // This branch replaces the throw that used to live in app/actions/tickets.ts
-    // - the one whose comment said "this throw is the line the payment work
-    // deletes". This is that deletion. Gifts pass, because a gift is a comp and
-    // charges nobody.
+    // A priced tier reached by a path that collects nothing. The website's free
+    // reserve lands here, and the answer is: this one is PAID for - on roblox.com
+    // if it has a game pass, or inside the experience if it has a Developer
+    // Product. Gifts pass, because a gift is a comp and charges nobody.
     if (mode.kind === "reserve") return fail("payment_required");
-  } else if (mode.kind === "purchase") {
+
+    if (mode.kind === "game_pass") {
+      // The tier is not sold on this rail. Nobody drew it a pass, so a claim to have
+      // bought its pass is a claim about a pass that does not exist.
+      if (!tier.gamePassId) return fail("badtier");
+
+      // The third key. Robux may be on and this partner may be allowed to price in
+      // it, and the game-pass rail can STILL be off - because it needs the OAuth app
+      // to carry the inventory scope, which neither of the other two switches can
+      // see. See gamePassSalesAllowed().
+      if (!gamePassSalesAllowed(partner, env.robuxTickets, env.robuxGamePass)) {
+        return fail("payments_off");
+      }
+    }
+  } else if (mode.kind === "purchase" || mode.kind === "game_pass") {
     // Free tier, and somebody says they paid for it. Something is wrong on the
-    // game's side - refuse rather than take the money and issue what they could
-    // have had for nothing.
+    // caller's side - refuse rather than take the money and issue what they could
+    // have had for nothing. The `|| game_pass` is the clause that stops the web
+    // checkout charging for a free ticket.
     return fail("not_purchasable");
   }
 
-  const userId = await resolveHolderUserId(input.holder);
+  // ---- The hold ----------------------------------------------------------
+  //
+  // Read OUTSIDE the transaction, because the ownership check below needs to know who
+  // the beneficiary is before it can ask Roblox about them - and that is a network
+  // call, which must not happen under the lock. It is re-read INSIDE the transaction
+  // before it is spent (see below); this read is advisory, and anything it decides is
+  // re-decided under the lock.
+  const intentToken =
+    mode.kind === "game_pass"
+      ? mode.intentToken
+      : mode.kind === "purchase" || mode.kind === "reserve"
+        ? (mode.intentToken ?? null)
+        : null;
+
+  let intent: PurchaseIntent | null = null;
+
+  if (intentToken) {
+    intent = await prisma.purchaseIntent.findUnique({
+      where: { token: intentToken },
+    });
+
+    // Every one of these is "this hold is not the hold you say it is". They are all
+    // `bad_intent` rather than four different words, because to the caller there is
+    // exactly one thing to do about any of them, and to an attacker each distinct
+    // answer is a free bit of information about somebody else's order.
+    if (!intent) return fail("bad_intent");
+    if (intent.eventId !== eventId) return fail("bad_intent");
+    if ((intent.tierId ?? "") !== (tier.id ?? "")) return fail("bad_intent");
+    if (intent.status === "CANCELLED") return fail("bad_intent");
+
+    // NOTE what is NOT checked here: expiresAt.
+    //
+    // AN EXPIRED HOLD IS NOT A REFUSAL. They may well have paid - the charge happened
+    // on a page we do not control, and the ten minutes ran out while they were on it.
+    // What an expiry costs them is the SEAT THEY PICKED, not the ticket they paid for.
+    // See the fallback under the lock.
+  }
+
+  // A game-pass claim with no hold has nothing to stand on: the hold is the only thing
+  // that says which event, which tier and which person this pass was bought for.
+  if (mode.kind === "game_pass" && !intent) return fail("bad_intent");
+
+  // ---- Who is getting in -------------------------------------------------
+  //
+  // On an intent-backed issue the holder comes from the INTENT, not from the caller.
+  // The caller named a token; the token names a person. That is what makes the token
+  // safe to hand to Roblox and safe to put in a URL - it cannot be redirected onto
+  // somebody else by whoever ends up holding it.
+  const holder = intent ? { userId: intent.beneficiaryUserId } : input.holder;
+
+  const userId = await resolveHolderUserId(holder);
   if (!userId) return fail("no_player");
+
+  // A /purchase body that names a robloxId AND carries a token must agree with itself.
+  // If it does not, something upstream is confused about whose ticket this is, and the
+  // safe move is to stop rather than to pick one and hope.
+  if (intent && "robloxId" in input.holder) {
+    const named = await prisma.user.findUnique({
+      where: { robloxId: String(input.holder.robloxId) },
+      select: { id: true },
+    });
+    if (named?.id !== userId) return fail("bad_intent");
+  }
+
+  // ---- Did they ACTUALLY pay? --------------------------------------------
+  //
+  // The one question in this system that can be answered without believing anybody, and
+  // this is where it gets asked.
+  //
+  // IT RUNS HERE, OUTSIDE THE TRANSACTION, and it must never be moved inside. The
+  // transaction below holds a write lock on the event row, and every reserve, hold and
+  // purchase for this show queues behind it. Those transactions are a handful of indexed
+  // queries and clear in ~10ms - call it a hundred issues a second. An HTTP round trip
+  // to Roblox is 200-800ms. Put this inside the lock and a sold-out show serialises to
+  // THREE TICKETS A SECOND, on the one night of the year when that matters.
+  //
+  // It sits next to resolveHolderUserId(), which is a network call kept out here for
+  // exactly the same reason.
+  let gamePassKey: string | null = null;
+
+  if (mode.kind === "game_pass") {
+    const payerId = intent!.userId;
+
+    const owns = await ownsGamePass(payerId, tier.gamePassId!);
+
+    if (!owns.ok) {
+      // Three-state, and the third state is the point. "We could not ask" is not "they
+      // did not pay", and saying the second when we mean the first is how you tell
+      // somebody who is 500 Robux down that they bought nothing.
+      return fail(owns.reason === "no_grant" ? "needs_consent" : "verify_unavailable");
+    }
+
+    // Not an error. Roblox's inventory lags a purchase by seconds - this is the normal
+    // answer while the buyer is still walking back to our tab. The checkout polls on it.
+    if (!owns.owns) return fail("not_paid");
+
+    // They own it. Now: has this pass already bought a ticket?
+    //
+    // `gp:<passId>:<robloxId>` rides the SAME unique constraint ProcessReceipt uses, so
+    // the replay machinery, the double-claim guard and the payment ledger all come for
+    // free - and a second claim on a pass somebody owns forever cannot mint a second
+    // ticket. See gamePassPurchaseId().
+    const payer = await prisma.user.findUnique({
+      where: { id: payerId },
+      select: { robloxId: true },
+    });
+    if (!payer) return fail("no_player");
+
+    gamePassKey = gamePassPurchaseId(tier.gamePassId!, payer.robloxId);
+
+    const settled = await settleExisting(gamePassKey);
+    if (settled.done) return settled.outcome;
+    skipPurchaseRow = settled.restore;
+  }
+
+  /** The idempotency key for whichever paying rail we are on. Null when nobody paid. */
+  const purchaseKey =
+    mode.kind === "purchase" ? mode.purchaseId : mode.kind === "game_pass" ? gamePassKey : null;
+
+  // The event's own map. Parsed once, out here, rather than inside the retry loop.
+  const layout = event.venueMap ? parseLayout(event.venueMap.layout) : null;
+
+  // A seated show whose map does not parse. NOT "no map, so sell it as general
+  // admission" - that would put the entire room on sale a second time, on top of
+  // everybody already holding a seat in it. Refuse. See parseLayout().
+  if (event.seatMode !== "NONE" && event.venueMap && !layout) {
+    return fail("unavailable");
+  }
 
   // What they hold is frozen at issue and never looked up again: renaming or
   // re-pricing the tier tomorrow must not rewrite the ticket they hold today.
@@ -281,12 +580,13 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
     try {
       return await prisma.$transaction(async (tx) => {
         // Take a write lock on the event row and hold it to commit. Everyone
-        // reserving for this event now queues here, so no two requests can both
-        // read `capacity - 1` and both insert. It serialises per event, so other
-        // events are unaffected - and unlike a Serializable transaction there is
-        // no retry loop to get wrong. The tier counts below are read under this
-        // same lock, which is what makes a per-tier cap hold as tightly as the
-        // room's own.
+        // reserving, HOLDING or paying for this event now queues here, so no two
+        // requests can both read `capacity - 1` - or both read "A1-K12 is free" -
+        // and both insert. It serialises per event, so other events are unaffected,
+        // and unlike a Serializable transaction there is no retry loop to get wrong.
+        //
+        // Every count and every seat read below happens under it. THAT is what makes
+        // a per-tier cap hold as tightly as the room's own, and a seat hold hold at all.
         const rows = await tx.$queryRaw<
           { id: string; capacity: number; status: string; startsAt: Date }[]
         >`SELECT id, capacity, status, "startsAt" FROM events WHERE id = ${eventId} FOR UPDATE`;
@@ -308,27 +608,119 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
         // them clicking Reserve.
         if (existing?.revokedAt) return fail("revoked");
 
+        // ---- The hold, re-read under the lock -------------------------
+        //
+        // A plain read, with no second FOR UPDATE on the intent row - because every
+        // writer of a hold for this event takes the EVENT lock first (see
+        // createPurchaseIntent), so by the time we are in here nobody else can be
+        // touching it. One lock, held at one grain, is the whole concurrency story.
+        const live = intent
+          ? await tx.purchaseIntent.findUnique({ where: { id: intent.id } })
+          : null;
+
+        if (intent && !live) return fail("bad_intent");
+
+        // Already spent. Two tabs, or a double-click on "check again". Hand back what
+        // it made rather than erroring at somebody who has paid and is watching a
+        // spinner - that is the whole difference between idempotent and merely correct.
+        if (live?.status === "CONSUMED") {
+          if (live.ticketId) {
+            const made = await tx.ticket.findUnique({
+              where: { id: live.ticketId },
+              select: { id: true, status: true, userId: true },
+            });
+            if (made && made.userId === userId && made.status !== "CANCELLED") {
+              return { ok: true as const, ticketId: made.id, existing: true };
+            }
+          }
+          return fail("bad_intent");
+        }
+
+        // ---- The hold expired, and they paid anyway --------------------
+        //
+        // The case this whole design has to be honest about. They were charged - on
+        // Roblox's website, on a page we do not control - and by the time they got back
+        // here their ten minutes were up and their chair was gone.
+        //
+        // WE DO NOT REFUSE THEM. They have a ticket coming. What they lose is the SEAT
+        // they picked, and only that: the wanted seat is dropped, and the allocator below
+        // hands them the best available one in the same tier. If the tier is completely
+        // full, THEN it fails - `seat_taken` - and that, and only that, is the case a
+        // human has to refund.
+        const expired = Boolean(live && live.expiresAt.getTime() < Date.now());
+        const wantSeat = expired ? null : (live?.seatKey ?? null);
+        const wantSection = expired ? null : (live?.sectionKey ?? null);
+
+        // ---- The chair -------------------------------------------------
+        //
+        // Runs BEFORE the already-holds branch, because an upgrade needs one too: a GA
+        // holder who buys VIP gets a VIP SEAT, not a VIP badge and a place in the pit.
+        const seat = await resolveSeat({
+          tx,
+          eventId,
+          seatMode: event.seatMode,
+          layout,
+          tier,
+          wantSeat,
+          wantSection,
+          // Their own hold must not block them. Miss this and every buyer is refused the
+          // one seat they are actually holding.
+          ignoreIntentId: live?.id ?? null,
+          // Nor may their own existing ticket. Same bug, wearing a hat: an upgrade that
+          // collides with the GA chair the upgrader is already sitting in.
+          ignoreTicketId: existing?.id ?? null,
+        });
+        if (!seat.ok) return fail(seat.reason);
+
+        const seated: SeatAssignment = {
+          seatKey: seat.seatKey,
+          sectionKey: seat.sectionKey,
+          seatLabel: seat.seatLabel,
+        };
+
+        /** Spend the hold. Called on every path that actually issues something. */
+        const consume = async (ticketId: string) => {
+          if (!live) return;
+          await tx.purchaseIntent.update({
+            where: { id: live.id },
+            data: { status: "CONSUMED", consumedAt: new Date(), ticketId },
+          });
+        };
+
+        /** Write the payment down - unless we already did, on a previous attempt. */
+        const recordPayment = async (ticketId: string) => {
+          if (!purchaseKey || skipPurchaseRow) return;
+          await tx.ticketPurchase.create({
+            data: {
+              purchaseId: purchaseKey,
+              ticketId,
+              robuxSpent:
+                mode.kind === "purchase" ? mode.robuxSpent : tier.priceRobux,
+              apiKeyId: mode.kind === "purchase" ? (mode.apiKeyId ?? null) : null,
+              placeId: mode.kind === "purchase" ? (mode.placeId ?? null) : null,
+              productId: mode.kind === "purchase" ? (mode.productId ?? null) : null,
+            },
+          });
+        };
+
         // ---- They already hold one ------------------------------------
         if (existing && existing.status !== "CANCELLED") {
-          // A purchase is not a no-op. They have been CHARGED. Silently handing
-          // back the ticket they already had would be taking Robux for nothing -
-          // so the payment lands on the ticket they hold, upgrading its tier. It
-          // is the same ticket (one per person per event, always), now VIP.
-          if (mode.kind === "purchase") {
+          // A payment is not a no-op. They have been CHARGED. Silently handing back the
+          // ticket they already had would be taking Robux for nothing - so the payment
+          // lands on the ticket they hold, upgrading its tier AND its chair. It is the
+          // same ticket (one per person per event, always), now VIP, now sitting down.
+          if (mode.kind === "purchase" || mode.kind === "game_pass") {
             await tx.ticket.update({
               where: { id: existing.id },
-              data: { tierId: tier.id, tierName: tier.name, priceRobux: tier.priceRobux },
-            });
-            await tx.ticketPurchase.create({
               data: {
-                purchaseId: mode.purchaseId,
-                ticketId: existing.id,
-                robuxSpent: mode.robuxSpent,
-                apiKeyId: mode.apiKeyId ?? null,
-                placeId: mode.placeId ?? null,
-                productId: mode.productId ?? null,
+                tierId: tier.id,
+                tierName: tier.name,
+                priceRobux: tier.priceRobux,
+                ...seated,
               },
             });
+            await recordPayment(existing.id);
+            await consume(existing.id);
             return { ok: true as const, ticketId: existing.id, existing: true };
           }
 
@@ -361,27 +753,24 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
           ? (
               await tx.ticket.update({
                 where: { id: existing.id },
-                data: { status: "RESERVED", ...held },
+                data: { status: "RESERVED", ...held, ...seated },
               })
             ).id
           : (
               await tx.ticket.create({
-                data: { eventId, userId, code, status: "RESERVED", ...held },
+                data: {
+                  eventId,
+                  userId,
+                  code,
+                  status: "RESERVED",
+                  ...held,
+                  ...seated,
+                },
               })
             ).id;
 
-        if (mode.kind === "purchase") {
-          await tx.ticketPurchase.create({
-            data: {
-              purchaseId: mode.purchaseId,
-              ticketId,
-              robuxSpent: mode.robuxSpent,
-              apiKeyId: mode.apiKeyId ?? null,
-              placeId: mode.placeId ?? null,
-              productId: mode.productId ?? null,
-            },
-          });
-        }
+        await recordPayment(ticketId);
+        await consume(ticketId);
 
         return { ok: true as const, ticketId, existing: false };
       });
@@ -389,15 +778,28 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
       // Two calls with the same PurchaseId, racing. One committed; this one lost
       // on the unique constraint, which is the constraint doing its job. Re-read
       // and hand back the ticket the winner created.
-      if (isPurchaseReplay(err) && mode.kind === "purchase") {
+      if (isPurchaseReplay(err) && purchaseKey) {
         const settled = await prisma.ticketPurchase.findUnique({
-          where: { purchaseId: mode.purchaseId },
+          where: { purchaseId: purchaseKey },
           select: { ticketId: true },
         });
         if (settled) {
           return { ok: true, ticketId: settled.ticketId, existing: true };
         }
       }
+
+      // Two people took the same chair.
+      //
+      // This SHOULD be impossible - the event row lock is what stops it, and both of them
+      // queued on it. So reaching here means the lock was bypassed by some future code
+      // path that forgot to take it, and @@unique([eventId, seatKey]) has just caught what
+      // the lock was supposed to.
+      //
+      // Which is exactly what a backstop is for. Retry: the loop re-enters the lock,
+      // resolveSeat sees the seat is now taken, and falls back to the next one. The bug
+      // costs a round trip instead of a double-sold chair.
+      if (isSeatCollision(err)) continue;
+
       if (isCodeCollision(err)) continue;
       throw err;
     }
@@ -455,6 +857,27 @@ export async function voidTicket(input: {
     where: { id: ticket.id },
     data: {
       status: "CANCELLED",
+
+      // ---- GIVE THE CHAIR BACK ------------------------------------------
+      //
+      // This is not tidying up. It is the ONLY thing that frees a seat, and leaving it
+      // out silently breaks the show.
+      //
+      // @@unique([eventId, seatKey]) binds CANCELLED rows too - Postgres cannot express
+      // "unique among live tickets" without a partial index, and `prisma db push` runs on
+      // every boot and drops those (see the note on Ticket.seatKey). So a cancelled row
+      // that still carries a seatKey still OWNS that seat, forever: nobody can be sold it,
+      // the map renders it taken, and there is nobody sitting in it.
+      //
+      // `seatLabel` is deliberately NOT cleared. It is frozen, like tierName - the stub
+      // still says where they would have been sitting. What they lose is the chair, not
+      // the memory of it.
+      //
+      // The mirror of this line lives in cancelTicket() in app/actions/tickets.ts. There
+      // are exactly two writers, and they must both do this.
+      seatKey: null,
+      sectionKey: null,
+
       // Revoking an already-voided ticket upgrades it to a ban, which is a real
       // thing somebody will want to do. Voiding an already-REVOKED one does NOT
       // silently lift the ban - clearing it is its own deliberate act.

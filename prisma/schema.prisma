@@ -22,10 +22,50 @@ model User {
   profileUrl  String?
   createdAt   DateTime @default(now())
 
+  // ---- The Roblox OAuth grant -------------------------------------------
+  //
+  // Ordinary sign-in asks for `openid profile` and NOTHING else, so somebody who
+  // only ever takes free tickets is never shown a permission prompt they did not
+  // need. The moment they reach a PAID checkout on a game-pass tier we ask again -
+  // for `user.inventory-item:read offline_access` - and THAT grant lands here.
+  // That is what "incremental consent" means, and it is why these are nullable:
+  // most rows will never have them.
+  //
+  // It lives on the USER rather than in the session cookie, and that is what makes
+  // it work across hosts. Only the CONSENT has to happen on authorise.ronation.live
+  // (the one registered redirect - see lib/sso.ts); the ownership check itself is a
+  // server-side read of this row, and any host can do it.
+  //
+  // NOT ENCRYPTED, deliberately, and the scope list is the entire reason: this grant
+  // can read exactly one thing - whether they own a game pass. It cannot spend a
+  // Robux, change an avatar or post anything. If the scope set ever grows past
+  // read-only inventory, encrypt these two columns BEFORE it does.
+  //
+  // Roblox refresh tokens ROTATE: spending one invalidates it and hands back a new
+  // one. So refreshing is a COMPARE-AND-SWAP, never a plain update - two tabs
+  // polling a checkout at once will both read the same expired token and both try
+  // to spend it, and the loser's response would otherwise overwrite the winner's
+  // and permanently break the grant. See accessTokenFor() in lib/roblox-tokens.ts.
+  robloxAccessToken  String?   @db.Text
+  robloxRefreshToken String?   @db.Text
+  robloxTokenExpires DateTime?
+
+  /// The scopes the stored grant actually carries. Read BEFORE we try to use it: a
+  /// row written before any of this existed holds tokens for `openid profile` only,
+  /// and asking Roblox about an inventory with those is a 401, not an answer.
+  robloxScopes String[] @default([])
+
   tickets         Ticket[]
   applications    Application[]
   surveyResponses SurveyResponse[]
   enquiries       Enquiry[]
+
+  /// Holds this person is PAYING for.
+  purchaseIntents PurchaseIntent[] @relation("IntentPayer")
+
+  /// Holds whose TICKET is destined for this person. The same rows as above for an
+  /// ordinary purchase; different ones when somebody is buying for a friend.
+  purchaseIntentsFor PurchaseIntent[] @relation("IntentBeneficiary")
 
   @@map("users")
 }
@@ -37,6 +77,24 @@ enum EventStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+// How much of the room a buyer gets to choose.
+//
+// NONE is what every event that exists today is, and the default, so adding this
+// column changed nothing about any of them. The seat picker is skipped outright
+// when it is NONE - see app/events/[slug]/seats/page.tsx - which is what lets
+// seating ship without touching a single existing show.
+enum SeatMode {
+  /// No map. Every ticket is general admission, and that is the whole of it.
+  NONE
+
+  /// Buy an AREA: a standing pit, a gate, a tier of the balcony. There is no seat -
+  /// you buy the section, and the section has a cap. Festivals.
+  SECTION
+
+  /// Buy a SEAT. Row K, seat 12. Stadiums.
+  SEAT
 }
 
 model Event {
@@ -58,6 +116,29 @@ model Event {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
+  /// The Roblox place id, as a STRING (Roblox ids passed 2^31 long ago - same
+  /// reasoning as MerchProduct.assetId).
+  ///
+  /// `placeUrl` above is what a HUMAN clicks. This is what a deep link is BUILT
+  /// from - roblox.com/games/start?placeId=<this>&launchData=<intent token> - and
+  /// they are deliberately two columns rather than one parsed at use time, because
+  /// scraping an id back out of a URL works right up until somebody pastes a link
+  /// with a tracking query string on the end of it.
+  placeId String?
+
+  seatMode SeatMode @default(NONE)
+
+  /// This event's OWN copy of a layout, cloned from a template when the event was
+  /// created. SetNull, not Cascade: deleting a map must never delete a show.
+  ///
+  /// A CLONE, not a reference, and that is the whole design. A TEMPLATE is a library
+  /// item ("The Vault - Main Stage") that gets drawn once and reused; an EVENT's map
+  /// is a snapshot of one, with THIS event's tiers assigned to its sections. Point
+  /// two live shows at one row and editing the template quietly re-seats a show that
+  /// has already sold four hundred tickets. See VenueMap.kind.
+  venueMap   VenueMap? @relation(fields: [venueMapId], references: [id], onDelete: SetNull)
+  venueMapId String?
+
   // The partner whose show this is - a slug from lib/partners/registry.ts.
   // NULL means it is RO. Nation LIVE's own event. See the note on partnerId in
   // RosterEntry for why this is a plain column and not a foreign key.
@@ -71,9 +152,11 @@ model Event {
   tickets      Ticket[]
   tiers        TicketTier[]
   testimonials Testimonial[]
+  intents      PurchaseIntent[]
 
   @@index([status, startsAt])
   @@index([partnerId, status, startsAt])
+  @@index([venueMapId])
   @@map("events")
 }
 
@@ -107,12 +190,56 @@ model TicketTier {
   /// applies on top - a tier can never oversell the room.
   capacity Int @default(0)
 
+  // ---- What you actually BUY, on each of the two rails --------------------
+  //
+  // Two ids, because THE SURFACE PICKS THE RAIL, NOT THE TIER. A buyer on the web
+  // buys the game PASS; a buyer standing at a booth inside the experience buys the
+  // developer PRODUCT. One tier may offer either, or both, and a priced tier that
+  // offers NEITHER cannot be sold anywhere - the tier editor says so loudly.
+
+  /// The Roblox GAME PASS that buys this tier on the WEB.
+  ///
+  /// This is the rail that can be VERIFIED. A pass is bought on roblox.com, in a
+  /// browser, and afterwards we can ask Roblox's Open Cloud whether they own it -
+  /// with the buyer's own OAuth grant. No game server, and nobody's word for it.
+  /// It is the answer to the note on TicketPurchase below.
+  ///
+  /// UNIQUE, and that constraint is doing real work. A pass is owned FOREVER: once
+  /// you have it, Roblox will never sell it to you again, and our ownership check
+  /// will answer "yes, they paid" for the rest of time. So a pass may back exactly
+  /// ONE (event, tier), and next month's show needs a NEW pass.
+  ///
+  /// Without this: paste last month's VIP pass onto this month's VIP tier, and every
+  /// one of last month's buyers walks into this month's show for free - verified,
+  /// waved through by our own check, with a payment record we wrote ourselves. That
+  /// is not a hypothetical failure mode. It is the FIRST thing a copy-paste produces.
+  ///
+  /// NULLs are distinct in Postgres, so every free tier holds NULL here and they do
+  /// not collide with each other. A plain unique index, which `prisma db push`
+  /// preserves - unlike the partial ones it silently drops (see Career.slug).
+  gamePassId String? @unique
+
+  /// The Roblox DEVELOPER PRODUCT that buys this tier INSIDE the experience.
+  ///
+  /// This is what a walk-up ticket booth prompts: the game reads this off
+  /// GET /api/v1/events/<id>, calls MarketplaceService:PromptProductPurchase, and
+  /// its ProcessReceipt handler calls POST /api/v1/tickets/purchase. It is the rail
+  /// that CANNOT be verified (read TicketPurchase), and the rail that can GIFT -
+  /// a product is a payment, not an item, so it can grant a ticket to anybody.
+  ///
+  /// NOT unique, and the difference from gamePassId above is the whole point: a
+  /// product is a PAYMENT, not a possession. Buying one twice is two payments and
+  /// Roblox is happy to take both, so the same product may legitimately back the
+  /// same tier across a recurring show without anybody getting in free.
+  devProductId String?
+
   sortOrder Int      @default(0)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   tickets Ticket[]
+  intents PurchaseIntent[]
 
   @@index([eventId, sortOrder])
   @@map("ticket_tiers")
@@ -186,6 +313,56 @@ model Ticket {
   revokedReason String?
   revokedByName String?
 
+  // ---- Where they are standing or sitting ---------------------------------
+
+  /// WHICH SEAT. "A1-K12" = section A1, row K, seat 12. NULL on an unseated show,
+  /// which is every show that exists today.
+  ///
+  /// Seats are DERIVED, never stored. There is no Seat table and there must not be:
+  /// a 2,000-seat venue would mean 2,000 rows per show whose entire job is to say
+  /// "nobody is sitting here". A section carries a ROW SPEC, and lib/venue/seats.ts
+  /// turns that spec into seat keys. THIS column is the only place a seat exists in
+  /// the database - and it exists precisely because somebody is in it.
+  ///
+  /// ---- Why this is a PLAIN unique index, and what that costs ---------------
+  ///
+  /// @@unique([eventId, seatKey]) below is the one rule about seating that the
+  /// DATABASE enforces, and no code path - present or future, careful or not - can
+  /// argue with it. NULLs are distinct in Postgres, so every general-admission
+  /// ticket holds NULL here and unlimited GA coexists with assigned seating on the
+  /// same show.
+  ///
+  /// The tighter rule we actually want - unique among LIVE tickets - would be a
+  /// PARTIAL index, and `prisma db push` runs on every boot and silently drops those
+  /// (the same trap already documented on Career.slug). An enforcement that quietly
+  /// disappears on a Tuesday is worse than one that is written down.
+  ///
+  /// So this index binds CANCELLED rows too. Which means:
+  ///
+  ///     CANCELLING A TICKET NULLS THIS COLUMN. That is what frees the seat.
+  ///
+  /// Both writers do it - voidTicket() in lib/tickets/issue.ts and cancelTicket() in
+  /// app/actions/tickets.ts. Forget it in either one and that chair is unsellable for
+  /// the life of the show, with nothing on any screen to say why: the constraint holds
+  /// against a dead row, the seat renders taken, and nobody is sitting in it.
+  seatKey String?
+
+  /// WHICH SECTION. Set in SEAT mode (denormalised out of seatKey, so counting a
+  /// section is one indexed read instead of a LIKE over every ticket) and in SECTION
+  /// mode - where there is no seat at all, because you buy the pit, not a chair in it.
+  ///
+  /// Nulled alongside seatKey on cancellation, for exactly the same reason.
+  sectionKey String?
+
+  /// "Section A1 · Row K · Seat 12". FROZEN AT ISSUE, exactly like tierName above,
+  /// and for the identical reason: the map gets redrawn, the section gets renamed,
+  /// the seat gets released by a cancellation - and what their ticket SAYS is what
+  /// they bought, forever.
+  ///
+  /// This is also what survives seatKey being nulled. A cancelled ticket still knows
+  /// where its holder would have been sitting; it just no longer holds the chair.
+  seatLabel String?
+
   /// Every Robux payment made against this ticket. A LIST, not one: a holder who
   /// already has general admission and then buys VIP inside the experience is
   /// upgrading the one ticket they are allowed to hold for this event, and that
@@ -193,7 +370,9 @@ model Ticket {
   purchases TicketPurchase[]
 
   @@unique([eventId, userId]) // one ticket per person per event
+  @@unique([eventId, seatKey]) // and one person per seat. See the note above.
   @@index([eventId])
+  @@index([eventId, sectionKey])
   @@map("tickets")
 }
 
@@ -207,6 +386,31 @@ model Ticket {
 // a key with `tickets:purchase` can assert that somebody paid, and we believe them.
 // That is worth saying out loud rather than burying, because it means a leaked
 // purchase-scoped key can mint paid tickets for free.
+//
+// ---- All of which is true of ONE of the two rails --------------------------
+//
+// Everything above describes the DEVELOPER PRODUCT rail, and on that rail it is
+// still exactly true.
+//
+// The GAME PASS rail does not have this problem, and it is why it exists. A pass is
+// bought on roblox.com, in a browser - and afterwards we can ASK ROBLOX whether they
+// own it, over Open Cloud, authorised by the buyer's own OAuth grant. Nobody's word
+// for it, no game server in the loop, and no key that can assert a payment: a claim
+// on that rail is checked, not believed. See lib/roblox-gamepass.ts.
+//
+// So the honest summary is not "we cannot verify payments". It is:
+//
+//   GAME_PASS    verified against Roblox. A leaked key mints nothing - the rail does
+//                not go through this endpoint at all.
+//
+//   DEV_PRODUCT  believed. But NARROWED, once a PurchaseIntent is in play: a leaked
+//                key can now only settle a hold that a real signed-in person actually
+//                created, for the seat they actually picked, before it expires. That
+//                is a much smaller hole than "mint any ticket for anyone" - and on a
+//                seated show the intent is REQUIRED, so it is the only hole there is.
+//
+// Narrowed, not closed. Still give `tickets:purchase` only to a place you would trust
+// with your own Robux, and still revoke it the moment a key leaks.
 //
 // What this table CAN do, and the reason it is a table rather than a column, is
 // stop the same payment being honoured twice. `purchaseId` is Roblox's own
@@ -250,6 +454,207 @@ model TicketPurchase {
   @@index([ticketId])
   @@index([createdAt])
   @@map("ticket_purchases")
+}
+
+// ------------------------------------------------------------------
+// A venue, drawn.
+//
+// Stages, seated blocks, standing pits, gates. Geometry in a flat viewBox, plus one
+// anchor that maps that viewBox onto real Roblox studs - so the same drawing renders
+// as an SVG seat picker on the web AND as a 3D seat map inside the experience.
+//
+// ---- Templates and copies ------------------------------------------------
+//
+// A TEMPLATE is a library item: "The Vault - Main Stage", drawn once, reused for
+// every show that happens there. An EVENT map is a SNAPSHOT of a template with one
+// event's tiers assigned to its sections.
+//
+// The copy is the point. Pointing two live shows at one row would mean that tidying
+// up a template on a Tuesday silently re-seats a show that has already sold four
+// hundred tickets - and the people holding those tickets would find out at the door.
+// So creating an event CLONES, and the two rows drift apart from that moment on.
+// ------------------------------------------------------------------
+enum VenueMapKind {
+  /// A reusable library layout. Cloned onto events; never sells anything itself.
+  TEMPLATE
+
+  /// One event's own copy. Owned by that event, edited freely, dies with it.
+  EVENT
+}
+
+model VenueMap {
+  id String @id @default(cuid())
+
+  /// A slug from lib/partners/registry.ts, or NULL for RNL's own. Same convention as
+  /// Event.partnerId - and the same rule, which is not optional: every query that
+  /// LISTS maps must filter on this, or one org's venues turn up in another's designer.
+  partnerId String?
+
+  /// "The Vault - Main Stage".
+  name String
+  kind VenueMapKind @default(TEMPLATE)
+
+  /// The template this was cloned from. A plain column and deliberately NOT a foreign
+  /// key: the template may be deleted, and an event's map has to outlive it. Display
+  /// and provenance only - nothing reads it to make a decision.
+  templateId String?
+
+  /// THE LAYOUT. Shapes with stable keys, the viewBox, the world anchor, and the row
+  /// spec on every seated section.
+  ///
+  /// Json because it is a tree of heterogeneous shapes of arbitrary length, which flat
+  /// columns model badly and a shapes table models worse - a section's seats are a
+  /// SPEC, not four hundred rows.
+  ///
+  /// Validated with zod on the way IN (lib/venue/schema.ts) and never trusted on the
+  /// way out. Same contract as PartnerContent, and the same reason: this column is
+  /// written from a browser.
+  layout Json
+
+  createdById   String
+  createdByName String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  updatedByName String?
+
+  events Event[]
+
+  @@index([partnerId, kind, name])
+  @@map("venue_maps")
+}
+
+// ------------------------------------------------------------------
+// The bridge between "I picked that seat" and "I paid for it".
+//
+// It exists because those two things are separated by a round trip through somebody
+// else's website (a game pass page on roblox.com) or somebody else's game server (a
+// ProcessReceipt handler) - and for the length of that trip, the seat has to belong
+// to nobody else. A hold is the only honest way to sell a numbered seat. Without one,
+// two people pay Robux for A1-K12 and exactly one of them gets it.
+//
+// ---- What it is NOT ------------------------------------------------------
+//
+// It is not a lock. The LOCK is the event row (SELECT … FOR UPDATE), which every
+// reader and writer of a hold takes - so "is this seat held?" and "hold this seat"
+// are one serialised step per event and cannot interleave.
+//
+// And it is not the last word either. The last word is Ticket's
+// @@unique([eventId, seatKey]): if a hold is ever wrong, the ticket INSERT loses on a
+// constraint rather than overselling a chair. A hold is an optimisation on the
+// buyer's experience. The unique index is the truth.
+// ------------------------------------------------------------------
+enum PurchaseRail {
+  /// Paid on roblox.com, on a game pass page, in a browser. VERIFIABLE: afterwards we
+  /// ask Roblox's Open Cloud whether they own the pass, using their own OAuth grant.
+  /// This is the rail that closes the trust hole described on TicketPurchase.
+  GAME_PASS
+
+  /// Paid INSIDE the experience, as a Developer Product, witnessed only by the game's
+  /// ProcessReceipt handler. Still unverifiable - but an intent NARROWS it: a leaked
+  /// TICKETS_PURCHASE key can now only settle a hold that a real signed-in person
+  /// actually created, for the seat they actually picked.
+  DEV_PRODUCT
+}
+
+enum IntentStatus {
+  PENDING
+  CONSUMED
+  CANCELLED
+}
+
+model PurchaseIntent {
+  id String @id @default(cuid())
+
+  /// What travels. It goes in a game pass popup's return URL, and in `launchData` on a
+  /// Roblox deep link - which the game reads back with player:GetJoinData().LaunchData.
+  ///
+  /// So it ends up in URLs, on Roblox's servers, and in some game's logs. It is worth
+  /// nothing to a stranger, and three properties are why: it is BOUND TO A USER (issue.ts
+  /// refuses to spend an intent for anybody but its beneficiary), it cannot be replayed
+  /// (status), and it dies in ten minutes (expiresAt). The same three things that make an
+  /// SsoTicket safe to put in a query string.
+  token String @unique
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+
+  /// SetNull, exactly like Ticket.tierId: deleting a tier must not delete the record of a
+  /// hold somebody may already have PAID against. A claim on a null tier fails `badtier`,
+  /// and the price snapshot below is what support reads to work out what to refund.
+  tier   TicketTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  tierId String?
+
+  /// WHO IS PAYING. The signed-in session that created the hold, or the player standing
+  /// at the booth. The intent may be spent by nobody else, and that is the single thing
+  /// that makes the token safe to hand to Roblox.
+  user   User   @relation("IntentPayer", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  /// WHO GETS THE TICKET. Equal to userId for an ordinary purchase; different when
+  /// somebody is buying for a friend.
+  ///
+  /// Two columns rather than one, because A GAME PASS CANNOT BE GIFTED. Roblox has no
+  /// mechanism for it: the pass lands in the inventory of whoever paid, so our ownership
+  /// check would be asking about the wrong person and would answer "no, they didn't pay"
+  /// about somebody who did. So createPurchaseIntent() REFUSES a beneficiary who is not
+  /// the payer on the GAME_PASS rail, and that one refusal is the entire rule. Paid
+  /// gifting is a Developer Product, bought inside the experience.
+  beneficiary       User   @relation("IntentBeneficiary", fields: [beneficiaryUserId], references: [id], onDelete: Cascade)
+  beneficiaryUserId String
+
+  /// The seat being held. NULL on an unseated event - where the hold is only about the
+  /// tier's cap, and is STILL worth taking: a paid tier's last ticket can sell out while
+  /// the buyer is away on roblox.com, and they would come back having been charged.
+  seatKey    String?
+  sectionKey String?
+
+  /// How this one is going to be paid for - or NULL, when it is not.
+  ///
+  /// Nullable because a FREE seated ticket still needs a hold. Picking seat A1-K12 and
+  /// then walking to the checkout is a gap of a few seconds, and somebody else can take
+  /// the chair inside it; the hold is what stops them, and it has nothing to do with
+  /// money. Forcing a rail onto that row would mean writing down a payment method for a
+  /// payment that is never going to happen, and something downstream would eventually
+  /// believe it.
+  ///
+  /// So: NULL = nothing to pay. Which is also the honest answer.
+  rail   PurchaseRail?
+  status IntentStatus  @default(PENDING)
+
+  /// SNAPSHOTS, frozen at hold. Same reasoning as Ticket.tierName: the tier can be
+  /// re-priced, renamed or deleted while the buyer is standing on Roblox's website, and
+  /// none of that changes what they were quoted or which pass we sent them to buy.
+  ///
+  /// `gamePassId` here is a RECORD, never the authority - issue.ts re-reads the pass id
+  /// from the live tier row and refuses if the two disagree.
+  priceRobux Int     @default(0)
+  gamePassId String?
+
+  /// Ten minutes. Past it the hold is ignored by every reader.
+  ///
+  /// An expired hold is NOT a refusal. A buyer who paid anyway - and they will, because
+  /// the charge happened on a page we do not control - falls back to the best available
+  /// seat in the same tier. It costs them the seat they chose, not the ticket they paid
+  /// for. See the game_pass branch in lib/tickets/issue.ts.
+  expiresAt DateTime
+
+  /// Rate limit for the game-pass rail's polling, and it lives in the DATABASE rather
+  /// than in a ref on the client so that hitting refresh cannot reset it. The checkout
+  /// polls US every 2s; we ask ROBLOX at most once every 4s.
+  checkedAt DateTime?
+
+  consumedAt DateTime?
+
+  /// What it became. NOT a relation - it is a receipt, and it has to survive the ticket
+  /// being deleted.
+  ticketId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([eventId, status, expiresAt])
+  @@index([eventId, seatKey, status])
+  @@index([userId, status])
+  @@map("purchase_intents")
 }
 
 // ------------------------------------------------------------------

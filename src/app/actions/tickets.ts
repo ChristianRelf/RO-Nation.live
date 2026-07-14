@@ -61,7 +61,11 @@ export type ReserveState =
         | "past"
         | "soldout"
         | "tier_soldout"
-        | "not_found";
+        | "not_found"
+        /** Their seat hold went stale or was spent. Send them back to the map. */
+        | "bad_intent"
+        /** The seat went, and the tier has nothing left to move them to. */
+        | "seat_taken";
     };
 
 const fail = (error: Extract<ReserveState, { ok: false }>["error"]) =>
@@ -127,6 +131,12 @@ export async function reserveTicket(
   const tierId = String(formData.get("tierId") || ""); // "" = the implicit tier
   const acceptedTerms = formData.get("terms") === "on";
 
+  // The seat hold, on a seated show. "" on an unseated one - and NOT trusted here for a
+  // moment: issueTicket re-reads it, checks it is this event's, this tier's and this
+  // person's, and refuses it otherwise. A token in a form field is not evidence of
+  // anything, exactly like the tier id sitting next to it.
+  const intentToken = String(formData.get("intent") || "");
+
   const session = await getUserSession();
   if (!session) return fail("auth");
 
@@ -151,18 +161,31 @@ export async function reserveTicket(
     // Unscoped: this is the holder reserving for themselves on whichever site
     // they are standing on, and the event they clicked is by definition theirs to
     // click. Scope is what stops a partner's KEY reaching RNL's shows.
-    mode: { kind: "reserve" },
+    //
+    // The hold, on a seated show. It is what has been keeping their chair warm since
+    // they clicked it on the map, and spending it here is what turns it into a seat.
+    // Empty on an unseated show, where there is nothing to hold.
+    mode: { kind: "reserve", intentToken: intentToken || null },
   });
 
   if (!outcome.ok) {
-    // Two of issueTicket's refusals cannot reach a web visitor: `no_player` needs
-    // a Roblox id that Roblox has never heard of (this holder is a signed-in
-    // session, so they demonstrably exist), and `not_purchasable` is a game
-    // server charging for a free tier (this path charges nothing). Neither has a
-    // sentence written for it, because nobody will ever read one. Fold them into
-    // the generic refusal rather than putting words on a page that cannot render.
+    // Some of issueTicket's refusals cannot reach a web visitor, and folding them into
+    // the generic one is better than putting words on a page that can never render:
+    //
+    //   no_player          needs a Roblox id Roblox has never heard of. This holder is a
+    //                      signed-in session, so they demonstrably exist.
+    //   not_purchasable    a caller charging for a free tier. This path charges nothing.
+    //   not_paid,          the game-pass rail's answers. This is `reserve` - it never asks
+    //   verify_unavailable, Roblox anything, because there is nothing to verify.
+    //   needs_consent
     const reason = outcome.reason;
-    if (reason === "no_player" || reason === "not_purchasable") {
+    if (
+      reason === "no_player" ||
+      reason === "not_purchasable" ||
+      reason === "not_paid" ||
+      reason === "verify_unavailable" ||
+      reason === "needs_consent"
+    ) {
       return fail("unavailable");
     }
     return fail(reason);
@@ -196,7 +219,21 @@ export async function cancelTicket(formData: FormData) {
 
   await prisma.ticket.update({
     where: { id: ticket.id },
-    data: { status: "CANCELLED" },
+    data: {
+      status: "CANCELLED",
+
+      // GIVE THE CHAIR BACK. See the long note on the identical line in voidTicket()
+      // (lib/tickets/issue.ts) - this is the second of exactly two writers, and both of
+      // them have to do it.
+      //
+      // @@unique([eventId, seatKey]) binds cancelled rows too, so a cancelled ticket that
+      // keeps its seatKey keeps its SEAT: unsellable for the life of the show, rendering
+      // as taken on the map, with nobody in it and nothing on any screen to explain why.
+      //
+      // seatLabel stays. The stub still says where they were going to sit.
+      seatKey: null,
+      sectionKey: null,
+    },
   });
 
   const { partnerId, slug } = ticket.event;

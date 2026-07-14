@@ -57,6 +57,33 @@ export function robuxSalesAllowed(
   return partner ? partner.robuxTickets === true : true;
 }
 
+/**
+ * And may they sell on the GAME PASS rail specifically?
+ *
+ * A THIRD key, on top of the two above, and it is not paranoia - it guards a
+ * prerequisite the other two cannot see.
+ *
+ * The game-pass rail needs something that lives outside this codebase entirely: the
+ * Roblox OAuth application must be registered with the `user.inventory-item:read` and
+ * `offline_access` scopes. Without them, a buyer goes to roblox.com, pays real Robux,
+ * comes back - and we cannot ask Roblox whether they own the pass, because we were
+ * never granted permission to look. They are charged, and they have no ticket.
+ *
+ * The other two switches cannot possibly know that. So this is its own key, off by
+ * default, and turning it on is the deliberate act of somebody who has just gone and
+ * configured the OAuth app. Flip the master switch alone and the DEV PRODUCT rail
+ * works fine while the web checkout simply does not offer itself - which is the failure
+ * you want, rather than the one where somebody's money vanishes.
+ */
+export function gamePassSalesAllowed(
+  partner: Partner | null,
+  masterSwitch: boolean,
+  gamePassSwitch: boolean,
+) {
+  if (!gamePassSwitch) return false;
+  return robuxSalesAllowed(partner, masterSwitch);
+}
+
 // ---- Tiers ---------------------------------------------------------------
 
 /** A tier as the UI needs it. `id: null` is the implicit free admission. */
@@ -67,6 +94,12 @@ export type Tier = {
   perks: string[];
   priceRobux: number;
   capacity: number;
+
+  /** The Roblox game pass that buys this on the WEB. Null = not sold that way. */
+  gamePassId: string | null;
+
+  /** The Developer Product that buys this IN-EXPERIENCE. Null = not sold that way. */
+  devProductId: string | null;
 };
 
 /**
@@ -83,6 +116,8 @@ export const IMPLICIT_TIER: Tier = {
   perks: [],
   priceRobux: 0,
   capacity: 0,
+  gamePassId: null,
+  devProductId: null,
 };
 
 type TierRow = {
@@ -94,6 +129,8 @@ type TierRow = {
   capacity: number;
   sortOrder: number;
   active: boolean;
+  gamePassId: string | null;
+  devProductId: string | null;
 };
 
 /** The tiers on sale, in display order - or the implicit one if there are none. */
@@ -109,9 +146,52 @@ export function effectiveTiers(rows: readonly TierRow[]): Tier[] {
         perks: t.perks,
         priceRobux: t.priceRobux,
         capacity: t.capacity,
+        gamePassId: t.gamePassId,
+        devProductId: t.devProductId,
       }),
     );
   return live.length ? live : [IMPLICIT_TIER];
+}
+
+// ---- Rails ---------------------------------------------------------------
+
+/**
+ * How a tier can be paid for.
+ *
+ * THE SURFACE PICKS THE RAIL, NOT THE TIER - which is why this is two booleans and not
+ * one enum. A buyer on the web buys the game PASS; a player at a booth inside the
+ * experience buys the developer PRODUCT; and one tier may perfectly well offer both,
+ * because they are the same seat sold in two places.
+ *
+ * An enum here would force a tier to choose, and the choice it would force is exactly
+ * the wrong one: "this VIP ticket can be bought on the website OR at the door, but not
+ * both" is not a rule anybody wants.
+ */
+export type Rails = {
+  /** Buyable on roblox.com, in a browser. Verifiable afterwards. */
+  gamePass: boolean;
+  /** Buyable inside the experience, as a Developer Product. Giftable. */
+  devProduct: boolean;
+};
+
+export function railsFor(tier: Tier): Rails {
+  return {
+    gamePass: Boolean(tier.gamePassId),
+    devProduct: Boolean(tier.devProductId),
+  };
+}
+
+/**
+ * A priced tier that cannot be bought ANYWHERE, because nobody gave it a pass or a
+ * product. It is not sold out and it is not locked - it is misconfigured, and the tier
+ * editor says so in those words rather than letting a buyer find out at the checkout.
+ *
+ * Free tiers are never unsellable: they need no rail, because there is nothing to pay.
+ */
+export function isUnsellable(tier: Tier): boolean {
+  if (tier.priceRobux <= 0) return false;
+  const rails = railsFor(tier);
+  return !rails.gamePass && !rails.devProduct;
 }
 
 /** A tier, plus everything the checkout needs to decide if you can take it. */

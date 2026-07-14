@@ -26,6 +26,28 @@ export const ISSUE_MESSAGES: Record<Exclude<IssueReason, "ok">, string> = {
   payment_required:
     "That tier costs Robux. Prompt the Developer Product, then call /purchase from ProcessReceipt.",
   not_purchasable: "That tier is free - don't charge for it. Use /reserve.",
+
+  bad_intent:
+    "That hold isn't valid: it has expired beyond recovery, belongs to somebody else, or was already spent. Create a new one with POST /intents.",
+
+  // NOT a failure, and the wording has to carry that or a game will show it as one.
+  //
+  // Roblox's inventory lags a purchase by seconds. For the whole of that gap this is the
+  // answer, and the only correct response to it is to WAIT and ask again. A game that
+  // renders this as "payment failed" will make people pay twice - so the sentence says,
+  // in as many words, that it is not a failure.
+  not_paid:
+    "Roblox doesn't show that pass in their inventory yet. This is normal for a few seconds after a purchase - keep polling. It does NOT mean the payment failed; do not tell them it did.",
+
+  // Kept apart from not_paid on purpose. This one means WE are broken.
+  verify_unavailable:
+    "We couldn't reach Roblox to check the purchase. Nothing has been decided - do not tell them they haven't paid. Try again shortly.",
+
+  needs_consent:
+    "They haven't given us permission to check their Roblox inventory, so we can't confirm the purchase. Send them back to the website to reconnect - this is a button, not a wait.",
+
+  seat_taken:
+    "That seat has gone and there's nothing left in that tier to move them to. If they have already been charged, this one needs a refund by hand.",
 };
 
 export const VOID_MESSAGES = {
