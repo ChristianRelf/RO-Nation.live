@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { AdminHeader, StatCard } from "@/components/admin-ui";
-import { UploadField } from "@/components/upload-field";
+import { TextureField } from "@/components/texture-field";
 import { requireCompanyUser } from "@/lib/company";
 import { activeCollections } from "@/lib/merch/collections";
 import { merchOrigin, productPath, robloxCatalogUrl } from "@/lib/merch/urls";
@@ -19,6 +19,8 @@ const messages: Record<string, string> = {
     "Roblox didn't answer, so nothing was changed. Everything below is exactly as it was - try again in a minute.",
   collection: "That collection doesn't exist.",
   missing: "That product no longer exists.",
+  texture:
+    "That template reference wasn't one we issued. Upload the PNG with the button rather than editing the field - a template has no URL, by design.",
 };
 
 export default async function CompanyMerchPage({
@@ -42,7 +44,7 @@ export default async function CompanyMerchPage({
 
   const live = products.filter((p) => p.visible && p.collection).length;
   const unplaced = products.filter((p) => !p.collection).length;
-  const untextured = products.filter((p) => !p.textureUrl).length;
+  const untextured = products.filter((p) => !p.texturePath).length;
 
   const error = searchParams.error ? messages[searchParams.error] : null;
 
@@ -91,7 +93,7 @@ export default async function CompanyMerchPage({
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="On the shop" value={live} hint={`${products.length} synced`} />
         <StatCard label="Unplaced" value={unplaced} hint="no collection = not shown" />
-        <StatCard label="No texture" value={untextured} hint="falls back to a flat image" />
+        <StatCard label="No template" value={untextured} hint="falls back to Roblox's render" />
       </div>
 
       <form action={syncMerch} className="mt-8">
@@ -222,11 +224,11 @@ export default async function CompanyMerchPage({
               </div>
 
               <div className="mt-5 border-t border-line pt-4">
-                <UploadField
-                  name="textureUrl"
+                <TextureField
+                  name="texturePath"
                   label="Clothing template (the 3D viewer)"
-                  defaultValue={p.textureUrl}
-                  hint="The classic 585×559 template PNG you uploaded to Roblox. Roblox won't give us this file, so it has to come from you - without it the page shows Roblox's flat image instead of a character."
+                  defaultValue={p.texturePath}
+                  hint="The classic 585×559 template PNG you uploaded to Roblox. Roblox won't give us this file, so it has to come from you - without it the page shows Roblox's flat image instead of a character. It is stored privately and is never served to shoppers: the shop only ever sends single, shuffled faces of it. The preview above is watermarked for the same reason."
                 />
               </div>
             </div>

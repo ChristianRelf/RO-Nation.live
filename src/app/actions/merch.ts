@@ -75,7 +75,26 @@ export async function updateMerchProduct(formData: FormData) {
   const collection = raw ? (collectionBySlug(raw)?.slug ?? null) : null;
   if (raw && !collection) redirect("/company/merch?error=collection");
 
-  const textureUrl = s(formData, "textureUrl") || null;
+  // The private storage path of the clothing template - "rnl/<uuid>.png", handed back
+  // by /api/uploads/texture. Never a URL, and the shape is enforced rather than
+  // trusted: the field is a hidden input, so anything that is not exactly what that
+  // route minted got there by somebody editing the DOM.
+  //
+  // It matters because this value is later joined onto a filesystem root and opened.
+  // resolveInRoot() in lib/uploads.ts is the lock on that door and it holds on its own
+  // - but a column that can only ever contain a UUID is a column no traversal can be
+  // smuggled through in the first place, and the two together are what let plate.ts
+  // read from disk without thinking about it.
+  //
+  // The extension is not pinned to .png even though the upload route now only accepts
+  // one: templates migrated off the public volume by scripts/privatise-textures.ts keep
+  // whatever extension they were sniffed as years ago, and re-saving one of those rows
+  // from this form must not reject a file that is already on disk and working.
+  const submitted = s(formData, "texturePath");
+  const texturePath = /^[a-z0-9-]+\/[0-9a-f-]{36}\.(png|jpe?g|webp|gif)$/i.test(submitted)
+    ? submitted
+    : null;
+  if (submitted && !texturePath) redirect("/company/merch?error=texture");
 
   await prisma.merchProduct.update({
     where: { id },
@@ -86,7 +105,11 @@ export async function updateMerchProduct(formData: FormData) {
       // on. Enforced here rather than trusted from the checkbox, so the database
       // cannot hold a state the site is unable to render.
       visible: collection ? formData.get("visible") === "on" : false,
-      textureUrl,
+      texturePath,
+      // Belt and braces on the deploy that moved the artwork off the public volume: any
+      // product saved from the admin gets its dead public URL cleared, whether or not
+      // the migration script has been run. See the column's note in schema.prisma.
+      textureUrl: null,
     },
   });
 

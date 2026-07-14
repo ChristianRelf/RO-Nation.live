@@ -9,14 +9,26 @@ import { cn } from "@/lib/utils";
 
 // The table the garment is laid on.
 //
-// three.js touches `window` at import time, so the viewer can never be server-
-// rendered - and `ssr: false` also keeps ~600KB of WebGL out of the bundle of every
-// page that has no character to show. That option is only legal inside a client
-// component, which is the entire reason this wrapper exists.
+// three.js touches `window` at import time, so the viewer can never be server-rendered
+// - and `ssr: false` also keeps ~600KB of WebGL out of the bundle of every page that
+// has no character to show. That option is only legal inside a client component, which
+// is the entire reason this wrapper exists.
 //
 // Note what it does NOT do: it never reaches the dynamic import at all unless there is
-// a texture. A product with no template - which is most of them - costs zero bytes of
+// a plate. A product with no template - which is most of them - costs zero bytes of
 // three.js.
+//
+// ---- The tab that is not here any more ------------------------------------
+//
+// There used to be a third tab, FLAT PRINT, which showed the 585x559 clothing template
+// full-bleed in an <img>. It was the best-looking thing on the page and it was giving
+// the product away: that PNG *is* the shirt, and anybody who wanted it could take it
+// with a right-click and re-upload it to their own group.
+//
+// The template no longer leaves the server (see lib/merch/tiles.ts). What replaces the
+// tab is PlateSpec, further down the product page - the cut lines of the garment with
+// no artwork in them at all, which turns out to say the true thing the flat was there
+// to say ("this is a net, not a photograph") without shipping the goods.
 const AvatarViewer = dynamic(() => import("./avatar-viewer"), {
   ssr: false,
   loading: () => (
@@ -28,26 +40,26 @@ const AvatarViewer = dynamic(() => import("./avatar-viewer"), {
   ),
 });
 
-type View = "front" | "back" | "flat";
+type View = "front" | "back";
 
 export function ProductStage({
   kind,
-  textureUrl,
+  plate,
   thumbnailUrl,
   name,
 }: {
   kind: MerchKind;
-  textureUrl: string | null;
+  /** Sealed per-face tile URLs, or null when there is no template on file. */
+  plate: Record<string, string> | null;
   thumbnailUrl: string | null;
   name: string;
 }) {
   const [view, setView] = useState<View>("front");
-  const has3D = Boolean(textureUrl);
+  const has3D = Boolean(plate);
 
   const tabs: { id: View; label: string }[] = [
     { id: "front", label: "Front" },
     { id: "back", label: "Back" },
-    { id: "flat", label: "Flat print" },
   ];
 
   return (
@@ -59,25 +71,8 @@ export function ProductStage({
         <div className="ticket-guilloche pointer-events-none absolute inset-0" aria-hidden />
 
         <div className="relative p-4 sm:p-6">
-          {has3D && view !== "flat" ? (
-            <AvatarViewer
-              kind={kind}
-              textureUrl={textureUrl as string}
-              name={name}
-              view={view}
-              paused={false}
-            />
-          ) : has3D && view === "flat" ? (
-            // The pattern piece. The garment, cut open and laid out - and genuinely
-            // useful: buyers want to see the print flat, and the 3D cannot show it.
-            <div className="pattern-piece grid aspect-square place-items-center rounded-brand p-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={textureUrl as string}
-                alt={`${name}, the classic clothing template`}
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
+          {plate ? (
+            <AvatarViewer kind={kind} plate={plate} view={view} />
           ) : thumbnailUrl ? (
             // The common case: no template on file, so no WebGL at all. Roblox's own
             // render, on the SAME plinth, with the same crop marks, the same contact

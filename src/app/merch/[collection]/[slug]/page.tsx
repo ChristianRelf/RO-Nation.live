@@ -8,7 +8,8 @@ import { priceLabel } from "@/lib/merch/price";
 import { tagRotation } from "@/lib/merch/hang";
 import { CollectionDisclaimer } from "@/components/shop/shop-footer";
 import { ProductStage } from "@/components/shop/product-stage";
-import { PlateFlat } from "@/components/shop/plate-flat";
+import { PlateSpec } from "@/components/shop/plate-spec";
+import { plateFor } from "@/lib/merch/tiles";
 import { Docket } from "@/components/shop/docket";
 import { Rail } from "@/components/shop/rail";
 import { ProductCard } from "@/components/shop/product-card";
@@ -80,6 +81,14 @@ export default async function ProductPage({
   const buyable = product.forSale;
   const price = priceLabel(product);
 
+  // The garment, cut into sealed per-face tiles. This is the ONLY thing about the
+  // clothing template that crosses to the browser - eighteen opaque URLs, each of which
+  // returns one shredded face of one cube. The template itself is on the private volume
+  // and has no URL at all. See lib/merch/tiles.ts for the whole argument.
+  const plate = product.texturePath
+    ? plateFor(product.id, product.kind)
+    : null;
+
   // The product page used to have no way onward at all except the back link. This is
   // the moment you would glance sideways at the rest of the stall.
   const siblings = await prisma.merchProduct.findMany({
@@ -106,7 +115,7 @@ export default async function ProductPage({
           {/* ---- THE TABLE ---- */}
           <ProductStage
             kind={product.kind}
-            textureUrl={product.textureUrl}
+            plate={plate}
             thumbnailUrl={product.thumbnailUrl}
             name={product.name}
           />
@@ -149,7 +158,7 @@ export default async function ProductPage({
                 },
                 {
                   label: "Print",
-                  value: product.textureUrl
+                  value: product.texturePath
                     ? "Template on file"
                     : "Roblox render only",
                 },
@@ -205,9 +214,8 @@ export default async function ProductPage({
         </div>
 
         {/* ---- THE PATTERN PIECE ---- */}
-        {product.textureUrl ? (
-          <PlateFlat src={product.textureUrl} name={product.name} />
-        ) : null}
+        {/* The cut, not the cloth. No artwork crosses the wire here - see plate-spec. */}
+        {product.texturePath ? <PlateSpec kind={product.kind} /> : null}
       </div>
 
       {/* ---- THE REST OF THE STALL ---- */}

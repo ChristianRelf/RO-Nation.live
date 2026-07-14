@@ -11,28 +11,39 @@
 # For this to work: ports 80 and 443 must be open on the server, and both names
 # below must already resolve to it.
 #
-# ---- EDITING THIS FILE IS NOT ENOUGH. RELOAD CADDY. -------------------------
+# ---- ADDING A HOST HERE? YOU MUST RECREATE THE CADDY CONTAINER. -------------
 #
-# This file is BIND-MOUNTED into the container (docker-compose.yml). Docker Compose
-# decides whether to recreate a container by comparing its DEFINITION - image, env,
-# ports, the list of volumes - and the CONTENTS of a bind-mounted file are not part
-# of that. So `docker compose up -d`, even with `--build`, leaves Caddy running on
-# the config it loaded when it last started, and a hostname added here is simply
-# never seen.
+#   docker compose up -d --force-recreate caddy
 #
-# The failure is not a 404, which is what you would go looking for. Caddy has no
-# certificate for the new name, so it ABORTS THE TLS HANDSHAKE - the browser says
-# ERR_SSL_PROTOCOL_ERROR, and `openssl s_client` says "no peer certificate
-# available". Port 80 still answers and still 308s to HTTPS (it does that for any
-# host, even one Caddy has never heard of), which makes it look like the config
-# took. It did not.
+# Not `restart`. Not `caddy reload`. RECREATE. Here is why, because it has already
+# cost an outage once and the symptom points nowhere near the cause.
 #
-# After changing the address line, ALWAYS:
+# This file is BIND-MOUNTED into the container as a single file
+# (./Caddyfile:/etc/caddy/Caddyfile). Docker binds a single file by INODE, not by
+# path. `git pull` does not edit a file in place - it writes a new one and renames
+# it over the top, which produces a NEW INODE. The running container stays bound to
+# the old, now-orphaned inode and can never see the new content, however many times
+# you reload it.
 #
-#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+# So all of these lie to you:
 #
-# It is zero-downtime, and it is when Caddy asks Let's Encrypt for the new
-# certificate. `docker compose restart caddy` works too, with a blip.
+#   git pull                     the file on the host is correct
+#   docker compose up -d         compose sees no change to the SERVICE definition
+#                                (image, env, ports, volume list) - a file's contents
+#                                are not part of that - so it leaves caddy alone
+#   caddy reload                 succeeds, and cheerfully re-reads the OLD file that
+#                                is still inside the container
+#
+# The proof, if you are ever here again:
+#
+#   grep -c MERCH_HOST Caddyfile                                        # -> 1
+#   docker compose exec -T caddy grep -c MERCH_HOST /etc/caddy/Caddyfile # -> 0
+#
+# And the failure is NOT the 404 you would go looking for. Caddy has no certificate
+# for the new name, so it ABORTS THE TLS HANDSHAKE: the browser says
+# ERR_SSL_PROTOCOL_ERROR and `openssl s_client` says "no peer certificate available".
+# Port 80 still answers and still 308s to HTTPS - it does that for ANY host, even one
+# Caddy has never heard of - which makes it look like the config took. It did not.
 {
 	# Let's Encrypt emails this address before a cert expires. Renewal is
 	# automatic either way - set ACME_EMAIL in .env to get the warnings.

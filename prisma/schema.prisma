@@ -980,7 +980,7 @@ model MerchProduct {
   order   Int     @default(0)
   visible Boolean @default(false)
 
-  /// The classic clothing template, uploaded by RNL - the image the 3D viewer wraps
+  /// The classic clothing template, uploaded by RNL - the artwork the 3D viewer wraps
   /// onto the character.
   ///
   /// It is uploaded rather than fetched because Roblox will not give it to us:
@@ -988,6 +988,27 @@ model MerchProduct {
   /// thumbnail. RNL owns this artwork, so the upload is the honest path and the one
   /// that cannot expire. Null is fine and common - the product page falls back to
   /// Roblox's flat thumbnail and still sells the shirt.
+  ///
+  /// ---- A PATH, ON THE PRIVATE VOLUME. NOT A URL. ----
+  ///
+  /// This is "rnl/<uuid>.png", relative to PRIVATE_UPLOAD_DIR - the volume that is
+  /// deliberately not mounted into Caddy (see lib/uploads.ts, and the DO NOT ADD IT in
+  /// docker-compose.yml). There is no URL that returns this file, and that is the point:
+  /// a classic Roblox shirt IS its template, so a public URL for it is a free copy of the
+  /// product for anybody who views source. It used to be exactly that.
+  ///
+  /// The only readers are lib/merch/plate.ts, which hands out one shredded face of one
+  /// cube at a time through a sealed token, and the staff-only watermarked preview in
+  /// api/merch/texture-preview. Nothing else may open it, and nothing may put it back in
+  /// an <img src>.
+  texturePath String?
+
+  /// DEAD. The public /uploads URL the template used to be served from.
+  ///
+  /// Kept as a column, empty, purely so `prisma db push` does not need --accept-data-loss
+  /// on the deploy that moves the artwork to the private volume. scripts/privatise-
+  /// textures.ts moves the file, fills texturePath, and nulls this. Nothing reads it; do
+  /// not write to it, and do not put a template back on the public volume.
   textureUrl String?
 
   createdAt DateTime @default(now())

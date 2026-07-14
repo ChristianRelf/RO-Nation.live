@@ -18,22 +18,26 @@ import { cn } from "@/lib/utils";
 //
 // ---- What it does when the data is thin -----------------------------------
 //
-// This is the part that matters, because in production the data IS thin: almost no
-// product has an uploaded texture, and plenty have no Roblox render yet either. A
-// design that only looks good with a full row is a design that looks broken on the
-// day it ships. So each missing field turns into a DIFFERENT OBJECT rather than a
-// hole:
+// This is the part that matters, because in production the data IS thin: plenty of
+// products have no Roblox render yet. A design that only looks good with a full row is
+// a design that looks broken on the day it ships. So a missing render turns into a
+// DIFFERENT OBJECT rather than a hole: a STENCIL - the name, ghosted, on a blank panel,
+// stamped AWAITING ARTWORK. A shirt whose print has not come back from the press.
 //
-//   thumbnailUrl null, textureUrl set  -> the PATTERN PIECE. The garment cut flat, on
-//                                         a dashed cut-line. Not a fallback: it is the
-//                                         real artwork, at a fidelity the mannequin
-//                                         render cannot reach.
-//   both null                          -> a STENCIL. The name, ghosted, on a blank
-//                                         panel, stamped AWAITING ARTWORK. A shirt
-//                                         whose print has not come back from the press.
+// It is not "the sad version". It is a thing you would actually find on a merch table
+// at the back of a venue.
 //
-// Neither is "the sad version". Both are things you would actually find on a merch
-// table at the back of a venue.
+// ---- The fallback that used to be here ------------------------------------
+//
+// A card with no Roblox render but a template on file used to draw the TEMPLATE: the
+// raw 585x559 flat, as the card art, on the collection page, in the rail, on the
+// homepage. It was the most exposed copy of the artwork on the whole site - a grid of
+// stealable shirts, no click required - and it is gone.
+//
+// A card cannot show a mannequin (three.js in a rail of twelve is not a trade anybody
+// would make), and it must never show the flat, so a product with no render is a
+// stencil now even when its template is on file. If that ever looks too bare, the fix
+// is to get a Roblox render for it - not to put the artwork back.
 
 export function ProductCard({
   product,
@@ -64,12 +68,11 @@ export function ProductCard({
   const path = productPath(collection, product.slug);
   const label = `${product.name}. ${price}.${product.limited ? " Limited." : ""}`;
 
-  // The image, and which of the three objects this card is.
+  // The image, and which of the two objects this card is. Roblox's render, or nothing -
+  // never the template. See the note above.
   const art = product.thumbnailUrl
     ? { kind: "render" as const, src: product.thumbnailUrl }
-    : product.textureUrl
-      ? { kind: "flat" as const, src: product.textureUrl }
-      : { kind: "none" as const, src: null };
+    : { kind: "none" as const, src: null };
 
   // Everything inside the link. Lifted out because the link itself is either a next/link
   // (inside the shop) or a plain <a> (cross-host, from the main site) - and duplicating
@@ -93,7 +96,6 @@ export function ProductCard({
             className={cn(
               "relative mt-[-1px] overflow-hidden border border-line bg-surface/40 transition-colors duration-200 group-hover:border-accent/55",
               "rounded-brand",
-              art.kind === "flat" && "pattern-piece",
             )}
           >
             <div className="relative aspect-[4/5]">
@@ -138,11 +140,6 @@ export function ProductCard({
               ) : null}
             </div>
 
-            {/* What kind of object you are looking at. Says the true thing rather than
-                apologising for a missing one. */}
-            {art.kind === "flat" ? (
-              <span className="pill absolute left-2 top-2 !text-[9px]">Flat</span>
-            ) : null}
             {product.limited ? (
               <span className="pill ticket-foil absolute right-2 top-2 overflow-hidden !text-[9px] !text-accent">
                 Ltd

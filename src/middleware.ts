@@ -126,6 +126,15 @@ const MERCH_PATHS = [
   "/api/auth/dev",
   "/api/auth/logout",
   "/api/health",
+  // The clothing-template tiles. The shop's product pages are served ON this host, so
+  // this is the host the browser fetches them from - and without this line they rewrite
+  // to /merch/api/merch/plate/<token>, which matches no route and 404s.
+  //
+  // It is precisely the trap the /api/auth/sso note above describes, and it fails in
+  // precisely the way that note warns about: nothing throws, the page renders fine, and
+  // the character simply never gets dressed. The only clue is eighteen 404s in a network
+  // tab nobody had open.
+  "/api/merch",
 ];
 
 const isLocalHost = (host: string) =>
