@@ -30,7 +30,11 @@ const ERRORS: Record<string, string> = {
 export default async function PartnerReservePage({
   params,
   searchParams,
-}: Params & { searchParams: { error?: string } }) {
+  // `tier` is the choice the checkout modal hands back when a reservation fails, so a
+  // buyer whose order fell over does not have to pick their ticket a second time. A hint
+  // only: the form ignores a tier that is no longer takeable, and checkout re-resolves it
+  // against the event regardless.
+}: Params & { searchParams: { error?: string; tier?: string } }) {
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
   // Tickets and shows only exist for a partner who HAS the events feature.
@@ -106,6 +110,7 @@ export default async function PartnerReservePage({
           offers={offers}
           terms={terms}
           checkoutHref={`/events/${event.slug}/checkout`}
+          preferTier={searchParams.tier}
           error={searchParams.error ? ERRORS[searchParams.error] : undefined}
         />
       </section>

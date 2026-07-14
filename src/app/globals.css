@@ -1411,6 +1411,19 @@
  * Declaring it here fixes them as a side-effect.
  * ------------------------------------------------------------------------- */
 
+/* The tick on the checkout modal, once the ticket is out.
+   Invoked from an inline `animation:` in components/ticket/checkout-processing.tsx, so
+   Tailwind never sees an `.animate-checkout-tick` class and would never emit this block -
+   which is precisely the silent failure the note above is about. */
+@keyframes checkout-tick {
+  0% {
+    stroke-dashoffset: 30;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
 @keyframes fade-up {
   0% {
     opacity: 0;

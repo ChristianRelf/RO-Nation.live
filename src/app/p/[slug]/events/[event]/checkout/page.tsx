@@ -6,6 +6,7 @@ import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { CheckoutProcessing } from "@/components/ticket/checkout-processing";
+import { CheckoutNoScript } from "@/components/ticket/checkout-noscript";
 import { isPast } from "@/lib/format";
 import { offersForEvent } from "@/lib/tickets/offers";
 import { priceLabel } from "@/lib/tickets/pricing";
@@ -90,6 +91,8 @@ export default async function PartnerCheckoutPage({
         ticketBase="/tickets"
         reserveHref={reserveHref}
       />
+
+      <CheckoutNoScript reserveHref={reserveHref} />
     </div>
   );
 }

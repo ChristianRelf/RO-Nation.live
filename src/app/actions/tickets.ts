@@ -78,6 +78,46 @@ function refreshTicketViews(partnerId: string | null, slug: string) {
   revalidatePath("/tickets");
 }
 
+// ---- Why reserveTicket does NOT call the function above -------------------
+//
+// It used to, and it is what made the checkout modal flash past in a fraction of a
+// second instead of running its course.
+//
+// revalidatePath() inside a SERVER ACTION does not merely mark a page stale. It busts the
+// client Router Cache and makes Next re-render THE ROUTE THE CALLER IS STANDING ON, and
+// ship that re-render back in the action's own response. The caller here is the checkout
+// modal, and the route it is standing on is /events/<slug>/checkout - whose server
+// component opens with:
+//
+//     const existing = await prisma.ticket.findUnique({ ...eventId_userId... });
+//     if (existing && existing.status !== "CANCELLED") redirect(`/tickets/${existing.id}`);
+//
+// The reservation had just created that ticket. So the moment the action resolved - a few
+// hundred milliseconds in - the page re-rendered, found the ticket, redirected, and the
+// router navigated away, tearing the modal down mid-animation. The buyer lost the two
+// stages they were meant to watch AND the `?issued=1` on the destination, which is what
+// throws the confetti. The whole flow, gone, because a page revalidated itself.
+//
+// The reserve page's own comment describes this mechanism exactly, and says it was
+// removed - "the action revalidated, this page re-rendered, the buyer now held a ticket,
+// and this redirect fired. It was a clever trick and it is gone." It was not gone. When
+// reserve and checkout were split, the redirect moved to the checkout page and the
+// revalidation stayed here, so the trick kept firing one page over.
+//
+// ---- And it was buying nothing anyway --------------------------------------
+//
+// Every page it targeted - /events/[slug], /tickets, and both partner equivalents - is
+// `export const dynamic = "force-dynamic"`. There is no server cache on any of them to
+// invalidate, so it was a no-op on that side.
+//
+// And on the client side, checkout ends with `window.location.assign()` - a real document
+// navigation, chosen deliberately (see checkout-processing.tsx) - which tears down the
+// entire JavaScript application. There is no Router Cache left to be stale.
+//
+// So: no server cache to bust, no client cache to bust, and one very expensive side
+// effect. cancelTicket and activateTicket still call it, and must - they revalidate and
+// STAY PUT, which is the case revalidatePath is actually for.
+
 /** useFormState signature: the previous state comes in, the next one goes out. */
 export async function reserveTicket(
   _prev: ReserveState | null,
@@ -93,14 +133,14 @@ export async function reserveTicket(
   // The "purchase" gate: you must accept the ticket terms & conditions.
   if (!acceptedTerms) return fail("terms");
 
-  // Only the slug is needed here, and only to revalidate the right pages
-  // afterwards. Everything that DECIDES anything - the tier, the caps, the money
-  // wall, the event lock - now lives in lib/tickets/issue.ts, because the game
-  // API issues tickets too and a second copy of the capacity check would
-  // eventually oversell a room this one thinks is full.
+  // Everything that DECIDES anything - the tier, the caps, the money wall, the event
+  // lock - lives in lib/tickets/issue.ts, because the game API issues tickets too and a
+  // second copy of the capacity check would eventually oversell a room this one thinks is
+  // full. issueTicket takes the id, so this lookup exists only to prove the show is real
+  // before we bother it.
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { slug: true, partnerId: true },
+    select: { id: true },
   });
   if (!event) return fail("unavailable");
 
@@ -128,7 +168,10 @@ export async function reserveTicket(
     return fail(reason);
   }
 
-  refreshTicketViews(event.partnerId ?? null, event.slug);
+  // NO refreshTicketViews() HERE. See the long note above the function - revalidating from
+  // this action re-renders the checkout page the buyer is standing on, which redirects to
+  // the ticket that was just created, which kills the modal mid-flow. The hard navigation
+  // at the end of checkout-processing.tsx already resets everything a revalidation would.
   return { ok: true, id: outcome.ticketId };
 }
 

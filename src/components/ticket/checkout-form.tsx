@@ -50,6 +50,7 @@ export function CheckoutForm({
   terms,
   checkoutHref,
   error,
+  preferTier,
 }: {
   eventTitle: string;
   startsAt: Date | string;
@@ -60,12 +61,29 @@ export function CheckoutForm({
   checkoutHref: string;
   /** A refusal bounced back from the checkout step. */
   error?: string;
+  /**
+   * The tier they had already chosen, when they are here because something went wrong
+   * rather than because they just arrived.
+   *
+   * A failed checkout used to dump them on a blank form - so somebody whose reservation
+   * fell over for a reason that had nothing to do with their choice (a transient error,
+   * the whole show selling out) had to pick their tier all over again to find out.
+   */
+  preferTier?: string;
 }) {
 
-  // Default to the first tier anyone can actually take, so the common case is
-  // one click. If every tier is blocked the page never renders - the checkout
-  // redirects to the event with a sold-out notice before it gets here.
-  const first = offers.find((o) => !o.blockedReason) ?? offers[0];
+  // Default to the tier they came back with, if it is still takeable - and otherwise to
+  // the first tier anyone can actually take, so the common case is one click. The
+  // "still takeable" half matters: when the failure WAS the tier (it sold out while they
+  // were deciding), re-selecting it would hand them back a dead radio and a disabled
+  // button, with no clue what to do about it.
+  //
+  // If every tier is blocked this page never renders - the reserve step redirects to the
+  // event with a sold-out notice before it gets here.
+  const preferred = preferTier
+    ? offers.find((o) => (o.id ?? "") === preferTier && !o.blockedReason)
+    : undefined;
+  const first = preferred ?? offers.find((o) => !o.blockedReason) ?? offers[0];
   const [selectedId, setSelectedId] = useState<string>(first?.id ?? "");
 
   const selected =

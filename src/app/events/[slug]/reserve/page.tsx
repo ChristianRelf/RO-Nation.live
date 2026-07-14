@@ -41,7 +41,11 @@ export default async function ReservePage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { error?: string };
+  // `tier` is what the checkout modal hands back when a reservation fails, so a buyer
+  // whose order fell over does not have to re-pick the ticket they had already chosen.
+  // It is a HINT and nothing more - the form ignores it if that tier is no longer
+  // takeable, and the checkout step re-resolves it against the event regardless.
+  searchParams: { error?: string; tier?: string };
 }) {
   const event = await getEventBySlug(null, params.slug);
   if (!event) notFound();
@@ -102,6 +106,7 @@ export default async function ReservePage({
           offers={offers}
           terms={terms}
           checkoutHref={`/events/${event.slug}/checkout`}
+          preferTier={searchParams.tier}
           error={
             searchParams.error ? ERRORS[searchParams.error] : undefined
           }
