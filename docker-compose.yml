@@ -15,7 +15,27 @@ services:
       retries: 12
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Write cache metadata into the image itself, so the layers below can be
+      # reused as a cache source even by a builder that has never seen this repo.
+      args:
+        BUILDKIT_INLINE_CACHE: "1"
+      # Seed the build from the last image we produced. BuildKit keeps its own
+      # layer cache and will normally hit that first, so this is the fallback for
+      # when that cache is gone but the image is not - a pruned builder, a daemon
+      # restart, a fresh clone on the server. Without it, those all mean a build
+      # from zero.
+      #
+      # NOTE: this restores LAYERS, not the `type=cache` mounts in the Dockerfile.
+      # Those are builder-local by design, so `docker builder prune` still costs
+      # you the warm npm and Next caches. It is not a reason to run it routinely.
+      cache_from:
+        - ronation-web:latest
+    # Tagged, rather than left as the default `<project>-web`, purely so cache_from
+    # above has a stable name to point at.
+    image: ronation-web:latest
     restart: unless-stopped
     depends_on:
       db:

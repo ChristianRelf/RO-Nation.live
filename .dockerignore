@@ -1,12 +1,49 @@
+# Everything here does two jobs: it keeps the build context small, and - the part
+# that actually costs minutes - it stops an edit to a file the build never reads
+# from invalidating `COPY . .` in the Dockerfile's build stage. That COPY is the
+# cache boundary: bust it and `next build` recompiles from cold, so editing the
+# README or the Caddyfile used to buy you a full rebuild for nothing.
+#
+# Anything listed below is therefore either (a) huge, or (b) inert at build time.
+# `scripts/` is deliberately NOT here: tsconfig's `include` is `**/*.ts`, so
+# `next build` type-checks it, and hiding it would make the Docker build check
+# less than the local one does.
+
+# Huge, and rebuilt inside the image anyway.
 node_modules
 .next
 .git
-.gitignore
+
+# Runtime state. These are Docker named volumes in production (see
+# docker-compose.yml); the copies in the source tree are stale local leftovers and
+# must never be baked into an image.
+uploads
+private-uploads
+
+# Docs. Read by humans, not by `next build`.
 *.md
-!README.md
+
+# Loose design assets. Nothing in src/ or the Caddyfile resolves this path -
+# images the app actually serves live in public/ or in the uploads volume.
+portal
+
+# Secrets. Compose injects the real values as environment at run time, so a build
+# that could see .env would only be able to bake them into the image - which is
+# precisely what we don't want.
 .env
-.env*.local
-npm-debug.log
+.env.*
+
+# Infrastructure config. Interpreted by Docker and by Caddy - Caddyfile is
+# bind-mounted into the caddy container at run time, never copied into this image.
 Dockerfile
-docker-compose.yml
 .dockerignore
+docker-compose*.yml
+Caddyfile
+
+# Local tool state.
+.gitignore
+.claude
+.vscode
+.idea
+tsconfig.tsbuildinfo
+npm-debug.log
