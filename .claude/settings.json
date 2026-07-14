@@ -10,7 +10,26 @@
       "Bash(./node_modules/.bin/tsx --tsconfig tsconfig.json \"C:/Users/crelf/AppData/Local/Temp/claude/c--Users-crelf-Desktop-RO-Nation-live/6d8f60ca-4412-44b2-a1d6-53a614fd2d92/scratchpad/seats-check.ts\")",
       "Bash(docker --version)",
       "PowerShell($p = \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"; if \\(Test-Path $p\\) { Start-Process $p; \"started Docker Desktop, waiting for daemon...\" } else { \"Docker Desktop not found at $p\" })",
-      "Bash(docker info *)"
+      "Bash(docker info *)",
+      "PowerShell(\"--- wsl status ---\"; try { wsl --status } catch { \"wsl --status failed: $_\" }; \"--- wsl distros ---\"; try { wsl --list --verbose } catch { \"wsl -l -v failed\" })",
+      "Bash(npm init *)",
+      "Bash(node pg-up.mjs --init)",
+      "Bash(export DATABASE_URL=\"postgresql://rnl:rnl@127.0.0.1:55432/rnl\")",
+      "Bash(./node_modules/.bin/prisma db *)",
+      "Bash(export DATABASE_URL=\"postgresql://rnl:rnl@127.0.0.1:55432/rnl\" AUTH_SECRET=\"test-secret\" ROBUX_TICKETS_ENABLED=\"true\")",
+      "Bash(./node_modules/.bin/tsx --conditions=react-server \"C:/Users/crelf/AppData/Local/Temp/claude/c--Users-crelf-Desktop-RO-Nation-live/6d8f60ca-4412-44b2-a1d6-53a614fd2d92/scratchpad/ticketing-check.ts\")",
+      "Bash(export DATABASE_URL=\"postgresql://rnl:rnl@127.0.0.1:55432/rnl\" AUTH_SECRET=\"test-secret\")",
+      "Bash(./node_modules/.bin/tsx --conditions=react-server \"C:/Users/crelf/AppData/Local/Temp/claude/c--Users-crelf-Desktop-RO-Nation-live/6d8f60ca-4412-44b2-a1d6-53a614fd2d92/scratchpad/race-check.ts\")",
+      "Bash(node pg-up.mjs)",
+      "Bash(node -e \"const{Client}=require\\('C:/Users/crelf/AppData/Local/Temp/claude/c--Users-crelf-Desktop-RO-Nation-live/6d8f60ca-4412-44b2-a1d6-53a614fd2d92/scratchpad/node_modules/pg'\\);const c=new Client\\({connectionString:'postgresql://rnl:rnl@127.0.0.1:55432/rnl'}\\);c.connect\\(\\).then\\(\\(\\)=>c.end\\(\\)\\).then\\(\\(\\)=>process.exit\\(0\\)\\).catch\\(\\(\\)=>process.exit\\(1\\)\\)\")",
+      "Bash(break)",
+      "Bash(echo \"=== tsc exit: $? ===\")",
+      "Bash(git ls-tree *)",
+      "Bash(rm -f .git/ORIG_HEAD)",
+      "Bash(git update-ref *)",
+      "Bash(git symbolic-ref *)",
+      "Bash(git fsck *)",
+      "Bash(echo \"tsc exit: $?\")"
     ]
   }
 }

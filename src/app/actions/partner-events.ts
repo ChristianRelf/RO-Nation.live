@@ -67,7 +67,13 @@ export async function createPartnerEvent(formData: FormData) {
       partnerId: partner.slug,
     },
   });
-  await syncEventTiers(event.id, tiers);
+  // A game pass id already on another tier - see syncEventTiers. The show saved; its
+  // tiers did not (the sync rolls back whole), so send them to the editor to fix it.
+  const synced = await syncEventTiers(event.id, tiers);
+  if (!synced.ok) {
+    refresh(partner.slug);
+    redirect(`${base}/${event.id}/edit?error=${synced.reason}`);
+  }
 
   refresh(partner.slug);
   redirect(base);
@@ -97,7 +103,13 @@ export async function updatePartnerEvent(formData: FormData) {
   // And the tiers go through the same gate. syncEventTiers matches on eventId
   // alone, so gating it on the row the event write actually matched is what stops
   // one partner reaching another's tiers by pasting their event id.
-  if (count > 0) await syncEventTiers(id, tiers);
+  if (count > 0) {
+    const synced = await syncEventTiers(id, tiers);
+    if (!synced.ok) {
+      refresh(partner.slug);
+      redirect(`${base}/${id}/edit?error=${synced.reason}`);
+    }
+  }
 
   refresh(partner.slug);
   redirect(base);

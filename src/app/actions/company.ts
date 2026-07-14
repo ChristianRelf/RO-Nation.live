@@ -81,7 +81,15 @@ export async function createEvent(formData: FormData) {
   const event = await prisma.event.create({
     data: { ...data, startsAt: data.startsAt!, slug },
   });
-  await syncEventTiers(event.id, tiers);
+
+  // A game pass id already spoken for by another tier. The show exists but its tiers did
+  // not save (the sync rolls back whole), so send them back to the editor to fix it rather
+  // than leaving them on a list page wondering where their VIP tier went.
+  const synced = await syncEventTiers(event.id, tiers);
+  if (!synced.ok) {
+    refreshEvents();
+    redirect(`/company/events/${event.id}/edit?error=${synced.reason}`);
+  }
 
   refreshEvents();
   redirect("/company/events");
@@ -115,7 +123,13 @@ export async function updateEvent(formData: FormData) {
   // Gated on the same check the event write just made: the tier sync matches on
   // eventId alone, so without this a company user could rewrite a partner's tiers
   // by pasting their event id - the exact hole `partnerId: null` above closes.
-  if (count > 0) await syncEventTiers(id, tiers);
+  if (count > 0) {
+    const synced = await syncEventTiers(id, tiers);
+    if (!synced.ok) {
+      refreshEvents();
+      redirect(`/company/events/${id}/edit?error=${synced.reason}`);
+    }
+  }
 
   refreshEvents();
   redirect("/company/events");
