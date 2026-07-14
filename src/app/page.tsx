@@ -6,24 +6,39 @@ import {
   getOpenCareers,
   getPublishedPosts,
 } from "@/lib/queries";
+import { prisma } from "@/lib/db";
+import { getSiteStats, statTiles } from "@/lib/stats";
 import { Countdown } from "@/components/countdown";
 import { EventCard } from "@/components/event-card";
 import { EventTicker } from "@/components/event-ticker";
 import { MerchStrip } from "@/components/merch-strip";
-import { QuoteMarquee, type Quote } from "@/components/quote-marquee";
+import { QuoteMarquee } from "@/components/quote-marquee";
 import { Reveal } from "@/components/reveal";
 import { Kicker, SectionHeading } from "@/components/ui";
 import { formatDate, formatTime } from "@/lib/format";
 import { site } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const stats = [
-  { value: "40+", label: "Shows produced" },
-  { value: "120K+", label: "Seats filled" },
-  { value: "60+", label: "Crew members" },
-  { value: "4.9/5", label: "Attendee rating" },
-];
+// ---- What used to be at the top of this file ------------------------------
+//
+// A `stats` array reading "40+ Shows produced", "120K+ Seats filled", "60+ Crew members"
+// and "4.9/5 Attendee rating", rendered in a strip under the hero. Every one of those
+// numbers was invented. There is no ratings table anywhere in this schema, so 4.9/5
+// could not have been true even in principle.
+//
+// And a `quotes` array of five testimonials from five people who do not exist, under a
+// heading that said "What the crowd said".
+//
+// Both are gone. What makes it galling is that a hundred lines below where the fake
+// stats sat, this same page ALREADY counted the real thing - `attended`, further down,
+// is a genuine sum of genuine tickets. The honest number was right there.
+//
+// They come back as real ones: lib/stats.ts counts shows, tickets, door check-ins,
+// merch sales (Roblox's own figure) and the group's member count, and the Testimonial
+// model holds quotes somebody actually said. Anything that cannot be counted is not
+// rounded up - it is absent.
 
 const pillars = [
   {
@@ -40,36 +55,6 @@ const pillars = [
     step: "03",
     title: "We verify in-game",
     body: "Your ticket is checked at the door inside the experience through our API - no screenshots, no fakes, no queue-jumping.",
-  },
-];
-
-// Crowd copy. Swap these for real quotes as they come in - the layout takes any
-// number of them and loops until the strip is full.
-const quotes: Quote[] = [
-  {
-    body: "Genuinely forgot I was in Roblox for a second. The lighting on that final drop was unreal.",
-    author: "vyn",
-    meta: "Front row",
-  },
-  {
-    body: "Doors opened, scanned straight through, no queue, no drama. First time that's ever happened at a Roblox show.",
-    author: "kade_",
-    meta: "Ticket holder",
-  },
-  {
-    body: "The stage build alone was worth logging in for. You can tell nobody phoned this in.",
-    author: "mira",
-    meta: "Showcase night",
-  },
-  {
-    body: "Brought six friends, all six got in free, all six stayed till the lights came up.",
-    author: "TSUKI",
-    meta: "Regular",
-  },
-  {
-    body: "Best-run event I've been to on the platform. It felt like an actual gig.",
-    author: "orbit",
-    meta: "Tournament finals",
   },
 ];
 
@@ -93,14 +78,28 @@ const faqs = [
 ];
 
 export default async function HomePage() {
-  const [featured, upcoming, past, careers, posts] = await Promise.all([
-    // null = RNL's own events. A partner's never appear on this site.
-    getFeaturedEvent(null),
-    getUpcomingEvents(null, 7),
-    getPastEvents(null, 4),
-    getOpenCareers(null),
-    getPublishedPosts(null, 3),
-  ]);
+  const [featured, upcoming, past, careers, posts, stats, quotes] =
+    await Promise.all([
+      // null = RNL's own events. A partner's never appear on this site.
+      getFeaturedEvent(null),
+      getUpcomingEvents(null, 7),
+      getPastEvents(null, 4),
+      getOpenCareers(null),
+      getPublishedPosts(null, 3),
+      getSiteStats(),
+      // Published only. The column defaults to false, so a quote reaches this query
+      // because somebody read it and decided - never because somebody typed it.
+      prisma.testimonial.findMany({
+        where: { published: true },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        take: 12,
+      }),
+    ]);
+
+  // Zeroes dropped, and the whole strip dropped below two survivors - one lonely tile is
+  // not a stat strip. See lib/stats.ts; /press applies the identical rule, so the shop
+  // window and the press kit cannot disagree.
+  const tiles = statTiles(stats);
 
   const grid = upcoming.filter((e) => e.id !== featured?.id).slice(0, 6);
   const tickerItems = upcoming.map(
@@ -139,7 +138,7 @@ export default async function HomePage() {
             </span>
             <span className="flex items-center gap-2 text-fg">
               <span className="h-1.5 w-1.5 bg-accent" />
-              Live since 2024
+              Est. 2023 :: 2026 Revival
             </span>
           </div>
         </div>
@@ -264,21 +263,36 @@ export default async function HomePage() {
           )}
         </div>
 
-        {/* stat strip */}
-        <div className="border-t border-line">
-          <div className="shell grid grid-cols-2 divide-x divide-line md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="px-2 py-6 text-center md:py-7">
-                <div className="font-display text-3xl tnum text-fg md:text-4xl">
-                  {s.value}
+        {/* ---- stat strip ----
+            Every number here is COUNTED. Shows we actually ran, people who actually came
+            through a door, shirts Roblox says were actually bought, and the size of the
+            group. Nothing is rounded up and nothing has a "+" on it.
+
+            Absent entirely below two tiles: on a young site most of these are zero, and a
+            row of noughts under the hero says something far worse about RNL than saying
+            nothing does. The four invented ones that used to sit here ("40+ shows",
+            "120K+ seats", "4.9/5") never had that problem, which was the problem. */}
+        {tiles.length >= 2 ? (
+          <div className="border-t border-line">
+            <div
+              className={cn(
+                "shell grid grid-cols-2 divide-x divide-line",
+                tiles.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3",
+              )}
+            >
+              {tiles.map((t) => (
+                <div key={t.label} className="px-2 py-6 text-center md:py-7">
+                  <div className="font-display text-3xl tnum text-fg md:text-4xl">
+                    {t.value}
+                  </div>
+                  <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+                    {t.label}
+                  </div>
                 </div>
-                <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                  {s.label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
 
       {/* ---------------- TICKER ---------------- */}
@@ -410,12 +424,31 @@ export default async function HomePage() {
       ) : null}
 
       {/* ---------------- CROWD ---------------- */}
-      <section className="overflow-hidden border-y border-line bg-elev py-20 sm:py-24">
-        <div className="shell">
-          <SectionHeading kicker="Word of mouth" title="What the crowd said" />
-        </div>
-        <QuoteMarquee quotes={quotes} className="mt-12" />
-      </section>
+      {/* The guard is on the SECTION, not on <QuoteMarquee>.
+          QuoteMarquee already returns null for an empty array - but the SectionHeading
+          wrapping it does not, so guarding only the component would ship the words "What
+          the crowd said" above a strip of nothing. That is precisely the bug merch-strip
+          warns about: "a section announcing a shop, above an empty rail, is worse than no
+          section at all - it is a promise the site immediately breaks."
+
+          `meta` is optional on a Testimonial and required by Quote, because not every real
+          quote comes with a caption and inventing one would be a small lie of exactly the
+          kind this whole change exists to stop. */}
+      {quotes.length ? (
+        <section className="overflow-hidden border-y border-line bg-elev py-20 sm:py-24">
+          <div className="shell">
+            <SectionHeading kicker="Word of mouth" title="What the crowd said" />
+          </div>
+          <QuoteMarquee
+            quotes={quotes.map((q) => ({
+              body: q.body,
+              author: q.author,
+              meta: q.meta ?? "",
+            }))}
+            className="mt-12"
+          />
+        </section>
+      ) : null}
 
       {/* ---------------- DISPATCH ---------------- */}
       {posts.length ? (
@@ -472,9 +505,22 @@ export default async function HomePage() {
       ) : null}
 
       {/* ---------------- CAREERS CTA ---------------- */}
+      {/* The four role names beside this used to be a hardcoded list - "Event Host",
+          "Stage Builder", "Moderator", "Social Media" - sitting next to a counter that
+          was reading the REAL roles out of the database, on this same page, three lines
+          above. So the count and the names could disagree, and did.
+
+          They are the real roles now, and when there are none the grid is dropped
+          entirely rather than showing four empty boxes: the panel still says "run the
+          show with us", which is true whether or not a role is open today. */}
       <section className="shell py-20 sm:py-24">
         <div className="panel-paper relative overflow-hidden p-8 sm:p-12">
-          <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+          <div
+            className={cn(
+              "grid gap-8",
+              careers.length ? "lg:grid-cols-[1.3fr_1fr] lg:items-center" : "",
+            )}
+          >
             <div>
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/50">
                 We&apos;re hiring
@@ -494,18 +540,19 @@ export default async function HomePage() {
                 See open roles{careers.length ? ` - ${careers.length}` : ""}
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              {["Event Host", "Stage Builder", "Moderator", "Social Media"].map(
-                (r) => (
-                  <div
-                    key={r}
-                    className="rounded-[3px] border border-black/20 px-4 py-4 text-sm font-bold uppercase tracking-[0.06em] text-black"
+            {careers.length ? (
+              <div className="grid grid-cols-2 gap-2.5">
+                {careers.slice(0, 4).map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/careers/${c.slug}`}
+                    className="rounded-[3px] border border-black/20 px-4 py-4 text-sm font-bold uppercase tracking-[0.06em] text-black transition-colors hover:border-black hover:bg-black hover:text-paper"
                   >
-                    {r}
-                  </div>
-                ),
-              )}
-            </div>
+                    {c.title}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

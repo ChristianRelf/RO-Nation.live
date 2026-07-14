@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { RosterKind } from "@prisma/client";
 import { addRosterEntry, searchRoblox } from "@/app/actions/portal";
+import { PickedUser, RobloxPicker } from "@/components/roblox-picker";
 import type { RobloxProfile } from "@/lib/roblox-users";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +62,13 @@ export function RosterAddForm({
           {picked ? (
             <PickedUser profile={picked} onClear={() => setPicked(null)} />
           ) : (
-            <RobloxPicker scope={scope} onPick={setPicked} />
+            // The scope is bound in HERE, at the call site, rather than being a prop of
+            // the picker - so this page can only ever search through the guard that
+            // matches the door its user came through. See the note in roblox-picker.tsx.
+            <RobloxPicker
+              search={(q) => searchRoblox(scope, q)}
+              onPick={setPicked}
+            />
           )}
         </Field>
 
@@ -122,136 +129,9 @@ function SubmitButton({
   );
 }
 
-// ---- Roblox typeahead --------------------------------------------
-function RobloxPicker({
-  scope,
-  onPick,
-}: {
-  scope: string;
-  onPick: (p: RobloxProfile) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<RobloxProfile[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [pending, setPending] = useState(false);
-  const debounce = useRef<ReturnType<typeof setTimeout>>();
-  const latest = useRef(0);
-
-  useEffect(() => () => clearTimeout(debounce.current), []);
-
-  async function run(value: string) {
-    const trimmed = value.trim();
-    if (trimmed.length < 3) {
-      setResults([]);
-      setSearched(false);
-      return;
-    }
-
-    const ticket = ++latest.current;
-    setPending(true);
-    try {
-      const found = await searchRoblox(scope, trimmed);
-      // Ignore a slow response that a newer keystroke has already superseded.
-      if (ticket !== latest.current) return;
-      setResults(found);
-      setSearched(true);
-    } finally {
-      if (ticket === latest.current) setPending(false);
-    }
-  }
-
-  return (
-    <div>
-      <input
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          clearTimeout(debounce.current);
-          debounce.current = setTimeout(() => run(e.target.value), 300);
-        }}
-        placeholder="Roblox username or user ID"
-        autoComplete="off"
-        className="w-full border border-line bg-bg px-4 py-3 text-sm outline-none transition-colors focus:border-accent"
-      />
-
-      {pending ? (
-        <p className="mt-2 text-xs text-faint">Searching Roblox…</p>
-      ) : null}
-
-      {!pending && searched && !results.length ? (
-        <p className="mt-2 text-xs text-faint">
-          No Roblox account matched “{query.trim()}”.
-        </p>
-      ) : null}
-
-      {results.length ? (
-        <ul className="mt-2 divide-y divide-line border border-line">
-          {results.map((r) => (
-            <li key={r.robloxId}>
-              <button
-                type="button"
-                onClick={() => onPick(r)}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface"
-              >
-                <Avatar src={r.avatarUrl} />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold">
-                    {r.displayName}
-                  </span>
-                  <span className="block truncate text-xs text-muted">
-                    @{r.username} · {r.robloxId}
-                  </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
-  );
-}
-
-function PickedUser({
-  profile,
-  onClear,
-}: {
-  profile: RobloxProfile;
-  onClear: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-3 border border-accent/40 bg-accent-soft px-3 py-2.5">
-      <Avatar src={profile.avatarUrl} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{profile.displayName}</p>
-        <p className="truncate text-xs text-muted">
-          @{profile.username} · {profile.robloxId}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onClear}
-        className="text-[10px] font-bold uppercase tracking-kicker text-muted hover:text-fg"
-      >
-        Change
-      </button>
-    </div>
-  );
-}
-
-function Avatar({ src }: { src: string | null }) {
-  return src ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      width={36}
-      height={36}
-      className="h-9 w-9 shrink-0 border border-line bg-bg object-cover"
-    />
-  ) : (
-    <span className="h-9 w-9 shrink-0 border border-line bg-bg" />
-  );
-}
+// The Roblox typeahead, the picked-user card and the avatar all used to live here as
+// private components. They are in components/roblox-picker.tsx now, because /company/team
+// needs the identical thing and the alternative was a second copy that would drift.
 
 // ---- Tags ---------------------------------------------------------
 function TagInput({

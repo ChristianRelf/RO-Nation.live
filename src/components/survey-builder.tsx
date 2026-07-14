@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { QuestionType, Survey, SurveyQuestion } from "@prisma/client";
+import { toDateTimeInput } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const inputClass =
@@ -163,6 +164,28 @@ export function SurveyBuilder({
             <option value="OPEN">Open - accepting responses</option>
             <option value="CLOSED">Closed - link says it&apos;s finished</option>
           </select>
+        </div>
+
+        {/* Survey.closesAt was ENFORCED and UNSETTABLE: actions/survey.ts refuses a
+            response after it, and survey/[code] renders the page as closed - but this
+            builder never posted the field and readSurveyForm never read it, so the column
+            could only ever be null. Half a feature: the lock shipped, the key did not.
+
+            Left empty, the survey stays open until somebody closes it by hand, which is
+            exactly how it behaved before. */}
+        <div>
+          <label className={labelClass}>Closes</label>
+          <input
+            type="datetime-local"
+            name="closesAt"
+            defaultValue={toDateTimeInput(survey?.closesAt)}
+            className={inputClass}
+          />
+          <p className="mt-1.5 text-xs text-faint">
+            Optional. After this it answers as closed, whatever the status says. Clear
+            it to leave it open indefinitely. Uses the server&apos;s timezone, like an
+            event&apos;s start time.
+          </p>
         </div>
       </div>
 

@@ -60,3 +60,14 @@ export function toLines(value: string) {
     .map((l) => l.trim())
     .filter(Boolean);
 }
+
+/**
+ * A Roblox user's public profile page.
+ *
+ * Pure, so it lives here rather than in lib/roblox-users.ts - that module opens with
+ * `import "server-only"` because it calls Roblox's API, and dragging it into a client
+ * component to build one URL fails the build. Which is the guard working: an isomorphic
+ * helper does not belong in a server-only file.
+ */
+export const robloxProfileUrl = (robloxId: string) =>
+  `https://www.roblox.com/users/${robloxId}/profile`;

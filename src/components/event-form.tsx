@@ -1,16 +1,10 @@
 import type { Event } from "@prisma/client";
 import { TierEditor, type TierDraft } from "./tier-editor";
 import { UploadField } from "./upload-field";
-
-// Format a Date for a <input type="datetime-local">. Uses the server's local
-// time; set the container TZ env var if you want a specific zone.
-function toInput(d?: Date | null) {
-  if (!d) return "";
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(
-    d.getHours(),
-  )}:${p(d.getMinutes())}`;
-}
+// Was a private helper in this file. It is in lib/format.ts now, because the survey
+// builder needs the identical thing and a second copy of a date formatter is a second
+// answer to the same question.
+import { toDateTimeInput as toInput } from "@/lib/format";
 
 const inputClass =
   "w-full rounded-xl border border-line bg-bg px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent";

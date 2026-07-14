@@ -5,14 +5,17 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   ApplicationStatus,
+  EnquiryStatus,
   JobStatus,
   SurveyStatus,
   TicketStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireCompanyUser } from "@/lib/company";
+import { resolveRobloxUser, searchRobloxUsers } from "@/lib/roblox-users";
 import { generateSurveyCode } from "@/lib/utils";
 import {
+  parseDate,
   readEventForm,
   readPostForm,
   resolvePublishedAt,
@@ -20,6 +23,7 @@ import {
   uniqueSlug,
 } from "@/lib/content";
 import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
+import { unrevokeTicket } from "@/lib/tickets/issue";
 
 // Every write to ronation.live's own content: events, blog, surveys, careers,
 // applications, attendees. One module, because there is now one door.
@@ -48,6 +52,18 @@ function refreshBlog() {
 function refreshCareers() {
   revalidatePath("/company/careers");
   revalidatePath("/careers");
+}
+
+function refreshTeam() {
+  revalidatePath("/company/team");
+  revalidatePath("/team");
+}
+
+function refreshTestimonials() {
+  revalidatePath("/company/testimonials");
+  // The homepage is where they surface. Miss this and publishing a quote appears to do
+  // nothing at all, which reads as a broken button rather than a stale cache.
+  revalidatePath("/");
 }
 
 // ---- events ------------------------------------------------------
@@ -138,6 +154,36 @@ export async function setTicketStatus(formData: FormData) {
       revalidatePath(`/company/events/${eventId}/attendees`);
     }
   }
+}
+
+/**
+ * Lift a show ban.
+ *
+ * api/v1/tickets/revoke has always told the world that "lifting it is a deliberate act in
+ * the portal, not something the game can undo". The primitive was written
+ * (unrevokeTicket), exported, and then called by NOTHING - so the deliberate act did not
+ * exist anywhere, and a show-banned attendee could not be un-banned by any person through
+ * any surface in this application.
+ *
+ * This is that act.
+ *
+ * It clears the ban and nothing else. The ticket stays CANCELLED - lifting a ban is not
+ * the same as handing the ticket back, and conflating them would silently re-seat somebody
+ * at a sold-out show. What it restores is their RIGHT to reserve one again, which is what
+ * the ban took away.
+ */
+export async function liftTicketRevocation(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "ticketId");
+  const eventId = s(formData, "eventId");
+  if (!id) return;
+
+  // null = RNL's own shows. The primitive now takes the scope as a required argument, so
+  // this cannot reach a partner's ticket even with a pasted id.
+  await unrevokeTicket(id, null);
+
+  if (eventId) revalidatePath(`/company/events/${eventId}/attendees`);
 }
 
 // ---- blog posts --------------------------------------------------
@@ -329,6 +375,16 @@ function readSurveyForm(form: FormData) {
     status: (["DRAFT", "OPEN", "CLOSED"] as const).includes(status as never)
       ? (status as SurveyStatus)
       : SurveyStatus.DRAFT,
+    // A deadline the code has always ENFORCED and the form never let anybody SET. It is
+    // read in two places - actions/survey.ts refuses a response past it, and
+    // survey/[code] renders the page as closed - and the builder simply never posted it,
+    // so the column could only ever be null.
+    //
+    // parseDate("") returns null, and that null is written rather than skipped: clearing
+    // the field has to mean "no deadline", not "keep the old one". A spread that dropped
+    // it would make the date un-clearable once set, which is the kind of thing nobody
+    // notices until they need to reopen a survey.
+    closesAt: parseDate(s(form, "closesAt")),
   };
 }
 
@@ -442,4 +498,284 @@ export async function deleteSurvey(formData: FormData) {
 
   refreshSurveys();
   redirect("/company/surveys?ok=deleted");
+}
+
+// ---- the Roblox picker, for /company -----------------------------
+/**
+ * Search Roblox from a /company page.
+ *
+ * There is already a searchRoblox() in actions/portal.ts, and it is NOT reused here on
+ * purpose. That one guards with requireScopeUser(scope) - the SHASHA/partner door. A
+ * /company user clears it today only because COMPANY_MIN_RANK (245) happens to be above
+ * SHASHA_MIN_RANK (200), and those are two separate environment variables describing two
+ * separate doors. Move them apart and the picker inside /company would start bouncing
+ * staff to /shasha/login from a page they are perfectly entitled to be on.
+ *
+ * So: same lookup, its own guard. Three lines is a cheap price for not borrowing another
+ * door's permission.
+ *
+ * Like the portal's, this is not an open Roblox proxy - you have to be staff to call it.
+ */
+export async function searchRobloxForCompany(query: string) {
+  await requireCompanyUser();
+  return searchRobloxUsers(query);
+}
+
+// ---- the crew ----------------------------------------------------
+//
+// /team was six invented people in a hardcoded array. The defence against that happening
+// again is not discipline, it is the shape of the write: a crew member is identified by a
+// ROBLOX ID that came back from Roblox's own API through the picker. You cannot type a
+// person into this table - you can only find one.
+
+function readTeamMember(form: FormData) {
+  return {
+    role: s(form, "role"),
+    department: s(form, "department") || "Crew",
+    bio: s(form, "bio") || null,
+    order: parseInt(s(form, "order") || "0", 10) || 0,
+    visible: form.get("visible") === "on",
+  };
+}
+
+export async function createTeamMember(formData: FormData) {
+  await requireCompanyUser();
+
+  const robloxId = s(formData, "robloxId");
+  const data = readTeamMember(formData);
+  if (!robloxId || !data.role) redirect("/company/team/new?error=required");
+
+  // Re-resolved server-side. The client sent an id, a username and an avatar; only the
+  // id is used as a lookup key, and the other two are fetched again from Roblox - the
+  // same rule addRosterEntry follows. Never trust the client's idea of who this is.
+  const profile = await resolveRobloxUser(robloxId);
+  if (!profile) redirect("/company/team/new?error=roblox");
+
+  await prisma.teamMember.upsert({
+    // Unique on robloxId, so adding somebody who is already on the crew updates them
+    // rather than producing a second card nobody notices.
+    where: { robloxId: profile.robloxId },
+    update: {
+      ...data,
+      robloxUsername: profile.username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+    },
+    create: {
+      ...data,
+      robloxId: profile.robloxId,
+      robloxUsername: profile.username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+    },
+  });
+
+  refreshTeam();
+  redirect("/company/team");
+}
+
+export async function updateTeamMember(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  const data = readTeamMember(formData);
+  if (!id || !data.role) redirect(`/company/team/${id}/edit?error=required`);
+
+  await prisma.teamMember.update({ where: { id }, data });
+
+  refreshTeam();
+  redirect("/company/team");
+}
+
+/**
+ * Re-read a crew member's name and face from Roblox.
+ *
+ * Usernames change and headshot URLs rotate. Without this, the only way to fix a stale
+ * card is to delete the person and add them back - which loses their blurb and their
+ * ordering, so nobody does it, so the page slowly fills with people under names they no
+ * longer use.
+ */
+export async function refreshTeamMember(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (!id) redirect("/company/team");
+
+  const member = await prisma.teamMember.findUnique({ where: { id } });
+  if (!member) redirect("/company/team");
+
+  const profile = await resolveRobloxUser(member.robloxId);
+  // Roblox did not answer, or the account is gone. Leaving the row exactly as it is
+  // beats overwriting a real name with nothing.
+  if (!profile) redirect("/company/team?error=roblox");
+
+  await prisma.teamMember.update({
+    where: { id },
+    data: {
+      robloxUsername: profile.username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+    },
+  });
+
+  refreshTeam();
+  redirect("/company/team?ok=refreshed");
+}
+
+export async function deleteTeamMember(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (id) await prisma.teamMember.delete({ where: { id } });
+
+  refreshTeam();
+  redirect("/company/team");
+}
+
+// ---- testimonials ------------------------------------------------
+
+export async function createTestimonial(formData: FormData) {
+  await requireCompanyUser();
+
+  const body = s(formData, "body");
+  const author = s(formData, "author");
+  if (!body || !author) redirect("/company/testimonials?error=required");
+
+  const eventId = s(formData, "eventId") || null;
+
+  await prisma.testimonial.create({
+    data: {
+      body: body.slice(0, 600),
+      author: author.slice(0, 60),
+      meta: s(formData, "meta").slice(0, 60) || null,
+      // Scoped to RNL's own shows. A pasted id for a partner's event would otherwise
+      // attach an RNL homepage quote to somebody else's show.
+      eventId: eventId
+        ? ((await prisma.event.findFirst({
+            where: { id: eventId, partnerId: null },
+            select: { id: true },
+          }))?.id ?? null)
+        : null,
+      // published is NOT read from the form, and that is the point of the whole table.
+      // A quote is entered, then somebody READS it and publishes it. There is no path
+      // that types a quote straight onto the homepage.
+    },
+  });
+
+  refreshTestimonials();
+  redirect("/company/testimonials?ok=added");
+}
+
+/**
+ * Turn a survey answer into a quote.
+ *
+ * The single highest-integrity source of testimonials this codebase can have, and it was
+ * already sitting in the database. A LONG_TEXT answer to "how was the show?" was typed by
+ * a real, signed-in Roblox account - SurveyResponse.robloxUsername is denormalised so it
+ * survives a rename - which makes it better attributed than anything anybody could paste
+ * into a form.
+ *
+ * It still lands UNPUBLISHED. Somebody said it, but somebody at RNL still has to decide
+ * it belongs on the homepage.
+ */
+export async function promoteSurveyAnswer(formData: FormData) {
+  await requireCompanyUser();
+
+  const answerId = s(formData, "answerId");
+  if (!answerId) redirect("/company/testimonials");
+
+  const answer = await prisma.surveyAnswer.findUnique({
+    where: { id: answerId },
+    include: {
+      question: { select: { type: true } },
+      response: { select: { robloxUsername: true, survey: { select: { title: true } } } },
+    },
+  });
+
+  // Only free text. A "4" out of five, or a "YES", is data - it is not a quote, and
+  // putting one in speech marks on the homepage would be a lie about what was said.
+  if (!answer || answer.question.type !== "LONG_TEXT" || !answer.value.trim()) {
+    redirect("/company/testimonials?error=notaquote");
+  }
+
+  await prisma.testimonial.upsert({
+    // Unique, so a double-click or a second click from a stale page updates the row it
+    // already made instead of putting the same words on the homepage twice.
+    where: { sourceAnswerId: answerId },
+    update: {},
+    create: {
+      sourceAnswerId: answerId,
+      body: answer.value.trim().slice(0, 600),
+      author: answer.response.robloxUsername,
+      meta: answer.response.survey.title.slice(0, 60),
+    },
+  });
+
+  refreshTestimonials();
+  redirect("/company/testimonials?ok=promoted");
+}
+
+export async function setTestimonialPublished(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (id) {
+    await prisma.testimonial.update({
+      where: { id },
+      data: { published: s(formData, "published") === "true" },
+    });
+  }
+
+  refreshTestimonials();
+}
+
+export async function deleteTestimonial(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (id) await prisma.testimonial.delete({ where: { id } });
+
+  refreshTestimonials();
+}
+
+// ---- enquiries ---------------------------------------------------
+//
+// The inbox side only. The public WRITE lives in actions/enquiries.ts, unguarded,
+// because it has to be - and keeping the two in separate files is what stops somebody
+// adding a public action to this module by muscle memory and quietly opening every
+// /company write to the internet. Same reason actions/applications.ts is its own file.
+
+export async function setEnquiryStatus(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  const status = s(formData, "status") as EnquiryStatus;
+  if (id && ["NEW", "READING", "REPLIED", "CLOSED"].includes(status)) {
+    await prisma.enquiry.update({ where: { id }, data: { status } });
+  }
+
+  revalidatePath("/company/enquiries");
+}
+
+export async function setEnquiryNote(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (id) {
+    await prisma.enquiry.update({
+      where: { id },
+      data: { note: s(formData, "note").slice(0, 4000) || null },
+    });
+  }
+
+  revalidatePath("/company/enquiries");
+}
+
+export async function deleteEnquiry(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (id) await prisma.enquiry.delete({ where: { id } });
+
+  revalidatePath("/company/enquiries");
 }

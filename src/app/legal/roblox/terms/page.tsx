@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, robloxNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Roblox Integration - Terms of Service",
@@ -86,7 +87,7 @@ export default function RobloxTermsPage() {
   return (
     <LegalDoc
       title="Roblox Integration - Terms of Service"
-      updated="12 July 2026"
+      updated={legalUpdated("/legal/roblox/terms")}
       currentHref="/legal/roblox/terms"
       nav={robloxNav}
       intro="These are the terms you accept when you sign in with Roblox and reserve a ticket for one of our events."

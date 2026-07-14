@@ -1,8 +1,8 @@
 import type { RosterEntry } from "@prisma/client";
 import { ConfirmButton } from "@/components/confirm-button";
 import { removeRosterEntry, updateRosterEntry } from "@/app/actions/portal";
-import { robloxProfileUrl } from "@/lib/roblox-users";
 import { formatDateTime } from "@/lib/format";
+import { robloxProfileUrl } from "@/lib/utils";
 
 export function RosterList({
   scope,

@@ -4,18 +4,48 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-// The Company sidebar. Everything on ronation.live is authored from behind these
-// six links - the /admin dashboard that used to hold the last three is gone.
-const links = [
-  { label: "Overview", href: "/company" },
-  { label: "Events", href: "/company/events" },
-  { label: "Door", href: "/company/door" },
-  { label: "Blog", href: "/company/blog" },
-  { label: "Merch", href: "/company/merch" },
-  { label: "Docs", href: "/company/docs" },
-  { label: "Surveys", href: "/company/surveys" },
-  { label: "Careers", href: "/company/careers" },
-  { label: "Applications", href: "/company/applications" },
+// The Company sidebar. Everything on ronation.live is authored from behind these links -
+// the /admin dashboard that used to hold some of them is gone.
+//
+// It is GROUPED, and that is not decoration. It was a flat list of nine, which is about
+// where a flat list stops working; team, testimonials, enquiries and partners take it to
+// thirteen, and thirteen undifferentiated links is a menu you scan rather than read.
+//
+// The groups answer the question you actually arrive with - "what am I here to do?" -
+// rather than the one the database would answer:
+//
+//   The shows    the thing RNL does. Events, and the door you check people in at.
+//   Content      things RNL publishes.
+//   People       every human the org touches, from the crew to the inbox.
+const groups: { title: string; links: { label: string; href: string }[] }[] = [
+  {
+    title: "The shows",
+    links: [
+      { label: "Overview", href: "/company" },
+      { label: "Events", href: "/company/events" },
+      { label: "Door", href: "/company/door" },
+    ],
+  },
+  {
+    title: "Content",
+    links: [
+      { label: "Blog", href: "/company/blog" },
+      { label: "Merch", href: "/company/merch" },
+      { label: "Docs", href: "/company/docs" },
+      { label: "Surveys", href: "/company/surveys" },
+    ],
+  },
+  {
+    title: "People",
+    links: [
+      { label: "Team", href: "/company/team" },
+      { label: "Careers", href: "/company/careers" },
+      { label: "Applications", href: "/company/applications" },
+      { label: "Testimonials", href: "/company/testimonials" },
+      { label: "Enquiries", href: "/company/enquiries" },
+      { label: "Partners", href: "/company/partners" },
+    ],
+  },
 ];
 
 export function CompanyNav({
@@ -34,27 +64,37 @@ export function CompanyNav({
         </p>
       </div>
 
-      <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-        {links.map((l) => {
-          const active =
-            l.href === "/company"
-              ? pathname === "/company"
-              : pathname.startsWith(l.href);
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={cn(
-                "shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-surface text-fg"
-                  : "text-muted hover:bg-surface/60 hover:text-fg",
-              )}
-            >
-              {l.label}
-            </Link>
-          );
-        })}
+      {/* On a narrow screen the groups collapse back into one scrolling row - the
+          headings are structure, and on a phone the structure is the scroll. */}
+      <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-0">
+        {groups.map((group) => (
+          <div key={group.title} className="contents lg:block">
+            <p className="hidden lg:mb-1.5 lg:mt-5 lg:block lg:px-3 lg:text-[10px] lg:font-bold lg:uppercase lg:tracking-kicker lg:text-faint lg:first:mt-0">
+              {group.title}
+            </p>
+
+            {group.links.map((l) => {
+              const active =
+                l.href === "/company"
+                  ? pathname === "/company"
+                  : pathname.startsWith(l.href);
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={cn(
+                    "shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:block",
+                    active
+                      ? "bg-surface text-fg"
+                      : "text-muted hover:bg-surface/60 hover:text-fg",
+                  )}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="mt-6 flex flex-col gap-1 border-t border-line pt-4">

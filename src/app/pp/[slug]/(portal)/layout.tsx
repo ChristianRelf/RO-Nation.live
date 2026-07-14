@@ -62,6 +62,9 @@ export default async function PartnerPortalLayout({
         // Only an org with shows has tickets for a key to touch, and only a
         // manager may mint one.
         keysLink={user.canWrite && partnerHasFeature(partner, "events")}
+        // Who else may sign in here. Owners only - and `canManageMembers` is the
+        // flag guard.ts has been computing since day one with nothing reading it.
+        membersLink={user.canManageMembers}
         user={{
           displayName: user.displayName,
           avatarUrl: user.avatarUrl,

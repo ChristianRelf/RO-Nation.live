@@ -18,6 +18,7 @@ export function PortalNav({
   studioLink = false,
   doorLink = false,
   keysLink = false,
+  membersLink = false,
   user,
 }: {
   /** Wordmark in the top-left - "SHASHA", "Sleep Token". */
@@ -41,6 +42,14 @@ export function PortalNav({
    * requireScopeManager() in the page is the actual lock.
    */
   keysLink?: boolean;
+  /**
+   * Who else may sign in here. OWNERS ONLY, and only on a partner portal.
+   *
+   * Same courtesy/lock split as keysLink: the page itself calls requirePartnerOwner(), and
+   * hiding the item just spares a manager a bounce. SHASHA has no equivalent - its
+   * membership IS a rank in RNL's Roblox group, so there is no list to manage.
+   */
+  membersLink?: boolean;
   user: {
     displayName: string;
     // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
@@ -62,6 +71,7 @@ export function PortalNav({
     { label: "Blacklist", href: `${basePath}/blacklist` },
     { label: "History", href: `${basePath}/audit` },
     ...(keysLink ? [{ label: "API keys", href: `${basePath}/keys` }] : []),
+    ...(membersLink ? [{ label: "Access", href: `${basePath}/members` }] : []),
   ];
 
   return (

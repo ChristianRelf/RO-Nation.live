@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, type LegalSection } from "@/components/legal-doc";
 import { site } from "@/lib/site";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -177,7 +178,7 @@ export default function PrivacyPage() {
   return (
     <LegalDoc
       title="Privacy Policy"
-      updated="13 July 2026"
+      updated={legalUpdated("/legal/privacy")}
       currentHref="/legal/privacy"
       intro="What we collect, why we hold it, and who can see it - in plain language, with nothing hidden in a clause. If a line here doesn't match what the site actually does, that's a bug. Tell us."
       sections={sections}

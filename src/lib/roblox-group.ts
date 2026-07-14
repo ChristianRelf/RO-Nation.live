@@ -75,3 +75,53 @@ export function forgetGroupMembership(
 ) {
   cache.delete(cacheKey(groupId, robloxId));
 }
+
+// ---- How many people are in the group ------------------------------------
+
+const MEMBERS_TTL_MS = 30 * 60 * 1000;
+let members: { at: number; value: number } | null = null;
+
+/**
+ * The group's member count, or null if Roblox will not say.
+ *
+ * ---- It fails SOFT, and everything above it fails HARD --------------------
+ *
+ * getGroupMembership() returns null on a network blip and the caller denies access. That
+ * is fail-CLOSED, and it is right: a gate that cannot read your rank must not let you
+ * through.
+ *
+ * This one returns null on a blip and the caller PRINTS NOTHING. That is fail-SOFT, and
+ * it is right for the opposite reason: a number nobody can verify must not appear on the
+ * page. There is no safe default to fall back on - "0 members" is a lie and the last
+ * known value is a stale one - so the honest output is no output.
+ *
+ * The asymmetry is deliberate and it is the whole reason this lives in its own function
+ * rather than being folded into the one above.
+ *
+ * Cached for half an hour. It moves slowly, it is on the homepage of every visit, and
+ * Roblox rate-limits this endpoint.
+ */
+export async function getGroupMemberCount(
+  groupId: string = env.company.groupId,
+): Promise<number | null> {
+  if (members && Date.now() - members.at < MEMBERS_TTL_MS) return members.value;
+
+  try {
+    // v1, not v2: the member count lives on the group detail endpoint, and v2's
+    // /groups?groupIds= batch form does not carry it.
+    const res = await fetch(`https://groups.roblox.com/v1/groups/${groupId}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+
+    const body = (await res.json()) as { memberCount?: number };
+    const count = body.memberCount;
+    if (typeof count !== "number" || !Number.isFinite(count)) return null;
+
+    members = { at: Date.now(), value: count };
+    return count;
+  } catch {
+    // Not cached. A blip should cost one render, not thirty minutes of silence.
+    return null;
+  }
+}

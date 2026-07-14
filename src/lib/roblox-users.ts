@@ -135,5 +135,16 @@ export async function searchRobloxUsers(
   }));
 }
 
-export const robloxProfileUrl = (robloxId: string) =>
-  `https://www.roblox.com/users/${robloxId}/profile`;
+// robloxProfileUrl used to live here, and it could not stay.
+//
+// This module opens with `import "server-only"` - it makes network calls to Roblox and has
+// no business running in a browser. But robloxProfileUrl is a PURE STRING HELPER: it takes
+// an id and returns a URL, touches nothing, and is exactly as safe on the client as on the
+// server.
+//
+// The moment a client component wanted to link to somebody's profile (the partner member
+// list), importing it dragged the whole server-only module across the boundary and FAILED
+// THE BUILD. Which is the guard working correctly - the fix is not to weaken it, it is to
+// stop keeping an isomorphic helper in a server-only file.
+//
+// It is in lib/utils.ts now, with the other pure functions.

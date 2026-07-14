@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, discordNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Discord Integration - Terms of Service",
@@ -79,7 +80,7 @@ export default function DiscordTermsPage() {
   return (
     <LegalDoc
       title="Discord Integration - Terms of Service"
-      updated="12 July 2026"
+      updated={legalUpdated("/legal/discord/terms")}
       currentHref="/legal/discord/terms"
       nav={discordNav}
       intro="These are the terms you accept when you sign in to the staff portal with Discord."

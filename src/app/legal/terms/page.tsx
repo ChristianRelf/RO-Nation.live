@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, type LegalSection } from "@/components/legal-doc";
 import { site } from "@/lib/site";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -172,7 +173,7 @@ export default function TermsPage() {
   return (
     <LegalDoc
       title="Terms of Service"
-      updated="13 July 2026"
+      updated={legalUpdated("/legal/terms")}
       currentHref="/legal/terms"
       intro="The rules for reserving tickets, coming to our shows, joining the crew, and using the partner sites we host. Written to be read - no dense legalese, and nothing important buried."
       sections={sections}

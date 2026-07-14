@@ -25,6 +25,7 @@ model User {
   tickets         Ticket[]
   applications    Application[]
   surveyResponses SurveyResponse[]
+  enquiries       Enquiry[]
 
   @@map("users")
 }
@@ -67,8 +68,9 @@ model Event {
   // argument for exactly that reason: there is no "forgot to pass it" default.
   partnerId String?
 
-  tickets Ticket[]
-  tiers   TicketTier[]
+  tickets      Ticket[]
+  tiers        TicketTier[]
+  testimonials Testimonial[]
 
   @@index([status, startsAt])
   @@index([partnerId, status, startsAt])
@@ -1016,4 +1018,198 @@ model MerchProduct {
 
   @@index([visible, collection, order])
   @@map("merch_products")
+}
+
+// ------------------------------------------------------------------
+// The crew.
+//
+// /team used to be six people hardcoded in the page component - names, roles,
+// blurbs and Roblox handles, none of which belonged to anybody. Inventing a
+// statistic is one thing; inventing a PERSON, giving them a job title at a real
+// company and a handle on a real platform, is another, and it is the reason this
+// table exists rather than a tidier array.
+//
+// The defence against it happening again is the shape of the row: a crew member
+// is IDENTIFIED BY A ROBLOX ID, resolved server-side through Roblox's own user
+// API by the picker in /company/team. You cannot type a person into this table.
+// You can only find one.
+//
+// No partnerId. This is RNL's crew, and a nullable scope column "just in case" is
+// a filter every future read has to remember - see the note on Guide.
+// ------------------------------------------------------------------
+model TeamMember {
+  id String @id @default(cuid())
+
+  /// The canonical Roblox id. Unique: one card per person, so adding somebody
+  /// twice updates them instead of producing a duplicate nobody notices.
+  robloxId       String  @unique
+  robloxUsername String
+  displayName    String
+  /// Roblox's headshot, cached when they were picked. It CAN rot - Roblox rotates
+  /// these URLs - so every reader tolerates null and a broken image, exactly as
+  /// MerchProduct.thumbnailUrl does. The initials fallback is the design, not the
+  /// error state.
+  avatarUrl      String?
+
+  /// "Lead Stage Builder". Free text and editorial - it is a job title, not an enum.
+  role String
+
+  /// "Build", "Talent", "Tech". Free text on purpose: an enum would make adding a
+  /// department a schema migration and a deploy, which is absurd for a heading.
+  department String @default("Crew")
+
+  /// Optional. A name and a role is already a complete card; forcing a paragraph
+  /// out of somebody who does not want to write one is how you get filler.
+  bio String? @db.Text
+
+  order Int @default(0)
+
+  /// Off the site, but still on the books. The ROW SURVIVES a hide, so somebody
+  /// who steps back for a season is un-hidden later rather than re-added from
+  /// scratch - and their order and blurb come back with them.
+  visible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visible, order])
+  @@map("team_members")
+}
+
+// ------------------------------------------------------------------
+// What the crowd actually said.
+//
+// The homepage carried five of these as a hardcoded array, under a heading
+// reading "What the crowd said", written by nobody and said by nobody.
+//
+// `published` DEFAULTS TO FALSE, and that default is the entire point of the
+// table: nothing reaches the homepage because it was typed into a form. Somebody
+// reads it and decides. A quote is a claim about a real person's opinion, and the
+// cost of getting one wrong is not a broken layout.
+// ------------------------------------------------------------------
+model Testimonial {
+  id String @id @default(cuid())
+
+  body String @db.Text
+
+  /// Who said it.
+  ///
+  /// A plain string, and deliberately NOT resolved against Roblox the way a crew
+  /// member or a roster entry is. This is an ATTRIBUTION, not an identity: the
+  /// person may have written in on Discord, or said it on a stream, or filled in a
+  /// post-show survey under a name they have since changed. A lookup here would
+  /// refuse perfectly real quotes for being hard to verify, which is how you end up
+  /// back at inventing them.
+  author String
+
+  /// "Front row", "Ticket holder". Optional flavour, never load-bearing.
+  meta String?
+
+  /// The show it is about, when it is about one.
+  ///
+  /// SetNull, NOT Cascade. A quote about a show that has since been archived is
+  /// still a quote somebody said - deleting their words because the event row went
+  /// away would be a bug that looks like housekeeping.
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  eventId String?
+
+  /// The survey answer this was lifted from, if it was lifted from one.
+  ///
+  /// The best quotes RNL will ever have are already in this database. A LONG_TEXT answer
+  /// to "how was the show?" was typed by a REAL, SIGNED-IN ROBLOX ACCOUNT - the username
+  /// is denormalised onto SurveyResponse precisely so it survives a rename - which makes
+  /// it better attributed than anything a person could paste into an admin form.
+  ///
+  /// Unique, so promoting the same answer twice is impossible rather than merely
+  /// discouraged: the second attempt hits the constraint instead of quietly producing a
+  /// duplicate quote on the homepage. It is a plain String, not a relation, because the
+  /// quote must OUTLIVE the survey - deleting a survey cascades its answers away, and a
+  /// person's words are not the survey's to delete.
+  sourceAnswerId String? @unique
+
+  published Boolean @default(false)
+  order     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, order])
+  @@map("testimonials")
+}
+
+// ------------------------------------------------------------------
+// Somebody wants to talk to us.
+//
+// Every "work with us" and "book us" call to action on this site used to be a link
+// to Discord, and /contact had no form at all - which is fine for a fan and useless
+// for a group leader with a launch to run and a budget to spend.
+//
+// ---- Why sending one requires a Roblox sign-in --------------------------------
+//
+// This is a PUBLIC, UNAUTHENTICATED WRITE to the production database, which is the
+// most-spammed object on the web. Applications get away with it because a job
+// application is a niche target; a contact form is not.
+//
+// So the action behind it requires a session (lib/session.ts), which costs a real
+// visitor one click - they are on a Roblox site, signing in with Roblox - blocks
+// essentially every bot, and fills `userId` for free. The one person it turns away
+// is a journalist with no Roblox account, and they get the BETTER channel: /press
+// carries a plain email address, precisely so it does not depend on this.
+// ------------------------------------------------------------------
+enum EnquiryKind {
+  BOOKING
+  PRESS
+  PARTNERSHIP
+  GENERAL
+}
+
+enum EnquiryStatus {
+  NEW
+  READING
+  REPLIED
+  CLOSED
+}
+
+model Enquiry {
+  id String @id @default(cuid())
+
+  /// Which pile it lands in. SAFE to take from the form body, unlike a partner
+  /// scope: it authorises nothing at all, it only files the row.
+  kind   EnquiryKind   @default(GENERAL)
+  status EnquiryStatus @default(NEW)
+
+  name String
+
+  /// At least one way to reply is required - and that is enforced in the ACTION,
+  /// not here. "One of two columns must be present" needs a CHECK constraint, and
+  /// `prisma db push` silently drops hand-written constraints on every boot (the
+  /// same trap documented on Career.slug). A rule the database forgets on Tuesday
+  /// is worse than a rule the code enforces every time.
+  email   String?
+  discord String?
+
+  /// Who they were signed in as. SetNull: an enquiry outlives an account.
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+
+  subject String
+  message String @db.Text
+
+  /// Booking only, and optional even then.
+  ///
+  /// PLAIN STRINGS, not a DateTime and an Int. "Some time in March" and "a few
+  /// hundred?" are the honest answers at first contact, and a date picker that
+  /// refuses them is a form that loses the lead. Pin it down in the reply.
+  eventDate String?
+  scale     String?
+
+  /// A crew note on the row. Never shown to the person who sent it.
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([kind, status])
+  @@map("enquiries")
 }

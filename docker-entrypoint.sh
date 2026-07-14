@@ -49,8 +49,22 @@ if ! npx prisma db push --skip-generate; then
   exit 1
 fi
 
-echo "→ Seeding starter content (skips if events already exist)..."
-npm run seed || echo "  seed skipped/failed (non-fatal)"
+# There is deliberately NO SEED STEP HERE ANY MORE.
+#
+# There used to be: `npm run seed`, on every boot. It created five PUBLISHED events that
+# never happened, with invented venues and capacities, and four OPEN job roles nobody was
+# hiring for - and it put two fictional shows onto a real partner's live site,
+# unconditionally, every single time the container started.
+#
+# It had a guard, and the guard is the whole lesson. It skipped the demo content only
+# while at least one RNL event already existed, so DELETING the fake events RE-ARMED IT:
+# the next restart put them straight back. A seed that runs on boot is not a convenience,
+# it is a machine for republishing content nobody chose to publish, and no amount of
+# improving the guard changes that.
+#
+# Publishing content and granting somebody access to a partner's portal are DECISIONS.
+# They are made in /company, or - until the partner-member admin ships - by running
+# scripts/grant-partner-owner.ts on purpose. Neither is a side-effect of a restart.
 
 echo "→ Starting RO. Nation LIVE on port ${PORT:-3000}..."
 exec npm run start -- -p "${PORT:-3000}" -H "${HOSTNAME:-0.0.0.0}"

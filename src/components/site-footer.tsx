@@ -1,6 +1,18 @@
 import Link from "next/link";
 import { Logo } from "./logo";
-import { site } from "@/lib/site";
+import { SOCIAL_LABELS, site, type Social } from "@/lib/site";
+
+/**
+ * The socials RNL actually has, in the order SOCIAL_LABELS declares them.
+ *
+ * This list used to be four hardcoded <li>s, two of which pointed at
+ * `x.com/your-handle` and `youtube.com/@your-channel` - placeholder strings, live and
+ * clickable on every page of the site. Driving it off the record means an account that
+ * does not exist cannot be linked to, because there is nothing to link.
+ */
+const socials = (Object.keys(SOCIAL_LABELS) as Social[])
+  .map((key) => ({ key, href: site.socials[key] }))
+  .filter((s): s is { key: Social; href: string } => Boolean(s.href));
 
 const columns = [
   {
@@ -16,12 +28,22 @@ const columns = [
     ],
   },
   {
-    title: "Join",
+    // Renamed from "Join", because it is not just a careers column any more - /services
+    // and /press are here, and they are for a different visitor entirely: somebody who
+    // wants something FROM RNL rather than to come to a show.
+    //
+    // Services deliberately stays OUT of the header nav (lib/site.ts). RNL's primary
+    // visitor is an attendee after a free ticket, not a client, and the top nav belongs to
+    // them. The client finds this from four places instead - here, /about, /partners and
+    // /contact - and if bookings ever become the priority, promoting it is one line.
+    title: "Work with us",
     links: [
+      { label: "What we do", href: "/services" },
       { label: "Open roles", href: "/careers" },
       { label: "About the group", href: "/about" },
       { label: "Meet the crew", href: "/team" },
       { label: "Partners", href: "/partners" },
+      { label: "Press kit", href: "/press" },
       { label: "Contact us", href: "/contact" },
     ],
   },
@@ -31,6 +53,10 @@ const legalLinks = [
   { label: "Privacy", href: "/legal/privacy" },
   { label: "Terms", href: "/legal/terms" },
   { label: "Code of Conduct", href: "/legal/code-of-conduct" },
+  // The other four - the Roblox and Discord sign-in documents - were reachable only by
+  // cross-links from each other, so the pages this site handed to two OAuth providers at
+  // registration were effectively unlisted on it.
+  { label: "All policies", href: "/legal" },
 ];
 
 export function SiteFooter() {
@@ -67,38 +93,16 @@ export function SiteFooter() {
           <div>
             <p className="kicker">Follow</p>
             <ul className="mt-4 space-y-3">
-              <li>
-                <a
-                  href={site.socials.discord}
-                  className="link-underline text-sm text-muted transition-colors hover:text-fg"
-                >
-                  Discord
-                </a>
-              </li>
-              <li>
-                <a
-                  href={site.socials.roblox}
-                  className="link-underline text-sm text-muted transition-colors hover:text-fg"
-                >
-                  Roblox group
-                </a>
-              </li>
-              <li>
-                <a
-                  href={site.socials.x}
-                  className="link-underline text-sm text-muted transition-colors hover:text-fg"
-                >
-                  X / Twitter
-                </a>
-              </li>
-              <li>
-                <a
-                  href={site.socials.youtube}
-                  className="link-underline text-sm text-muted transition-colors hover:text-fg"
-                >
-                  YouTube
-                </a>
-              </li>
+              {socials.map((s) => (
+                <li key={s.key}>
+                  <a
+                    href={s.href}
+                    className="link-underline text-sm text-muted transition-colors hover:text-fg"
+                  >
+                    {SOCIAL_LABELS[s.key]}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -115,13 +119,14 @@ export function SiteFooter() {
               </Link>
             ))}
           </nav>
-          <div className="flex w-full flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <p>
-              © {new Date().getFullYear()} {site.name}. Not affiliated with or
-              endorsed by Roblox Corporation.
-            </p>
-            <p className="font-mono">Built for the crew · v1.0</p>
-          </div>
+          {/* "Built for the crew · v1.0" used to sit on the right here. The version
+              number tracked nothing and meant nothing - it was v1.0 on the first commit
+              and v1.0 on the five hundredth. A number that never changes is not a
+              version, it is decoration pretending to be information. */}
+          <p>
+            © {new Date().getFullYear()} {site.name}. Not affiliated with or
+            endorsed by Roblox Corporation.
+          </p>
         </div>
       </div>
     </footer>

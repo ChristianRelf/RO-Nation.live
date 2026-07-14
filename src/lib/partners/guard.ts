@@ -229,6 +229,29 @@ export async function requirePartnerManager(slug: string): Promise<PartnerUser> 
 }
 
 /**
+ * Owners only - the tier that grants and revokes other people's access.
+ *
+ * `canManageMembers` has been computed above since the day this file was written and read
+ * by absolutely nothing. It is the defining power of OWNER - the one thing that separates
+ * it from MANAGER - and there was no surface anywhere in the application that used it,
+ * because there was no member admin: the only thing that had ever written a PartnerMember
+ * row was the demo seed, which is now deleted.
+ *
+ * This is the guard that finally reads it. It is the most dangerous door in the partner
+ * system: a row on the other side of it is the right to read a partner's blacklist and
+ * mint API keys against their experience, so it is deliberately narrower than
+ * requirePartnerManager - a manager can run the portal, but only an owner decides who else
+ * gets to.
+ */
+export async function requirePartnerOwner(slug: string): Promise<PartnerUser> {
+  const user = await requirePartnerUser(slug);
+  if (!user.canManageMembers) {
+    redirect(`${partnerPortalPath(slug)}?error=notowner`);
+  }
+  return user;
+}
+
+/**
  * 404 unless the partner actually has this feature.
  *
  * The registry is explicit that a feature a partner does not have "must 404, not

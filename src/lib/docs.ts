@@ -84,6 +84,40 @@ export async function brandAssetsByCategory(): Promise<
   return groups;
 }
 
+/**
+ * The PUBLIC assets only, grouped by category. What the press kit is made of.
+ *
+ * `visibility` decides which Docker volume the bytes live on, and the schema is explicit
+ * about why PUBLIC exists: "a shareable URL is the FEATURE here - a partner pasting a logo
+ * link into a Discord is the entire point, and it keeps working when they are signed out,
+ * which is when they will be using it."
+ *
+ * And yet the only surface that had ever listed one was /docs/brandassets, which is behind
+ * a portal login. The flag was shipped, correct, and pointed at nothing. /press is the
+ * public home it was built for.
+ *
+ * The filter lives HERE, once - never in the page - for exactly the reason
+ * publishedGuidesBySection() gives about `status`: it is the only thing standing between a
+ * gated file and the open internet, and a page that has to remember to add a `where` is a
+ * page that will one day forget.
+ */
+export async function publicBrandAssetsByCategory(): Promise<
+  { category: string; assets: BrandAsset[] }[]
+> {
+  const assets = await prisma.brandAsset.findMany({
+    where: { visibility: "PUBLIC" },
+    orderBy: [{ category: "asc" }, { order: "asc" }, { title: "asc" }],
+  });
+
+  const groups: { category: string; assets: BrandAsset[] }[] = [];
+  for (const asset of assets) {
+    const last = groups[groups.length - 1];
+    if (last && last.category === asset.category) last.assets.push(asset);
+    else groups.push({ category: asset.category, assets: [asset] });
+  }
+  return groups;
+}
+
 /** The categories already in use, for the uploader's datalist. */
 export async function assetCategories(): Promise<string[]> {
   const rows = await prisma.brandAsset.findMany({

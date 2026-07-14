@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AdminHeader, Badge, StatCard } from "@/components/admin-ui";
-import { setTicketStatus } from "@/app/actions/company";
+import { liftTicketRevocation, setTicketStatus } from "@/app/actions/company";
 import { formatDateTime } from "@/lib/format";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { requireCompanyUser } from "@/lib/company";
@@ -15,8 +15,18 @@ export default async function AttendeesPage({
   params: { id: string };
 }) {
   await requireCompanyUser();
-  const event = await prisma.event.findUnique({
-    where: { id: params.id },
+
+  // findFirst with partnerId: null, NOT findUnique on the id alone.
+  //
+  // It was findUnique, which is a scope leak of exactly the kind this codebase warns about
+  // everywhere else: an event id is opaque but not secret, and pasting a partner's into
+  // this URL rendered THEIR attendee list - every holder's display name, username and
+  // Roblox id - inside RNL's dashboard. The writes on this page were already scoped
+  // (setTicketStatus matches `event: { partnerId: null }`), so the buttons all refused;
+  // the page just showed you the data first. updateEvent puts it best: "passing one guard
+  // is not the same as being allowed to touch the row."
+  const event = await prisma.event.findFirst({
+    where: { id: params.id, partnerId: null },
     include: {
       tickets: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
@@ -99,8 +109,26 @@ export default async function AttendeesPage({
                         {t.priceRobux > 0 ? formatRobux(t.priceRobux) : "Free"}
                       </p>
                     </td>
+                    {/* CANCELLED alone cannot say WHICH of the two things happened.
+                        Voiding is an undo - wrong person, duplicate, change of plan - and
+                        the holder may reserve again. Revoking is a BAN: the reason they
+                        may not have a ticket is the person, not the ticket. The schema
+                        spends twenty lines distinguishing them and this table rendered
+                        both as the same grey pill, with no reason, no author, and no way
+                        to tell them apart. */}
                     <td className="px-5 py-4">
-                      <Badge value={t.status} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge value={t.status} />
+                        {t.revokedAt ? <Badge value="REVOKED" /> : null}
+                      </div>
+                      {t.revokedAt ? (
+                        <p className="mt-1.5 max-w-[16rem] text-xs text-red-300/80">
+                          {t.revokedReason || "No reason recorded"}
+                          {t.revokedByName ? (
+                            <span className="text-faint"> · {t.revokedByName}</span>
+                          ) : null}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-5 py-4 text-muted">
                       {formatDateTime(t.createdAt)}
@@ -124,7 +152,28 @@ export default async function AttendeesPage({
                             label="Undo"
                           />
                         )}
-                        {t.status !== "CANCELLED" ? (
+
+                        {/* Three states, three buttons - and the banned one is NOT
+                            "Restore".
+
+                            Restore sets status = RESERVED and leaves revokedAt stamped:
+                            a ticket that is live and revoked at the same time, which is a
+                            state nobody chose and nothing else in the system expects.
+                            Lifting a ban and handing back a seat are two different acts,
+                            so they are two different buttons. Lift the ban first, then
+                            Restore appears. */}
+                        {t.revokedAt ? (
+                          <form action={liftTicketRevocation}>
+                            <input type="hidden" name="ticketId" value={t.id} />
+                            <input type="hidden" name="eventId" value={event.id} />
+                            <button
+                              title="They can reserve for this show again. The ticket stays cancelled."
+                              className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+                            >
+                              Lift ban
+                            </button>
+                          </form>
+                        ) : t.status !== "CANCELLED" ? (
                           <StatusForm
                             ticketId={t.id}
                             eventId={event.id}

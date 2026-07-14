@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalDoc } from "@/components/legal-doc";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Code of Conduct",
@@ -56,7 +57,7 @@ export default function CodeOfConductPage() {
   return (
     <LegalDoc
       title="Code of Conduct"
-      updated="6 July 2026"
+      updated={legalUpdated("/legal/code-of-conduct")}
       currentHref="/legal/code-of-conduct"
       intro="Everyone who attends our events agrees to these rules. They exist to keep our shows safe, welcoming and fun for the whole crowd."
       sections={sections}

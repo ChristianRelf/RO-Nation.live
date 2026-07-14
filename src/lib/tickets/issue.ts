@@ -476,10 +476,28 @@ export async function voidTicket(input: {
   };
 }
 
-/** Lift a revocation. The holder may reserve again; the ticket stays cancelled. */
-export async function unrevokeTicket(ticketId: string) {
+/**
+ * Lift a revocation. The holder may reserve again; the ticket stays cancelled.
+ *
+ * ---- The scope is not optional -------------------------------------------
+ *
+ * This used to match on `{ id }` alone, with no scope check anywhere in it, which meant
+ * every caller owned the scoping - and the only caller was nobody, because for the whole
+ * life of this function NOTHING CALLED IT. It was exported, documented, and dead, while
+ * api/v1/tickets/revoke told the world that "lifting it is a deliberate act in the portal".
+ * That act did not exist: a show-banned attendee could not be un-banned by anyone, through
+ * any surface.
+ *
+ * Now that there IS a caller, the scope is a required argument rather than a rule the
+ * caller has to remember. `null` is RNL's own shows; a slug is a partner's. A ticket
+ * belonging to another org matches zero rows and the ban simply does not lift - which is
+ * the right failure, and it is a failure the function cannot be talked out of.
+ */
+export async function unrevokeTicket(ticketId: string, scope: string | null) {
   await prisma.ticket.updateMany({
-    where: { id: ticketId },
+    // The scope travels through the EVENT, because that is where a ticket's org actually
+    // lives - a Ticket row has no partnerId of its own.
+    where: { id: ticketId, event: { partnerId: scope } },
     data: { revokedAt: null, revokedReason: null, revokedByName: null },
   });
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, discordNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Discord Integration - Privacy Policy",
@@ -76,7 +77,7 @@ export default function DiscordPrivacyPage() {
   return (
     <LegalDoc
       title="Discord Integration - Privacy Policy"
-      updated="12 July 2026"
+      updated={legalUpdated("/legal/discord/privacy")}
       currentHref="/legal/discord/privacy"
       nav={discordNav}
       intro="Our Discord sign-in is used only to identify staff for an internal tool. This page explains precisely what Discord shares with us, and what we keep."

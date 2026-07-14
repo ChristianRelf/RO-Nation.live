@@ -28,6 +28,28 @@ export function formatDate(d: Date | string) {
  * string has to come out of a server render and a client one, and a thousands
  * separator is exactly the sort of thing that differs between the two.
  */
+/**
+ * A Date, formatted for an `<input type="datetime-local">`.
+ *
+ * Lifted out of event-form.tsx, where it was a private helper, the moment a SECOND form
+ * needed it (the survey builder's closing date). One function, so the two cannot disagree
+ * about what a datetime-local value looks like - and the alternative was a copy that
+ * would have.
+ *
+ * TIMEZONE: this is the SERVER's local time, and so is the parse on the way back in
+ * (parseDate in lib/content.ts). datetime-local carries no zone, so the string a person
+ * types is read in whatever TZ the container is set to - which is exactly how Event.startsAt
+ * has always behaved, and is documented in the README. Consistent, and consistently the
+ * server's clock.
+ */
+export function toDateTimeInput(d?: Date | null) {
+  if (!d) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(
+    d.getHours(),
+  )}:${p(d.getMinutes())}`;
+}
+
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   const kb = bytes / 1024;

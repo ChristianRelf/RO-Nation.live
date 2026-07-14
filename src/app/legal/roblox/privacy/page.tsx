@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, robloxNav } from "@/components/legal-doc";
 import { site } from "@/lib/site";
+import { legalUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Roblox Integration - Privacy Policy",
@@ -86,7 +87,7 @@ export default function RobloxPrivacyPage() {
   return (
     <LegalDoc
       title="Roblox Integration - Privacy Policy"
-      updated="12 July 2026"
+      updated={legalUpdated("/legal/roblox/privacy")}
       currentHref="/legal/roblox/privacy"
       nav={robloxNav}
       intro="This policy explains exactly what we receive from Roblox when you sign in with your Roblox account, what we keep, and how to get it removed."

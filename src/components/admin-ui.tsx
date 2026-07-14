@@ -57,6 +57,24 @@ const badgeStyles: Record<string, string> = {
   RESERVED: "bg-accent-soft text-accent border-accent/30",
   CHECKED_IN: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30",
   CANCELLED: "bg-red-500/10 text-red-300 border-red-500/30",
+
+  // A ban, not an undo. CANCELLED alone cannot say which of the two happened - and the
+  // schema spends twenty lines on that distinction - so a revoked ticket carries this
+  // one as well. Red and loud: it is a statement about a person.
+  REVOKED: "bg-red-500/20 text-red-200 border-red-500/50",
+
+  // Enquiries.
+  READING: "bg-amber-400/10 text-amber-300 border-amber-400/30",
+  REPLIED: "bg-emerald-400/10 text-emerald-300 border-emerald-400/30",
+  BOOKING: "bg-accent-soft text-accent border-accent/30",
+  PRESS: "bg-violet-400/10 text-violet-300 border-violet-400/30",
+  PARTNERSHIP: "bg-sky-400/10 text-sky-300 border-sky-400/30",
+  GENERAL: "bg-fg/5 text-muted border-line",
+
+  // Partner roles.
+  OWNER: "bg-accent-soft text-accent border-accent/30",
+  MANAGER: "bg-sky-400/10 text-sky-300 border-sky-400/30",
+  STAFF: "bg-fg/5 text-muted border-line",
 };
 
 export function Badge({ value }: { value: string }) {

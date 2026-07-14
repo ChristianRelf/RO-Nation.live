@@ -1,7 +1,7 @@
 import type { RosterScope } from "@/lib/portal-scope";
 import { findRosterAudit } from "@/lib/roster";
 import { formatDateTime } from "@/lib/format";
-import { robloxProfileUrl } from "@/lib/roblox-users";
+import { robloxProfileUrl } from "@/lib/utils";
 
 const ACTION_STYLES: Record<string, string> = {
   ADDED: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
