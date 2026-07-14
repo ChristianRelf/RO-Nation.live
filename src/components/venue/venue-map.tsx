@@ -71,6 +71,15 @@ export type VenueMapProps = {
   /** The designer sets this; the picker does not. */
   showGrid?: boolean;
 
+  /**
+   * Draw layout.backdrop - the promoter's tracing diagram - behind everything.
+   *
+   * The DESIGNER sets this true; the seat picker, the ticket stub and the door do
+   * NOT, so a buyer never sees the working sketch a room was drawn over. It is a
+   * design aid that happens to be persisted, not part of the sold map.
+   */
+  showBackdrop?: boolean;
+
   className?: string;
   /** An SVG viewBox override, for zooming into a section. */
   view?: { x: number; y: number; w: number; h: number } | null;
@@ -143,6 +152,7 @@ export function VenueMap({
   onSectionHover,
   onSeatClick,
   showGrid,
+  showBackdrop,
   className,
   view,
 }: VenueMapProps) {
@@ -169,6 +179,23 @@ export function VenueMap({
       role="img"
       aria-label="Venue map"
     >
+      {/* The tracing image, at the very bottom. Drawn in full layout coordinates (not the
+          zoom window), so panning and zooming the canvas move it in lock-step with the
+          shapes on top of it - which is the whole point of tracing over it. `meet` keeps the
+          entire diagram visible rather than cropping it. */}
+      {showBackdrop && layout.backdrop ? (
+        <image
+          href={layout.backdrop.url}
+          x={0}
+          y={0}
+          width={layout.viewBox.w}
+          height={layout.viewBox.h}
+          opacity={layout.backdrop.opacity}
+          preserveAspectRatio="xMidYMid meet"
+          className="pointer-events-none"
+        />
+      ) : null}
+
       {showGrid ? (
         <>
           <defs>

@@ -111,7 +111,9 @@ function layout(
   // No anchor - that is world placement for the 3D booth, and it is set later against the
   // real experience, not baked into a shared starter. A map with no anchor works everywhere
   // the game is not involved (picker, stub, door), which is exactly this stage of its life.
-  return { viewBox, grid: 10, anchor: null, shapes };
+  //
+  // No backdrop either: a preset IS the drawing, so there is nothing to trace.
+  return { viewBox, grid: 10, anchor: null, backdrop: null, shapes };
 }
 
 // ---- The rooms -------------------------------------------------------------

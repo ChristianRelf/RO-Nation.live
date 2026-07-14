@@ -271,6 +271,41 @@ const anchor = z.object({
 
 export type MapAnchor = z.infer<typeof anchor>;
 
+// ---- The backdrop ----------------------------------------------------------
+
+/**
+ * A reference image to trace a room over: a promoter's PNG stage diagram, a
+ * seating-plan screenshot, an architect's drawing. It is a DESIGN AID, not a seat
+ * and not a section - it sells nothing and the allocator has never heard of it.
+ *
+ * ---- Why the url is constrained to /uploads/ -------------------------------
+ *
+ * This whole file is a SHAPE, not a wall (see the header). But `url` ends up in an
+ * SVG `<image href>`, and this one field is the one place in a layout that points at
+ * a RESOURCE rather than describing geometry - so it is worth pinning to our own
+ * volume. It must be a root-relative `/uploads/...` path, which is exactly what
+ * POST /api/uploads hands back. That does three things at once: it is same-origin
+ * (an `<image>` cannot be pointed at an attacker's host to leak a referer or phone
+ * home), it cannot carry a `javascript:`/`data:` scheme, and it can only ever name
+ * a file that came through the authenticated upload door. A pasted external URL is
+ * simply not a backdrop; upload the image instead.
+ */
+const backdrop = z.object({
+  url: z
+    .string()
+    .trim()
+    .max(300)
+    .regex(
+      /^\/uploads\/[A-Za-z0-9._\-/]+$/,
+      "A backdrop must be an uploaded image (a /uploads/… path)",
+    ),
+
+  /** How strongly it shows through, 0–1. The designer's slider writes this. */
+  opacity: z.number().finite().min(0).max(1).default(0.6),
+}).nullable();
+
+export type Backdrop = z.infer<typeof backdrop>;
+
 // ---- The layout ------------------------------------------------------------
 
 export const venueLayoutSchema = z.object({
@@ -292,6 +327,14 @@ export const venueLayoutSchema = z.object({
    */
   anchor: anchor.nullable().default(null),
 
+  /**
+   * A tracing image behind the shapes. Null by default, and rendered ONLY in the
+   * designer (see venue-map.tsx's `showBackdrop`) - a buyer's seat picker never
+   * shows the promoter's working diagram. It rides in the layout so it is there
+   * again the next time the room is opened to be edited.
+   */
+  backdrop: backdrop.default(null),
+
   // 200 is well past any real venue (a stadium is a few dozen sections) and it is a
   // cap rather than no cap for the same reason polygon points are capped: a browser
   // writes this.
@@ -302,7 +345,7 @@ export type VenueLayout = z.infer<typeof venueLayoutSchema>;
 
 /** An empty room. What a new map starts as - and NEVER a parse failure's fallback. */
 export function emptyLayout(): VenueLayout {
-  return { viewBox: { w: 1000, h: 700 }, grid: 10, anchor: null, shapes: [] };
+  return { viewBox: { w: 1000, h: 700 }, grid: 10, anchor: null, backdrop: null, shapes: [] };
 }
 
 /**

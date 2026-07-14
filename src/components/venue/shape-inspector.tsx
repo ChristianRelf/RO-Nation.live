@@ -63,6 +63,43 @@ export function ShapeInspector({
         </p>
       </div>
 
+      {/* Rotation, for rects and ellipses. A polygon carries its rotation in its points -
+          you turn one by dragging its corners - so it has no single angle to set here. The
+          seat grid and the outline are spun about the same centre (see venue-map.tsx), so a
+          turned block's chairs turn with it. */}
+      {shape.geom.type !== "polygon" ? (
+        <div>
+          <label className={labelClass}>Rotation · {Math.round(shape.geom.rotation)}°</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              step={1}
+              value={shape.geom.rotation}
+              onChange={(e) =>
+                onChange({
+                  geom: { ...shape.geom, rotation: clamp(+e.target.value, -180, 180) },
+                } as Partial<Shape>)
+              }
+              className="h-1 flex-1 cursor-pointer accent-[rgb(var(--accent-rgb))]"
+            />
+            <input
+              type="number"
+              min={-180}
+              max={180}
+              value={Math.round(shape.geom.rotation)}
+              onChange={(e) =>
+                onChange({
+                  geom: { ...shape.geom, rotation: clamp(+e.target.value, -180, 180) },
+                } as Partial<Shape>)
+              }
+              className={inputClass + " w-16"}
+            />
+          </div>
+        </div>
+      ) : null}
+
       {sellable ? (
         <div>
           <label className={labelClass}>Tier</label>
