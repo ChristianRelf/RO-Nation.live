@@ -1,5 +1,5 @@
 import "server-only";
-import type { BrandAsset, Guide } from "@prisma/client";
+import type { AssetKind, BrandAsset, Guide, GuideKind } from "@prisma/client";
 import { prisma } from "./db";
 import { UPLOAD_URL_PREFIX } from "./uploads";
 
@@ -30,11 +30,13 @@ export async function guideSections(): Promise<string[]> {
  * every read-only staffer on the platform. It belongs here, once, rather than in
  * each page that lists them.
  */
-export async function publishedGuidesBySection(): Promise<
-  { section: string; guides: Guide[] }[]
-> {
+export async function publishedGuidesBySection(
+  // Which docs area to read. Defaults to GUIDE so the original /docs/guides call
+  // site is unchanged; /docs/runbooks and /docs/onboarding pass their own kind.
+  kind: GuideKind = "GUIDE",
+): Promise<{ section: string; guides: Guide[] }[]> {
   const guides = await prisma.guide.findMany({
-    where: { status: "PUBLISHED" },
+    where: { status: "PUBLISHED", kind },
     orderBy: [{ section: "asc" }, { order: "asc" }, { title: "asc" }],
   });
 
@@ -67,11 +69,14 @@ export function brandAssetHref(
     : `${UPLOAD_URL_PREFIX}/${asset.storagePath}`; // /uploads/... - served by Caddy
 }
 
-/** Every asset, grouped by category, in display order. */
-export async function brandAssetsByCategory(): Promise<
-  { category: string; assets: BrandAsset[] }[]
-> {
+/** Every asset of a kind, grouped by category, in display order. */
+export async function brandAssetsByCategory(
+  // ASSET is the brand library; TEMPLATE is the downloads area. Defaults to ASSET
+  // so the original brand-assets call sites are unchanged.
+  kind: AssetKind = "ASSET",
+): Promise<{ category: string; assets: BrandAsset[] }[]> {
   const assets = await prisma.brandAsset.findMany({
+    where: { kind },
     orderBy: [{ category: "asc" }, { order: "asc" }, { title: "asc" }],
   });
 
@@ -105,7 +110,31 @@ export async function publicBrandAssetsByCategory(): Promise<
   { category: string; assets: BrandAsset[] }[]
 > {
   const assets = await prisma.brandAsset.findMany({
-    where: { visibility: "PUBLIC" },
+    // PUBLIC brand assets only - a TEMPLATE is a working download, not press art,
+    // and has no business in the public press kit even when it is shareable.
+    where: { visibility: "PUBLIC", kind: "ASSET" },
+    orderBy: [{ category: "asc" }, { order: "asc" }, { title: "asc" }],
+  });
+
+  const groups: { category: string; assets: BrandAsset[] }[] = [];
+  for (const asset of assets) {
+    const last = groups[groups.length - 1];
+    if (last && last.category === asset.category) last.assets.push(asset);
+    else groups.push({ category: asset.category, assets: [asset] });
+  }
+  return groups;
+}
+
+/**
+ * EVERY asset, both kinds, grouped by category. The authoring list at
+ * /company/docs/assets uses this - a template must not vanish from the page that
+ * manages it just because the reader-facing brandAssetsByCategory() defaults to
+ * ASSET. The kind is shown there as a badge instead of splitting the list.
+ */
+export async function allBrandAssetsByCategory(): Promise<
+  { category: string; assets: BrandAsset[] }[]
+> {
+  const assets = await prisma.brandAsset.findMany({
     orderBy: [{ category: "asc" }, { order: "asc" }, { title: "asc" }],
   });
 

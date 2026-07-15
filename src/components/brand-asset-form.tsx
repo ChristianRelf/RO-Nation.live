@@ -70,6 +70,20 @@ export function BrandAssetForm({
       </div>
 
       <div>
+        <label className={labelClass}>Kind</label>
+        <select name="kind" defaultValue="ASSET" className={inputClass}>
+          <option value="ASSET">Brand asset (logo, artwork, guideline)</option>
+          <option value="TEMPLATE">
+            Template / download (run sheet, spreadsheet, config)
+          </option>
+        </select>
+        <p className="mt-1.5 text-xs text-faint">
+          Assets list under Brand assets; templates under Templates &amp; downloads.
+          Same upload and same viewer either way.
+        </p>
+      </div>
+
+      <div>
         <label className={labelClass}>Description</label>
         <input
           name="description"

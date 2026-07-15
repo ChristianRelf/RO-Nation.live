@@ -69,8 +69,14 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.mjs ./next.config.mjs
+# The maintenance scripts (npm run cull, purge:demo, …). The `cron` service in
+# docker-compose runs `npm run cull` from here on a daily loop, so scripts/ has to
+# ship in the image, not just live in the repo. cull.ts imports only @prisma/client
+# - no `@/` src alias - so it needs nothing from src, which the runner does not carry.
+COPY --from=build /app/scripts ./scripts
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh
+COPY docker-cron.sh ./docker-cron.sh
+RUN chmod +x docker-entrypoint.sh docker-cron.sh
 
 # Drop root. The node:20 image ships an unprivileged `node` user (uid 1000); run
 # as it so an RCE in a dependency or a container escape lands unprivileged, not as

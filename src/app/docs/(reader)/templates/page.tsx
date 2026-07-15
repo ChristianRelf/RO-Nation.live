@@ -5,26 +5,28 @@ import { AssetViewer } from "@/components/asset-viewer";
 import { DocsEmpty } from "@/components/docs-empty";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Brand assets" };
+export const metadata: Metadata = { title: "Templates & downloads" };
 
-export default async function DocsBrandAssetsPage() {
+// The downloads area. Same file machinery as the brand library - same upload
+// path, same viewer, same PUBLIC/INTERNAL split - filtered to kind TEMPLATE, so a
+// run sheet or a config sits somewhere other than the logos without a second
+// system to maintain.
+
+export default async function DocsTemplatesPage() {
   await requireDocsReader();
 
-  const groups = await brandAssetsByCategory("ASSET");
+  const groups = await brandAssetsByCategory("TEMPLATE");
 
   return (
     <div>
       <header className="max-w-2xl">
         <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
-          The brand
+          Reusable
         </p>
-        <h1 className="display mt-3 text-4xl sm:text-5xl">Brand assets</h1>
+        <h1 className="display mt-3 text-4xl sm:text-5xl">Templates &amp; downloads</h1>
         <p className="mt-4 text-sm text-muted">
-          Logos, artwork and the guidelines - shown in place, so a PDF opens right
-          here. Anything marked{" "}
-          <span className="font-semibold text-fg">internal</span> is served only to
-          somebody signed in here; its link won&rsquo;t work for anybody else, so
-          send the file, not the URL.
+          The files you copy from rather than read: run sheets, checklists you print,
+          spreadsheets, starter configs. Preview one in place, then grab it.
         </p>
       </header>
 
@@ -45,8 +47,8 @@ export default async function DocsBrandAssetsPage() {
         </div>
       ) : (
         <DocsEmpty
-          title="Nothing here yet"
-          body="The logos and guidelines are on their way up."
+          title="No templates yet"
+          body="Run sheets, checklists and starter files will land here as they are made."
         />
       )}
     </div>

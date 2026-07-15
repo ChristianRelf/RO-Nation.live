@@ -101,7 +101,22 @@
 	# break a page by blocking a resource it legitimately loads. The /uploads handler
 	# below sets its own, far stricter CSP, and because that runs later in the chain
 	# it wins for those responses - user-uploaded files stay fully locked down.
-	header {
+	# Framing is DENY'd everywhere EXCEPT the two embeddable asset paths, which the
+	# docs viewer needs to <iframe> on our own origin (a brand-guideline PDF, a
+	# template). Splitting the header block by a matcher - rather than setting DENY
+	# globally and overriding it afterwards - means no two directives ever fight over
+	# X-Frame-Options on one response, so the result is not a question of which one
+	# Caddy happens to apply last.
+	#
+	#   @embeddable  /files/* (gated, app-served) and /uploads/*.pdf (public, Caddy).
+	#   @chrome      everything else - the app's real pages, every sensitive action
+	#                on them, which must stay unframeable.
+	@embeddable path /files/* /uploads/*.pdf
+	@chrome {
+		not path /files/* /uploads/*.pdf
+	}
+
+	header @chrome {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
@@ -121,6 +136,18 @@
 		Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
 	}
 
+	# Same hardening, but framed by our OWN pages only. The CSP that carries
+	# frame-ancestors 'self' is set on the response itself - by app/files/[id] for a
+	# gated PDF, and the /uploads/*.pdf branch below for a public one - so this only
+	# relaxes X-Frame-Options from DENY to SAMEORIGIN to match. A brand PDF has
+	# nothing to clickjack; @chrome keeps the real app pages locked to DENY.
+	header @embeddable {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+	}
+
 	# Uploaded images, served straight off the shared volume - they never touch
 	# Next. This block must come BEFORE the reverse_proxy below; handle_path strips
 	# the /uploads prefix, so /uploads/rnl/x.png reads /srv/uploads/rnl/x.png.
@@ -135,8 +162,20 @@
 	handle_path /uploads/* {
 		root * /srv/uploads
 		header X-Content-Type-Options nosniff
-		header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 		header Cache-Control "public, max-age=31536000, immutable"
+
+		# A PDF here is EMBEDDED in the docs viewer, and `sandbox` (kept for everything
+		# else, esp. SVG) stops the browser's PDF viewer rendering. So .pdf drops sandbox
+		# and carries frame-ancestors 'self' so our own /docs page may frame it. A PDF
+		# cannot script our origin the way an SVG can, so this is safe for .pdf alone.
+		# (Path matched AFTER handle_path strips /uploads, so it is the bare suffix.)
+		@pdf path *.pdf
+		header @pdf Content-Security-Policy "default-src 'none'; frame-ancestors 'self'"
+		@notpdf {
+			not path *.pdf
+		}
+		header @notpdf Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+
 		file_server
 	}
 

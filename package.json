@@ -15,6 +15,7 @@
     "merch:privatise": "tsx scripts/privatise-textures.ts",
     "merch:check": "tsx --conditions=react-server scripts/check-plate.ts",
     "purge:demo": "tsx scripts/purge-demo-content.ts",
+    "cull": "tsx scripts/cull.ts",
     "partner:member": "tsx --conditions=react-server scripts/grant-partner-owner.ts",
     "postinstall": "prisma generate"
   },

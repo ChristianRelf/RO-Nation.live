@@ -77,6 +77,24 @@ export function GuideForm({
       <div className="card space-y-5 p-6">
         <h3 className="font-display text-lg">Filing &amp; visibility</h3>
 
+        <div>
+          <label className={labelClass}>Area</label>
+          <select
+            name="kind"
+            defaultValue={guide?.kind ?? "GUIDE"}
+            className={inputClass}
+          >
+            <option value="GUIDE">Guide (reference)</option>
+            <option value="RUNBOOK">Runbook (step-by-step procedure)</option>
+            <option value="ONBOARDING">Onboarding (getting started, checklists)</option>
+          </select>
+          <p className="mt-1.5 text-xs text-faint">
+            Which docs area it lists under. Runbooks are numbered procedures for the
+            night; onboarding renders <code className="font-mono">- [ ]</code> lines
+            as a checklist.
+          </p>
+        </div>
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label className={labelClass}>Section</label>

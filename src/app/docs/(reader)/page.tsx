@@ -25,9 +25,24 @@ export default async function DocsIndexPage({
       body: "Running an event, working the door, and how the systems fit together.",
     },
     {
+      href: "/docs/runbooks",
+      title: "Runbooks",
+      body: "Step-by-step procedures for the moment it matters: show-day, the door, incidents.",
+    },
+    {
+      href: "/docs/onboarding",
+      title: "Onboarding",
+      body: "New to the crew? The getting-started path, with checklists to work through.",
+    },
+    {
       href: "/docs/brandassets",
       title: "Brand assets",
-      body: "Logos, artwork and the brand guidelines. Some are shareable; some are not.",
+      body: "Logos, artwork and the brand guidelines - shown in place. Some shareable, some not.",
+    },
+    {
+      href: "/docs/templates",
+      title: "Templates & downloads",
+      body: "Reusable run sheets, checklists, spreadsheets and starter configs to copy from.",
     },
     ...(reader.canMintKeys
       ? [

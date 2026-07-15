@@ -77,8 +77,22 @@ export async function GET(
   ) as ReadableStream<Uint8Array>;
 
   // Rendered in place for a PDF or an image; downloaded for anything else.
-  const inline =
-    asset.mime === "application/pdf" || asset.mime.startsWith("image/");
+  const isPdf = asset.mime === "application/pdf";
+  const inline = isPdf || asset.mime.startsWith("image/");
+
+  // Two CSPs, because a PDF and an SVG are different threats.
+  //
+  //   PDF  - meant to be EMBEDDED in the docs viewer (an <iframe> on our own
+  //          /docs page). `sandbox` would stop the browser's PDF viewer rendering,
+  //          so it is dropped; `frame-ancestors 'self'` lets our own pages frame it
+  //          and nobody else's. A PDF cannot script our origin the way an SVG can -
+  //          its own JS runs in the viewer's sandbox, not ours.
+  //   else - an image or, dangerously, an SVG. Kept fully sandboxed: an SVG
+  //          navigated to directly would otherwise execute on RNL's own origin.
+  //          Images are shown with <img>, which framing rules never touch.
+  const csp = isPdf
+    ? "default-src 'none'; img-src 'self'; frame-ancestors 'self'"
+    : "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox";
 
   return new NextResponse(body, {
     headers: {
@@ -92,11 +106,15 @@ export async function GET(
       // hand it to the next person who asked, session or no session.
       "Cache-Control": "private, no-store, max-age=0, must-revalidate",
       Vary: "Cookie",
-      // The same two defences Caddy applies to /uploads: an SVG navigated to
-      // directly would otherwise execute on RNL's own origin.
+      // The same defence Caddy applies to /uploads: a response is never re-guessed
+      // as a type it did not declare.
       "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy":
-        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      // SAMEORIGIN, not DENY, so a PDF can be framed by our own docs viewer. The
+      // Caddyfile also relaxes the site-wide DENY for /files/* to match - both are
+      // needed, because whichever header lands last wins and neither should be the
+      // one that quietly re-locks it.
+      "X-Frame-Options": isPdf ? "SAMEORIGIN" : "DENY",
+      "Content-Security-Policy": csp,
     },
   });
 }

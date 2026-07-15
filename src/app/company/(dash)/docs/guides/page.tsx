@@ -43,6 +43,11 @@ export default async function CompanyGuidesPage() {
                   <tr key={g.id} className="hover:bg-fg/[0.02]">
                     <td className="px-5 py-4">
                       <span className="font-medium">{g.title}</span>
+                      {g.kind !== "GUIDE" ? (
+                        <span className="ml-2 inline-flex items-center rounded-full border border-accent/30 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                          {g.kind === "RUNBOOK" ? "Runbook" : "Onboarding"}
+                        </span>
+                      ) : null}
                       <span className="block text-xs text-muted">
                         {g.publishedAt
                           ? formatDateTime(g.publishedAt)

@@ -1,5 +1,11 @@
 import "server-only";
-import { EventStatus, GuideStatus, PostStatus, SeatMode } from "@prisma/client";
+import {
+  EventStatus,
+  GuideKind,
+  GuideStatus,
+  PostStatus,
+  SeatMode,
+} from "@prisma/client";
 import { prisma } from "./db";
 import { slugify } from "./utils";
 
@@ -139,9 +145,18 @@ export function readGuideForm(form: FormData) {
     section: s(form, "section") || "General",
     // Truncated, not rejected - same wall, same reasoning as a post body above.
     body: s(form, "body").slice(0, BODY_MAX),
+    // Which docs area it files under. Validated against the enum rather than cast
+    // blindly, so a hand-posted junk value lands as an ordinary GUIDE.
+    kind: readGuideKind(s(form, "kind")),
     order: parseInt(s(form, "order") || "0", 10) || 0,
     status: (s(form, "status") as GuideStatus) || GuideStatus.DRAFT,
   };
+}
+
+function readGuideKind(value: string): GuideKind {
+  return (Object.values(GuideKind) as string[]).includes(value)
+    ? (value as GuideKind)
+    : GuideKind.GUIDE;
 }
 
 /**

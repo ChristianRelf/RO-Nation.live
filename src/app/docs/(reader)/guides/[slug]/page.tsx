@@ -23,6 +23,15 @@ export async function generateMetadata({
   return { title: guide?.title ?? "Guide" };
 }
 
+// One reader for every kind - slugs are unique across the whole library, so the
+// area a guide belongs to comes from its own `kind`, and that is what the "back"
+// link and the kicker point at. Add an area, add a row here.
+const AREA: Record<string, { href: string; label: string }> = {
+  GUIDE: { href: "/docs/guides", label: "Guides" },
+  RUNBOOK: { href: "/docs/runbooks", label: "Runbooks" },
+  ONBOARDING: { href: "/docs/onboarding", label: "Onboarding" },
+};
+
 export default async function DocsGuidePage({
   params,
 }: {
@@ -37,18 +46,20 @@ export default async function DocsGuidePage({
   });
   if (!guide) notFound();
 
+  const area = AREA[guide.kind] ?? AREA.GUIDE;
+
   return (
     <article className="max-w-3xl">
       <Link
-        href="/docs/guides"
+        href={area.href}
         className="text-sm text-muted transition-colors hover:text-fg"
       >
-        ← Guides
+        ← {area.label}
       </Link>
 
       <header className="mt-6 border-b border-line pb-6">
         <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
-          {guide.section}
+          {area.label} · {guide.section}
         </p>
         <h1 className="display mt-3 text-4xl sm:text-5xl">{guide.title}</h1>
         {guide.excerpt ? (

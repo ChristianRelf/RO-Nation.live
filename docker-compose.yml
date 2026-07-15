@@ -6,6 +6,25 @@ services:
       POSTGRES_USER: ronation
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ronation}
       POSTGRES_DB: ronation
+    # Storage compression, on by config rather than by schema.
+    #
+    #   default_toast_compression=lz4  Postgres already compresses any over-size
+    #       column value (a guide body, a venue's JSON layout, a long description) into
+    #       TOAST storage - this switches that from the pglz default to LZ4, which is
+    #       faster and packs tighter, across every such value in every table without a
+    #       single ALTER. Existing rows adopt it as they are next rewritten; a one-off
+    #       `VACUUM FULL` in a maintenance window recompresses everything at once.
+    #   wal_compression=on             Compresses the write-ahead log, so both the disk
+    #       churn of normal writes and the size of every base backup drop.
+    #
+    # Both ship in the official postgres:16 image. Confirm once, if you like, with:
+    #   docker compose exec db psql -U ronation -c 'SHOW default_toast_compression'
+    command:
+      - "postgres"
+      - "-c"
+      - "default_toast_compression=lz4"
+      - "-c"
+      - "wal_compression=on"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -97,6 +116,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  # Daily maintenance. Reuses the web image (so it has tsx, the Prisma client and a
+  # DATABASE_URL) and runs `npm run cull` once a day - scripts/cull.ts - to delete the
+  # throwaway rows that would otherwise grow forever: spent SSO tickets, ended
+  # rate-limit windows, expired seat holds. No ports and no volumes; it only talks to
+  # the database. Change the hour with CULL_HOUR (UTC); see docker-cron.sh.
+  cron:
+    build: .
+    image: ronation-web:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://ronation:${POSTGRES_PASSWORD:-ronation}@db:5432/ronation?schema=public
+      CULL_HOUR: ${CULL_HOUR:-4}
+      TZ: ${TZ:-UTC}
+    entrypoint: ["./docker-cron.sh"]
 
   # TLS terminator. Gets and renews Let's Encrypt certificates automatically for
   # both hostnames, and redirects http → https. See ./Caddyfile.

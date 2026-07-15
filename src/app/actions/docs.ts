@@ -3,7 +3,7 @@
 import { rm, stat } from "fs/promises";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AssetVisibility } from "@prisma/client";
+import { AssetKind, AssetVisibility } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireCompanyUser } from "@/lib/company";
 import {
@@ -111,6 +111,13 @@ const STORAGE_PATH_RE = /^[a-z0-9-]+\/[0-9a-f-]{36}\.[a-z0-9]+$/;
 
 const ASSETS = "/company/docs/assets";
 
+/** Validate the posted kind against the enum; anything junk files as an ASSET. */
+function readAssetKind(value: string): AssetKind {
+  return (Object.values(AssetKind) as string[]).includes(value)
+    ? (value as AssetKind)
+    : AssetKind.ASSET;
+}
+
 /**
  * Take a file the upload route has already written, and file it.
  *
@@ -165,6 +172,7 @@ export async function createBrandAsset(formData: FormData) {
       category: s(formData, "category") || "Logos",
       title,
       description: s(formData, "description") || null,
+      kind: readAssetKind(s(formData, "kind")),
       visibility,
       storagePath,
       filename: filename || storagePath,
@@ -202,6 +210,10 @@ export async function updateBrandAsset(formData: FormData) {
       category: s(formData, "category") || "Logos",
       title,
       description: s(formData, "description") || null,
+      // Metadata only - kind just re-files it between the two reader pages, it does
+      // not touch which volume the bytes are on (that is visibility, which stays
+      // fixed). So unlike visibility, this is safe to change after upload.
+      kind: readAssetKind(s(formData, "kind")),
       order: parseInt(s(formData, "order") || "0", 10) || 0,
     },
   });

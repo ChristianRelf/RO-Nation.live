@@ -3,7 +3,11 @@ import { AdminHeader } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { BrandAssetForm } from "@/components/brand-asset-form";
 import { createBrandAsset, deleteBrandAsset } from "@/app/actions/docs";
-import { assetCategories, brandAssetsByCategory, brandAssetHref } from "@/lib/docs";
+import {
+  allBrandAssetsByCategory,
+  assetCategories,
+  brandAssetHref,
+} from "@/lib/docs";
 import { formatBytes } from "@/lib/format";
 import { requireCompanyUser } from "@/lib/company";
 
@@ -18,7 +22,7 @@ export default async function CompanyAssetsPage({
   await requireCompanyUser();
 
   const [groups, categories] = await Promise.all([
-    brandAssetsByCategory(),
+    allBrandAssetsByCategory(),
     assetCategories(),
   ]);
 
@@ -61,6 +65,11 @@ export default async function CompanyAssetsPage({
                         >
                           {a.visibility}
                         </span>
+                        {a.kind === "TEMPLATE" ? (
+                          <span className="ml-2 inline-flex items-center rounded-full border border-accent/30 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                            Template
+                          </span>
+                        ) : null}
                       </p>
                       <p className="mt-1 text-xs text-faint">
                         {a.filename} · {a.mime} · {formatBytes(a.size)} · #

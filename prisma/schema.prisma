@@ -1196,6 +1196,16 @@ enum GuideStatus {
   ARCHIVED
 }
 
+/// Which docs AREA a guide belongs to. One model, one editor, one reader for all
+/// three - the kind only decides which heading in the nav it files under, so
+/// adding an area is a value here and a page, never a parallel table. Existing
+/// rows default to GUIDE, so this column is a safe additive `db push`.
+enum GuideKind {
+  GUIDE
+  RUNBOOK
+  ONBOARDING
+}
+
 model Guide {
   id String @id @default(cuid())
 
@@ -1211,6 +1221,10 @@ model Guide {
   /// would make adding one a deploy.
   section String @default("General")
 
+  /// Which docs area it appears under - Guides, Runbooks, or Onboarding. See
+  /// GuideKind. Existing rows are GUIDE.
+  kind GuideKind @default(GUIDE)
+
   status GuideStatus @default(DRAFT)
 
   /// Ascending within a section. Ties break on title.
@@ -1222,7 +1236,7 @@ model Guide {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  @@index([status, section, order])
+  @@index([kind, status, section, order])
   @@map("guides")
 }
 
@@ -1258,6 +1272,16 @@ enum AssetVisibility {
   INTERNAL
 }
 
+/// What a file IS, for filing. ASSET is the brand library (logos, artwork,
+/// guideline PDFs); TEMPLATE is a reusable download (a run sheet, a spreadsheet,
+/// a config). Same upload path, same viewer - the kind only chooses which docs
+/// page it lists on. Existing rows default to ASSET, so this is a safe additive
+/// `db push`.
+enum AssetKind {
+  ASSET
+  TEMPLATE
+}
+
 model BrandAsset {
   id String @id @default(cuid())
 
@@ -1265,6 +1289,10 @@ model BrandAsset {
   category    String          @default("Logos")
   title       String
   description String?         @db.Text
+
+  /// Brand asset, or reusable template/download. See AssetKind. Existing rows
+  /// are ASSET.
+  kind AssetKind @default(ASSET)
   visibility  AssetVisibility @default(PUBLIC)
 
   /// "rnl/<uuid>.pdf" - relative to the root `visibility` selects. Never a URL,
@@ -1290,7 +1318,7 @@ model BrandAsset {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@index([visibility, category, order])
+  @@index([kind, visibility, category, order])
   @@map("brand_assets")
 }
 

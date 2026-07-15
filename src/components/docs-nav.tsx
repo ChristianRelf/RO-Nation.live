@@ -15,7 +15,10 @@ export function DocsNav({ showApi }: { showApi: boolean }) {
   const links = [
     { label: "Overview", href: "/docs" },
     { label: "Guides", href: "/docs/guides" },
+    { label: "Runbooks", href: "/docs/runbooks" },
+    { label: "Onboarding", href: "/docs/onboarding" },
     { label: "Brand assets", href: "/docs/brandassets" },
+    { label: "Templates", href: "/docs/templates" },
     // Only for somebody who could actually hold a key. Hiding it is courtesy -
     // requireDocsUser() on the page is the lock. See lib/docs-guard.ts.
     ...(showApi ? [{ label: "Ticket API", href: "/docs/api" }] : []),
