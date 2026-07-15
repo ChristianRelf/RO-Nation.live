@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireDocsReader } from "@/lib/docs-guard";
-import { brandAssetsByCategory } from "@/lib/docs";
+import { brandLibraryGroups } from "@/lib/docs";
 import { AssetViewer } from "@/components/asset-viewer";
 import { DocsEmpty } from "@/components/docs-empty";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Brand assets" };
 export default async function DocsBrandAssetsPage() {
   await requireDocsReader();
 
-  const groups = await brandAssetsByCategory("ASSET");
+  const groups = await brandLibraryGroups();
 
   return (
     <div>

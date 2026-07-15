@@ -80,14 +80,33 @@ export const site = {
     "RO. Nation LIVE is a Roblox event management group. It produces live shows, showcases and tournaments inside Roblox - building the venue, running the production and handling the ticketing end to end. Tickets are free and tied to a Roblox account, capacity is enforced at the door by in-experience verification rather than by screenshots, and partner groups can run their own branded site and box office on the same platform.",
 };
 
-export const nav = [
+export type NavItem = {
+  label: string;
+  href: string;
+  /**
+   * Render as a plain <a> (a full browser navigation), never a client-side <Link>.
+   *
+   * For a link the middleware hands to ANOTHER host. A <Link> to /merch triggers a
+   * client RSC fetch of /merch, which the middleware answers with a 307 to
+   * merch.ronation.live; the browser then tries that RSC fetch cross-origin, it is
+   * blocked, and Next logs "Failed to fetch RSC payload ... Falling back to browser
+   * navigation" before doing the hard nav anyway. A plain <a> skips the whole detour:
+   * no prefetch, no failed fetch, no console noise - just the navigation that was
+   * always going to happen.
+   */
+  hardNav?: boolean;
+};
+
+export const nav: NavItem[] = [
   { label: "Events", href: "/events" },
   // The shop lives on merch.ronation.live, and this is deliberately the RELATIVE path
   // rather than that absolute origin. The middleware already hands /merch over to the
   // merch host (src/middleware.ts), so one link works everywhere: on the live site it
   // redirects, and in local dev - where every host is served from one origin - it just
   // renders. An absolute URL here would be a second place for the host to be wrong.
-  { label: "Merch", href: "/merch" },
+  //
+  // hardNav because it crosses hosts - see NavItem above.
+  { label: "Merch", href: "/merch", hardNav: true },
   { label: "Blog", href: "/blog" },
   { label: "Careers", href: "/careers" },
   { label: "About", href: "/about" },

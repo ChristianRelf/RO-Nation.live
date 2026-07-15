@@ -14,29 +14,37 @@ const socials = (Object.keys(SOCIAL_LABELS) as Social[])
   .map((key) => ({ key, href: site.socials[key] }))
   .filter((s): s is { key: Social; href: string } => Boolean(s.href));
 
-// A glyph per social. Only discord and roblox are ever guaranteed (see lib/site.ts); the
-// rest carry a plain fallback so adding one later is still one line in the record and needs
-// no new artwork here.
+// The real, official marks (simple-icons) for the socials RNL actually has, so the footer
+// shows Discord's and Roblox's own logos rather than a hand-drawn lookalike. Only discord and
+// roblox are ever guaranteed (see lib/site.ts); the rest carry a plain outward-arrow fallback,
+// so adding one later is still one line in the record and needs no new artwork here.
+const SOCIAL_PATHS: Partial<Record<Social, string>> = {
+  discord:
+    "M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z",
+  roblox:
+    "M18.926 23.998 0 18.892 5.075.002 24 5.108ZM15.348 10.09l-5.282-1.453-1.414 5.273 5.282 1.453z",
+};
+
 function SocialIcon({ social }: { social: Social }) {
-  const common = { viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": true };
-  if (social === "discord") {
+  const path = SOCIAL_PATHS[social];
+  if (path) {
     return (
-      <svg {...common} className="h-4 w-4">
-        <path d="M20.3 4.5A19 19 0 0 0 15.5 3l-.24.5a17.6 17.6 0 0 1 4 1.35 16.7 16.7 0 0 0-14.6 0 17.6 17.6 0 0 1 4-1.35L8.5 3A19 19 0 0 0 3.7 4.5C1 8.6.27 12.6.6 16.6A19.2 19.2 0 0 0 6.4 19.5l.7-1a12.4 12.4 0 0 1-2-.95l.5-.4a13.3 13.3 0 0 0 11.3 0l.5.4c-.63.37-1.3.68-2 .95l.7 1a19 19 0 0 0 5.8-2.9c.4-4.7-.68-8.66-3.6-12.6ZM8.9 14.4c-.95 0-1.73-.87-1.73-1.95S8.06 10.5 9 10.5s1.74.88 1.73 1.95c0 1.08-.78 1.95-1.73 1.95Zm6.3 0c-.95 0-1.73-.87-1.73-1.95s.78-1.95 1.73-1.95 1.74.88 1.73 1.95c0 1.08-.78 1.95-1.73 1.95Z" />
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-4 w-4">
+        <path d={path} />
       </svg>
     );
   }
-  if (social === "roblox") {
-    return (
-      <svg {...common} className="h-4 w-4">
-        <path d="M4.9 2 2 15.1 19.1 22 22 8.9 4.9 2Zm7.75 12.2-3.85-1.55.9-3.85 3.85 1.55-.9 3.85Z" />
-      </svg>
-    );
-  }
-  // x / youtube / tiktok, if ever added: an outward arrow, honest about being a link out.
+  // x / youtube / tiktok, if ever added without a mark here: an outward arrow, honest about
+  // being a link out.
   return (
-    <svg {...common} className="h-4 w-4">
-      <path d="M7 17 17 7M8 7h9v9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-4 w-4">
+      <path
+        d="M7 17 17 7M8 7h9v9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -48,8 +56,9 @@ const columns = [
       { label: "Upcoming events", href: "/events" },
       { label: "My tickets", href: "/tickets" },
       { label: "My account", href: "/account" },
-      // Handed over to merch.ronation.live by the middleware - see the note on `nav`.
-      { label: "Merch", href: "/merch" },
+      // Handed over to merch.ronation.live by the middleware - hardNav so it does a full
+      // browser navigation rather than a client RSC fetch that redirects off-origin.
+      { label: "Merch", href: "/merch", hardNav: true },
       { label: "Blog", href: "/blog" },
       { label: "How ticketing works", href: "/about#ticketing" },
       { label: "FAQ", href: "/faq" },
@@ -152,16 +161,24 @@ export function SiteFooter() {
           <div key={col.title}>
             <p className="kicker">{col.title}</p>
             <ul className="mt-4 space-y-3">
-              {col.links.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    href={l.href}
-                    className="link-underline text-sm text-muted transition-colors hover:text-fg"
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
+              {col.links.map((l) => {
+                const cls =
+                  "link-underline text-sm text-muted transition-colors hover:text-fg";
+                return (
+                  <li key={l.href}>
+                    {"hardNav" in l && l.hardNav ? (
+                      // Cross-host (Merch) - full navigation, no client RSC fetch.
+                      <a href={l.href} className={cls}>
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link href={l.href} className={cls}>
+                        {l.label}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
@@ -171,9 +188,12 @@ export function SiteFooter() {
           bleeds off the edge on purpose. It is the one place the brand gets to be big. */}
       <div
         aria-hidden
-        className="shell relative select-none overflow-hidden pb-8"
+        className="shell relative select-none overflow-hidden pb-8 pt-3"
       >
-        <p className="display whitespace-nowrap text-[clamp(2.5rem,10vw,8rem)] leading-[0.78] tracking-tight text-fg/[0.06]">
+        {/* leading-none, not tighter: Anton's caps are tall, and a sub-1 line-height under the
+            overflow-hidden (which is there to clip the horizontal bleed) shaved the tops off.
+            The small pt gives the ascenders their last pixel of room. */}
+        <p className="display whitespace-nowrap text-[clamp(2.5rem,10vw,8rem)] leading-none tracking-tight text-fg/[0.06]">
           RO. NATION LIVE
         </p>
       </div>

@@ -1,5 +1,4 @@
-import type { BrandAsset } from "@prisma/client";
-import { brandAssetHref } from "@/lib/docs";
+import type { BrandAssetView } from "@/lib/docs";
 import { formatBytes } from "@/lib/format";
 import { PdfEmbed } from "./pdf-embed";
 
@@ -24,11 +23,12 @@ import { PdfEmbed } from "./pdf-embed";
 // load-bearing part and are always present; the preview is the enhancement.
 //
 // Shared component, so the brand library, the templates area and the public press
-// kit cannot drift into three ways of drawing one file. The `href` ALWAYS comes from
-// brandAssetHref() - the one place that gets the PUBLIC/INTERNAL split right.
+// kit cannot drift into three ways of drawing one file. It draws a BrandAssetView - the
+// href is RESOLVED before it gets here (by brandAssetHref for an upload, by the file's own
+// public path for a base preset), so this never builds a URL and both kinds render the same.
 
-export function AssetViewer({ asset }: { asset: BrandAsset }) {
-  const href = brandAssetHref(asset);
+export function AssetViewer({ asset }: { asset: BrandAssetView }) {
+  const href = asset.href;
   const isImage = asset.mime.startsWith("image/");
   const isPdf = asset.mime === "application/pdf";
 

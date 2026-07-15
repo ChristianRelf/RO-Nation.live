@@ -187,9 +187,10 @@ export function AccountHome({
               <Link href="/tickets" className="link-underline text-accent">
                 My tickets →
               </Link>
-              <Link href="/merch" className="link-underline text-accent">
+              {/* Cross-host - plain <a> so it hard-navigates instead of a failing RSC fetch. */}
+              <a href="/merch" className="link-underline text-accent">
                 Shop merch →
-              </Link>
+              </a>
             </div>
           </div>
         </Section>

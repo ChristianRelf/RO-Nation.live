@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AssetViewer } from "@/components/asset-viewer";
 import { Reveal } from "@/components/reveal";
 import { Kicker, SectionHeading } from "@/components/ui";
-import { publicBrandAssetsByCategory } from "@/lib/docs";
+import { publicBrandLibraryGroups } from "@/lib/docs";
 import { formatDate } from "@/lib/format";
 import { getPublishedPosts } from "@/lib/queries";
 import { site, SOCIAL_LABELS, type Social } from "@/lib/site";
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 export default async function PressPage() {
   const [stats, groups, posts] = await Promise.all([
     getSiteStats(),
-    publicBrandAssetsByCategory(),
+    publicBrandLibraryGroups(),
     getPublishedPosts(null, 4),
   ]);
 
@@ -158,7 +158,7 @@ export default async function PressPage() {
 
           <div className="mt-8 space-y-12">
             {groups.map((g) => {
-              // Belt and braces. publicBrandAssetsByCategory() already filters to PUBLIC,
+              // Belt and braces. publicBrandLibraryGroups() already filters to PUBLIC,
               // and this is the same check again - because the cost of it is nothing and
               // the cost of a future "let's just list them all" edit to that query is an
               // internal brand-guideline PDF on a public URL, permanently, in somebody's

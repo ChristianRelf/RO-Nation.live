@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireDocsReader } from "@/lib/docs-guard";
-import { brandAssetsByCategory } from "@/lib/docs";
+import { templateGroups } from "@/lib/docs";
 import { AssetViewer } from "@/components/asset-viewer";
 import { DocsEmpty } from "@/components/docs-empty";
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Templates & downloads" };
 export default async function DocsTemplatesPage() {
   await requireDocsReader();
 
-  const groups = await brandAssetsByCategory("TEMPLATE");
+  const groups = await templateGroups();
 
   return (
     <div>

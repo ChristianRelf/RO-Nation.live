@@ -54,15 +54,18 @@ export function HeaderClient({
         <nav className="hidden items-center gap-8 md:flex">
           {nav.map((item) => {
             const active = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "link-underline text-sm font-medium transition-colors",
-                  active ? "text-fg" : "text-muted hover:text-fg",
-                )}
-              >
+            const className = cn(
+              "link-underline text-sm font-medium transition-colors",
+              active ? "text-fg" : "text-muted hover:text-fg",
+            );
+            // A cross-host link (Merch) hard-navigates - a <Link> would try a
+            // client RSC fetch that the middleware redirects off-origin. See NavItem.
+            return item.hardNav ? (
+              <a key={item.href} href={item.href} className={className}>
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.href} href={item.href} className={className}>
                 {item.label}
               </Link>
             );
@@ -128,15 +131,19 @@ export function HeaderClient({
         style={{ maxHeight: open ? 460 : 0, transition: "max-height .35s ease" }}
       >
         <div className="shell flex flex-col gap-1 py-4">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg px-3 py-3 text-base font-medium text-fg hover:bg-surface"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {nav.map((item) => {
+            const className =
+              "rounded-lg px-3 py-3 text-base font-medium text-fg hover:bg-surface";
+            return item.hardNav ? (
+              <a key={item.href} href={item.href} className={className}>
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.href} href={item.href} className={className}>
+                {item.label}
+              </Link>
+            );
+          })}
           <div className="my-2 h-px bg-line" />
           {account ? (
             <>
