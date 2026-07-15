@@ -52,11 +52,11 @@ services:
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       DISCORD_MANAGER_IDS: ${DISCORD_MANAGER_IDS:-}
       DISCORD_STAFF_IDS: ${DISCORD_STAFF_IDS:-}
-      # Read by prisma/seed.ts, which the entrypoint runs on every boot. The
-      # seed is the ONLY thing that creates the PartnerMember row granting
-      # access to portal.ronation.live/sleeptokenro - so without these two here,
-      # the variables sit in .env, never reach the container, and the portal is
-      # unreachable for everybody. The seed's own upsert is idempotent.
+      # DEPRECATED - no longer read by anything. These fed prisma/seed.ts, which
+      # created the first PartnerMember row on every boot. That seed is gone; seat a
+      # partner's first owner with `npm run partner:member` instead (see .env.example
+      # and scripts/grant-partner-owner.ts). Kept here only so a .env that still sets
+      # them does not error; safe to drop.
       STRO_OWNER_ROBLOX_ID: ${STRO_OWNER_ROBLOX_ID:-}
       STRO_OWNER_NAME: ${STRO_OWNER_NAME:-}
       # Where uploaded images are written. Must match the volume mount below and

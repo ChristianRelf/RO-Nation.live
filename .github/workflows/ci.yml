@@ -1,0 +1,60 @@
+name: CI
+
+# The gate next.config.mjs's `eslint.ignoreDuringBuilds: true` leaves un-enforced:
+# typecheck, lint and the ticketing regression tests, on every push and PR.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    # A real Postgres for the DB-backed tests. The suite's global-setup runs
+    # `prisma db push` against this before any test, exactly as it does locally.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: rnl
+          POSTGRES_PASSWORD: rnl
+          POSTGRES_DB: rnl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rnl"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL: postgresql://rnl:rnl@localhost:5432/rnl
+      # A real, non-default secret - so nothing trips the production fail-fast
+      # (src/instrumentation.ts) and any session in a test is signable.
+      AUTH_SECRET: ci-secret-not-a-default-0123456789
+      # The paid-tier idempotency fixtures need Robux sales switched on.
+      ROBUX_TICKETS_ENABLED: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test

@@ -16,8 +16,10 @@
  * to publish. The seed is gone. This is the half of it that was actually load-bearing,
  * kept as an explicit act you run on purpose rather than a side-effect of a restart.
  *
- * It is a BRIDGE, not the destination: /company/partners is the real tool. Until that
- * ships, this is the only way to onboard a partner without hand-writing SQL.
+ * /company/partners is the day-to-day tool now, and a partner's own owners manage
+ * their crew from portal.ronation.live/<slug>/members. This script stays as the
+ * no-UI bootstrap: a way to seat a partner's very first owner - or repair access
+ * when nobody can sign in - from the command line, without hand-writing SQL.
  *
  * ---- What it does ----------------------------------------------------------
  *

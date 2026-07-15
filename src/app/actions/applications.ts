@@ -4,6 +4,8 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
+import { notify } from "@/lib/notify";
+import { partnerPortalUrl } from "@/lib/partners/urls";
 
 const schema = z.object({
   careerId: z.string().min(1),
@@ -53,6 +55,26 @@ export async function submitApplication(formData: FormData) {
       portfolio: data.portfolio ?? null,
       message: data.message,
     },
+  });
+
+  // Route the ping to whoever owns the role: the partner's channel when the career
+  // carries a partnerId (that same denormalised scope decides the inbox above), else
+  // RNL's. The link goes to the matching applications dashboard - the partner's on
+  // the portal host, RNL's on the main site. Fire-and-forget; the redirect below
+  // throws, so this is started first and never awaited.
+  void notify({
+    partnerId: career.partnerId,
+    title: `New application · ${career.title}`,
+    description: data.message,
+    url: career.partnerId
+      ? partnerPortalUrl(career.partnerId, "/studio/applications")
+      : "/company/applications",
+    fields: [
+      { name: "Roblox", value: data.robloxUsername, inline: true },
+      ...(data.discord ? [{ name: "Discord", value: data.discord, inline: true }] : []),
+      ...(data.timezone ? [{ name: "Timezone", value: data.timezone, inline: true }] : []),
+      ...(data.portfolio ? [{ name: "Portfolio", value: data.portfolio }] : []),
+    ],
   });
 
   redirect(`/careers/${data.slug}?applied=1#apply`);

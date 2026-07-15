@@ -31,6 +31,16 @@ export const env = {
   gameApiKey: process.env.GAME_API_KEY || "",
   allowDevLogin: process.env.ALLOW_DEV_LOGIN === "true",
 
+  // ---- Notifications -----------------------------------------------
+  // The Discord channel new applications, enquiries and ticket reservations are
+  // pushed to. A webhook URL is a secret, so it lives in the environment, never in
+  // the code registry. Absent → notifications silently no-op, which is the default
+  // in dev and a safe default in prod. Per-partner overrides follow the
+  // DISCORD_WEBHOOK_URL_<SLUG> convention and are resolved straight from
+  // process.env in lib/notify.ts, because a partner slug cannot be a static key
+  // here. See lib/notify.ts.
+  discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL || "",
+
   // ---- Paid ticketing (Robux) --------------------------------------
   //
   // THE MASTER SWITCH. May this site sell a ticket for Robux at all? Off by default.

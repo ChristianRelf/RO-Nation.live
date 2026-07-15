@@ -16,6 +16,9 @@ import {
 import { offersForEvent } from "@/lib/tickets/offers";
 import { anyAvailable } from "@/lib/tickets/pricing";
 import { site } from "@/lib/site";
+import { env } from "@/lib/env";
+import { absoluteUrl } from "@/lib/url";
+import { JsonLd } from "@/components/json-ld";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +29,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const event = await getEventBySlug(null, params.slug);
   if (!event) return { title: "Event not found" };
+  const description = event.tagline ?? event.description.slice(0, 150);
+  const path = `/events/${event.slug}`;
   return {
     title: event.title,
-    description: event.tagline ?? event.description.slice(0, 150),
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      title: event.title,
+      description,
+      type: "website",
+      url: path,
+      // The real poster, made absolute for the crawler. No thumbnail → this key
+      // is absent and the site-wide branded card (app/opengraph-image) fills in.
+      images: event.thumbnailUrl ? [absoluteUrl(event.thumbnailUrl)] : undefined,
+    },
   };
 }
 
@@ -73,8 +88,43 @@ export default async function EventPage({
   const { day, month } = dateBlock(event.startsAt);
   const error = searchParams.error ? reserveErrors[searchParams.error] : null;
 
+  // Structured data, every field read from the real row. RNL runs inside Roblox,
+  // so the event is an online one with a VirtualLocation - the experience URL when
+  // there is one, the event page otherwise. A price is asserted only when entry is
+  // genuinely free; a Robux-priced tier is left without a price rather than dressed
+  // up in a currency it is not, in keeping with the rest of the site.
+  const eventLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    startDate: event.startsAt.toISOString(),
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    location: {
+      "@type": "VirtualLocation",
+      url: event.placeUrl || absoluteUrl(`/events/${event.slug}`),
+    },
+    image: event.thumbnailUrl ? [absoluteUrl(event.thumbnailUrl)] : undefined,
+    description: event.tagline ?? event.description.slice(0, 300),
+    url: absoluteUrl(`/events/${event.slug}`),
+    organizer: {
+      "@type": "Organization",
+      name: site.name,
+      url: env.siteUrl,
+    },
+    offers: {
+      "@type": "Offer",
+      url: absoluteUrl(`/events/${event.slug}`),
+      availability: soldOut
+        ? "https://schema.org/SoldOut"
+        : "https://schema.org/InStock",
+      ...(allFree ? { price: "0", priceCurrency: "USD" } : {}),
+    },
+  };
+
   return (
     <article>
+      <JsonLd data={eventLd} />
       {/* Banner */}
       <div className="relative">
         <div className="relative h-[42vh] min-h-[320px] w-full overflow-hidden sm:h-[52vh]">

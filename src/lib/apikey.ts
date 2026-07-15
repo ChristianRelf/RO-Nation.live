@@ -195,7 +195,10 @@ export async function resolveApiKey(req: Request): Promise<ApiCaller | null> {
       id: null,
       name: "GAME_API_KEY (root)",
       // Unscoped - the only caller that is, and the reason this key should not
-      // outlive the migration of RNL's own game onto a minted one.
+      // outlive the migration of RNL's own game onto a minted one. It also has no
+      // row id, so the API rate limiter (lib/api/guard.ts) can only bucket it under
+      // a shared "root" key: every caller holding it shares one budget and throttles
+      // the others. One more reason to mint a real key and retire this.
       scope: undefined,
       root: true,
       scopes: new Set(ALL_SCOPES),

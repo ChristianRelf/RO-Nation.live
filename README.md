@@ -292,8 +292,10 @@ session cookie, so a change lands on its own with no redeploy.
 Set with `COMPANY_MIN_RANK`, `PARTNER_STAFF_RANK`, `SHASHA_MIN_RANK` and
 `SHASHA_MANAGER_RANK` - see `.env.example`.
 
-A **partner's own crew** get in the other way: an explicit `PartnerMember` row
-(seeded from `STRO_OWNER_ROBLOX_ID`). They are not in RNL's group at all, and
+A **partner's own crew** get in the other way: an explicit `PartnerMember` row -
+their owners manage crew from `portal.ronation.live/<slug>/members`, and the very
+first owner is seated with `npm run partner:member` (the old boot-time seed,
+`STRO_OWNER_ROBLOX_ID`, is gone). They are not in RNL's group at all, and
 RNL deliberately does **not** rank off *their* group - RNL doesn't own it, so
 ranking off it would let a partner mint access to RNL's infrastructure by
 promoting whoever they liked.

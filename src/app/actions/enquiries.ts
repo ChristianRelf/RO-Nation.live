@@ -5,6 +5,8 @@ import { z } from "zod";
 import { EnquiryKind } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
+import { notify } from "@/lib/notify";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Somebody filling in the contact form.
 //
@@ -107,6 +109,17 @@ export async function submitEnquiry(formData: FormData) {
   const session = await getUserSession();
   if (!session) back(from, "error=signin");
 
+  // A burst guard, on top of the sign-in and the open-enquiry cap below. The comment
+  // at the top of this file used to say a rate limiter needed "state we do not have
+  // anywhere to keep" - we do, it is Postgres (see lib/rate-limit.ts). Generous on
+  // purpose: a real person does not send five enquiries in ten minutes; a script does.
+  // Reuses the existing "too many" message, which is exactly what this is.
+  const rl = await rateLimit(`enquiry:${session.uid}`, {
+    limit: 5,
+    windowSeconds: 600,
+  });
+  if (!rl.ok) back(from, "error=toomany");
+
   const parsed = schema.safeParse({
     kind: formData.get("kind"),
     name: formData.get("name"),
@@ -157,6 +170,23 @@ export async function submitEnquiry(formData: FormData) {
       eventDate: data.eventDate || null,
       scale: data.scale || null,
     },
+  });
+
+  // Ping the inbox. Enquiries are always RNL's (they have no partner scope), so
+  // this goes to RNL's channel. Fire-and-forget: notify() never throws and is not
+  // awaited, so a down webhook cannot turn a saved enquiry into an error - and it
+  // is started before the redirect below, which throws.
+  void notify({
+    partnerId: null,
+    title: `New enquiry · ${data.subject}`,
+    description: data.message,
+    url: "/company/enquiries",
+    fields: [
+      { name: "From", value: data.name, inline: true },
+      { name: "Kind", value: String(data.kind), inline: true },
+      ...(email ? [{ name: "Email", value: email, inline: true }] : []),
+      ...(discord ? [{ name: "Discord", value: discord, inline: true }] : []),
+    ],
   });
 
   back(from, "sent=1");

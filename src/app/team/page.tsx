@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Meet the crew",
   description:
     "The builders, hosts, editors and moderators behind RO. Nation LIVE.",
+  alternates: { canonical: "/team" },
 };
 
 // ---- The roster that used to be here --------------------------------------

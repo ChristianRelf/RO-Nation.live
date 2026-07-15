@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
-import { partnerSiteRoute } from "@/lib/partners/urls";
+import { partnerSiteRoute, partnerPortalUrl } from "@/lib/partners/urls";
 import { issueTicket } from "@/lib/tickets/issue";
+import { notify } from "@/lib/notify";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Ticketing, for RNL's events and every partner's - the WEBSITE's half of it.
 //
@@ -65,7 +67,9 @@ export type ReserveState =
         /** Their seat hold went stale or was spent. Send them back to the map. */
         | "bad_intent"
         /** The seat went, and the tier has nothing left to move them to. */
-        | "seat_taken";
+        | "seat_taken"
+        /** Too many reservation attempts from this holder in a short window. */
+        | "rate_limited";
     };
 
 const fail = (error: Extract<ReserveState, { ok: false }>["error"]) =>
@@ -140,6 +144,15 @@ export async function reserveTicket(
   const session = await getUserSession();
   if (!session) return fail("auth");
 
+  // A burst guard, keyed on the holder. Reserving is a once-per-show act for a real
+  // person, so a generous ceiling only ever catches a script hammering the endpoint -
+  // it never touches a genuine buyer working through the modal. See lib/rate-limit.ts.
+  const rl = await rateLimit(`reserve:${session.uid}`, {
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (!rl.ok) return fail("rate_limited");
+
   // The "purchase" gate: you must accept the ticket terms & conditions.
   if (!acceptedTerms) return fail("terms");
 
@@ -150,7 +163,9 @@ export async function reserveTicket(
   // before we bother it.
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { id: true },
+    // title + partnerId are for the reservation notification below; issueTicket
+    // still does all the deciding from the id alone.
+    select: { id: true, title: true, partnerId: true },
   });
   if (!event) return fail("unavailable");
 
@@ -190,6 +205,26 @@ export async function reserveTicket(
     }
     return fail(reason);
   }
+
+  // Tell the box office a seat just went. Routes to the event's partner channel
+  // when it has one, else RNL's; the link points at where staff manage that show -
+  // the partner's shows list on the portal host, RNL's per-event attendees page.
+  // Fire-and-forget, exactly like the other public writes: notify() never throws
+  // and is not awaited, so it adds nothing to the checkout the buyer is watching.
+  void notify({
+    partnerId: event.partnerId,
+    title: `Ticket reserved · ${event.title}`,
+    url: event.partnerId
+      ? partnerPortalUrl(event.partnerId, "/shows")
+      : `/company/events/${event.id}/attendees`,
+    fields: [
+      {
+        name: "Holder",
+        value: `${session.displayName} (@${session.username})`,
+        inline: true,
+      },
+    ],
+  });
 
   // NO refreshTicketViews() HERE. See the long note above the function - revalidating from
   // this action re-renders the checkout page the buyer is standing on, which redirects to

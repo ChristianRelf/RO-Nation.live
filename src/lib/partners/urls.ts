@@ -33,6 +33,19 @@ export function partnerPortalPath(slug: string, sub = "") {
   return `/${slug}${sub}`;
 }
 
+/**
+ * Absolute URL of a partner's portal page, on the portal host:
+ * https://portal.ronation.live/<slug><sub> (http://portal.localhost:3000/… in
+ * dev). For links that LEAVE the app - a Discord embed pointing a partner's crew
+ * at the row - where a site-relative path would resolve against the wrong host.
+ */
+export function partnerPortalUrl(slug: string, sub = "") {
+  const url = new URL(env.siteUrl);
+  url.hostname = `portal.${url.hostname.replace(/^www\./, "")}`;
+  url.pathname = partnerPortalPath(slug, sub);
+  return url.toString();
+}
+
 /** Internal path Next renders that portal at. For revalidatePath ONLY. */
 export function partnerPortalRoute(slug: string, sub = "") {
   return `/pp/${slug}${sub}`;

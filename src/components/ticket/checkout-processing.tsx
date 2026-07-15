@@ -79,6 +79,7 @@ const ERRORS: Record<string, string> = {
   bad_intent: "That seat hold is no longer valid. Pick your seat again.",
   seat_taken:
     "The last seats in that tier went while you were checking out. Pick another tier.",
+  rate_limited: "You're going too fast. Wait a moment and try again.",
 };
 
 export function CheckoutProcessing({

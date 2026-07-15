@@ -13,6 +13,10 @@ const nextConfig = {
     ],
   },
   experimental: {
+    // Enables src/instrumentation.ts (register()), which fail-fasts on insecure
+    // production config at server startup. Stable in Next 15; still behind this
+    // flag in 14.2.
+    instrumentationHook: true,
     // sharp is a native module: it loads a platform-specific .node binary at runtime.
     // Webpack cannot bundle that - it would either inline the JS and lose the binary, or
     // fail the build outright - so it is left as a real require() out of node_modules.

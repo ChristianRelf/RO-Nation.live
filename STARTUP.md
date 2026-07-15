@@ -207,7 +207,10 @@ Ranked members see a **Company** link in their account menu once signed in.
 A partner (Sleep Token) runs their own site from
 `portal.ronation.live/<slug>/studio` - their shows and ticket pricing, their blog,
 their careers and applications, and the words on their homepage. Their crew get in
-via a `PartnerMember` row (seeded from `STRO_OWNER_ROBLOX_ID`).
+via a `PartnerMember` row: a partner's owners add and remove their own crew from
+`portal.ronation.live/<slug>/members`, and RNL manages partners from
+`/company/partners`. A partner's very first owner is seated with
+`npm run partner:member` - the old boot-time seed (`STRO_OWNER_ROBLOX_ID`) is gone.
 
 **Rank 250+ in RNL's group opens every partner's portal and studio**, with no row
 needed. That is the most powerful grant in the system - it reaches into orgs RNL

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Kicker, SectionHeading } from "@/components/ui";
+import { JsonLd } from "@/components/json-ld";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "FAQ",
   description:
     "Answers to common questions about RO. Nation LIVE tickets, entry, Roblox sign-in, events and joining the crew.",
+  alternates: { canonical: "/faq" },
 };
 
 const groups = [
@@ -89,8 +91,23 @@ const groups = [
 ];
 
 export default function FaqPage() {
+  // The whole page's Q&A, flattened out of the same `groups` the page renders -
+  // one source, so the structured data cannot drift from what a visitor reads.
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: groups.flatMap((g) =>
+      g.faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    ),
+  };
+
   return (
     <div className="relative">
+      <JsonLd data={faqLd} />
       <div className="accent-glow pointer-events-none absolute inset-x-0 top-0 h-64" />
       <div className="shell relative pt-16 sm:pt-20">
         <Kicker>Help centre</Kicker>

@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import type { ApiKeyScope } from "@prisma/client";
 import { resolveApiKey, hasScope, type ApiCaller } from "@/lib/apikey";
+import { rateLimit } from "@/lib/rate-limit";
 
 // The front door of /api/v1. Every route starts here, and no route authenticates
 // itself: a route that does its own auth is a route that will one day forget to,
@@ -43,6 +44,28 @@ export async function authorize(
       "unauthorized",
       "Send your key as `x-api-key: <key>` (or `Authorization: Bearer <key>`). Mint one in your portal, under API keys.",
     );
+  }
+
+  // Per-key burst guard, keyed on the key's id so one leaked or misbehaving key is
+  // throttled without touching anyone else's. Generous - a busy door scans a lot -
+  // so it only bites a key being hammered; ship it loose and tighten later. The root
+  // env key has no id and shares a single "root" bucket, which is one more reason to
+  // retire it onto a minted key (see resolveApiKey).
+  const rl = await rateLimit(`apikey:${caller.id ?? "root"}`, {
+    limit: 600,
+    windowSeconds: 60,
+  });
+  if (!rl.ok) {
+    const res = deny(
+      429,
+      "rate_limited",
+      "Too many requests on this key. Slow down and retry shortly.",
+    );
+    res.headers.set(
+      "Retry-After",
+      String(Math.max(1, Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000))),
+    );
+    return res;
   }
 
   if (!hasScope(caller, scope)) {

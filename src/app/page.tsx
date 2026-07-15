@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   getFeaturedEvent,
@@ -14,12 +15,24 @@ import { EventTicker } from "@/components/event-ticker";
 import { MerchStrip } from "@/components/merch-strip";
 import { QuoteMarquee } from "@/components/quote-marquee";
 import { Reveal } from "@/components/reveal";
+import { JsonLd } from "@/components/json-ld";
 import { Kicker, SectionHeading } from "@/components/ui";
 import { formatDate, formatTime } from "@/lib/format";
 import { site } from "@/lib/site";
+import { env } from "@/lib/env";
+import { absoluteUrl } from "@/lib/url";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+// The homepage is the most-linked, most-crawled URL on the site, so it names its
+// own canonical and carries an explicit (non-templated) title rather than leaning
+// on the layout default. Description is the site one, same as the layout.
+export const metadata: Metadata = {
+  title: { absolute: `${site.name} - ${site.tagline}` },
+  description: site.description,
+  alternates: { canonical: "/" },
+};
 
 // ---- What used to be at the top of this file ------------------------------
 //
@@ -122,8 +135,22 @@ export default async function HomePage() {
 
   const attended = past.reduce((sum, e) => sum + e.ticketsCount, 0);
 
+  // Organisation structured data. sameAs is only the socials RNL actually has -
+  // the same sparse record the footer renders, so a link never appears here that
+  // does not appear there (see lib/site.ts on why socials is Partial).
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: site.name,
+    url: env.siteUrl,
+    description: site.description,
+    logo: absoluteUrl("/brand/RNL_FAVICON_BLACK.jpg"),
+    sameAs: Object.values(site.socials).filter(Boolean),
+  };
+
   return (
     <>
+      <JsonLd data={orgLd} />
       {/* ---------------- HERO ---------------- */}
       <section className="relative overflow-hidden border-b border-line">
         <div className="hairline-grid pointer-events-none absolute inset-0 opacity-[0.35] [mask-image:linear-gradient(to_bottom,#000,transparent_70%)]" />

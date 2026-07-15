@@ -86,7 +86,7 @@ export default async function AccountPage({
                   </a>
                 ) : (
                   <p className="rounded-xl border border-line bg-bg px-4 py-3 text-sm text-muted">
-                    Roblox OAuth isn't configured yet. Add{" "}
+                    Roblox OAuth isn&apos;t configured yet. Add{" "}
                     <code className="font-mono text-fg">ROBLOX_CLIENT_ID</code>{" "}
                     and{" "}
                     <code className="font-mono text-fg">

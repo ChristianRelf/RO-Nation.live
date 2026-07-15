@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "Services",
   description:
     "What RO. Nation LIVE does for other groups: production, custom venues, free account-tied ticketing with door verification, and a branded site of your own.",
+  alternates: { canonical: "/services" },
 };
 
 // What you get if you hire us.

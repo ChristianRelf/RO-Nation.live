@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: "Press",
   description:
     "Press kit for RO. Nation LIVE: boilerplate, the numbers, logos and brand assets, and who to contact.",
+  alternates: { canonical: "/press" },
 };
 
 // The press kit.

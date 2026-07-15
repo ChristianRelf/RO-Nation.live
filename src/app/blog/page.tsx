@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Recaps, announcements and behind-the-scenes stories from the RO. Nation LIVE crew.",
+  alternates: { canonical: "/blog" },
 };
 
 export default async function BlogPage() {

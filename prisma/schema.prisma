@@ -1631,3 +1631,27 @@ model Enquiry {
   @@index([kind, status])
   @@map("enquiries")
 }
+
+// ------------------------------------------------------------------
+// Fixed-window rate-limit counters.
+// ------------------------------------------------------------------
+/// One row per bucket key, updated in place - so this table is bounded by the
+/// number of DISTINCT keys (users, API keys), not by request volume, and never
+/// grows with traffic.
+///
+/// Written only by lib/rate-limit.ts, through a single atomic upsert. There is no
+/// application read path and no relation to anything else: it is throwaway state
+/// that merely has to outlive a process restart and be shared across processes -
+/// which is exactly why it is a table and not an in-memory map. There is more than
+/// one web process, and a counter in one cannot see the requests hitting another.
+model RateLimit {
+  /// The bucket: "enquiry:<uid>", "reserve:<uid>", "apikey:<id>".
+  key     String   @id
+  /// Hits so far in the current window.
+  count   Int      @default(0)
+  /// When the window ends; the next hit after this resets count to 1.
+  resetAt DateTime
+
+  @@index([resetAt])
+  @@map("rate_limits")
+}

@@ -8,6 +8,14 @@
 /out/
 next-env.d.ts
 
+# typescript incremental build cache - machine-local, already in .dockerignore
+tsconfig.tsbuildinfo
+
+# test artefacts
+/coverage
+# embedded-postgres data dir, when a dev runs the suite without their own DB
+/.pgdata-test
+
 # production
 /build
 

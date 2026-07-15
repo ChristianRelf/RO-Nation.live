@@ -87,6 +87,28 @@
 	request_header -X-Ron-Brand
 	request_header -X-Ron-Area
 
+	# Security headers, on every response from every host on the line above. All of
+	# those hostnames are RNL's, so includeSubDomains on HSTS is safe.
+	#
+	#   HSTS             once a browser has seen this it refuses plain HTTP to the
+	#                    whole domain for a year - no downgrade, no sslstrip.
+	#   X-Frame-Options  the site is never meant to be framed; DENY stops clickjacking.
+	#   Referrer-Policy  full path same-site, bare origin cross-site.
+	#   nosniff          a response typed text/html is never re-guessed as script.
+	#
+	# The CSP here carries ONLY frame-ancestors - the modern anti-framing lock. It
+	# deliberately sets nothing else (no default-src, no script-src), so it cannot
+	# break a page by blocking a resource it legitimately loads. The /uploads handler
+	# below sets its own, far stricter CSP, and because that runs later in the chain
+	# it wins for those responses - user-uploaded files stay fully locked down.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+		Content-Security-Policy "frame-ancestors 'none'"
+	}
+
 	# Uploaded images, served straight off the shared volume - they never touch
 	# Next. This block must come BEFORE the reverse_proxy below; handle_path strips
 	# the /uploads prefix, so /uploads/rnl/x.png reads /srv/uploads/rnl/x.png.

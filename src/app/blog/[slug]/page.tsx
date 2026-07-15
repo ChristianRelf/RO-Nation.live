@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPostBySlug } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
+import { absoluteUrl } from "@/lib/url";
 import { Kicker } from "@/components/ui";
 import { Prose } from "@/components/prose";
 
@@ -26,12 +27,14 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt ?? undefined,
+    alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt ?? undefined,
       type: "article",
+      url: `/blog/${post.slug}`,
       publishedTime: post.publishedAt?.toISOString(),
-      images: post.coverUrl ? [post.coverUrl] : undefined,
+      images: post.coverUrl ? [absoluteUrl(post.coverUrl)] : undefined,
     },
   };
 }
