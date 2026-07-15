@@ -67,7 +67,71 @@ model User {
   /// ordinary purchase; different ones when somebody is buying for a friend.
   purchaseIntentsFor PurchaseIntent[] @relation("IntentBeneficiary")
 
+  /// This account's Discord link and its live rotating link code, if any. Both are
+  /// 1:1 - one Roblox account, one Discord - and cascade away with the user.
+  discordLink DiscordLink?
+  linkCode    LinkCode?
+
   @@map("users")
+}
+
+// ------------------------------------------------------------------
+// Linking a Roblox account to Discord.
+//
+// A signed-in member opens /account/link and is shown a 6-digit code that rotates
+// every couple of minutes (LinkCode). They read it to a Discord bot, which calls
+// POST /api/v1/discord/link with the code and the Discord user id; we look the code
+// up, and if it is live we write the DiscordLink and burn the code.
+//
+// The code is the whole secret, and six digits is not much - so its safety is not the
+// code, it is everything around it: the code is single-use, one-per-account and dies
+// in minutes, AND the redeem endpoint is key-gated (scope DISCORD_LINK) and rate
+// limited per Discord id. Guessing a live code therefore costs a bot key and buys only
+// a handful of tries against a target that is valid for two minutes. See
+// lib/discord-link.ts.
+// ------------------------------------------------------------------
+model DiscordLink {
+  id String @id @default(cuid())
+
+  /// The Roblox account. One link per account.
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  /// The Discord user. Unique too, so one Discord account cannot be claimed by two
+  /// Roblox accounts - a would-be impersonator who guessed a code still cannot attach
+  /// a Discord that is already attached elsewhere.
+  discordId String @unique
+
+  /// Display only, for the portal and the bot's convenience. Never identity -
+  /// discordId is the key.
+  discordUsername String?
+
+  linkedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("discord_links")
+}
+
+model LinkCode {
+  id String @id @default(cuid())
+
+  /// The six digits the page shows and the bot redeems. Unique across all live codes
+  /// so a redeem resolves to exactly one account; indexed because that lookup is the
+  /// hot path.
+  code String @unique
+
+  /// One live code per account. Rotating REPLACES this row (upsert on userId) rather
+  /// than piling new codes up, so an account never has two valid codes at once.
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  /// Short - a couple of minutes. Past it the code is refused, and the daily cull
+  /// (scripts/cull.ts) deletes it.
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("link_codes")
 }
 
 // ------------------------------------------------------------------
@@ -1134,6 +1198,11 @@ enum ApiKeyScope {
   /// chair warm while somebody makes up their mind - gets THIS, and never the scope that
   /// could mint itself a free VIP ticket.
   INTENTS_WRITE
+
+  /// POST /api/v1/discord/link, POST /discord/unlink, GET /discord/link - tie a Roblox
+  /// account to a Discord one via the rotating code shown at /account/link. Touches no
+  /// tickets and no money: it is the scope a Discord bot holds, and nothing else.
+  DISCORD_LINK
 }
 
 model ApiKey {

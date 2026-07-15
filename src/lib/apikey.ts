@@ -91,6 +91,7 @@ export const ALL_SCOPES: readonly ApiKeyScope[] = [
   "INTENTS_WRITE",
   "TICKETS_PURCHASE",
   "TICKETS_VOID",
+  "DISCORD_LINK",
 ];
 
 /** What each scope is called, and what it hands over, in the portal's own words. */
@@ -127,6 +128,11 @@ export const SCOPE_LABELS: Record<
   TICKETS_VOID: {
     title: "Void and revoke",
     detail: "Take a ticket back, or ban a player from one of your shows.",
+  },
+  DISCORD_LINK: {
+    title: "Link Discord accounts",
+    detail:
+      "Redeem the rotating code from ronation.live/account/link to tie a Roblox account to a Discord one, and read or remove those links. This is the Discord bot's scope. Touches no tickets and no money.",
   },
 };
 

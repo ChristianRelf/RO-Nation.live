@@ -139,6 +139,17 @@ const INTENT_GET_JSON = `GET /api/v1/intents/<token>     // resolve a web deep-l
     "seatKey": "A1-K12", "sectionKey": "A1",
     "ticketId": null } }                          // the id it BECAME once spent (else null)`;
 
+const DISCORD_LINK_JSON = `POST /api/v1/discord/link
+{ "code": "123456",
+  "discordId": "<the invoking user's id>",   // from the interaction, NOT typed
+  "discordUsername": "name" }                 // optional
+
+{ "ok": true, "linked": true, "robloxId": "851394804",
+  "username": "chrxs_dev", "displayName": "chrxs_dev" }
+
+// wrong / expired / already-spent → 200, linked:false
+{ "ok": true, "linked": false, "reason": "invalid", "message": "…" }`;
+
 const PLAYER_TICKETS_JSON = `GET /api/v1/players/<robloxId>/tickets?eventId=<id>   // eventId optional
 
 { "ok": true, "robloxId": "851394804",
@@ -382,6 +393,27 @@ const ENDPOINTS: {
     writes: true,
     desc: "Cancel it, and bar them from this show.",
   },
+  {
+    method: "POST",
+    path: "/api/v1/discord/link",
+    scope: "DISCORD_LINK",
+    writes: true,
+    desc: "Redeem a link code → tie a Roblox account to Discord.",
+  },
+  {
+    method: "GET",
+    path: "/api/v1/discord/link",
+    scope: "DISCORD_LINK",
+    writes: false,
+    desc: "Who is linked? (?discordId= or ?robloxId=)",
+  },
+  {
+    method: "POST",
+    path: "/api/v1/discord/unlink",
+    scope: "DISCORD_LINK",
+    writes: true,
+    desc: "Drop a link (discordId or robloxId).",
+  },
 ];
 
 const VERIFY_REASONS: [string, string, string, string][] = [
@@ -539,7 +571,7 @@ export default async function ApiDocsPage() {
 
         <h3 className="mt-6 text-fg">It carries only the scopes it was minted with.</h3>
         <p className="text-muted">
-          Seven of them, one per thing a key can do - listed below. Tick only what the
+          Eight of them, one per thing a key can do - listed below. Tick only what the
           key needs: a door scanner with <Mono>TICKETS_REDEEM</Mono> and nothing else,
           if it leaks, cannot be turned into a ticket printer. That is the entire
           reason scopes exist - one key per job, not one key for everything.
@@ -1307,6 +1339,57 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           <Mono>displayName</Mono> of whoever we matched. Read it before acting on
           the answer - it is how you confirm the name resolved to the person you
           meant.
+        </p>
+      </Section>
+
+      {/* 14b - discord linking */}
+      <Section title="Linking Discord to Roblox">
+        <p className="text-muted">
+          A separate little system, for a Discord bot rather than a game server - but it
+          speaks the same API, with the same keys, under the{" "}
+          <Mono>DISCORD_LINK</Mono> scope. A signed-in member opens{" "}
+          <Mono>ronation.live/account/link</Mono> and sees a six-digit code that rotates
+          every couple of minutes, shown as <Mono>123 . 456</Mono>. They give it to your
+          bot; your bot redeems it.
+        </p>
+        <Code>{DISCORD_LINK_JSON}</Code>
+        <ul className="mt-4 space-y-2 text-muted">
+          <li>
+            <span className="text-fg">
+              <Mono>discordId</Mono> must be the id Discord reports for whoever ran the
+              command
+            </span>{" "}
+            - never a value the user typed. The link is only as honest as that binding.
+          </li>
+          <li>
+            <Mono>reason: &quot;invalid&quot;</Mono> covers wrong, expired and
+            already-spent with <span className="text-fg">one answer</span> - telling a
+            guesser which of their tries grazed a real code is the one thing a six-digit
+            secret cannot afford. <Mono>discord_taken</Mono> means that Discord is
+            already linked to a different Roblox account (unlink first).
+          </li>
+        </ul>
+        <Callout kind="accent" title="Why six digits is safe">
+          <p className="text-muted">
+            It isn&rsquo;t, on its own - the wall around it is. The endpoint is
+            key-gated (only your bot can call it) and{" "}
+            <span className="text-fg">
+              rate limited to 8 tries per 10 minutes per Discord id
+            </span>
+            ; the code is single-use, one-per-account, and dies in two minutes. So the
+            space anyone can search against a live code, through a throttled key, is
+            tiny. A <Mono>429</Mono> with <Mono>Retry-After</Mono> means that budget is
+            spent.
+          </p>
+        </Callout>
+        <p className="mt-6 text-muted">The rest:</p>
+        <Code>{`GET  /api/v1/discord/link?discordId=<id>   → who is this? (or ?robloxId=<id>)
+POST /api/v1/discord/unlink  { "discordId": "<id>" }   → drop the link (or robloxId)`}</Code>
+        <p className="mt-3 text-muted">
+          <Mono>GET</Mono> answers <Mono>{'{ "ok": true, "linked": false }'}</Mono> when
+          there is no link, or the redeem shape plus <Mono>discordId</Mono> /{" "}
+          <Mono>linkedAt</Mono> - for role sync or a <Mono>/whois</Mono>. A member can
+          also unlink themselves from <Mono>/account/link</Mono>.
         </p>
       </Section>
 

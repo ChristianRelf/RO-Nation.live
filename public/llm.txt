@@ -49,7 +49,7 @@ not "forbidden", because whether somebody else's ticket exists is none of your
 business, and those are the same answer. The scope is read from the key on our
 side. **You cannot widen it from the request. There is no field for it.**
 
-**It carries only the scopes it was minted with.** Seven of them, one per thing a key
+**It carries only the scopes it was minted with.** Eight of them, one per thing a key
 can do:
 
 | Scope              | Lets the key…                                                  |
@@ -61,6 +61,7 @@ can do:
 | `INTENTS_WRITE`    | Hold a seat for ten minutes while a player decides. Takes no money. |
 | `TICKETS_PURCHASE` | Issue a **paid** ticket on your game server's word. See below. |
 | `TICKETS_VOID`     | Void a ticket, or revoke a player from a show.                 |
+| `DISCORD_LINK`     | Tie a Roblox account to a Discord one via the code at /account/link. The bot's scope. |
 
 **Tick only what the key needs.** A door scanner with `TICKETS_REDEEM` and nothing
 else, if it leaks, cannot be turned into a ticket printer. That is the entire
@@ -120,6 +121,9 @@ moving it onto a scoped key is the single best thing you can do to it.
 | `POST /api/v1/tickets/purchase`            | Yes     | `TICKETS_PURCHASE` | They paid Robux. Issue the paid ticket. |
 | `POST /api/v1/tickets/void`                | Yes     | `TICKETS_VOID`     | Cancel a ticket. They may reserve again.|
 | `POST /api/v1/tickets/revoke`              | Yes     | `TICKETS_VOID`     | Cancel it, and bar them from this show. |
+| `POST /api/v1/discord/link`                | Yes     | `DISCORD_LINK`     | Redeem a link code → tie Roblox to Discord. |
+| `GET  /api/v1/discord/link`                | No      | `DISCORD_LINK`     | Who is linked? (`?discordId=` or `?robloxId=`) |
+| `POST /api/v1/discord/unlink`              | Yes     | `DISCORD_LINK`     | Drop a link (`discordId` or `robloxId`). |
 
 Every ticket endpoint returns the **same response shape**. That is deliberate: you
 parse one shape in Luau, not nine.
@@ -971,6 +975,55 @@ end
 The response's `holder` block comes back with the canonical `robloxId`, `username`
 and `displayName` of whoever we matched. Read it before acting on the answer - it
 is how you confirm the name resolved to the person you meant.
+
+---
+
+## Linking Discord to Roblox
+
+A separate little system, for a Discord bot rather than a game server - but it speaks
+the same API with the same keys, under the `DISCORD_LINK` scope.
+
+A signed-in member opens **ronation.live/account/link** and sees a six-digit code that
+rotates every couple of minutes, shown as `123 . 456`. They give it to your bot; your
+bot redeems it:
+
+```
+POST /api/v1/discord/link
+{ "code": "123456", "discordId": "<the invoking user's id>", "discordUsername": "name#0"? }
+```
+
+```json
+{ "ok": true, "linked": true, "robloxId": "851394804",
+  "username": "chrxs_dev", "displayName": "chrxs_dev" }
+```
+
+A wrong or expired code is a **200** with `linked: false` and a `reason`, not an error:
+
+- `invalid` - wrong, expired, or already spent. One answer for all three on purpose:
+  telling a guesser which of their tries grazed a real code is the one thing a
+  six-digit secret cannot afford. Get a fresh code at /account/link.
+- `discord_taken` - that Discord account is already linked to a **different** Roblox
+  account. Refused, not moved - unlink it first.
+
+**`discordId` MUST be the id Discord reports for whoever ran the command** - never a
+value the user typed. The binding is only as honest as that.
+
+**Why six digits is enough.** It isn't, on its own - the safety is around it: the
+endpoint is key-gated (only your bot can call it) and **rate limited to 8 tries per 10
+minutes per Discord id**, the code is single-use and one-per-account, and it dies in
+two minutes. So the whole space anyone can search against a live code, through a
+throttled key, is tiny. A `429` with `Retry-After` means that budget is spent.
+
+**The rest:**
+
+```
+GET  /api/v1/discord/link?discordId=<id>     → who is this? (or ?robloxId=<id>)
+POST /api/v1/discord/unlink  { "discordId": "<id>" }   → drop the link (or robloxId)
+```
+
+`GET` answers `{ "ok": true, "linked": false }` when there is no link, or the same
+shape as a redeem plus `discordId` / `linkedAt`. Use it for role sync or a `/whois`.
+A member can also unlink themselves from /account/link.
 
 ---
 

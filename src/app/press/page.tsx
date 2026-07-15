@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AssetCard } from "@/components/asset-card";
+import { AssetViewer } from "@/components/asset-viewer";
 import { Reveal } from "@/components/reveal";
 import { Kicker, SectionHeading } from "@/components/ui";
 import { publicBrandAssetsByCategory } from "@/lib/docs";
 import { formatDate } from "@/lib/format";
 import { getPublishedPosts } from "@/lib/queries";
-import { site } from "@/lib/site";
+import { site, SOCIAL_LABELS, type Social } from "@/lib/site";
 import { getSiteStats, statTiles } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
@@ -68,15 +68,51 @@ export default async function PressPage() {
         </p>
       </div>
 
-      {/* ---- BOILERPLATE ---- */}
+      {/* ---- BOILERPLATE + FAST FACTS ---- */}
       <section className="shell py-14">
         <SectionHeading kicker="The boilerplate" title="Who we are" />
-        <div className="mt-8 max-w-3xl">
-          <p className="text-lg leading-relaxed text-fg">{site.boilerplate}</p>
-          <p className="mt-5 text-sm text-faint">
-            Copy that as-is. It is deliberately free of figures - the ones below are
-            counted live, so they never go stale.
-          </p>
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+          <div>
+            <p className="text-lg leading-relaxed text-fg">{site.boilerplate}</p>
+            <p className="mt-5 text-sm text-faint">
+              Copy that as-is. It is deliberately free of figures - the ones below are
+              counted live, so they never go stale.
+            </p>
+          </div>
+
+          {/* The at-a-glance box a journalist actually lifts from. Every value is real
+              and lives elsewhere on the site - name, what it is, how tickets work - so
+              it cannot drift from the paragraph beside it. */}
+          <aside className="card h-max p-6">
+            <h3 className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
+              Fast facts
+            </h3>
+            <dl className="mt-4 space-y-3 text-sm">
+              {[
+                ["Name", site.name],
+                ["Short name", site.shortName],
+                ["What it is", "Roblox event management group"],
+                ["Tickets", "Free · tied to a Roblox account"],
+                ["Independent", "Not affiliated with Roblox Corporation"],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4 border-b border-line pb-3 last:border-0 last:pb-0">
+                  <dt className="shrink-0 text-muted">{k}</dt>
+                  <dd className="text-right font-medium text-fg">{v}</dd>
+                </div>
+              ))}
+              <div className="flex justify-between gap-4">
+                <dt className="shrink-0 text-muted">Press contact</dt>
+                <dd className="text-right">
+                  <a
+                    href={`mailto:${site.contactEmail}?subject=Press%20enquiry`}
+                    className="font-medium text-accent hover:text-fg"
+                  >
+                    {site.contactEmail}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </aside>
         </div>
       </section>
 
@@ -120,28 +156,48 @@ export default async function PressPage() {
             action={{ label: "Usage rules", href: "#usage" }}
           />
 
-          <div className="mt-8 space-y-10">
-            {groups.map((g) => (
-              <div key={g.category}>
-                <h3 className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
-                  {g.category}
-                </h3>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {g.assets
-                    // Belt and braces. publicBrandAssetsByCategory() already filters, and
-                    // this is the same check again - because the cost of it is nothing and
-                    // the cost of a future "let's just list them all" edit to that query is
-                    // an internal brand guideline PDF on a public URL, permanently, in
-                    // somebody's crawler.
-                    .filter((a) => a.visibility === "PUBLIC")
-                    .map((a, i) => (
-                      <Reveal key={a.id} delay={i * 55}>
-                        <AssetCard asset={a} />
-                      </Reveal>
-                    ))}
+          <div className="mt-8 space-y-12">
+            {groups.map((g) => {
+              // Belt and braces. publicBrandAssetsByCategory() already filters to PUBLIC,
+              // and this is the same check again - because the cost of it is nothing and
+              // the cost of a future "let's just list them all" edit to that query is an
+              // internal brand-guideline PDF on a public URL, permanently, in somebody's
+              // crawler.
+              const assets = g.assets.filter((a) => a.visibility === "PUBLIC");
+              // Logos and artwork sit two-up so several fit the eye at once; a guideline
+              // PDF is embedded full-width, because half a page of a document is no
+              // preview at all. Both are shown IN PLACE now, not hidden behind a link.
+              const images = assets.filter((a) => a.mime.startsWith("image/"));
+              const docs = assets.filter((a) => !a.mime.startsWith("image/"));
+
+              return (
+                <div key={g.category}>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
+                    {g.category}
+                  </h3>
+
+                  {images.length ? (
+                    <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                      {images.map((a, i) => (
+                        <Reveal key={a.id} delay={i * 55}>
+                          <AssetViewer asset={a} />
+                        </Reveal>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {docs.length ? (
+                    <div className="mt-5 space-y-5">
+                      {docs.map((a, i) => (
+                        <Reveal key={a.id} delay={i * 55}>
+                          <AssetViewer asset={a} />
+                        </Reveal>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -202,6 +258,39 @@ export default async function PressPage() {
           </div>
         </section>
       ) : null}
+
+      {/* ---- OFFICIAL CHANNELS ---- */}
+      {/* Same rule as the footer (lib/site.ts): render only the accounts RNL actually
+          has, never a placeholder. On a press page it earns its place twice over - the
+          point of "official channels" is that a journalist can tell a real account from
+          an impersonator, and a dead link would defeat exactly that. */}
+      <section className="border-y border-line bg-elev">
+        <div className="shell py-14">
+          <SectionHeading kicker="Verify us" title="Official channels" />
+          <p className="mt-8 max-w-2xl text-muted">
+            The only accounts that are ours. If a page, server or handle claiming to be
+            RO. Nation LIVE isn&apos;t linked here, treat it as not us.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {(Object.keys(SOCIAL_LABELS) as Social[])
+              .filter((k) => site.socials[k])
+              .map((k) => (
+                <a
+                  key={k}
+                  href={site.socials[k]}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-bg px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
+                >
+                  {SOCIAL_LABELS[k]}
+                  <span aria-hidden className="text-faint">
+                    ↗
+                  </span>
+                </a>
+              ))}
+          </div>
+        </div>
+      </section>
 
       {/* ---- CONTACT ---- */}
       <section className="shell py-20">

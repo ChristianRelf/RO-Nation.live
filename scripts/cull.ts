@@ -18,6 +18,11 @@
  *                    (lib/sso.ts already sweeps these opportunistically on redeem;
  *                    this is the floor under that, for a quiet week with few redeems.)
  *
+ *   link_codes       A rotating six-digit Discord-link code lives a couple of minutes
+ *                    (lib/discord-link.ts). It is replaced in place while a member
+ *                    watches the page, but the last one they leave behind lingers past
+ *                    its expiry - dead the moment it lapses, and swept here.
+ *
  *   rate_limits      One row per bucket key ("enquiry:<uid>", "apikey:<id>"),
  *                    updated in place. It does not grow with traffic - but it DOES
  *                    grow with distinct keys, and a one-time visitor's bucket lingers
@@ -89,6 +94,15 @@ async function main() {
         .deleteMany({ where: { resetAt: { lt: now } } })
         .then((r) => r.count),
     () => prisma.rateLimit.count({ where: { resetAt: { lt: now } } }),
+  );
+
+  total += await sweep(
+    "link_codes past expiry",
+    () =>
+      prisma.linkCode
+        .deleteMany({ where: { expiresAt: { lt: now } } })
+        .then((r) => r.count),
+    () => prisma.linkCode.count({ where: { expiresAt: { lt: now } } }),
   );
 
   // Expired dead holds, plus receipts long past their show. One `where` so the

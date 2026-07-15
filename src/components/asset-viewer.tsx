@@ -4,10 +4,12 @@ import { formatBytes } from "@/lib/format";
 
 // One asset, shown in place rather than hidden behind a link.
 //
-// The old AssetCard was a link with a 64px thumbnail - fine for a logo, useless
-// for a 24-page brand guideline nobody opens because opening it is a whole extra
-// tab. This renders the file itself: a PDF in the browser's own viewer, an image
-// at a size you can actually read, and anything else as a clear download.
+// A link with a 64px thumbnail was fine for a logo and useless for a 24-page brand
+// guideline nobody opens because opening it is a whole extra tab. This renders the
+// file itself: a PDF in the browser's own viewer, an image at a size you can
+// actually read, and anything else as a clear download. It is the one asset
+// renderer now - the docs library, the templates area and the public press kit all
+// use it.
 //
 // ---- Why the embed can be trusted, and why it still has a fallback ----------
 //
