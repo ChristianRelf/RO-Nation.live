@@ -57,6 +57,18 @@ export async function register() {
     );
   }
 
+  // The dev-login backdoor (src/app/api/auth/dev/route.ts) mints a member session
+  // for any username with no credential - it exists for local demos only. It is
+  // normally gated by the ABSENCE of Roblox creds, but a production instance
+  // brought up before its OAuth app is provisioned would leave that gate open, so
+  // refuse to boot if it is explicitly enabled here. (The route itself also 404s
+  // in production now; this stops the misconfiguration at the door.)
+  if (process.env.ALLOW_DEV_LOGIN === "true") {
+    problems.push(
+      "ALLOW_DEV_LOGIN is 'true' - the credential-free dev login backdoor must not be enabled in production.",
+    );
+  }
+
   if (problems.length > 0) {
     const line = "═".repeat(60);
     const message = [

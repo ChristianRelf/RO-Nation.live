@@ -39,7 +39,10 @@ async function sign(payload: Record<string, unknown>, expires: string) {
 
 async function verify<T>(token: string): Promise<T | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    // Pin the algorithm. The key is a symmetric Uint8Array, so jose already
+    // rejects `alg:none` and RS->HS confusion - this makes that explicit so a
+    // future swap to an asymmetric key/JWKS can't silently widen accepted algs.
+    const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] });
     return payload as T;
   } catch {
     return null;

@@ -177,6 +177,7 @@ export async function redeemTicket(
     // too.
     ({ payload } = await jwtVerify(token, ticketKey, {
       audience: expectedAudience,
+      algorithms: ["HS256"],
     }));
   } catch {
     return null;

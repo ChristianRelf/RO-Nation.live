@@ -44,6 +44,10 @@ export type VerifyPassState =
 async function verify(
   gamePassId: string,
   eventId: string,
+  // The caller's authorised scope: a partner's slug, or null for RNL/company
+  // (authorised platform-wide). Used only to decide whether the clash below may
+  // be NAMED - the existence check itself is always global.
+  callerScope: string | null,
 ): Promise<VerifyPassState> {
   const id = gamePassId.trim();
   if (!id) return { ok: false, reason: "empty" };
@@ -57,20 +61,35 @@ async function verify(
 
   // Is any OTHER tier already carrying this pass? Scoped away from this event's own tiers,
   // because a tier that already has the pass saved is not colliding with itself.
+  //
+  // gamePassId is globally @unique, so this existence check MUST be global - it has
+  // to catch a clash on RNL's or another partner's tier. But a partner manager has
+  // no business learning another org's event and tier NAMES from it (game-pass ids
+  // are public, enumerable integers, so this would otherwise be a cross-tenant
+  // metadata probe). Name the clash only when it belongs to the caller's own scope;
+  // otherwise report it generically so they still know the id is unusable.
   const clash = await prisma.ticketTier.findFirst({
     where: {
       gamePassId: id,
       ...(eventId ? { eventId: { not: eventId } } : {}),
     },
-    select: { name: true, event: { select: { title: true } } },
+    select: { name: true, event: { select: { title: true, partnerId: true } } },
   });
+
+  const clashIsOwn =
+    clash !== null &&
+    (callerScope === null || (clash.event.partnerId ?? null) === callerScope);
 
   return {
     ok: true,
     name: details.pass.name,
     priceRobux: details.pass.priceRobux,
     forSale: details.pass.forSale,
-    takenBy: clash ? `${clash.event.title} - ${clash.name}` : null,
+    takenBy: clash
+      ? clashIsOwn
+        ? `${clash.event.title} - ${clash.name}`
+        : "another show on the platform"
+      : null,
   };
 }
 
@@ -79,9 +98,11 @@ export async function verifyCompanyGamePass(
   formData: FormData,
 ): Promise<VerifyPassState> {
   await requireCompanyUser();
+  // RNL/company is authorised platform-wide, so it may see any clash by name.
   return verify(
     String(formData.get("gamePassId") || ""),
     String(formData.get("eventId") || ""),
+    null,
   );
 }
 
@@ -89,9 +110,12 @@ export async function verifyPartnerGamePass(
   _prev: VerifyPassState | null,
   formData: FormData,
 ): Promise<VerifyPassState> {
-  await requirePartnerManager(String(formData.get("scope") || ""));
+  const user = await requirePartnerManager(String(formData.get("scope") || ""));
+  // Scope the clash to the partner the guard actually approved - user.partner.slug,
+  // not the raw form string - so a clash on another org's tier is not named back.
   return verify(
     String(formData.get("gamePassId") || ""),
     String(formData.get("eventId") || ""),
+    user.partner.slug,
   );
 }

@@ -106,7 +106,19 @@
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		X-Content-Type-Options "nosniff"
-		Content-Security-Policy "frame-ancestors 'none'"
+		# frame-ancestors stays; object-src/base-uri are added because they are safe
+		# to ENFORCE (nothing here embeds a plugin or relies on a <base> tag) and they
+		# close two real XSS-escalation vectors - Flash/PDF plugin injection and
+		# <base href> hijack of every relative URL on the page. Still deliberately NO
+		# default-src/script-src here, so this cannot block a resource the app loads.
+		Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'none'"
+		# Rollout probe for a real script policy. Report-Only NEVER blocks - the browser
+		# just logs what a strict `script-src 'self'` would break (Next 14 injects an
+		# inline hydration bootstrap, so a full enforce needs a per-request nonce via
+		# middleware first). Ship this to measure the gap, then promote to the enforcing
+		# header above once the inline scripts carry a nonce. No report-uri set, so
+		# violations stay in the console rather than being POSTed anywhere.
+		Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
 	}
 
 	# Uploaded images, served straight off the shared volume - they never touch
@@ -133,7 +145,15 @@
 	# site, and Caddy passes the original Host through untouched. `web` is the
 	# service name on the Docker network - not localhost, which inside this
 	# container would be Caddy.
-	reverse_proxy web:3000
+	reverse_proxy web:3000 {
+		# Pin the forwarded host to the real connection host. The app derives its
+		# origin - OAuth redirect_uri, ticket audience, post-login redirect target and
+		# QR ticket URLs - from X-Forwarded-Host (src/lib/origin.ts). Caddy overwrites
+		# it by default, but pin it explicitly so a future proxy edit can't silently
+		# start trusting a client-supplied value (a post-login open-redirect / audience
+		# -spoof vector). This gets the same treatment X-Ron-Brand/X-Ron-Area already do.
+		header_up X-Forwarded-Host {host}
+	}
 
 	log {
 		output stdout

@@ -72,5 +72,21 @@ COPY --from=build /app/next.config.mjs ./next.config.mjs
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh
 
+# Drop root. The node:20 image ships an unprivileged `node` user (uid 1000); run
+# as it so an RCE in a dependency or a container escape lands unprivileged, not as
+# root. Only the two upload trees and Next's runtime cache need to be writable by
+# the process - everything else in /app stays read-only to it, which is the point.
+# `npx prisma db push` in the entrypoint runs fine as node: it only reaches the DB
+# and writes the npm cache under /home/node.
+#
+# NOTE for EXISTING deployments: the `uploads` / `private-uploads` named volumes,
+# if they already hold data written during a root-era boot, keep their old root
+# ownership - only a first-time EMPTY volume inherits the node ownership set here.
+# If uploads start failing after this change, run once:
+#   docker compose exec -u 0 web chown -R node:node /app/uploads /app/private-uploads
+RUN mkdir -p /app/uploads /app/private-uploads \
+    && chown -R node:node /app/uploads /app/private-uploads /app/.next
+USER node
+
 EXPOSE 3000
 ENTRYPOINT ["./docker-entrypoint.sh"]

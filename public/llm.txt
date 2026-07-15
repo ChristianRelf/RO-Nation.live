@@ -10,8 +10,8 @@
 Base URL: https://ronation.live
 Auth:     every request needs the header `x-api-key: <key>`
           (`Authorization: Bearer <key>` also works)
-Method:   POST + `Content-Type: application/json`, except the two event reads,
-          which are GET.
+Method:   Writes are POST + `Content-Type: application/json`. The reads (events, a
+          show's seats, a player's tickets, a hold) are GET; releasing a hold is DELETE.
 
 Enable **Allow HTTP Requests** in Roblox Studio → Game Settings → Security, or
 none of this works.
@@ -49,15 +49,16 @@ not "forbidden", because whether somebody else's ticket exists is none of your
 business, and those are the same answer. The scope is read from the key on our
 side. **You cannot widen it from the request. There is no field for it.**
 
-**It carries only the scopes it was minted with.** Six of them, one per thing a key
+**It carries only the scopes it was minted with.** Seven of them, one per thing a key
 can do:
 
 | Scope              | Lets the key…                                                  |
 | ------------------ | -------------------------------------------------------------- |
 | `EVENTS_READ`      | List your shows, their tiers, capacity, seats left.            |
-| `TICKETS_VERIFY`   | Check a ticket. Changes nothing.                               |
+| `TICKETS_VERIFY`   | Check a ticket, or read what a player already holds. Changes nothing. |
 | `TICKETS_REDEEM`   | Check somebody in at the door. **The scanner's scope.**        |
 | `TICKETS_ISSUE`    | Reserve and gift free tickets from inside the experience.      |
+| `INTENTS_WRITE`    | Hold a seat for ten minutes while a player decides. Takes no money. |
 | `TICKETS_PURCHASE` | Issue a **paid** ticket on your game server's word. See below. |
 | `TICKETS_VOID`     | Void a ticket, or revoke a player from a show.                 |
 

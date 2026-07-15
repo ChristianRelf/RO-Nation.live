@@ -98,7 +98,55 @@ const PURCHASE_JSON = `{ "purchaseId": "<receiptInfo.PurchaseId>",   // REQUIRED
   "eventId":    "cmr9…",
   "tierId":     "cmr9…",                      // REQUIRED. A priced tier.
   "robuxSpent": 250,
+  "intentToken":"9f3c…",                      // REQUIRED on a SEATED show. See below.
   "placeId":    "…", "productId": "…" }       // optional, recorded`;
+
+const INTENT_REQ_JSON = `POST /api/v1/intents
+
+{ "robloxId": "851394804",
+  "eventId":  "midnight-frequency",   // id OR slug, like everywhere
+  "tierId":   "cmr9…",
+  "seatKey":  "A1-K12" }              // OMIT for best available in the tier`;
+
+const INTENT_RES_JSON = `{
+  "ok": true,
+  "held": true,
+  "intent": {
+    "token":        "9f3c…",                      // → purchase.intentToken, or a launchData deep link
+    "expiresAt":    "2026-07-14T20:10:00.000Z",   // ten minutes
+    "priceRobux":   250,
+    "devProductId": "123456789",                  // what to prompt. null on a free seated tier
+    "seatKey":      "A1-K12",                      // the seat they GOT, not the one you asked for
+    "sectionKey":   "A1",
+    "seatLabel":    "VIP Front · Row K · Seat 12"
+  }
+}`;
+
+const SEATS_JSON = `GET /api/v1/events/<id>/seats     // send back If-None-Match to get 304s
+
+{ "ok": true, "seatMode": "SEAT",
+  "taken": ["A1-K12", "A1-K13"],                 // sold, gone for good
+  "held":  ["A1-J4"],                            // mid-checkout - draw it, do NOT offer it
+  "sections": [{ "key": "PIT", "taken": 240, "capacity": 500 }] }`;
+
+const INTENT_GET_JSON = `GET /api/v1/intents/<token>     // resolve a web deep-link's launchData
+
+{ "ok": true, "intent": {
+    "token": "9f3c…", "status": "PENDING", "live": true,   // branch on \`live\` - it folds in expiry
+    "eventId": "cmr9…", "eventSlug": "midnight-frequency",
+    "tierId": "cmr9…", "tierName": "VIP - Front Barrier",
+    "robloxId": "851394804", "priceRobux": 250, "devProductId": "123456789",
+    "seatKey": "A1-K12", "sectionKey": "A1",
+    "ticketId": null } }                          // the id it BECAME once spent (else null)`;
+
+const PLAYER_TICKETS_JSON = `GET /api/v1/players/<robloxId>/tickets?eventId=<id>   // eventId optional
+
+{ "ok": true, "robloxId": "851394804",
+  "tickets": [
+    { "id": "cmrij…", "kind": "GA", "tier": "General Admission", "priceRobux": 0,
+      "seatKey": null, "seatLabel": null, "activated": true, "checkedIn": false,
+      "event": { "id": "cmr9…", "slug": "midnight-frequency", "title": "…" } }
+  ] }`;
 
 const LUAU_CALL = `local HttpService = game:GetService("HttpService")
 
@@ -230,7 +278,7 @@ local function hasTicket(username)
 end`;
 
 const ENDPOINTS: {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   path: string;
   scope: string;
   writes: boolean;
@@ -249,6 +297,41 @@ const ENDPOINTS: {
     scope: "EVENTS_READ",
     writes: false,
     desc: "One show: doors, room, tiers, seats left.",
+  },
+  {
+    method: "GET",
+    path: "/api/v1/events/<id>/seats",
+    scope: "EVENTS_READ",
+    writes: false,
+    desc: "Which seats are gone, live. A booth polls this (304-aware).",
+  },
+  {
+    method: "GET",
+    path: "/api/v1/players/<robloxId>/tickets",
+    scope: "TICKETS_VERIFY",
+    writes: false,
+    desc: "What does this player already hold?",
+  },
+  {
+    method: "POST",
+    path: "/api/v1/intents",
+    scope: "INTENTS_WRITE",
+    writes: true,
+    desc: "Hold a seat for ten minutes while they decide.",
+  },
+  {
+    method: "GET",
+    path: "/api/v1/intents/<token>",
+    scope: "EVENTS_READ",
+    writes: false,
+    desc: "Resolve a hold token (a web deep-link's launchData).",
+  },
+  {
+    method: "DELETE",
+    path: "/api/v1/intents/<token>",
+    scope: "INTENTS_WRITE",
+    writes: true,
+    desc: "They said no. Give the seat back now.",
   },
   {
     method: "POST",
@@ -376,9 +459,10 @@ export default async function ApiDocsPage() {
           <p>
             Base URL <Mono>https://ronation.live</Mono>. Every request needs the
             header <Mono>x-api-key: &lt;key&gt;</Mono> (
-            <Mono>Authorization: Bearer &lt;key&gt;</Mono> also works). POST +{" "}
-            <Mono>Content-Type: application/json</Mono>, except the two event
-            reads, which are GET.
+            <Mono>Authorization: Bearer &lt;key&gt;</Mono> also works). Writes are
+            POST + <Mono>Content-Type: application/json</Mono>; the reads (events, a
+            show&rsquo;s seats, a player&rsquo;s tickets, a hold) are GET, and
+            releasing a hold is DELETE.
           </p>
           <p>
             Enable <span className="text-fg">Allow HTTP Requests</span> in Roblox
@@ -455,7 +539,7 @@ export default async function ApiDocsPage() {
 
         <h3 className="mt-6 text-fg">It carries only the scopes it was minted with.</h3>
         <p className="text-muted">
-          Six of them, one per thing a key can do - listed below. Tick only what the
+          Seven of them, one per thing a key can do - listed below. Tick only what the
           key needs: a door scanner with <Mono>TICKETS_REDEEM</Mono> and nothing else,
           if it leaks, cannot be turned into a ticket printer. That is the entire
           reason scopes exist - one key per job, not one key for everything.
@@ -968,6 +1052,161 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
         </Note>
       </Section>
 
+      {/* 12b - seating and the hold */}
+      <Section title="Seating, and the hold">
+        <p className="text-muted">
+          Most shows are general admission and none of this applies:{" "}
+          <Mono>seatMode</Mono> is <Mono>NONE</Mono>, there is no map, and every
+          endpoint behaves exactly as it did before seating existed.{" "}
+          <span className="text-fg">
+            If you are integrating an unseated show, skip this whole section.
+          </span>
+        </p>
+        <p className="mt-3 text-muted">
+          A show whose <Mono>seatMode</Mono> is <Mono>SECTION</Mono> or{" "}
+          <Mono>SEAT</Mono> sells a <em>place</em>, and that changes one thing:{" "}
+          <span className="text-fg">
+            you cannot sell a numbered seat to somebody who never said which seat.
+          </span>{" "}
+          So there is a step before the money - you <span className="text-fg">hold</span>{" "}
+          the chair, then you sell it. The hold lasts <span className="text-fg">ten
+          minutes</span> and closes the window in which two booths in two servers
+          sell the same seat and only one of the two who paid gets it.
+        </p>
+
+        <h3 className="mt-6 text-fg">
+          <Mono>INTENTS_WRITE</Mono> is deliberately not <Mono>TICKETS_PURCHASE</Mono>
+        </h3>
+        <p className="text-muted">
+          Holding a chair cannot take a penny off anybody; asserting a payment can. A
+          lobby board or a seat map should be able to do the first without being able
+          to do the second, so they are two scopes - hand out the smaller one.
+        </p>
+
+        <h3 className="mt-6 text-fg">
+          <Mono>POST /api/v1/intents</Mono> - hold a seat
+        </h3>
+        <Code>{INTENT_REQ_JSON}</Code>
+        <Code>{INTENT_RES_JSON}</Code>
+        <ul className="mt-4 space-y-2 text-muted">
+          <li>
+            <span className="text-fg">
+              <Mono>seatKey</Mono> is the seat they GOT, not the seat you asked for.
+            </span>{" "}
+            If somebody took it half a second ago they are quietly moved to the next
+            best seat in the same tier. Render what comes back - never what you sent.
+          </li>
+          <li>
+            <Mono>devProductId</Mono> is what to prompt. Read it here rather than
+            keeping your own tier → product map, which drifts the first time somebody
+            re-makes a product. It is <Mono>null</Mono> on a free seated tier - there
+            is nothing to pay, so call <Mono>/reserve</Mono> with the token instead.
+          </li>
+          <li>
+            Omit <Mono>seatKey</Mono> for <span className="text-fg">best available</span>{" "}
+            in the tier - the same code the website&rsquo;s &ldquo;Best available&rdquo;
+            button runs.
+          </li>
+        </ul>
+        <p className="mt-3 text-muted">
+          <Mono>held: false</Mono> means no seat was taken; <Mono>reason</Mono> says
+          why. <Mono>seat_taken</Mono> is the one to respect above all others -{" "}
+          <span className="text-fg">do not prompt for payment</span>, the tier is
+          empty.
+        </p>
+
+        <h3 className="mt-8 text-fg">Selling the held seat</h3>
+        <p className="text-muted">
+          <Mono>POST /api/v1/tickets/purchase</Mono> takes an{" "}
+          <Mono>intentToken</Mono>, and on a seated show it is{" "}
+          <span className="text-fg">required</span> - without it we do not know which
+          chair they bought. Unseated shows are unchanged: the token stays optional.
+        </p>
+        <Note>
+          An expired hold is <span className="text-fg">not</span> a refusal. They have
+          already been charged, so an expiry costs them the seat they picked, not the
+          ticket they paid for: they fall back to the best available chair in the same
+          tier and the purchase goes through. The only true refusal is{" "}
+          <Mono>seat_taken</Mono> - the whole tier is gone - which is the one case that
+          needs a refund by hand.
+        </Note>
+
+        <h3 className="mt-8 text-fg">
+          <Mono>DELETE /api/v1/intents/&lt;token&gt;</Mono> - give the seat back
+        </h3>
+        <p className="text-muted">
+          Call it from <Mono>PromptProductPurchaseFinished</Mono> when{" "}
+          <Mono>wasPurchased == false</Mono>. Nothing breaks if you never do - the hold
+          dies on its own - but calling it means the next player sees the chair{" "}
+          <span className="text-fg">now</span> instead of staring at a seat nobody
+          wants for ten minutes. It answers <Mono>released: true/false</Mono>; false
+          just means it was already spent, cancelled, or gone.
+        </p>
+
+        <h3 className="mt-8 text-fg">
+          <Mono>GET /api/v1/events/&lt;id&gt;/seats</Mono> - what is gone, live
+        </h3>
+        <p className="text-muted">
+          Fetch the layout <span className="text-fg">once</span> at startup (
+          <Mono>GET /api/v1/events/&lt;id&gt;?include=venue</Mono> - it does not
+          change), then poll this for the diff. It is tiny and answers{" "}
+          <span className="text-fg">304 Not Modified</span> to an{" "}
+          <Mono>If-None-Match</Mono>, so an idle show costs you nothing.
+        </p>
+        <Code>{SEATS_JSON}</Code>
+        <p className="mt-3 text-muted">
+          <Mono>taken</Mono> is sold. <Mono>held</Mono> is somebody mid-purchase - draw
+          it differently if you like, but <span className="text-fg">do not offer it</span>
+          . If their hold expires the seat simply reappears as free.
+        </p>
+
+        <h3 className="mt-8 text-fg">Starting on the web, finishing in the game</h3>
+        <p className="text-muted">
+          A buyer on the website gets a deep link -{" "}
+          <Mono>roblox.com/games/start?placeId=&lt;event.placeId&gt;&amp;launchData=&lt;token&gt;</Mono>
+          . Your game reads it back with{" "}
+          <Mono>player:GetJoinData().LaunchData</Mono> and asks us what it means:
+        </p>
+        <Code>{INTENT_GET_JSON}</Code>
+        <p className="mt-3 text-muted">
+          You get the show, the tier, the seat, and <Mono>ticketId</Mono> if it has
+          already been spent - which is how you know to show them their ticket instead
+          of selling a second one. Branch on <Mono>live</Mono>: it folds in the expiry
+          that <Mono>status</Mono> alone does not.
+        </p>
+      </Section>
+
+      {/* 12c - what a player already holds */}
+      <Section title="What a player already holds">
+        <p className="text-muted">
+          <Mono>GET /api/v1/players/&lt;robloxId&gt;/tickets</Mono> - the booth&rsquo;s
+          opening question, and there was no way to ask it before. <Mono>eventId</Mono>{" "}
+          is optional: leave it off for every live ticket this player holds for your
+          org (a lobby board), pass it for the one (a booth).
+        </p>
+        <Code>{PLAYER_TICKETS_JSON}</Code>
+        <p className="mt-3 text-muted">Three answers, three things to do:</p>
+        <ul className="mt-3 space-y-2 text-muted">
+          <li>
+            <span className="text-fg">nothing</span> - sell them a ticket.
+          </li>
+          <li>
+            <span className="text-fg">GA</span> - offer them the upgrade. This is the
+            sale that otherwise never happens: they have no idea VIP is still
+            available, and you have no way to know you are talking to a GA holder.
+          </li>
+          <li>
+            <span className="text-fg">VIP</span> - let them in. Don&rsquo;t try to sell
+            them anything.
+          </li>
+        </ul>
+        <p className="mt-3 text-sm text-faint">
+          Cancelled tickets are never returned, and the admitting <Mono>code</Mono> is
+          not included - this answers a question about a <em>player</em>, it does not
+          hand over the thing that opens the door. Use <Mono>/verify</Mono> for that.
+        </p>
+      </Section>
+
       {/* 13 - void vs revoke */}
       <Section title="Taking a ticket back">
         <p className="text-muted">
@@ -1069,6 +1308,70 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           the answer - it is how you confirm the name resolved to the person you
           meant.
         </p>
+      </Section>
+
+      {/* 15 - the manual door */}
+      <Section title="The manual door">
+        <p className="text-muted">
+          Every scanner eventually dies mid-queue. The crew can check and check in a
+          ticket by hand, from a browser, and it makes the{" "}
+          <span className="text-fg">same decision this API makes</span> - the same code
+          path, so the laptop and the game can never disagree.
+        </p>
+        <ul className="mt-4 space-y-2 text-muted">
+          <li>
+            RNL&rsquo;s shows: <Mono>ronation.live/company/door</Mono>{" "}
+            (Roblox group rank 245+).
+          </li>
+          <li>
+            A partner&rsquo;s shows: <Mono>portal.ronation.live/&lt;slug&gt;/door</Mono>{" "}
+            (their crew, or RNL 250+).
+          </li>
+        </ul>
+        <p className="mt-3 text-muted">
+          Both take a typed code or a USB barcode scanner - a scanner is just a
+          keyboard, and the page clears and re-focuses the input after every check, so
+          you can scan a queue without touching the laptop. Both also take a{" "}
+          <span className="text-fg">player</span> - a username or a Roblox id - for
+          somebody who turned up having lost theirs, which needs tonight&rsquo;s show
+          picked for the same reason a player lookup does on the API.
+        </p>
+      </Section>
+
+      {/* 16 - ticket anatomy */}
+      <Section title="Ticket anatomy, briefly">
+        <ul className="space-y-2 text-muted">
+          <li>
+            <span className="text-fg">Code</span> - <Mono>RN-…</Mono> (RNL) or{" "}
+            <Mono>ST-…</Mono> (a partner&rsquo;s prefix). What the barcode and QR carry,
+            and what you send to the API. Treat it as an{" "}
+            <span className="text-fg">opaque string</span>: it is unique on its own, so
+            nothing looks a ticket up by parsing it - don&rsquo;t assume a fixed length.
+          </li>
+          <li>
+            <span className="text-fg">Barcode</span> - Code 128, down the left of the
+            ticket. A cheap USB laser scanner reads it.
+          </li>
+          <li>
+            <span className="text-fg">QR</span> - on the stub. It encodes the
+            ticket&rsquo;s <em>URL</em>, not its code, so a phone scan opens the ticket
+            page.
+          </li>
+          <li>
+            <span className="text-fg">Reference</span> - the ticket&rsquo;s opaque id
+            (<Mono>cmrij…</Mono>). Not secret; it is what the URL is addressed by.
+          </li>
+          <li>
+            <span className="text-fg">Seal</span> - six characters, e.g.{" "}
+            <Mono>PVZFNR</Mono>. Anti-forgery, optional to check - see above.
+          </li>
+          <li>
+            <span className="text-fg">Sealed until activated</span> - the code, barcode
+            and QR are hidden until the holder activates the ticket. A
+            reserved-but-not-activated ticket is still valid, and <Mono>/redeem</Mono>{" "}
+            activates it for them.
+          </li>
+        </ul>
       </Section>
 
       <p className="mt-10 text-sm text-faint">
@@ -1200,14 +1503,16 @@ function Callout({
   );
 }
 
-function Method({ method }: { method: "GET" | "POST" }) {
+function Method({ method }: { method: "GET" | "POST" | "DELETE" }) {
+  const tone =
+    method === "GET"
+      ? "bg-emerald-400/10 text-emerald-300"
+      : method === "DELETE"
+        ? "bg-red-400/10 text-red-300"
+        : "bg-accent-soft text-accent";
   return (
     <span
-      className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold ${
-        method === "GET"
-          ? "bg-emerald-400/10 text-emerald-300"
-          : "bg-accent-soft text-accent"
-      }`}
+      className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold ${tone}`}
     >
       {method}
     </span>
