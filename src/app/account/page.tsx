@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getUserSession } from "@/lib/session";
 import { devLoginEnabled, robloxConfigured } from "@/lib/env";
 import { Kicker } from "@/components/ui";
+import { getAccountHome } from "@/lib/account";
+import { AccountHome } from "@/components/account/account-home";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Your account" };
 
 const errors: Record<string, string> = {
   "not-configured": "Roblox sign-in isn't configured on this server yet.",
@@ -21,6 +22,20 @@ export default async function AccountPage({
   searchParams: { error?: string; returnTo?: string };
 }) {
   const session = await getUserSession();
+
+  // Signed in: this is the member's home now, not just a "you're signed in" card. The
+  // signed-out branch below is unchanged - it is still the sign-in page.
+  if (session) {
+    const home = await getAccountHome(session.uid);
+    return (
+      <AccountHome
+        home={home}
+        displayName={session.displayName}
+        username={session.username}
+      />
+    );
+  }
+
   const returnTo =
     searchParams.returnTo && searchParams.returnTo.startsWith("/")
       ? searchParams.returnTo
@@ -35,12 +50,11 @@ export default async function AccountPage({
           <div className="text-center">
             <Kicker>Members</Kicker>
             <h1 className="display mt-4 text-4xl sm:text-5xl">
-              {session ? "You're signed in" : "Sign in to reserve"}
+              Sign in to reserve
             </h1>
             <p className="mt-4 text-muted">
-              {session
-                ? "Your tickets are tied to your Roblox account so we can verify you at the door in-experience."
-                : "Sign in with Roblox to reserve tickets. We only read your username and avatar - never your password."}
+              Sign in with Roblox to reserve tickets. We only read your username
+              and avatar - never your password.
             </p>
           </div>
 
@@ -51,30 +65,7 @@ export default async function AccountPage({
               </p>
             ) : null}
 
-            {session ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-xl border border-line bg-bg p-4">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-accent font-bold text-accent-ink">
-                    {session.displayName.charAt(0).toUpperCase()}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">
-                      {session.displayName}
-                    </p>
-                    <p className="truncate text-sm text-muted">
-                      @{session.username}
-                    </p>
-                  </div>
-                </div>
-                <Link href="/tickets" className="btn btn-accent w-full">
-                  View my tickets
-                </Link>
-                <a href="/api/auth/logout" className="btn btn-ghost w-full">
-                  Sign out
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {robloxConfigured ? (
                   <a
                     href={`/api/auth/roblox/login?returnTo=${encodeURIComponent(
@@ -123,8 +114,7 @@ export default async function AccountPage({
                     </p>
                   </>
                 ) : null}
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

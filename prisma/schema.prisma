@@ -72,6 +72,11 @@ model User {
   discordLink DiscordLink?
   linkCode    LinkCode?
 
+  /// This member's watchlist and the change-notices addressed to them. Both are
+  /// user-owned and cascade away with the account.
+  eventFollows  EventFollow[]
+  notifications MemberNotification[]
+
   @@map("users")
 }
 
@@ -218,10 +223,83 @@ model Event {
   testimonials Testimonial[]
   intents      PurchaseIntent[]
 
+  /// Members watching this show, and the change-notices raised about it. A notice
+  /// SetNulls its eventId (it must outlive a cancelled show); a follow cascades away.
+  follows       EventFollow[]
+  notifications MemberNotification[]
+
   @@index([status, startsAt])
   @@index([partnerId, status, startsAt])
   @@index([venueMapId])
   @@map("events")
+}
+
+// ------------------------------------------------------------------
+// A member's personal watchlist: shows they follow to keep an eye on.
+//
+// A WATCHLIST, not a notification subscription in its own right - but its followers
+// ARE part of the audience for a change-notice (see MemberNotification), alongside
+// anyone holding a ticket. User-scoped exactly like Ticket: read by userId, never
+// listed by partner scope, so it carries no partnerId - the Event it points at
+// already has one. Both sides cascade: unfollowing is deleting the row.
+// ------------------------------------------------------------------
+model EventFollow {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId]) // one follow per person per show; the idempotency key
+  @@index([userId, createdAt])
+  @@index([eventId])
+  @@map("event_follows")
+}
+
+// ------------------------------------------------------------------
+// A change-notice TO one member: "the show you hold a ticket to was rescheduled".
+//
+// Fan-out on write - one row per affected member per change. Each row genuinely
+// means "this person needs to see this", so unlike an empty seat row it earns its
+// keep. The display text is FROZEN at write (title/body/url), for the same reason
+// Ticket.tierName is: the event it refers to may be edited again, or deleted, and
+// the notice must still read correctly. That is also why eventId is SetNull and
+// nullable - a "this show was cancelled" notice has to survive the show.
+//
+// `seenAt` null means unseen; that is what pops the modal on the next page load and
+// what the account hub counts. There is no delivery beyond the site itself: no
+// member email exists, and notify() reaches a STAFF channel, never a member.
+// ------------------------------------------------------------------
+model MemberNotification {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  eventId String?
+
+  kind  MemberNotificationKind
+  title String
+  body  String? @db.Text
+  url   String?
+
+  seenAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, seenAt, createdAt])
+  @@map("member_notifications")
+}
+
+enum MemberNotificationKind {
+  EVENT_RESCHEDULED
+  EVENT_VENUE
+  EVENT_CANCELLED
+  EVENT_UPDATED
 }
 
 // ------------------------------------------------------------------

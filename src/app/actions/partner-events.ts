@@ -14,6 +14,11 @@ import {
   partnerSiteRoute,
 } from "@/lib/partners/urls";
 import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
+import {
+  cancelledNotice,
+  diffEventChange,
+  notifyEventAudience,
+} from "@/lib/member-notify";
 
 // A partner's own shows.
 //
@@ -94,12 +99,30 @@ export async function updatePartnerEvent(formData: FormData) {
   }
   if (tiers === null) redirect(`${base}/${id}/edit?error=tiers`);
 
+  // The row as it was, read before the write, so a material change can be diffed
+  // and this partner's ticket-holders and followers told.
+  const before = await prisma.event.findFirst({
+    where: { id, partnerId: partner.slug },
+  });
+
   // updateMany, matched on the partner too: an id belonging to RNL or to another
   // partner matches zero rows rather than being quietly overwritten.
   const { count } = await prisma.event.updateMany({
     where: { id, partnerId: partner.slug },
     data: { ...data, startsAt: data.startsAt! },
   });
+
+  // Fire-and-forget a change-notice. Never throws, so it cannot break the write.
+  if (count > 0 && before) {
+    const notice = diffEventChange(before, data);
+    if (notice) {
+      void notifyEventAudience(
+        { id, slug: before.slug, partnerId: partner.slug },
+        notice,
+      );
+    }
+  }
+
   // And the tiers go through the same gate. syncEventTiers matches on eventId
   // alone, so gating it on the row the event write actually matched is what stops
   // one partner reaching another's tiers by pasting their event id.
@@ -122,9 +145,21 @@ export async function deletePartnerEvent(formData: FormData) {
 
   const id = s(formData, "id");
   if (id) {
-    await prisma.event.deleteMany({
+    // Gather the audience and raise the cancellation notice BEFORE the delete -
+    // the tickets and follows that define it cascade away with the event.
+    const event = await prisma.event.findFirst({
       where: { id, partnerId: partner.slug },
     });
+    if (event) {
+      await notifyEventAudience(
+        { id: event.id, slug: event.slug, partnerId: partner.slug },
+        cancelledNotice(event.title),
+        { deleted: true },
+      );
+      await prisma.event.deleteMany({
+        where: { id, partnerId: partner.slug },
+      });
+    }
   }
 
   refresh(partner.slug);

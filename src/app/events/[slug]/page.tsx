@@ -6,6 +6,7 @@ import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { StatusBadge, Kicker } from "@/components/ui";
 import { TierSummary } from "@/components/ticket/tier-summary";
+import { FollowButton } from "@/components/account/follow-button";
 import {
   dateBlock,
   formatDate,
@@ -75,6 +76,17 @@ export default async function EventPage({
       })
     : null;
   const hasTicket = Boolean(myTicket && myTicket.status !== "CANCELLED");
+
+  // Whether this member follows the show - drives the Follow / Following button below.
+  const following = session
+    ? Boolean(
+        await prisma.eventFollow.findUnique({
+          where: {
+            userId_eventId: { userId: session.uid, eventId: event.id },
+          },
+        }),
+      )
+    : false;
 
   const offers = await offersForEvent(event);
   const available = anyAvailable(offers);
@@ -295,6 +307,24 @@ export default async function EventPage({
                 the door
               </p>
             </div>
+          </div>
+
+          {/* Watchlist + calendar. Follow tells us to notify this member if the show
+              moves or is cancelled; the .ics is a plain download for anyone. */}
+          <div className="mt-4 grid gap-2">
+            <FollowButton
+              eventId={event.id}
+              following={following}
+              signedIn={Boolean(session)}
+              returnTo={`/events/${event.slug}`}
+            />
+            <a
+              href={`/events/${event.slug}/calendar`}
+              download
+              className="btn btn-ghost w-full"
+            >
+              Add to calendar
+            </a>
           </div>
 
           <div className="mt-4 rounded-2xl border border-line bg-elev p-5 text-sm text-muted">

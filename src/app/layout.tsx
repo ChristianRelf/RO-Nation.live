@@ -14,6 +14,7 @@ import "@/styles/brands/index.css";
 
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { MemberNotifier } from "@/components/notifications/member-notifier";
 import { site } from "@/lib/site";
 import { env } from "@/lib/env";
 import { fontClassFor } from "@/lib/partners/fonts";
@@ -73,6 +74,12 @@ export default function RootLayout({
     area === "partner-portal" ||
     area === "shop";
 
+  // Where a signed-in member browses AS a member: RNL's own site and a partner's public site.
+  // The change-notice modal belongs on those, and not on the staff portal, the survey host or
+  // the shop - a member is not there to be told their gig moved. `partner` is `bare`, so it has
+  // to be added back explicitly.
+  const memberFacing = !bare || area === "partner";
+
   // data-brand must sit on <html>, not on a wrapper: `body { background-color:
   // var(--bg) }` resolves at body, and a descendant cannot retroactively change
   // what body already computed. Same reason the font class goes here.
@@ -88,6 +95,7 @@ export default function RootLayout({
             <SiteFooter />
           </>
         )}
+        {memberFacing ? <MemberNotifier /> : null}
       </body>
     </html>
   );

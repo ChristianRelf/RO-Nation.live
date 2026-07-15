@@ -78,3 +78,56 @@ export function ticketCalendarHref({
   const body = lines.join("\r\n");
   return `data:text/calendar;charset=utf-8,${encodeURIComponent(body)}`;
 }
+
+// The EVENT calendar - a real file, served by a route handler, for anyone (not just a
+// ticket-holder) who wants a show in their calendar. Same primitives as the ticket version
+// above, minus the ticket code: there is nothing secret here, so it can be a plain download.
+export function eventCalendarBody({
+  id,
+  title,
+  startsAt,
+  endsAt,
+  doorsAt,
+  venue,
+  description,
+  url,
+  organiser,
+}: {
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt?: Date | null;
+  doorsAt?: Date | null;
+  venue?: string | null;
+  description?: string | null;
+  url: string;
+  organiser: string;
+}) {
+  const start = doorsAt ?? startsAt;
+  const end = endsAt ?? new Date(startsAt.getTime() + 2 * 60 * 60 * 1000);
+
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    `PRODID:-//${esc(organiser)}//Events//EN`,
+    "BEGIN:VEVENT",
+    `UID:${id}@ronation.live`,
+    `DTSTAMP:${stamp(new Date())}`,
+    `DTSTART:${stamp(start)}`,
+    `DTEND:${stamp(end)}`,
+    `SUMMARY:${esc(title)}`,
+    venue ? `LOCATION:${esc(venue)}` : null,
+    `DESCRIPTION:${esc(`${description ? `${description}\n` : ""}${organiser}\n${url}`)}`,
+    `URL:${esc(url)}`,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT30M",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${esc(`${title} - doors soon`)}`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean) as string[];
+
+  return lines.join("\r\n");
+}

@@ -24,6 +24,11 @@ import {
 } from "@/lib/content";
 import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 import { unrevokeTicket } from "@/lib/tickets/issue";
+import {
+  cancelledNotice,
+  diffEventChange,
+  notifyEventAudience,
+} from "@/lib/member-notify";
 
 // Every write to ronation.live's own content: events, blog, surveys, careers,
 // applications, attendees. One module, because there is now one door.
@@ -116,10 +121,31 @@ export async function updateEvent(formData: FormData) {
   }
   if (tiers === null) redirect(`/company/events/${id}/edit?error=tiers`);
 
+  // The row as it was, read before the write, so a material change (a new time, a
+  // pulled show) can be diffed and the ticket-holders told. Scoped to RNL's own,
+  // exactly like the update below.
+  const before = await prisma.event.findFirst({
+    where: { id, partnerId: null },
+  });
+
   const { count } = await prisma.event.updateMany({
     where: { id, partnerId: null },
     data: { ...data, startsAt: data.startsAt! },
   });
+
+  // Fire-and-forget a change-notice to everyone holding or following this show.
+  // Started here, before the tier sync that may redirect, so a saved edit always
+  // notifies. Never throws (see member-notify.ts), so it cannot break the write.
+  if (count > 0 && before) {
+    const notice = diffEventChange(before, data);
+    if (notice) {
+      void notifyEventAudience(
+        { id, slug: before.slug, partnerId: null },
+        notice,
+      );
+    }
+  }
+
   // Gated on the same check the event write just made: the tier sync matches on
   // eventId alone, so without this a company user could rewrite a partner's tiers
   // by pasting their event id - the exact hole `partnerId: null` above closes.
@@ -139,7 +165,22 @@ export async function deleteEvent(formData: FormData) {
   await requireCompanyUser();
 
   const id = s(formData, "id");
-  if (id) await prisma.event.deleteMany({ where: { id, partnerId: null } });
+  if (id) {
+    // Deleting a show cascades its tickets and follows away - so the audience for a
+    // "this was cancelled" notice must be gathered BEFORE the delete, not after.
+    // notifyEventAudience is awaited here for exactly that reason.
+    const event = await prisma.event.findFirst({
+      where: { id, partnerId: null },
+    });
+    if (event) {
+      await notifyEventAudience(
+        { id: event.id, slug: event.slug, partnerId: null },
+        cancelledNotice(event.title),
+        { deleted: true },
+      );
+      await prisma.event.deleteMany({ where: { id, partnerId: null } });
+    }
+  }
 
   refreshEvents();
   redirect("/company/events");
