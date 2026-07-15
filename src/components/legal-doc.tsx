@@ -1,6 +1,66 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Kicker } from "@/components/ui";
 import { cn, slugify } from "@/lib/utils";
+
+// Inline links inside otherwise-plain policy text.
+//
+// The sections are authored as plain strings - deliberately, because a policy is prose and
+// prose is easier to read and diff as prose than as a tree of elements. But a request the
+// reader is meant to ACT on ("make a request here") is worse as an un-clickable URL, so this
+// one affordance is allowed: a markdown-style [label](href) token in any body, list item or
+// intro string is turned into a real link, and everything else is left exactly as written.
+//
+// The token is specific enough that ordinary copy does not trip it: it needs a []-bracketed
+// label immediately followed by a ()-wrapped href, which prose that merely uses brackets or
+// parentheses never produces. Internal hrefs (starting "/") route through next/link;
+// anything else (mailto:, https:) is a plain anchor, and an external http(s) link opens in a
+// new tab.
+const INLINE_LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
+
+function renderInline(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+
+  for (const m of text.matchAll(INLINE_LINK)) {
+    const at = m.index ?? 0;
+    if (at > last) parts.push(text.slice(last, at));
+
+    const label = m[1];
+    const href = m[2];
+    const style = "link-underline text-accent transition-colors hover:text-fg";
+
+    if (href.startsWith("/")) {
+      parts.push(
+        <Link key={key} href={href} className={style}>
+          {label}
+        </Link>,
+      );
+    } else {
+      const external = href.startsWith("http");
+      parts.push(
+        <a
+          key={key}
+          href={href}
+          className={style}
+          {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+        >
+          {label}
+        </a>,
+      );
+    }
+
+    last = at + m[0].length;
+    key++;
+  }
+
+  // No links found: hand back the original string, so the overwhelmingly common case
+  // allocates nothing and renders identically to before.
+  if (key === 0) return text;
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
 
 // Shared layout for the legal documents so they stay visually consistent and
 // DRY. Each legal page just supplies a `sections` array.
@@ -39,6 +99,15 @@ export const robloxNav = [
 export const discordNav = [
   { label: "Discord - Privacy", href: "/legal/discord/privacy" },
   { label: "Discord - Terms", href: "/legal/discord/terms" },
+  { label: "Site policies", href: "/legal/privacy" },
+];
+
+// The Discord bot is a separate integration from the sign-in above - it links a
+// member's Roblox account to their Discord one - so its two documents cross-link
+// to each other, not to the sign-in pair.
+export const discordBotNav = [
+  { label: "Bot - Privacy", href: "/legal/discord/bot/privacy" },
+  { label: "Bot - Terms", href: "/legal/discord/bot/terms" },
   { label: "Site policies", href: "/legal/privacy" },
 ];
 
@@ -91,7 +160,7 @@ export function LegalDoc({
 
       <div className="shell max-w-3xl py-12">
         {intro ? (
-          <p className="text-lg leading-relaxed text-muted">{intro}</p>
+          <p className="text-lg leading-relaxed text-muted">{renderInline(intro)}</p>
         ) : null}
 
         {showContents ? (
@@ -133,7 +202,7 @@ export function LegalDoc({
               </h2>
               <div className="mt-3 space-y-3 leading-relaxed text-muted">
                 {s.body.map((p, j) => (
-                  <p key={j}>{p}</p>
+                  <p key={j}>{renderInline(p)}</p>
                 ))}
               </div>
 
@@ -142,7 +211,7 @@ export function LegalDoc({
                   {s.list.map((item, j) => (
                     <li key={j} className="flex gap-3 leading-relaxed text-muted">
                       <span className="mt-[0.45rem] h-1 w-1 shrink-0 rounded-full bg-accent" />
-                      <span>{item}</span>
+                      <span>{renderInline(item)}</span>
                     </li>
                   ))}
                 </ul>

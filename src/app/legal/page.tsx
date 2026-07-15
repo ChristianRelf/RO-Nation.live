@@ -53,8 +53,9 @@ export default function LegalIndexPage() {
 
             {g.group === "Integrations" ? (
               <p className="mt-3 max-w-2xl text-sm text-muted">
-                These are the documents Roblox and Discord were given when the sign-in
-                apps were registered. If you have signed in with either, they apply to
+                How we connect to Roblox and Discord: the documents their sign-in apps
+                were registered with, and the terms for our Discord bot. If you have
+                signed in with either, or linked your account to the bot, they apply to
                 you.
               </p>
             ) : null}

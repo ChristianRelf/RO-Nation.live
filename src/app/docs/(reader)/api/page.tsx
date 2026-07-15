@@ -1349,7 +1349,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
           speaks the same API, with the same keys, under the{" "}
           <Mono>DISCORD_LINK</Mono> scope. A signed-in member opens{" "}
           <Mono>ronation.live/account/link</Mono> and sees a six-digit code that rotates
-          every couple of minutes, shown as <Mono>123 . 456</Mono>. They give it to your
+          every 20 seconds, shown as <Mono>123 . 456</Mono>. They give it to your
           bot; your bot redeems it.
         </p>
         <Code>{DISCORD_LINK_JSON}</Code>
@@ -1376,7 +1376,7 @@ GET /api/v1/events/<id>       → one show, in full. Takes the id OR the slug.`}
             <span className="text-fg">
               rate limited to 8 tries per 10 minutes per Discord id
             </span>
-            ; the code is single-use, one-per-account, and dies in two minutes. So the
+            ; the code is single-use, one-per-account, and dies in 20 seconds. So the
             space anyone can search against a live code, through a throttled key, is
             tiny. A <Mono>429</Mono> with <Mono>Retry-After</Mono> means that budget is
             spent.

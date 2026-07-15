@@ -18,7 +18,7 @@
  *                    (lib/sso.ts already sweeps these opportunistically on redeem;
  *                    this is the floor under that, for a quiet week with few redeems.)
  *
- *   link_codes       A rotating six-digit Discord-link code lives a couple of minutes
+ *   link_codes       A rotating six-digit Discord-link code lives 20 seconds
  *                    (lib/discord-link.ts). It is replaced in place while a member
  *                    watches the page, but the last one they leave behind lingers past
  *                    its expiry - dead the moment it lapses, and swept here.

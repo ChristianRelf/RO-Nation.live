@@ -984,7 +984,7 @@ A separate little system, for a Discord bot rather than a game server - but it s
 the same API with the same keys, under the `DISCORD_LINK` scope.
 
 A signed-in member opens **ronation.live/account/link** and sees a six-digit code that
-rotates every couple of minutes, shown as `123 . 456`. They give it to your bot; your
+rotates every 20 seconds, shown as `123 . 456`. They give it to your bot; your
 bot redeems it:
 
 ```
@@ -1011,7 +1011,7 @@ value the user typed. The binding is only as honest as that.
 **Why six digits is enough.** It isn't, on its own - the safety is around it: the
 endpoint is key-gated (only your bot can call it) and **rate limited to 8 tries per 10
 minutes per Discord id**, the code is single-use and one-per-account, and it dies in
-two minutes. So the whole space anyone can search against a live code, through a
+20 seconds. So the whole space anyone can search against a live code, through a
 throttled key, is tiny. A `429` with `Retry-After` means that budget is spent.
 
 **The rest:**

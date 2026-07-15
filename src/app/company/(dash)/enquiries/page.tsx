@@ -23,7 +23,10 @@ export const dynamic = "force-dynamic";
 // so the sender is a real, checkable person rather than a string in a form.
 
 const STATUSES = ["NEW", "READING", "REPLIED", "CLOSED"] as const;
-const KINDS = ["BOOKING", "PRESS", "PARTNERSHIP", "GENERAL"] as const;
+// DATA is here so a privacy request gets its own filter pill - those carry statutory
+// deadlines and want triaging apart from a booking. Kept last so the everyday kinds
+// stay first in the row. See actions/data-requests.ts.
+const KINDS = ["BOOKING", "PRESS", "PARTNERSHIP", "GENERAL", "DATA"] as const;
 
 type Kind = (typeof KINDS)[number];
 type Status = (typeof STATUSES)[number];

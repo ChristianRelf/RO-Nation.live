@@ -1,6 +1,7 @@
 import type { BrandAsset } from "@prisma/client";
 import { brandAssetHref } from "@/lib/docs";
 import { formatBytes } from "@/lib/format";
+import { PdfEmbed } from "./pdf-embed";
 
 // One asset, shown in place rather than hidden behind a link.
 //
@@ -11,19 +12,19 @@ import { formatBytes } from "@/lib/format";
 // renderer now - the docs library, the templates area and the public press kit all
 // use it.
 //
-// ---- Why the embed can be trusted, and why it still has a fallback ----------
+// ---- How the PDF actually renders, and why there is still a fallback --------
 //
-// A PDF/image response is served with `frame-ancestors 'self'` (app/files/[id]
-// for INTERNAL, the Caddy /uploads block for PUBLIC), so it may be framed by our
-// own pages and nobody else's - the app's real pages keep `frame-ancestors
-// 'none'`. If that carve-out is ever wrong in an environment, the browser simply
-// shows a blank frame - so the Open / Download actions in the header are the
-// load-bearing part, always present, and the frame is the enhancement. A viewer
-// that assumed the frame worked would be a viewer that hid the file when it did
-// not.
+// A PDF is NOT framed by URL - the site-wide anti-clickjacking header (X-Frame-
+// Options: DENY / frame-ancestors 'none') would refuse it, and relaxing that per
+// file at the proxy is fiddly and fails to a grey "refused to connect" box. Instead
+// PdfEmbed fetches the bytes same-origin and frames a `blob:` URL, which has no
+// headers to refuse - so it works regardless of the proxy's framing rules, and the
+// app's real pages keep DENY. Images are shown with a plain <img>, which framing
+// rules never touch. Either way, the Open / Download actions in the header are the
+// load-bearing part and are always present; the preview is the enhancement.
 //
-// Shared component, so the brand library and the templates area cannot drift into
-// two ways of drawing the same file. The `href` ALWAYS comes from
+// Shared component, so the brand library, the templates area and the public press
+// kit cannot drift into three ways of drawing one file. The `href` ALWAYS comes from
 // brandAssetHref() - the one place that gets the PUBLIC/INTERNAL split right.
 
 export function AssetViewer({ asset }: { asset: BrandAsset }) {
@@ -76,14 +77,9 @@ export function AssetViewer({ asset }: { asset: BrandAsset }) {
       </figcaption>
 
       {isPdf ? (
-        <iframe
-          src={`${href}#view=FitH`}
-          title={asset.title}
-          loading="lazy"
-          // Tall enough to read a page without scrolling the whole document into a
-          // porthole; the browser's viewer supplies its own scroll, zoom and print.
-          className="h-[75vh] max-h-[900px] min-h-[420px] w-full border-0 bg-white"
-        />
+        // Rendered from a same-origin fetch + blob URL, so no framing header can refuse
+        // it - see PdfEmbed. The browser's own viewer still supplies scroll/zoom/print.
+        <PdfEmbed href={href} title={asset.title} />
       ) : isImage ? (
         // A neutral, faintly chequered stage so a transparent-background logo is
         // actually visible rather than invisible-on-invisible. Plain <img>, not

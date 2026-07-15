@@ -77,22 +77,13 @@ export async function GET(
   ) as ReadableStream<Uint8Array>;
 
   // Rendered in place for a PDF or an image; downloaded for anything else.
-  const isPdf = asset.mime === "application/pdf";
-  const inline = isPdf || asset.mime.startsWith("image/");
-
-  // Two CSPs, because a PDF and an SVG are different threats.
   //
-  //   PDF  - meant to be EMBEDDED in the docs viewer (an <iframe> on our own
-  //          /docs page). `sandbox` would stop the browser's PDF viewer rendering,
-  //          so it is dropped; `frame-ancestors 'self'` lets our own pages frame it
-  //          and nobody else's. A PDF cannot script our origin the way an SVG can -
-  //          its own JS runs in the viewer's sandbox, not ours.
-  //   else - an image or, dangerously, an SVG. Kept fully sandboxed: an SVG
-  //          navigated to directly would otherwise execute on RNL's own origin.
-  //          Images are shown with <img>, which framing rules never touch.
-  const csp = isPdf
-    ? "default-src 'none'; img-src 'self'; frame-ancestors 'self'"
-    : "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox";
+  // "Rendered in place" no longer means FRAMED by this URL - the docs viewer fetches
+  // these bytes and frames a blob (see components/pdf-embed.tsx), so this response can
+  // keep the site-wide DENY and the strict sandbox and nothing has to be relaxed for a
+  // PDF. `inline` still matters for anyone who opens the file directly.
+  const inline =
+    asset.mime === "application/pdf" || asset.mime.startsWith("image/");
 
   return new NextResponse(body, {
     headers: {
@@ -106,15 +97,11 @@ export async function GET(
       // hand it to the next person who asked, session or no session.
       "Cache-Control": "private, no-store, max-age=0, must-revalidate",
       Vary: "Cookie",
-      // The same defence Caddy applies to /uploads: a response is never re-guessed
-      // as a type it did not declare.
+      // The same two defences Caddy applies to /uploads: an SVG navigated to
+      // directly would otherwise execute on RNL's own origin.
       "X-Content-Type-Options": "nosniff",
-      // SAMEORIGIN, not DENY, so a PDF can be framed by our own docs viewer. The
-      // Caddyfile also relaxes the site-wide DENY for /files/* to match - both are
-      // needed, because whichever header lands last wins and neither should be the
-      // one that quietly re-locks it.
-      "X-Frame-Options": isPdf ? "SAMEORIGIN" : "DENY",
-      "Content-Security-Policy": csp,
+      "Content-Security-Policy":
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     },
   });
 }

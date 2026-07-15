@@ -147,9 +147,9 @@ const sections: LegalSection[] = [
     heading: "Your choices",
     body: [
       "You can cancel a ticket yourself, at any time, from your tickets page.",
-      "You can ask us for a copy of what we hold about you, ask us to correct it, or ask us to delete it. Contact us and tell us your Roblox username, so we can find the right account.",
+      "You can ask us for a copy of what we hold about you, ask us to correct it, or ask us to delete it. The simplest way is our [data request form](/legal/data-request/request): sign in with Roblox and it is tied to the right account automatically, so you do not even need to tell us your username.",
       "Two honest limits on deletion. We may keep a blacklist entry where removing it would put other people at risk - if you are on one, ask us to review it rather than to erase it. And we cannot un-count an aggregate figure, such as the attendance of a show that has already happened, because that number no longer identifies anybody.",
-      `To make a request, use the contact page or email ${site.contactEmail}.`,
+      `To make a request, use the [data request form](/legal/data-request/request). If you are locked out of your account and cannot sign in, email [${site.contactEmail}](mailto:${site.contactEmail}) instead and we will verify it is you another way. Our [Data & Privacy Requests](/legal/data-requests) page explains the whole process.`,
     ],
   },
   {

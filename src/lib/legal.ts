@@ -33,7 +33,7 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/privacy",
     title: "Privacy Policy",
     group: "Site policies",
-    updated: "13 July 2026",
+    updated: "15 July 2026",
     blurb:
       "What we hold about you, why we hold it, how long for, and how to get it deleted.",
   },
@@ -52,10 +52,51 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     updated: "6 July 2026",
     blurb: "How to behave at a show, and what happens if you don't.",
   },
+  {
+    href: "/legal/accessibility",
+    title: "Accessibility Notice",
+    group: "Site policies",
+    updated: "15 July 2026",
+    blurb:
+      "What we aim for, what we know is not there yet, and how to tell us something is in your way.",
+  },
+  {
+    href: "/legal/cookies",
+    title: "Cookie Notice",
+    group: "Site policies",
+    updated: "15 July 2026",
+    blurb:
+      "Every cookie this site sets, why it exists, and why there is no banner asking you to accept them.",
+  },
+  {
+    href: "/legal/tickets",
+    title: "Ticket & Event Terms",
+    group: "Site policies",
+    updated: "15 July 2026",
+    blurb:
+      "The rules for a ticket: free, tied to your account, not for resale, and void if the show is cancelled.",
+  },
+  {
+    href: "/legal/data-requests",
+    title: "Data & Privacy Requests",
+    group: "Site policies",
+    updated: "15 July 2026",
+    blurb:
+      "How to get a copy of your data, correct it, or have it deleted - what to send, and the two honest limits.",
+  },
+  {
+    href: "/legal/refunds",
+    title: "Merch & Refunds",
+    group: "Site policies",
+    updated: "15 July 2026",
+    blurb:
+      "The shop is a showcase - every purchase happens on Roblox, under Roblox's terms and refund rules.",
+  },
 
-  // The four below are the URLs handed to Roblox and Discord when the OAuth apps were
-  // registered. They are not decoration - a broken link here is a broken sign-in for the
-  // whole platform, which is why they are listed rather than buried.
+  // The documents below concern how we connect to Roblox and Discord. The first four are the
+  // URLs handed to Roblox and Discord when the OAuth sign-in apps were registered - a broken
+  // link here is a broken sign-in for the whole platform, which is why they are listed rather
+  // than buried. The last two cover our Discord bot, which is a separate thing again.
   {
     href: "/legal/roblox/privacy",
     title: "Roblox sign-in - Privacy",
@@ -83,6 +124,24 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     group: "Integrations",
     updated: "12 July 2026",
     blurb: "The terms attached to signing in with a Discord account.",
+  },
+
+  // The Discord BOT is not the Discord sign-in. Sign-in is how staff get into the portal; the
+  // bot is what lets an ordinary member tie their Roblox account to their Discord one, by
+  // reading a short code from ronation.live/account/link. These two documents cover it.
+  {
+    href: "/legal/discord/bot/privacy",
+    title: "Discord bot - Privacy",
+    group: "Integrations",
+    updated: "15 July 2026",
+    blurb: "What the bot receives when you link your account, and what it stores.",
+  },
+  {
+    href: "/legal/discord/bot/terms",
+    title: "Discord bot - Terms",
+    group: "Integrations",
+    updated: "15 July 2026",
+    blurb: "The terms for using our Discord bot and linking your account to it.",
   },
 ];
 

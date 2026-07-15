@@ -20,16 +20,17 @@ import { prisma } from "./db";
 //     per Discord id, so guessing costs a bot key and buys a handful of tries;
 //   • a code is SINGLE-USE and ONE-PER-ACCOUNT (rotating replaces it), so there is at
 //     most one live code per member and it dies the instant it is spent;
-//   • it EXPIRES in a couple of minutes, so any given target is valid only briefly;
+//   • it EXPIRES in 20 seconds, so any given target is valid only for a blink;
 //   • a wrong guess returns one uniform answer, so the endpoint is not an oracle.
 //
 // Remove any one of those and six digits becomes too few. Keep them and the whole
 // space an attacker can search in a code's lifetime, through a rate-limited key, is
 // nothing.
 
-/** How long a freshly-minted code lives. Long enough to read into Discord, short
- *  enough that a guessed code is rarely still valid. The page rotates on this. */
-export const LINK_CODE_TTL_SECONDS = 120;
+/** How long a freshly-minted code lives - deliberately tight. Just long enough to
+ *  read the six digits into Discord, and short enough that a guessed code is almost
+ *  never still valid by the time it is tried. The page rotates on this. */
+export const LINK_CODE_TTL_SECONDS = 20;
 
 /** Unbiased six-digit code, zero-padded. crypto.randomInt, never Math.random - a
  *  predictable code is a guessable one, and the whole point is that it is not. */

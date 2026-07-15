@@ -187,7 +187,7 @@ export function LinkCodePanel({
           and confirms.
         </Step>
         <Step n={3}>
-          The code rotates every couple of minutes and is single-use - don&rsquo;t
+          The code rotates every 20 seconds and is single-use - don&rsquo;t
           share it, and it&rsquo;s fine if it changes before you finish.
         </Step>
       </ol>

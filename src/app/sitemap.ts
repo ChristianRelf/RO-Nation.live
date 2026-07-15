@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { env } from "@/lib/env";
+import { LEGAL_DOCS } from "@/lib/legal";
 import {
   getUpcomingEvents,
   getPastEvents,
@@ -27,14 +28,15 @@ const STATIC_ROUTES = [
   "/partners",
   "/press",
   "/services",
+  // The /legal index, then every published policy - read from the one registry that
+  // /legal itself renders from (lib/legal.ts), so a new document is advertised here the
+  // moment it is added there rather than needing a second copy of the list kept in step.
   "/legal",
-  "/legal/privacy",
-  "/legal/terms",
-  "/legal/code-of-conduct",
-  "/legal/roblox/privacy",
-  "/legal/roblox/terms",
-  "/legal/discord/privacy",
-  "/legal/discord/terms",
+  ...LEGAL_DOCS.map((d) => d.href),
+  // The data-request flow's landing. Not a policy (so not in LEGAL_DOCS), but a real public
+  // entry point worth indexing; the /new form under it is signed-in and dynamic, so it stays
+  // out.
+  "/legal/data-request/request",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

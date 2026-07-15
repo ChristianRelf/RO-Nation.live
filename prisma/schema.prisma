@@ -79,15 +79,15 @@ model User {
 // Linking a Roblox account to Discord.
 //
 // A signed-in member opens /account/link and is shown a 6-digit code that rotates
-// every couple of minutes (LinkCode). They read it to a Discord bot, which calls
+// every 20 seconds (LinkCode). They read it to a Discord bot, which calls
 // POST /api/v1/discord/link with the code and the Discord user id; we look the code
 // up, and if it is live we write the DiscordLink and burn the code.
 //
 // The code is the whole secret, and six digits is not much - so its safety is not the
 // code, it is everything around it: the code is single-use, one-per-account and dies
-// in minutes, AND the redeem endpoint is key-gated (scope DISCORD_LINK) and rate
+// in 20 seconds, AND the redeem endpoint is key-gated (scope DISCORD_LINK) and rate
 // limited per Discord id. Guessing a live code therefore costs a bot key and buys only
-// a handful of tries against a target that is valid for two minutes. See
+// a handful of tries against a target that is valid for 20 seconds. See
 // lib/discord-link.ts.
 // ------------------------------------------------------------------
 model DiscordLink {
@@ -125,7 +125,7 @@ model LinkCode {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String @unique
 
-  /// Short - a couple of minutes. Past it the code is refused, and the daily cull
+  /// Short - 20 seconds. Past it the code is refused, and the daily cull
   /// (scripts/cull.ts) deletes it.
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -1676,6 +1676,13 @@ enum EnquiryKind {
   PRESS
   PARTNERSHIP
   GENERAL
+
+  /// A privacy / data request submitted from /legal/data-request/request/new. Files
+  /// into the same inbox as everything else (it is still a message from outside that a
+  /// human has to action), but tagged so legal requests - which carry statutory
+  /// deadlines - can be filtered and triaged apart from a booking. See
+  /// app/actions/data-requests.ts.
+  DATA
 }
 
 enum EnquiryStatus {

@@ -96,36 +96,19 @@
 	#   Referrer-Policy  full path same-site, bare origin cross-site.
 	#   nosniff          a response typed text/html is never re-guessed as script.
 	#
-	# The CSP here carries ONLY frame-ancestors - the modern anti-framing lock. It
-	# deliberately sets nothing else (no default-src, no script-src), so it cannot
-	# break a page by blocking a resource it legitimately loads. The /uploads handler
-	# below sets its own, far stricter CSP, and because that runs later in the chain
-	# it wins for those responses - user-uploaded files stay fully locked down.
-	# Framing is DENY'd everywhere EXCEPT the two embeddable asset paths, which the
-	# docs viewer needs to <iframe> on our own origin (a brand-guideline PDF, a
-	# template). Splitting the header block by a matcher - rather than setting DENY
-	# globally and overriding it afterwards - means no two directives ever fight over
-	# X-Frame-Options on one response, so the result is not a question of which one
-	# Caddy happens to apply last.
+	# The CSP carries frame-ancestors 'none' (the anti-framing lock) plus object-src
+	# and base-uri 'none' - all safe to ENFORCE, none able to block a resource the app
+	# legitimately loads. The /uploads handler below sets its own stricter CSP and wins
+	# for those responses.
 	#
-	#   @embeddable  /files/* (gated, app-served) and /uploads/*.pdf (public, Caddy).
-	#   @chrome      everything else - the app's real pages, every sensitive action
-	#                on them, which must stay unframeable.
-	@embeddable path /files/* /uploads/*.pdf
-	@chrome {
-		not path /files/* /uploads/*.pdf
-	}
-
-	header @chrome {
+	# Embedded PDFs do NOT need any of this relaxed: the docs and press viewers fetch
+	# the bytes and frame a blob URL (components/pdf-embed.tsx), which has no headers
+	# for a browser to refuse - so the whole site stays X-Frame-Options: DENY.
+	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		X-Content-Type-Options "nosniff"
-		# frame-ancestors stays; object-src/base-uri are added because they are safe
-		# to ENFORCE (nothing here embeds a plugin or relies on a <base> tag) and they
-		# close two real XSS-escalation vectors - Flash/PDF plugin injection and
-		# <base href> hijack of every relative URL on the page. Still deliberately NO
-		# default-src/script-src here, so this cannot block a resource the app loads.
 		Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'none'"
 		# Rollout probe for a real script policy. Report-Only NEVER blocks - the browser
 		# just logs what a strict `script-src 'self'` would break (Next 14 injects an
@@ -134,18 +117,6 @@
 		# header above once the inline scripts carry a nonce. No report-uri set, so
 		# violations stay in the console rather than being POSTed anywhere.
 		Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
-	}
-
-	# Same hardening, but framed by our OWN pages only. The CSP that carries
-	# frame-ancestors 'self' is set on the response itself - by app/files/[id] for a
-	# gated PDF, and the /uploads/*.pdf branch below for a public one - so this only
-	# relaxes X-Frame-Options from DENY to SAMEORIGIN to match. A brand PDF has
-	# nothing to clickjack; @chrome keeps the real app pages locked to DENY.
-	header @embeddable {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
-		X-Frame-Options "SAMEORIGIN"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		X-Content-Type-Options "nosniff"
 	}
 
 	# Uploaded images, served straight off the shared volume - they never touch
@@ -162,20 +133,8 @@
 	handle_path /uploads/* {
 		root * /srv/uploads
 		header X-Content-Type-Options nosniff
+		header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 		header Cache-Control "public, max-age=31536000, immutable"
-
-		# A PDF here is EMBEDDED in the docs viewer, and `sandbox` (kept for everything
-		# else, esp. SVG) stops the browser's PDF viewer rendering. So .pdf drops sandbox
-		# and carries frame-ancestors 'self' so our own /docs page may frame it. A PDF
-		# cannot script our origin the way an SVG can, so this is safe for .pdf alone.
-		# (Path matched AFTER handle_path strips /uploads, so it is the bare suffix.)
-		@pdf path *.pdf
-		header @pdf Content-Security-Policy "default-src 'none'; frame-ancestors 'self'"
-		@notpdf {
-			not path *.pdf
-		}
-		header @notpdf Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
-
 		file_server
 	}
 
