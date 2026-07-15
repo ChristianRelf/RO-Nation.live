@@ -137,7 +137,14 @@ services:
 
   # TLS terminator. Gets and renews Let's Encrypt certificates automatically for
   # both hostnames, and redirects http → https. See ./Caddyfile.
+  #
+  # Joins two networks: `default` (to reach `web` and the other services in this
+  # project) and the shared external `edge` network (to reach the RNL support
+  # dashboard at `rnl-dashboard:6969`). Both are declared at the bottom of the file.
   caddy:
+    networks:
+      - default
+      - edge
     image: caddy:2-alpine
     restart: unless-stopped
     depends_on:
@@ -183,6 +190,17 @@ services:
       # no traversal out of /srv/uploads can reach them.
       #
       # DO NOT ADD IT.
+
+networks:
+  # This project's private network (created automatically by compose). All the
+  # services above share it; only `caddy` also joins `edge`.
+  default:
+  # Shared network that the RNL support stack also joins, so this Caddy can
+  # reverse-proxy support.ronation.live → rnl-dashboard:6969. Declared external
+  # because the RNL stack (a separate compose project) does not own it either.
+  # Create it once on the host:  docker network create edge
+  edge:
+    external: true
 
 volumes:
   db-data:
