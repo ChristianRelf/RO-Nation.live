@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Kicker } from "@/components/ui";
 import { DataRequestForm } from "@/components/data-request-form";
+import { OfficialMark } from "@/components/official-mark";
 import {
   DATA_REQUEST_VALUES,
   type DataRequestType,
@@ -59,6 +60,7 @@ export default async function NewDataRequestPage({
       </div>
 
       <div className="shell max-w-xl py-12">
+        <OfficialMark className="mb-4" />
         <DataRequestForm
           session={session}
           defaultType={defaultType}

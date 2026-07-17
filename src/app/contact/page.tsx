@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { EnquiryKind } from "@prisma/client";
 import { EnquiryForm } from "@/components/enquiry-form";
 import { Kicker, SectionHeading } from "@/components/ui";
+import { OfficialMark } from "@/components/official-mark";
 import { getUserSession } from "@/lib/session";
 import { site } from "@/lib/site";
 
@@ -127,6 +128,7 @@ export default async function ContactPage({
           </div>
 
           <div className="lg:pt-[4.5rem]">
+            <OfficialMark className="mb-4" />
             <EnquiryForm
               session={session}
               defaultKind={defaultKind}

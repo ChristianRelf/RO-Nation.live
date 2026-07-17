@@ -6,6 +6,7 @@ import { getUserSession } from "@/lib/session";
 import { Kicker } from "@/components/ui";
 import { toLines } from "@/lib/utils";
 import { ApplyForm } from "@/components/apply-form";
+import { OfficialMark } from "@/components/official-mark";
 
 export const dynamic = "force-dynamic";
 
@@ -80,7 +81,11 @@ export default async function CareerPage({
         </div>
 
         {/* Apply */}
+        {/* The mark goes HERE, on RNL's careers page, and not inside ApplyForm - the
+            partner careers page renders that same component, and its roles are the
+            partner's, not ours. See components/official-mark.tsx. */}
         <aside id="apply" className="lg:sticky lg:top-24 lg:self-start">
+          <OfficialMark className="mb-4" />
           <ApplyForm
             career={career}
             session={session}

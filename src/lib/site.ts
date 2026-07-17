@@ -65,6 +65,20 @@ export const site = {
   contactEmail: "hello@ronation.live",
 
   /**
+   * The domain RNL's own forms live on - the bare name, for reading, not linking.
+   *
+   * Hardcoded, and deliberately NOT derived from env.siteUrl. NEXT_PUBLIC_SITE_URL is
+   * passed to the container at RUNTIME (docker-compose.yml), but Next inlines every
+   * NEXT_PUBLIC_* at BUILD time, and the image is built without it - so env.siteUrl is
+   * baked as its "http://localhost:3000" fallback. A form telling the public that RNL
+   * only ever asks on localhost:3000 is worse than saying nothing at all.
+   *
+   * contactEmail above already carries the same domain the same way, for the same
+   * reason. If RNL ever moves, both change together, here.
+   */
+  domain: "ronation.live",
+
+  /**
    * The paragraph a journalist copies and pastes.
    *
    * Every claim in it is checkable against something on this site: RNL runs shows inside

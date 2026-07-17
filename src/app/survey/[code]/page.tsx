@@ -7,6 +7,7 @@ import { submitSurveyResponse } from "@/app/actions/survey";
 import { SURVEY_CODE_RE } from "@/lib/utils";
 import { formatDateTime } from "@/lib/format";
 import { site } from "@/lib/site";
+import { OfficialMark } from "@/components/official-mark";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,13 @@ export default async function SurveyPage({
             {survey.description}
           </p>
         ) : null}
+
+        {/* Above the fold, and outside the panel switch below, so it is on the page
+            in every state - including the sign-in one, which is the only state where
+            somebody is about to hand Roblox a redirect on our say-so. This host is
+            the whole reason the mark exists: a bare code on a subdomain, arriving by
+            link, is otherwise unverifiable. */}
+        <OfficialMark className="mt-8" />
 
         <div className="mt-10">
           {done ? (

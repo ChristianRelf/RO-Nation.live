@@ -4,6 +4,7 @@ import { EnquiryForm } from "@/components/enquiry-form";
 import { Reveal } from "@/components/reveal";
 import { Kicker, SectionHeading } from "@/components/ui";
 import { activePartners } from "@/lib/partners/registry";
+import { OfficialMark } from "@/components/official-mark";
 import { getUserSession } from "@/lib/session";
 import { site } from "@/lib/site";
 
@@ -268,13 +269,16 @@ export default async function ServicesPage({
             {/* Pinned to BOOKING, so the two extra fields - roughly when, roughly how big
                 - are showing before they start typing. returnTo brings them back HERE on
                 submit rather than teleporting them to /contact mid-thought. */}
-            <EnquiryForm
-              session={session}
-              defaultKind="BOOKING"
-              returnTo="/services"
-              sent={searchParams.sent === "1"}
-              error={searchParams.error}
-            />
+            <div>
+              <OfficialMark className="mb-4" />
+              <EnquiryForm
+                session={session}
+                defaultKind="BOOKING"
+                returnTo="/services"
+                sent={searchParams.sent === "1"}
+                error={searchParams.error}
+              />
+            </div>
           </div>
         </div>
       </section>

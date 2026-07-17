@@ -264,7 +264,14 @@ export default async function PressPage() {
           has, never a placeholder. On a press page it earns its place twice over - the
           point of "official channels" is that a journalist can tell a real account from
           an impersonator, and a dead link would defeat exactly that. */}
-      <section className="border-y border-line bg-elev">
+      {/* The id is load-bearing, not decoration: OfficialMark - the "this really is
+          RNL asking" strip on every RNL-owned form - links straight here. Renaming it
+          breaks that link into a silent scroll-to-top on the one page whose entire job
+          is letting somebody check. */}
+      <section
+        id="official-channels"
+        className="scroll-mt-24 border-y border-line bg-elev"
+      >
         <div className="shell py-14">
           <SectionHeading kicker="Verify us" title="Official channels" />
           <p className="mt-8 max-w-2xl text-muted">
