@@ -24,8 +24,17 @@ function confettiColors(): readonly string[] {
   return partnerBySlug(slug)?.confetti ?? RNL_CONFETTI;
 }
 
-// Self-contained confetti burst on a full-screen canvas - no dependencies.
-export function fireConfetti() {
+/**
+ * Self-contained confetti burst on a full-screen canvas - no dependencies.
+ *
+ * `z` exists because the canvas has to be told what it is celebrating IN FRONT OF, and it
+ * cannot work that out for itself. At the default 60 it sits above the page and below the
+ * dialogs (see the ladder in notifier-modal.tsx) - right for the ticket page, where the
+ * celebration happens on the page itself. A modal that celebrates has to raise it past its
+ * own scrim, or the burst fires perfectly and every single piece of it lands behind a sheet
+ * of 60%-black backdrop-blur, which looks exactly like confetti that never fired.
+ */
+export function fireConfetti({ z = 60 }: { z?: number } = {}) {
   if (typeof window === "undefined") return;
   const prefersReduced = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -33,8 +42,7 @@ export function fireConfetti() {
   if (prefersReduced) return;
 
   const canvas = document.createElement("canvas");
-  canvas.style.cssText =
-    "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60";
+  canvas.style.cssText = `position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:${z}`;
   document.body.appendChild(canvas);
   const ctx = canvas.getContext("2d");
   if (!ctx) {
@@ -114,16 +122,16 @@ export function fireConfetti() {
   requestAnimationFrame(tick);
 }
 
-/** Fires once when `when` is true. Renders nothing. */
-export function Celebrate({ when }: { when: boolean }) {
+/** Fires once when `when` is true. Renders nothing. `z` is passed through to fireConfetti. */
+export function Celebrate({ when, z }: { when: boolean; z?: number }) {
   const fired = useRef(false);
   useEffect(() => {
     if (when && !fired.current) {
       fired.current = true;
-      const t = setTimeout(fireConfetti, 120);
+      const t = setTimeout(() => fireConfetti({ z }), 120);
       return () => clearTimeout(t);
     }
-  }, [when]);
+  }, [when, z]);
 
   return null;
 }

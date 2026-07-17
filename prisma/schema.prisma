@@ -300,6 +300,20 @@ enum MemberNotificationKind {
   EVENT_VENUE
   EVENT_CANCELLED
   EVENT_UPDATED
+
+  // ---- About THEIR ticket, not about the show -----------------------------
+  //
+  // The four above are one broadcast to everybody holding or following a show.
+  // These two are addressed to ONE person, because somebody edited their row on
+  // the company tickets page - and that difference is why they are separate kinds
+  // rather than a fifth EVENT_UPDATED.
+  //
+  // The split between them is not cosmetic either: it is the only thing that tells
+  // the notifier which dialog to open. TICKET_UPGRADED gets the celebration; every
+  // other change to a ticket gets the ordinary notice. See lib/member-notify.ts
+  // (diffTicketChange decides which) and components/notifications/.
+  TICKET_UPDATED
+  TICKET_UPGRADED
 }
 
 // ------------------------------------------------------------------

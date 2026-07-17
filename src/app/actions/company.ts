@@ -23,11 +23,15 @@ import {
   uniqueSlug,
 } from "@/lib/content";
 import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
-import { unrevokeTicket } from "@/lib/tickets/issue";
+import { unrevokeTicket, voidTicket } from "@/lib/tickets/issue";
+import { effectiveTiers } from "@/lib/tickets/pricing";
 import {
   cancelledNotice,
   diffEventChange,
+  diffTicketChange,
   notifyEventAudience,
+  notifyTicketHolder,
+  ticketVoidedNotice,
 } from "@/lib/member-notify";
 
 // Every write to ronation.live's own content: events, blog, surveys, careers,
@@ -203,12 +207,203 @@ export async function setTicketStatus(formData: FormData) {
       data: {
         status,
         checkedInAt: status === "CHECKED_IN" ? new Date() : null,
+
+        // ---- THE THIRD WRITER ---------------------------------------------
+        //
+        // Ticket.seatKey says there are exactly two writers that cancel a ticket -
+        // voidTicket() and cancelTicket() - and that both must null the seat. This was a
+        // third, and it did not.
+        //
+        // @@unique([eventId, seatKey]) binds CANCELLED rows too, so the chair stayed owned
+        // by a dead ticket: unsellable for the life of the show, rendered taken on the map,
+        // nobody sitting in it, and nothing on any screen to say why. One click of the
+        // Cancel button on the attendees page burned a seat permanently.
+        //
+        // Spread, not set unconditionally: RESERVED and CHECKED_IN must leave the seat
+        // exactly where it is. Only cancelling gives the chair back.
+        ...(status === "CANCELLED" ? { seatKey: null, sectionKey: null } : {}),
       },
     });
-    if (count > 0 && eventId) {
-      revalidatePath(`/company/events/${eventId}/attendees`);
+    if (count > 0) {
+      refreshTickets(id);
+      if (eventId) revalidatePath(`/company/events/${eventId}/attendees`);
     }
   }
+}
+
+// ---- tickets (the register) --------------------------------------
+//
+// /company/tickets is every ticket RNL has ever issued, across every one of its shows -
+// which is a different question from /company/events/<id>/attendees, and that is why it is
+// a different page rather than a filter on that one. The attendees list answers "who is
+// coming to this show". This answers "where is this person's ticket", which is the question
+// you actually arrive with when somebody messages you a code.
+//
+// Every read and every write below is pinned to `event: { partnerId: null }`. A Ticket row
+// has no partnerId of its own - a ticket's org lives on its EVENT - so the scope has to
+// travel through the relation on every single query. Miss it on a read and this page lists
+// a partner's ticket-holders; miss it on a write and RNL's staff are editing them.
+
+function refreshTickets(id?: string) {
+  revalidatePath("/company/tickets");
+  if (id) revalidatePath(`/company/tickets/${id}`);
+}
+
+/** A company ticket, resolved inside RNL's scope. Null = not ours, or not real. */
+async function companyTicket(id: string) {
+  if (!id) return null;
+  return prisma.ticket.findFirst({
+    where: { id, event: { partnerId: null } },
+    include: {
+      event: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          seatMode: true,
+          tiers: true,
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Move a ticket to a different tier.
+ *
+ * This is the edit, and it is the ONE field on a ticket that a person can meaningfully be
+ * moved between - which is why this action takes a tier and nothing else.
+ *
+ * ---- Why this rewrites the frozen snapshot --------------------------------
+ *
+ * tierName and priceRobux are frozen at issue on purpose: renaming "VIP" to "VIP - Front
+ * Barrier" must not rewrite what somebody already holds. That rule is about editing the
+ * TIER. This is the other act - moving the TICKET - and it is precisely the case where the
+ * snapshot is supposed to move with it. What they hold is now a different thing, so the
+ * ticket must say so, under that tier's name and at that tier's price.
+ *
+ * ---- What it deliberately does NOT touch ----------------------------------
+ *
+ * The seat. issueTicket() re-resolves a chair when a paid upgrade lands, because a GA holder
+ * who buys VIP should get a VIP seat rather than a VIP badge and a place in the pit - but it
+ * does that inside the event-row lock, against the section specs, with ignoreTicketId set to
+ * skip its own chair. Reproducing that from a staff form is not a select box, and getting it
+ * half right double-sells a seat. So a tier move on a SEATED show leaves them where they are
+ * sitting and the page says so; moving the chair is the venue map's job.
+ */
+export async function updateTicket(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "ticketId");
+  const tierId = s(formData, "tierId");
+
+  const ticket = await companyTicket(id);
+  if (!ticket) redirect("/company/tickets");
+
+  // Re-read from the database, not from the form. The client posted an id; the name and the
+  // price are taken from the row it points at, and only if that row belongs to THIS event -
+  // otherwise a pasted tier id from another show writes another show's price onto this
+  // ticket. Same rule the crew picker follows: never trust the client's idea of what a thing
+  // is, only which thing it means.
+  const tier = ticket.event.tiers.find((t) => t.id === tierId);
+  if (!tier) redirect(`/company/tickets/${id}?error=tier`);
+
+  const before = {
+    tierId: ticket.tierId,
+    tierName: ticket.tierName,
+    priceRobux: ticket.priceRobux,
+  };
+  const after = {
+    tierId: tier.id,
+    tierName: tier.name,
+    priceRobux: tier.priceRobux,
+  };
+
+  await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: after,
+  });
+
+  // The holder is told, and WHICH dialog they get is decided by diffTicketChange against the
+  // event's own tier order.
+  //
+  // AWAITED, unlike the event fan-out above, which is `void`ed. That is not an inconsistency:
+  // the fan-out is voided because it can be thousands of inserts and no staff member should
+  // wait on them. This is one insert. The safety argument for voiding does not apply either -
+  // notifyTicketHolder never throws, so awaiting it cannot turn a saved edit into an error -
+  // and awaiting buys the thing that actually matters: a floating promise on a server action
+  // has no guarantee of surviving the response, so the notice could simply never be written.
+  // A silently-dropped "you've been upgraded" is a bug nobody would ever be able to reproduce.
+  const notice = diffTicketChange(before, after, {
+    eventTitle: ticket.event.title,
+    tierOrder: effectiveTiers(ticket.event.tiers)
+      .map((t) => t.id)
+      .filter((tid): tid is string => tid !== null),
+  });
+  if (notice) {
+    await notifyTicketHolder(
+      { id: ticket.id, userId: ticket.userId, eventId: ticket.eventId },
+      notice,
+    );
+  }
+
+  refreshTickets(id);
+  revalidatePath(`/company/events/${ticket.eventId}/attendees`);
+  redirect(`/company/tickets/${id}?ok=${notice?.kind === "TICKET_UPGRADED" ? "upgraded" : "updated"}`);
+}
+
+/**
+ * Void a ticket from the register, or void and ban.
+ *
+ * Delegates to voidTicket() rather than writing status here, and that is not tidiness: that
+ * primitive is where "cancelling nulls the seat" lives, along with the refusal to void a
+ * CHECKED_IN ticket. A fourth hand-rolled cancel on this page is how the bug fixed in
+ * setTicketStatus above got written in the first place.
+ *
+ * voidTicket() takes an id and no scope, because the API path scopes before calling it. So
+ * this resolves the ticket through companyTicket() FIRST - a pasted id from a partner's show
+ * resolves to null and never reaches the primitive.
+ */
+export async function voidCompanyTicket(formData: FormData) {
+  const user = await requireCompanyUser();
+
+  const id = s(formData, "ticketId");
+  const ban = s(formData, "ban") === "true";
+  const reason = s(formData, "reason").slice(0, 300) || null;
+
+  const ticket = await companyTicket(id);
+  if (!ticket) redirect("/company/tickets");
+
+  const result = await voidTicket({
+    ticketId: ticket.id,
+    ban,
+    reason,
+    // Who did it, for the audit line the attendees page renders. The display name from the
+    // session, never a name from the form.
+    actorName: user.displayName,
+  });
+
+  if (!result.ok) {
+    refreshTickets(id);
+    redirect(`/company/tickets/${id}?error=${result.reason}`);
+  }
+
+  // Only tell them if it was live a moment ago. Re-voiding an already-cancelled ticket to
+  // add a ban is idempotent on the write, and it must be idempotent on the dialog too -
+  // otherwise a staff member tightening a void into a ban pops a second "your ticket has
+  // been cancelled" at somebody who read the first one last week.
+  if (!result.alreadyVoid) {
+    await notifyTicketHolder(
+      { id: ticket.id, userId: ticket.userId, eventId: ticket.eventId },
+      ticketVoidedNotice(ticket.event.title, result.banned),
+      // A banned holder has nowhere useful to go; anyone else can take another ticket.
+      { url: result.banned ? null : `/events/${ticket.event.slug}` },
+    );
+  }
+
+  refreshTickets(id);
+  revalidatePath(`/company/events/${ticket.eventId}/attendees`);
+  redirect(`/company/tickets/${id}?ok=${result.banned ? "banned" : "voided"}`);
 }
 
 /**
@@ -238,6 +433,7 @@ export async function liftTicketRevocation(formData: FormData) {
   // this cannot reach a partner's ticket even with a pasted id.
   await unrevokeTicket(id, null);
 
+  refreshTickets(id);
   if (eventId) revalidatePath(`/company/events/${eventId}/attendees`);
 }
 
