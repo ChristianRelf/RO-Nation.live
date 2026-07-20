@@ -248,6 +248,14 @@ const RESERVED = new Set([
   // the middleware tries the partner rewrite BEFORE it checks PORTAL_PATHS, so a partner
   // slugged "hub" would swallow portal.ronation.live/hub outright.
   "hub",
+  // The portal's sign-in page, and the worst one on this list to lose.
+  //
+  // Every anonymous request to the portal host is now sent to /login by the gate in
+  // the middleware. A partner slugged "login" would swallow that page - so the gate
+  // would redirect every signed-out visitor into the partner's own portal, which
+  // bounces them back to the gate. A sign-in loop nobody can get out of, for every
+  // area at once.
+  "login",
   // every existing top-level route
   "events",
   "blog",

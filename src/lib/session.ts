@@ -2,6 +2,7 @@ import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { env } from "./env";
+import { USER_COOKIE } from "./session-cookie";
 
 const secret = new TextEncoder().encode(env.authSecret);
 
@@ -12,7 +13,12 @@ const secret = new TextEncoder().encode(env.authSecret);
 // Roblox group (lib/company.ts, lib/shasha.ts, lib/partners/guard.ts), which
 // means access is per-person, revoked by demotion rather than by rotating a
 // secret several people knew, and every write is attributable to an account.
-export const USER_COOKIE = "ron_session";
+//
+// The name itself now lives in lib/session-cookie.ts, so the middleware can read
+// it without importing this server-only module. Re-exported here because every
+// existing caller imports it from this file, and there is no reason to make them
+// all move.
+export { USER_COOKIE };
 
 const cookieBase = {
   httpOnly: true,

@@ -38,7 +38,7 @@ export function DocsHeader({
             </span>
           )}
           <a
-            href="/api/auth/logout?returnTo=/docs/login"
+            href="/api/auth/logout?returnTo=/login"
             className="text-sm text-muted transition-colors hover:text-red-400"
           >
             Sign out

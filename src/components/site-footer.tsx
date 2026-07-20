@@ -82,6 +82,26 @@ const columns = [
       { label: "Partners", href: "/partners" },
       { label: "Press kit", href: "/press" },
       { label: "Contact us", href: "/contact" },
+      // ---- The backstage door -------------------------------------------
+      //
+      // The portal was, deliberately, linked from nowhere on this site: you
+      // either knew the host or you had been sent a link. The reasoning was that
+      // a visitor who does not belong there is better told "not for you" than
+      // handed a map.
+      //
+      // What changed is that there is now one door to point at. Every anonymous
+      // request to that host lands on /login, which explains what the place is
+      // and hands out nothing - and a signed-in person goes to /hub, which shows
+      // only the areas they actually hold. So the link cannot leak a map any
+      // more: the map is built per-person, on the other side of a sign-in.
+      //
+      // In the FOOTER and not the header, for the same reason /services is - the
+      // top nav belongs to somebody after a free ticket, and crew know to scroll.
+      //
+      // hardNav because the middleware 307s this to portal.ronation.live, and a
+      // client-side <Link> would make an RSC fetch that the browser blocks when
+      // it redirects off-origin. Same as /merch above.
+      { label: "Staff & partner portal", href: "/login", hardNav: true },
     ],
   },
 ];
@@ -167,7 +187,9 @@ export function SiteFooter() {
                 return (
                   <li key={l.href}>
                     {"hardNav" in l && l.hardNav ? (
-                      // Cross-host (Merch) - full navigation, no client RSC fetch.
+                      // Cross-host (Merch, the portal) - full navigation, no
+                      // client RSC fetch for the middleware to redirect
+                      // off-origin and the browser to then block.
                       <a href={l.href} className={cls}>
                         {l.label}
                       </a>

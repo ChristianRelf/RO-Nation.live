@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SURVEY_CODE_RE } from "@/lib/utils";
 import { partnerByHost, partnerBySlug } from "@/lib/partners/registry";
 import { brandForCollection } from "@/lib/merch/collections";
+import { USER_COOKIE } from "@/lib/session-cookie";
 
 // Host routing.
 //
@@ -30,6 +31,9 @@ import { brandForCollection } from "@/lib/merch/collections";
  * OAuth round trip has to start and end here, exactly as on the survey host.
  */
 const PORTAL_PATHS = [
+  // The one front door. Every anonymous request to this host lands here - see
+  // portalSignInGate() below.
+  "/login",
   "/shasha",
   // The backstage launcher - every door a signed-in person holds, in one place. It lives
   // on the portal host and nowhere else (the main site redirects it here, below). See
@@ -217,6 +221,10 @@ function areaFor(path: string) {
     path.startsWith("/shasha") ||
     path === "/portal" ||
     path === "/hub" ||
+    // The portal's sign-in page. Portal chrome for the same reason /docs is:
+    // without this it renders inside the public site's "Book tickets" header, on
+    // the portal host, as the first thing every backstage visitor sees.
+    path === "/login" ||
     path === "/authorise" ||
     path === "/docs" ||
     path.startsWith("/docs/")
@@ -271,6 +279,58 @@ function proceed(req: NextRequest, url?: URL) {
 }
 
 /**
+ * Paths on the portal host that an anonymous visitor may still reach.
+ *
+ * Everything else on this host bounces to /login. Kept deliberately short:
+ *
+ *   /login    the destination itself, or the bounce is a loop.
+ *   /api/     the auth round trip lands here (SSO callback, logout, the dev login)
+ *             and /api/health is the container's liveness probe - a probe that
+ *             302s to a sign-in page reads as "unhealthy" to every orchestrator.
+ *   /legal    the privacy and sign-in policies. Roblox links these from its own
+ *             consent screen, so they have to be readable by somebody who has not
+ *             signed in yet - which is the entire population that sees them.
+ */
+const PORTAL_PUBLIC_PATHS = ["/login", "/api", "/legal"];
+
+/**
+ * THE PORTAL'S FRONT DOOR. Anonymous request to portal.ronation.live/anything →
+ * /login, carrying where they were going.
+ *
+ * ---- What this is, and what it very deliberately is NOT ------------------
+ *
+ * It is AUTHENTICATION, and only the cheap half of it: "is there a session cookie
+ * on this request". It is NOT authorization, and it does not replace a single
+ * guard.
+ *
+ * Every page behind here still calls its own guard - requirePortalUser,
+ * requirePartnerUser, requireScopeUser - and those do the real work: they verify
+ * the cookie's signature and then look up a LIVE Roblox group rank, which is why a
+ * demotion takes effect without anybody signing out. This only spares an anonymous
+ * visitor the round trip of being bounced by whichever guard they happened to hit.
+ *
+ * So a forged or expired cookie gets past THIS and is refused by the guard, which
+ * is the correct division: the middleware cannot verify a JWT it has no business
+ * holding the secret for, and the thing that can, does.
+ *
+ * If you are ever tempted to move an access decision up here, don't. Middleware
+ * runs on the edge, before the request reaches anything that knows who this person
+ * is beyond a cookie's existence.
+ */
+function portalSignInGate(req: NextRequest, pathname: string, search: string) {
+  if (matches(pathname, PORTAL_PUBLIC_PATHS)) return null;
+  if (req.cookies.has(USER_COOKIE)) return null;
+
+  const url = new URL("/login", req.nextUrl.origin);
+
+  // Where they were going, so signing in resumes it rather than dumping everybody
+  // on the hub. `/` has nothing to resume - the gate is the landing for it.
+  if (pathname !== "/") url.searchParams.set("returnTo", `${pathname}${search}`);
+
+  return NextResponse.redirect(url);
+}
+
+/**
  * portal.<host>/<slug>/… → /pp/<slug>/…, when <slug> names a live partner.
  * Returns null when it does not, so the caller can carry on.
  *
@@ -308,19 +368,18 @@ function merchRewrite(req: NextRequest, pathname: string) {
   return proceed(req, url);
 }
 
-/**
- * `/` on the portal host → the static "backstage portal" landing page.
- *
- * A rewrite, not a redirect: `/` is the canonical URL of this host, and /portal
- * is an internal path - the main site bounces /portal back here, so giving the
- * page a URL of its own would be a loop. Shared with the local-dev branch, which
- * serves portal.localhost from the same origin as everything else.
- */
-function portalHomeRewrite(req: NextRequest) {
-  const url = req.nextUrl.clone();
-  url.pathname = "/portal";
-  return proceed(req, url);
-}
+// `/` on the portal host used to rewrite to the static "backstage portal" landing
+// page (app/portal/page.tsx). It no longer does, and the rewrite is gone with it.
+//
+// That page existed to greet a visitor who might be anybody: it named the host,
+// said "staff and partners only", and offered one link to /hub. Both halves of its
+// job now belong somewhere better - a signed-OUT visitor is met by /login, which
+// can actually do something about it, and a signed-IN one goes straight to /hub,
+// which lists the doors they hold. An interstitial that says "this is a door" in
+// front of the door is a click, not a landing.
+//
+// /portal still redirects to `/` on this host (and the main site still bounces
+// /portal here), so old links resolve rather than 404.
 
 /**
  * /studio/… and /admin/… → /company/…, or null if this isn't one of them.
@@ -384,7 +443,15 @@ export function middleware(req: NextRequest) {
   // branch does, minus the https redirects.
   if (!host || isLocalHost(host)) {
     if (isPortalHost(host)) {
-      if (pathname === "/") return portalHomeRewrite(req);
+      // The same gate, in the same position, for the same reason - a dev whose
+      // portal lets them straight in is a dev who cannot see what everybody else
+      // sees. Runs before the partner rewrite here too.
+      const gated = portalSignInGate(req, pathname, search);
+      if (gated) return gated;
+
+      if (pathname === "/") {
+        return NextResponse.redirect(new URL("/hub", req.nextUrl.origin));
+      }
 
       const rewritten = partnerPortalRewrite(req, pathname);
       if (rewritten) return rewritten;
@@ -478,10 +545,24 @@ export function middleware(req: NextRequest) {
 
   // ---- portal.ronation.live ---------------------------------------
   if (isPortalHost(host)) {
-    // The landing page: what this host is, and the doors off it. Served here
-    // rather than redirecting to /shasha, which met anyone without staff rank
-    // with a login wall and no explanation of where they had landed.
-    if (pathname === "/") return portalHomeRewrite(req);
+    // ---- The gate, and it runs FIRST ------------------------------------
+    //
+    // Before the partner rewrite, deliberately. That rewrite turns
+    // /<slug>/vip into /pp/<slug>/vip for any slug in the registry, so a gate
+    // placed after it would send signed-out visitors into a partner's portal to
+    // be bounced by the partner's own guard - the scattered-login behaviour this
+    // replaces. One door, and every anonymous request arrives at it.
+    const gated = portalSignInGate(req, pathname, search);
+    if (gated) return gated;
+
+    // Signed in, at the root. /hub is the landing that is actually worth showing:
+    // it asks the real guards and lists every door this person holds. The old
+    // static "backstage portal" page told them the host existed and offered one
+    // link to here - a step that only ever existed because there was nothing to
+    // show a signed-OUT visitor, which is now /login's job.
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL("/hub", req.nextUrl.origin));
+    }
 
     // portal.ronation.live/<slug>/… → the partner's own portal.
     const rewritten = partnerPortalRewrite(req, pathname);
@@ -567,6 +648,11 @@ export function middleware(req: NextRequest) {
     pathname === "/shasha" ||
     pathname.startsWith("/shasha/") ||
     pathname === "/hub" ||
+    // The backstage sign-in. It belongs to the portal host - the session cookie is
+    // host-only, so a sign-in completed HERE would set a cookie on the apex and
+    // leave the portal exactly as signed-out as before. Forwarded rather than
+    // 404'd because ronation.live/login is what somebody will type.
+    pathname === "/login" ||
     pathname === "/docs" ||
     pathname.startsWith("/docs/") ||
     pathname === "/files" ||

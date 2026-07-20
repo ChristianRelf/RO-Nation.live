@@ -31,9 +31,17 @@ export function redirectUri() {
  * failed SHASHA sign-in to /account would dump them on ronation.live with no
  * explanation of what went wrong.
  *
- * A partner adds a third case. On the portal host, a failed sign-in headed for
- * /sleeptokenro/vip belongs at /sleeptokenro/login - /account is not served
- * there either, so the default would strand them exactly the same way.
+ * ---- Every portal destination now has the SAME answer --------------------
+ *
+ * This used to fan out: /shasha* → /shasha/login, /docs* → /docs/login, a partner
+ * slug → /<slug>/login. None of those is a sign-in page any more - /docs/login is
+ * deleted outright, and the other two are refusal pages that send an anonymous
+ * visitor straight on to /login (see app/login/page.tsx for why).
+ *
+ * So sending a FAILED sign-in to one of them would bounce it onward to /login
+ * with the ?error stripped, and the person would be asked to sign in again with
+ * no hint of what went wrong the first time. One hop, to the page that can
+ * actually show the error.
  *
  * The partner-site host is not a case: its paths are /events, /tickets and
  * /account, none of which can collide with a slug (the registry RESERVEs those
@@ -52,11 +60,16 @@ export function failPath(returnTo: string) {
     return to ? `/?to=${encodeURIComponent(to)}` : "/";
   }
 
-  if (returnTo.startsWith("/shasha")) return "/shasha/login";
-  if (returnTo.startsWith("/docs")) return "/docs/login";
+  // The portal host's destinations - its own front door, carrying both the error
+  // and where they were going, so "try again" resumes rather than restarts.
+  const portalBound =
+    returnTo.startsWith("/shasha") ||
+    returnTo.startsWith("/docs") ||
+    returnTo.startsWith("/hub") ||
+    returnTo.startsWith("/files") ||
+    partnerBySlug(returnTo.split("/")[1] ?? "") !== undefined;
 
-  const slug = returnTo.split("/")[1] ?? "";
-  if (partnerBySlug(slug)) return `/${slug}/login`;
+  if (portalBound) return `/login?returnTo=${encodeURIComponent(returnTo)}`;
 
   return "/account";
 }

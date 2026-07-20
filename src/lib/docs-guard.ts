@@ -75,13 +75,51 @@ export async function getDocsReader(): Promise<DocsReader | null> {
 }
 
 /**
+ * Where to send somebody the docs will not let in.
+ *
+ * ---- Why this is two answers and not one -------------------------------
+ *
+ * There used to be a /docs/login carrying both. It is gone, and its two states
+ * turned out to belong in two different places that already existed:
+ *
+ *   NOT SIGNED IN     → /login, the portal's one front door, carrying where they
+ *                       were headed. (The gate in middleware.ts catches this
+ *                       first in the ordinary case; this covers the request that
+ *                       arrives with a cookie the gate accepts and the JWT check
+ *                       then rejects.)
+ *
+ *   SIGNED IN, NO DOOR → /hub, NOT /login. Two reasons, and the first one is a
+ *                       bug: /login redirects anybody holding a session straight
+ *                       to `returnTo`, so sending them there would bounce them
+ *                       back to /docs, back to here, back to /login, forever.
+ *                       The second is that /hub already says this exact thing -
+ *                       "you're signed in, but your account doesn't hold access
+ *                       to any backstage area yet" - and says it better, because
+ *                       it is the page that knows what a door IS.
+ *
+ * That second case is why the docs' own refusal page could be deleted while
+ * SHASHA's and each partner's could not. Their refusals are specific - a rank
+ * number, a per-account grant - and only make sense next to the thing being
+ * refused. The docs' refusal is "you hold nothing ANYWHERE", which is a fact
+ * about the person, not about the docs.
+ */
+// Returns the path rather than calling redirect() itself, deliberately: redirect()
+// is typed `never`, and TypeScript only narrows on that when it is called at the
+// call site. Awaiting a Promise<never> from a helper does not end the branch as far
+// as control-flow analysis is concerned, so `reader` stayed DocsReader | null.
+async function docsRefusalPath(): Promise<string> {
+  const session = await getUserSession();
+  return session ? "/hub" : `/login?returnTo=${encodeURIComponent("/docs")}`;
+}
+
+/**
  * Guard the docs. Called by the page itself - never left to a layout, for the
  * reason spelled out in lib/session.ts: a layout redirect still ships the page's
  * RSC payload in the body of the 307 it bounced you with.
  */
 export async function requireDocsReader(): Promise<DocsReader> {
   const reader = await getDocsReader();
-  if (!reader) redirect("/docs/login");
+  if (!reader) redirect(await docsRefusalPath());
   return reader;
 }
 
@@ -120,7 +158,9 @@ async function managedOrgs(): Promise<DocsAccess["orgs"]> {
  */
 export async function requireDocsUser(): Promise<DocsAccess> {
   const session = await getUserSession();
-  if (!session) redirect("/docs/login");
+  // The front door, returning to THIS page rather than the docs index - somebody
+  // deep-linked to the API reference wants the API reference.
+  if (!session) redirect(`/login?returnTo=${encodeURIComponent("/docs/api")}`);
 
   const orgs = await managedOrgs();
   // Signed in, reads the docs perfectly well, but manages nothing - so they can

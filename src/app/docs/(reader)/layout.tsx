@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getDocsReader } from "@/lib/docs-guard";
+import { getUserSession } from "@/lib/session";
 import { DocsHeader } from "@/components/docs-header";
 import { DocsNav } from "@/components/docs-nav";
 import { PortalFooter } from "@/components/portal-footer";
@@ -24,8 +25,15 @@ export default async function DocsLayout({
   //
   // Every page under here calls requireDocsReader() - or requireDocsUser(), on
   // /docs/api - itself. That is the lock.
+  // Same two answers the page guard gives - /login when there is no session at
+  // all, /hub when there is one that simply holds no door. Sending the second
+  // case to /login would loop: it redirects a signed-in visitor straight back to
+  // where they came from. See refuseDocs() in lib/docs-guard.ts.
   const reader = await getDocsReader();
-  if (!reader) redirect("/docs/login");
+  if (!reader) {
+    const session = await getUserSession();
+    redirect(session ? "/hub" : `/login?returnTo=${encodeURIComponent("/docs")}`);
+  }
 
   return (
     <div className="flex min-h-dvh flex-col">
