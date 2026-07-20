@@ -8,7 +8,9 @@ import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { StatusBadge } from "@/components/ui";
 import { TierSummary } from "@/components/ticket/tier-summary";
+import { CrowdFacepile } from "@/components/ticket/crowd-facepile";
 import { FollowButton } from "@/components/account/follow-button";
+import { WaitlistButton } from "@/components/account/waitlist-button";
 import {
   dateBlock,
   formatDate,
@@ -80,6 +82,16 @@ export default async function PartnerEventPage({
   const following = session
     ? Boolean(
         await prisma.eventFollow.findUnique({
+          where: {
+            userId_eventId: { userId: session.uid, eventId: event.id },
+          },
+        }),
+      )
+    : false;
+
+  const onWaitlist = session
+    ? Boolean(
+        await prisma.waitlist.findUnique({
           where: {
             userId_eventId: { userId: session.uid, eventId: event.id },
           },
@@ -219,6 +231,9 @@ export default async function PartnerEventPage({
                 <p className="mb-4 text-sm text-muted">Unlimited entry</p>
               )}
 
+              {/* The crowd, as faces - the same reframing as on RNL's own show page. */}
+              <CrowdFacepile eventId={event.id} />
+
               <TierSummary offers={offers} />
 
               {error ? (
@@ -287,6 +302,19 @@ export default async function PartnerEventPage({
               </p>
             </div>
           </div>
+
+          {/* Waitlist - only when the room is genuinely full and they could still
+              take a spot. Relative returnTo resolves on the partner host. */}
+          {soldOut && !ended && !hasTicket ? (
+            <div className="mt-4">
+              <WaitlistButton
+                eventId={event.id}
+                onWaitlist={onWaitlist}
+                signedIn={Boolean(session)}
+                returnTo={`/events/${event.slug}`}
+              />
+            </div>
+          ) : null}
 
           {/* Watchlist + calendar. Relative links resolve on the partner host, where the
               browser already is; the follow's returnTo lands back on this show. */}

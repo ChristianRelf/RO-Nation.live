@@ -15,6 +15,7 @@ import {
 import { resolveSeat, type SeatAssignment } from "@/lib/tickets/seating";
 import { organiserFor, ticketTermsFor } from "@/lib/tickets/terms";
 import { parseLayout } from "@/lib/venue/schema";
+import { notifyNextWaiter } from "@/lib/waitlist";
 
 // The one place that decides whether somebody GETS a ticket.
 //
@@ -72,6 +73,26 @@ export type IssueReason =
   | "payment_required"
   /** /purchase, but the tier is free. Nothing to pay for - do not charge them. */
   | "not_purchasable"
+
+  /**
+   * They ALREADY HOLD this show's ticket, at this tier or a better one, and a paid
+   * purchase has arrived for it anyway.
+   *
+   * The case: a tier is sold on both rails (a game pass on the web AND a Developer
+   * Product in the experience - the same seat in two places, which pricing.ts allows
+   * on purpose). Someone buys the pass, gets their ticket, then is prompted the
+   * Developer Product for the SAME tier inside the game and pays again. One ticket per
+   * player per show means there is nothing to issue - so honouring it would bank the
+   * Robux for a second copy of a ticket that cannot exist.
+   *
+   * So a Developer Product purchase that is not a genuine UPGRADE (a strictly dearer
+   * tier than the one held) is refused here, before any payment is recorded. The game
+   * must not grant, and must refund. The way never to reach this is to call /verify
+   * before prompting - which is why /purchase's own note now says so. A game-pass claim
+   * in the same position is not an error: the buyer owns the pass and already holds the
+   * ticket, so it hands that ticket straight back instead.
+   */
+  | "already_owned"
 
   // ---- The hold, and the rail that can be checked ------------------------
 
@@ -717,11 +738,44 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
 
         // ---- They already hold one ------------------------------------
         if (existing && existing.status !== "CANCELLED") {
-          // A payment is not a no-op. They have been CHARGED. Silently handing back the
-          // ticket they already had would be taking Robux for nothing - so the payment
-          // lands on the ticket they hold, upgrading its tier AND its chair. It is the
-          // same ticket (one per person per event, always), now VIP, now sitting down.
           if (mode.kind === "purchase" || mode.kind === "game_pass") {
+            // Is this a genuine UPGRADE, or a second sale of a seat they already hold?
+            //
+            // The ordering is price: a dearer tier is a better one (GA < VIP), which is
+            // the same order the whole system prices in. Strictly dearer than what they
+            // hold = an upgrade, and the block below moves them up, seat and all. Same
+            // tier, or cheaper, is NOT an upgrade - there is nothing new to give them.
+            //
+            // A free ticket they RESERVED (priceRobux 0) upgrading to a paid tier is the
+            // ordinary, wanted case and passes cleanly: 0 < anything.
+            const isUpgrade = tier.priceRobux > existing.priceRobux;
+
+            if (!isUpgrade) {
+              // Nothing to sell. What happens next depends on which rail asked, because
+              // the money is in a different place on each.
+              if (mode.kind === "game_pass") {
+                // They own the pass AND already hold the ticket (bought the Developer
+                // Product first, say, then the pass). The pass money went to Roblox for a
+                // permanent good; there is nothing for us to refund and nothing to charge.
+                // Hand back the ticket they hold - they are in, which is the whole answer -
+                // and take no second payment. The hold, if any, is spent onto it.
+                await consume(existing.id);
+                return { ok: true as const, ticketId: existing.id, existing: true };
+              }
+
+              // A Developer Product purchase for a ticket they already hold. Roblox has
+              // ALREADY taken the Robux (ProcessReceipt fires after the charge), so this is
+              // the one place the refusal costs real money - and refusing is still right.
+              // Recording it would bank a second payment for a ticket that cannot be issued
+              // twice; the honest move is to refuse so the game returns NotProcessedYet and
+              // the purchase is refunded. Prompting this at all is the bug, and /verify
+              // before the prompt is how a booth avoids it.
+              return fail("already_owned");
+            }
+
+            // A genuine upgrade. A payment is not a no-op - they have been CHARGED - so it
+            // lands on the ticket they hold, moving its tier AND its chair. Still the same
+            // ticket (one per person per event, always), now dearer, now sitting down.
             await tx.ticket.update({
               where: { id: existing.id },
               data: {
@@ -858,7 +912,7 @@ export async function voidTicket(input: {
 }): Promise<VoidOutcome> {
   const ticket = await prisma.ticket.findUnique({
     where: { id: input.ticketId },
-    select: { id: true, status: true, revokedAt: true },
+    select: { id: true, status: true, revokedAt: true, eventId: true },
   });
   if (!ticket) return { ok: false, reason: "not_found" };
   if (ticket.status === "CHECKED_IN") return { ok: false, reason: "checked_in" };
@@ -902,6 +956,19 @@ export async function voidTicket(input: {
         : {}),
     },
   });
+
+  // A seat just came back - tell the next person waiting for this show. Only when
+  // this call actually freed one: an already-cancelled ticket voided again gave
+  // nothing back. Best-effort and swallowed, exactly like the notice fan-outs: a
+  // failed waitlist ping must never turn a successful void into an error for the
+  // crew member who asked for it.
+  if (!alreadyVoid) {
+    try {
+      await notifyNextWaiter(ticket.eventId);
+    } catch (err) {
+      console.error("notifyNextWaiter (void) failed", err);
+    }
+  }
 
   return {
     ok: true,

@@ -57,6 +57,21 @@ export const dynamic = "force-dynamic";
 // today, so do not prompt for it at all: read GET /api/v1/events/<id> first, and
 // only prompt for a tier that says `available: true`.
 //
+// ---- Do not prompt a product to someone who already holds the ticket ------
+//
+// A tier can be sold on BOTH rails at once - a game pass on the website and a
+// Developer Product in here - because they are the same seat in two places. So a
+// player can walk in already holding this show's ticket, bought on the site with the
+// pass. Prompting them the Developer Product for it would charge them a second time
+// for a ticket they cannot hold twice.
+//
+// BEFORE PromptProductPurchase, ask POST /api/v1/tickets/verify with { robloxId,
+// eventId }. If it says they already hold a ticket for this show, do not prompt - they
+// are in. This endpoint is the backstop, not the gate: a purchase that reaches it for
+// a tier they already hold (at that tier or better) is refused `already_owned` with
+// nothing charged on our side - but Roblox has already taken the Robux by then, so the
+// only fix left is a manual refund. The /verify check is what avoids needing one.
+//
 // ---- Seated shows: `intentToken` is REQUIRED -------------------------------
 //
 // If the event's `seatMode` is anything but NONE, this endpoint refuses a purchase with no

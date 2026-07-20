@@ -46,6 +46,9 @@ function studioSections(partner: Partner) {
           { label: "Applications", href: "/applications" },
         ]
       : []),
+    ...(partnerHasFeature(partner, "surveys")
+      ? [{ label: "Surveys", href: "/surveys" }]
+      : []),
     { label: "Homepage", href: "/content" },
   ];
 }

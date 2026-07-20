@@ -215,6 +215,137 @@ describe("one pass, one ticket", () => {
 });
 
 // ---------------------------------------------------------------------------
+describe("owning the pass blocks a second sale via Developer Product", () => {
+  it("refuses a dev-product purchase for a tier already held via the game pass", async () => {
+    owns();
+    const event = await makeEvent({ capacity: 0 });
+    const tier = await makeGamePassTier(event.id); // priceRobux 250, sold on both rails
+    const user = await makeUser();
+
+    // 1. They buy the pass on the website and claim their ticket.
+    const claim = await issueTicket({
+      eventId: event.id,
+      holder: { userId: user.id },
+      tierId: tier.id,
+      scope: null,
+      mode: {
+        kind: "game_pass",
+        intentToken: await holdGamePass(event.id, tier.id, user.id),
+      },
+    });
+    expect(claim.ok).toBe(true);
+    if (!claim.ok) return;
+
+    // 2. Inside the experience they are prompted the Developer Product for the SAME
+    //    tier and pay. ProcessReceipt calls /purchase. It must NOT bank a second sale.
+    const dev = await issueTicket({
+      eventId: event.id,
+      holder: { userId: user.id },
+      tierId: tier.id,
+      scope: null,
+      mode: { kind: "purchase", purchaseId: `dp-${Date.now()}-x`, robuxSpent: 250 },
+    });
+    expect(dev.ok).toBe(false);
+    if (!dev.ok) expect(dev.reason).toBe("already_owned");
+
+    // One ticket, and only the pass was ever recorded as paid - the dev-product
+    // purchase left no payment row behind it.
+    expect(await prisma.ticket.count({ where: { eventId: event.id } })).toBe(1);
+    expect(await prisma.ticketPurchase.count()).toBe(1);
+  });
+
+  it("hands back the ticket (no second charge) when the pass is claimed for a tier already bought in-experience", async () => {
+    owns();
+    const event = await makeEvent({ capacity: 0 });
+    const tier = await makeGamePassTier(event.id); // sold on both rails
+
+    // They bought it IN-EXPERIENCE first (a Developer Product purchase for this tier),
+    // so the `gp:` idempotency key does NOT yet exist - the claim below really reaches
+    // the already-holds branch rather than being short-circuited by a prior gp: row.
+    const user = await makeUser();
+    const bought = await issueTicket({
+      eventId: event.id,
+      holder: { userId: user.id },
+      tierId: tier.id,
+      scope: null,
+      mode: { kind: "purchase", purchaseId: `dp-${Date.now()}-first`, robuxSpent: 250 },
+    });
+    expect(bought.ok).toBe(true);
+    if (!bought.ok) return;
+    const before = await prisma.ticketPurchase.count(); // 1: the dev-product sale
+
+    // Later they also buy the game pass on the web and claim it. They own the pass and
+    // already hold the ticket: hand back the one they hold, take no second payment. The
+    // pass money went to Roblox for a permanent good - there is nothing for us to refund.
+    const claim = await issueTicket({
+      eventId: event.id,
+      holder: { userId: user.id },
+      tierId: tier.id,
+      scope: null,
+      mode: {
+        kind: "game_pass",
+        intentToken: await holdGamePass(event.id, tier.id, user.id),
+      },
+    });
+    expect(claim.ok).toBe(true);
+    if (!claim.ok) return;
+    expect(claim.ticketId).toBe(bought.ticketId);
+    expect(claim.existing).toBe(true);
+    expect(await prisma.ticketPurchase.count()).toBe(before); // no phantom gp: row
+  });
+
+  it("still allows a genuine upgrade to a dearer tier", async () => {
+    owns();
+    const event = await makeEvent({ capacity: 0 });
+    const cheap = await makeGamePassTier(event.id); // 250, held via the pass
+    const dear = await prisma.ticketTier.create({
+      data: {
+        eventId: event.id,
+        name: "Front Row VIP",
+        priceRobux: 500,
+        devProductId: `dp-${Date.now()}-dear`,
+        active: true,
+        sortOrder: 1,
+      },
+    });
+    const user = await makeUser();
+
+    const claim = await issueTicket({
+      eventId: event.id,
+      holder: { userId: user.id },
+      tierId: cheap.id,
+      scope: null,
+      mode: {
+        kind: "game_pass",
+        intentToken: await holdGamePass(event.id, cheap.id, user.id),
+      },
+    });
+    expect(claim.ok).toBe(true);
+    if (!claim.ok) return;
+
+    // A DEARER tier is something they do not own - selling it is not a double-sell.
+    const up = await issueTicket({
+      eventId: event.id,
+      holder: { userId: user.id },
+      tierId: dear.id,
+      scope: null,
+      mode: { kind: "purchase", purchaseId: `dp-${Date.now()}-up`, robuxSpent: 500 },
+    });
+    expect(up.ok).toBe(true);
+    if (!up.ok) return;
+    expect(up.ticketId).toBe(claim.ticketId); // same ticket, moved up
+    expect(up.existing).toBe(true);
+
+    const t = await prisma.ticket.findUnique({
+      where: { id: up.ticketId },
+      select: { tierId: true, priceRobux: true },
+    });
+    expect(t?.tierId).toBe(dear.id);
+    expect(t?.priceRobux).toBe(500);
+  });
+});
+
+// ---------------------------------------------------------------------------
 describe("the three-state answer", () => {
   it("does not issue when Roblox says they do not own it", async () => {
     ownsNot();

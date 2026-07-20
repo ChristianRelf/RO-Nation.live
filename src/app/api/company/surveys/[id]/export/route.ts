@@ -30,8 +30,10 @@ export async function GET(
     return NextResponse.json({ error: "unauthorised" }, { status: 403 });
   }
 
-  const survey = await prisma.survey.findUnique({
-    where: { id: params.id },
+  // partnerId: null - this is /company's export, RNL's own surveys only. A partner's
+  // results are exported from its own studio, never through here (they 404).
+  const survey = await prisma.survey.findFirst({
+    where: { id: params.id, partnerId: null },
     include: {
       questions: { orderBy: { order: "asc" } },
       responses: {

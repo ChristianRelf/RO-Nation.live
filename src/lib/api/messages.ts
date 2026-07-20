@@ -28,6 +28,14 @@ export const ISSUE_MESSAGES: Record<Exclude<IssueReason, "ok">, string> = {
     "That tier costs Robux. Prompt the Developer Product, then call /purchase from ProcessReceipt.",
   not_purchasable: "That tier is free - don't charge for it. Use /reserve.",
 
+  // The double-sell guard. One ticket per player per show, and they already hold this one
+  // at this tier or better - so a Developer Product purchase for it buys nothing. Do NOT
+  // prompt a product for a tier a player already holds: call POST /verify with their
+  // robloxId first, and only prompt when they hold nothing. If a purchase was taken anyway,
+  // return NotProcessedYet and refund it by hand - there is no second ticket to give them.
+  already_owned:
+    "They already hold this show's ticket at this tier or better. There is nothing to sell them - do not prompt, and if they were charged, refund it. Check /verify before prompting.",
+
   bad_intent:
     "That hold isn't valid: it has expired beyond recovery, belongs to somebody else, or was already spent. Create a new one with POST /intents.",
 

@@ -56,6 +56,35 @@ export async function ticketCrowd(
   return { going, watching, inside };
 }
 
+export type CrowdFace = { avatarUrl: string | null; displayName: string };
+
+/**
+ * A handful of the people going, for a face-pile. Avatars and display names only -
+ * no ticket, no id, nothing that says which SEAT anybody has.
+ *
+ * ---- Why the newest holders, and why so few --------------------------------
+ *
+ * `createdAt desc` gives the "someone just grabbed a ticket" feel a face-pile is
+ * for, and the small `take` is a privacy floor as much as a performance one: a pile
+ * is a sense of a crowd, not a guest list. The caller (components/ticket/
+ * crowd-facepile) refuses to render at all below a threshold, so no show with one
+ * or two holders ever puts those one or two faces on a public page.
+ *
+ * Served by @@index([eventId]) on tickets - the same index the counts above use.
+ */
+export async function crowdFaces(eventId: string, take = 8): Promise<CrowdFace[]> {
+  const holders = await prisma.ticket.findMany({
+    where: { eventId, status: { not: "CANCELLED" } },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { user: { select: { displayName: true, avatarUrl: true } } },
+  });
+  return holders.map((h) => ({
+    avatarUrl: h.user.avatarUrl,
+    displayName: h.user.displayName,
+  }));
+}
+
 /**
  * "1,247" - grouped, and deliberately not toLocaleString().
  *

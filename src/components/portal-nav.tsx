@@ -20,6 +20,11 @@ export function PortalNav({
   studioLink = false,
   doorLink = false,
   showsLink = false,
+  analyticsLink = false,
+  payoutsLink = false,
+  announceLink = false,
+  compLink = false,
+  feedbackLink = false,
   keysLink = false,
   membersLink = false,
   scopeId,
@@ -55,6 +60,33 @@ export function PortalNav({
    * exists on the main site; this is the copy that does not leave the portal.
    */
   showsLink?: boolean;
+  /**
+   * The read-only analytics dashboard. Only for an org that HAS shows - the page
+   * itself 404s a partner without the events feature, so this just spares them a
+   * dead item. Every role sees it: it counts, it never writes.
+   */
+  analyticsLink?: boolean;
+  /**
+   * The Robux settlement statement. Managers only (financial), and only for an org
+   * with shows. The page guards itself.
+   */
+  payoutsLink?: boolean;
+  /**
+   * Compose an announcement to a show's audience. Managers only (it is a write that
+   * reaches every holder), and only for an org with shows. Same courtesy/lock split
+   * as keysLink - the page calls requireScopeManager itself.
+   */
+  announceLink?: boolean;
+  /**
+   * Comp the VIP list into a show. Managers only (it issues real tickets), and only
+   * for an org with shows. The page calls requireScopeManager itself.
+   */
+  compLink?: boolean;
+  /**
+   * Invite a past show's attendees to a survey. Managers only, and only for an org
+   * that has both shows and surveys. The page guards itself.
+   */
+  feedbackLink?: boolean;
   /**
    * API keys. Managers only - the page itself refuses read-only staff, and a nav
    * item that bounces you is worse than no nav item. Hiding it is courtesy;
@@ -101,7 +133,12 @@ export function PortalNav({
     ...(showsLink ? [{ label: "Shows", href: `${basePath}/shows` }] : []),
     ...(doorLink ? [{ label: "Door", href: `${basePath}/door` }] : []),
     ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),
+    ...(analyticsLink ? [{ label: "Analytics", href: `${basePath}/analytics` }] : []),
+    ...(payoutsLink ? [{ label: "Payouts", href: `${basePath}/payouts` }] : []),
+    ...(announceLink ? [{ label: "Announce", href: `${basePath}/announce` }] : []),
+    ...(feedbackLink ? [{ label: "Feedback", href: `${basePath}/feedback` }] : []),
     { label: "VIP list", href: `${basePath}/vip` },
+    ...(compLink ? [{ label: "Comp", href: `${basePath}/comp` }] : []),
     { label: "Blacklist", href: `${basePath}/blacklist` },
     { label: "History", href: `${basePath}/audit` },
     ...(keysLink ? [{ label: "API keys", href: `${basePath}/keys` }] : []),

@@ -78,6 +78,9 @@ model User {
   eventFollows  EventFollow[]
   notifications MemberNotification[]
 
+  /// Sold-out shows this member is queued for. Cascades away with the account.
+  waitlists Waitlist[]
+
   @@map("users")
 }
 
@@ -199,6 +202,16 @@ model Event {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
+  /// When the "doors soon" reminder was fanned out to this show's holders.
+  ///
+  /// The idempotency key for the reminder sweep (scripts/remind.ts): the sweep
+  /// CLAIMS a show by setting this from null in one guarded update, and only the
+  /// claimer fans the notices out - so two sweeps racing, or one run twice, send
+  /// exactly one reminder per show. Null = not yet reminded, which every show is
+  /// until it falls inside the window. Nullable and defaulted-by-absence, so
+  /// `prisma db push` adds it to existing shows with nothing to backfill.
+  reminderSentAt DateTime?
+
   /// The Roblox place id, as a STRING (Roblox ids passed 2^31 long ago - same
   /// reasoning as MerchProduct.assetId).
   ///
@@ -242,6 +255,9 @@ model Event {
   follows       EventFollow[]
   notifications MemberNotification[]
 
+  /// The queue for a sold-out show. Cascades away with the event.
+  waitlist Waitlist[]
+
   @@index([status, startsAt])
   @@index([partnerId, status, startsAt])
   @@index([venueMapId])
@@ -272,6 +288,44 @@ model EventFollow {
   @@index([userId, createdAt])
   @@index([eventId])
   @@map("event_follows")
+}
+
+// ------------------------------------------------------------------
+// The queue for a SOLD-OUT show. When a seat frees - somebody cancels or is voided
+// - the oldest un-notified waiter is told (see lib/waitlist.ts, called from the two
+// seat-freeing writers in issue.ts and actions/tickets.ts).
+//
+// A NOTICE, not a hold: joining the queue reserves nothing, and the "a spot opened"
+// notification is first-come-first-served, not a claim on the seat. Holding a seat
+// for a waiter would need the intent machinery and a way to expire it; the honest
+// smaller thing is to tell them quickly and let them race for it.
+//
+// User-scoped like EventFollow, and no partnerId for the same reason: the Event it
+// points at already carries one. `notifiedAt` is the guard against telling the same
+// waiter twice - the seat-free hook claims the oldest row WHERE notifiedAt IS NULL.
+// ------------------------------------------------------------------
+model Waitlist {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+
+  /// The tier they are waiting on, if they said. Null = any / general admission.
+  /// A snapshot of intent only; the notice does not reserve the tier, so a deleted
+  /// tier here is harmless - it just means "they wanted a seat", which is still true.
+  tierId String?
+
+  createdAt  DateTime  @default(now())
+  /// When "a spot opened" was sent. NULL = still waiting, and it is what the
+  /// seat-free hook claims on so a waiter is never told twice.
+  notifiedAt DateTime?
+
+  @@unique([userId, eventId]) // one place in the queue per person per show
+  @@index([eventId, notifiedAt, createdAt]) // "oldest un-notified waiter for this show"
+  @@map("waitlists")
 }
 
 // ------------------------------------------------------------------
@@ -314,6 +368,21 @@ enum MemberNotificationKind {
   EVENT_VENUE
   EVENT_CANCELLED
   EVENT_UPDATED
+
+  // A "doors soon" nudge, raised by the reminder sweep (scripts/remind.ts) for
+  // everyone holding a ticket to a show inside the reminder window. Unlike the four
+  // above it is not triggered by an edit - nothing CHANGED - so it is its own kind,
+  // and it goes to holders only, not followers: a reminder is for people who are
+  // coming, not people still deciding. See lib/reminders.ts.
+  EVENT_REMINDER
+
+  // "A spot opened on the show you were waiting for." Raised when a seat frees on a
+  // sold-out show, to the oldest un-notified waiter. See lib/waitlist.ts.
+  WAITLIST_OFFER
+
+  // "How was the show?" - a post-show survey invite, sent by an organiser to the
+  // people who actually CHECKED IN (not merely reserved). See actions/feedback.ts.
+  SURVEY_INVITE
 
   // ---- About THEIR ticket, not about the show -----------------------------
   //
@@ -976,13 +1045,28 @@ model Survey {
   ///
   /// Enforced by SurveyResponse.dedupeKey, not by reading this at insert time.
   multipleResponses Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+
+  /// Whose survey this is - a slug from lib/partners/registry.ts, or NULL for RO.
+  /// Nation LIVE's own (authored in /company). The last content model to grow this
+  /// column; every listing query must filter on it, exactly as Event/Post/Career do.
+  ///
+  /// The PUBLIC responder (survey.ronation.live/<code>) is unaffected: a code is
+  /// globally unique, so answering never needs the scope. Only AUTHORING is scoped -
+  /// a partner builds and reads its own in the studio, RNL its own in /company - and
+  /// the survey action reads this off the form's `scope` field, guarded per-scope.
+  ///
+  /// Nullable and defaulted-by-absence: `prisma db push` adds it to every existing
+  /// survey as NULL (RNL's), which is exactly what they all are today. No backfill.
+  partnerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   questions SurveyQuestion[]
   responses SurveyResponse[]
 
   @@index([status])
+  @@index([partnerId, status])
   @@map("surveys")
 }
 

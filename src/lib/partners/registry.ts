@@ -196,10 +196,11 @@ export const PARTNERS: readonly Partner[] = [
       managerRank: 253, // 253+ - write, and mint API keys
     },
     robloxGroupUrl: "https://www.roblox.com/communities/636922593",
-    // Shows, their own blog, and their own crew applications. Not surveys -
-    // survey.ronation.live is still RNL-global and has no partner scope yet, so
-    // switching it on here would hand them a feature that does not exist.
-    features: ["events", "blog", "careers"],
+    // Shows, their own blog, their own crew applications, and their own surveys -
+    // Survey.partnerId now scopes authoring to the studio, so a partner's surveys and
+    // their results are theirs alone (the public responder was always code-based and
+    // needed no scope). See surveyScope in actions/company.ts.
+    features: ["events", "blog", "careers", "surveys"],
     // Sleep Token want paid VIP tiers alongside free general admission. This
     // says they are allowed to price them; it does not put any on sale. The
     // master switch is off, so their paid tiers render locked and the reserve

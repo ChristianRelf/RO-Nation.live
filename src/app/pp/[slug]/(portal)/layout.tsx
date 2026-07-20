@@ -66,6 +66,22 @@ export default async function PartnerPortalLayout({
         // features decide, inside the studio layout.
         doorLink={partnerHasFeature(partner, "events")}
         studioLink
+        // Read-only performance dashboard. Only an org with shows has anything to
+        // chart, so it rides the same feature flag as the door.
+        analyticsLink={partnerHasFeature(partner, "events")}
+        // Robux settlement statement - managers only, and only for an org with shows.
+        payoutsLink={partnerHasFeature(partner, "events") && user.canWrite}
+        // Announce to a show's audience. A write that reaches every holder, so
+        // managers only - and only for an org that has shows.
+        announceLink={partnerHasFeature(partner, "events") && user.canWrite}
+        // Comp the VIP list into a show - issues real tickets, so managers only.
+        compLink={partnerHasFeature(partner, "events") && user.canWrite}
+        // Post-show survey invites - needs both shows and surveys.
+        feedbackLink={
+          partnerHasFeature(partner, "events") &&
+          partnerHasFeature(partner, "surveys") &&
+          user.canWrite
+        }
         // Only an org with shows has tickets for a key to touch, and only a
         // manager may mint one.
         keysLink={user.canWrite && partnerHasFeature(partner, "events")}

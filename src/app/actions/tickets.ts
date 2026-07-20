@@ -7,6 +7,7 @@ import { getUserSession } from "@/lib/session";
 import { partnerSiteRoute, partnerPortalUrl } from "@/lib/partners/urls";
 import { issueTicket } from "@/lib/tickets/issue";
 import { notify } from "@/lib/notify";
+import { notifyNextWaiter } from "@/lib/waitlist";
 import { rateLimit } from "@/lib/rate-limit";
 
 // Ticketing, for RNL's events and every partner's - the WEBSITE's half of it.
@@ -194,18 +195,28 @@ export async function reserveTicket(
     //   not_paid,          the game-pass rail's answers. This is `reserve` - it never asks
     //   verify_unavailable, Roblox anything, because there is nothing to verify.
     //   needs_consent
+    //   already_owned      the paid double-sell guard. Only `purchase` and `game_pass` can
+    //                      trip it; `reserve` re-hands an existing ticket instead of refusing.
     const reason = outcome.reason;
     if (
       reason === "no_player" ||
       reason === "not_purchasable" ||
       reason === "not_paid" ||
       reason === "verify_unavailable" ||
-      reason === "needs_consent"
+      reason === "needs_consent" ||
+      reason === "already_owned"
     ) {
       return fail("unavailable");
     }
     return fail(reason);
   }
+
+  // They got in - so they are no longer waiting. Drop any waitlist row they held for
+  // this show, both to keep the queue clean and so a later freed seat does not ping
+  // somebody who already has a ticket. Best-effort; never block the checkout on it.
+  await prisma.waitlist
+    .deleteMany({ where: { userId: session.uid, eventId } })
+    .catch(() => {});
 
   // Tell the box office a seat just went. Routes to the event's partner channel
   // when it has one, else RNL's; the link points at where staff manage that show -
@@ -297,6 +308,10 @@ export async function cancelTicket(formData: FormData) {
   // Lost the race - somebody else's submit got there first. Nothing changed, so
   // there is nothing to revalidate.
   if (count === 0) return;
+
+  // A seat just came back. Tell the next person waiting for this show - best-effort,
+  // and never allowed to turn a successful cancel into an error the holder sees.
+  await notifyNextWaiter(ticket.eventId).catch(() => {});
 
   const { partnerId, slug } = ticket.event;
   refreshTicketViews(partnerId, slug);

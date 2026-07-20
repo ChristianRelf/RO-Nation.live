@@ -12,6 +12,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireCompanyUser } from "@/lib/company";
+import { requireScopeManager } from "@/lib/portal-scope";
 import { resolveRobloxUser, searchRobloxUsers } from "@/lib/roblox-users";
 import { generateSurveyCode } from "@/lib/utils";
 import { removePrivateFiles } from "@/lib/uploads";
@@ -664,63 +665,107 @@ async function uniqueSurveyCode() {
   throw new Error("Could not generate an unused survey code");
 }
 
-function refreshSurveys(id?: string) {
-  revalidatePath("/company/surveys");
-  if (id) revalidatePath(`/company/surveys/${id}/edit`);
+function refreshSurveys(routeBase: string, id?: string) {
+  revalidatePath(routeBase);
+  if (id) revalidatePath(`${routeBase}/${id}/edit`);
+}
+
+/**
+ * Which org a survey action is acting for, and where it belongs.
+ *
+ * `scope` on the form is a partner slug, or absent for RNL's own (the /company
+ * pages, which post no scope). One field carries all four survey actions across
+ * both the company dashboard and a partner studio, so there is one set of actions
+ * rather than two that drift.
+ *
+ *   partnerId     what to STORE and to SCOPE the read by - the slug, or null for RNL.
+ *   redirectBase  the PUBLIC path a redirect() lands on (rewritten for a partner).
+ *   routeBase     the INTERNAL path revalidatePath() must use (see partners/urls).
+ *
+ * The guard follows the scope: a partner slug needs manager rights on THAT partner
+ * (requireScopeManager, which 404s a stranger and bounces read-only staff), and the
+ * bare /company path needs company staff. Neither can be talked into the other.
+ */
+async function surveyScope(form: FormData) {
+  const scope = s(form, "scope");
+  if (scope) {
+    const { scope: sc, actor } = await requireScopeManager(scope);
+    return {
+      // eventScope: the slug for a partner, null for SHASHA. Surveys are authored in
+      // the studio, which only partners have - but reading eventScope rather than
+      // sc.id keeps this correct if SHASHA ever grows one.
+      partnerId: sc.eventScope,
+      redirectBase: `${sc.basePath}/studio/surveys`,
+      routeBase: `${sc.routeBase}/studio/surveys`,
+      actor,
+    };
+  }
+  const user = await requireCompanyUser();
+  return {
+    partnerId: null as string | null,
+    redirectBase: "/company/surveys",
+    routeBase: "/company/surveys",
+    actor: { robloxId: user.robloxId, displayName: user.displayName },
+  };
 }
 
 export async function createSurvey(formData: FormData) {
-  const user = await requireCompanyUser();
+  const { partnerId, redirectBase, routeBase, actor } = await surveyScope(formData);
 
   const data = readSurveyForm(formData);
   const questions = parseQuestions(s(formData, "questions"));
 
-  if (!data.title) redirect("/company/surveys/new?error=required");
-  if (!questions.success) redirect("/company/surveys/new?error=questions");
+  if (!data.title) redirect(`${redirectBase}/new?error=required`);
+  if (!questions.success) redirect(`${redirectBase}/new?error=questions`);
 
   const code = await uniqueSurveyCode();
   const survey = await prisma.survey.create({
     data: {
       ...data,
       code,
-      authorRobloxId: user.robloxId,
-      authorName: user.displayName,
+      partnerId,
+      authorRobloxId: actor.robloxId,
+      authorName: actor.displayName,
       questions: {
         create: questions.data.map((q, order) => ({ ...q, order })),
       },
     },
   });
 
-  refreshSurveys();
-  redirect(`/company/surveys?ok=created&code=${survey.code}`);
+  refreshSurveys(routeBase);
+  redirect(`${redirectBase}?ok=created&code=${survey.code}`);
 }
 
 export async function updateSurvey(formData: FormData) {
-  await requireCompanyUser();
+  const { partnerId, redirectBase, routeBase } = await surveyScope(formData);
 
   const id = s(formData, "id");
   const data = readSurveyForm(formData);
   const questions = parseQuestions(s(formData, "questions"));
 
-  if (!id) redirect("/company/surveys");
-  if (!data.title) redirect(`/company/surveys/${id}/edit?error=required`);
+  if (!id) redirect(redirectBase);
+  if (!data.title) redirect(`${redirectBase}/${id}/edit?error=required`);
   if (!questions.success) {
-    redirect(`/company/surveys/${id}/edit?error=questions`);
+    redirect(`${redirectBase}/${id}/edit?error=questions`);
   }
 
-  const existing = await prisma.survey.findUnique({
-    where: { id },
+  // Scoped read, not findUnique on the id alone: a survey outside this caller's org
+  // matches nothing, so a partner cannot edit RNL's survey - or another partner's -
+  // by posting its id. Same rule the attendees page learned: passing the guard is
+  // not the same as being allowed to touch the row.
+  const existing = await prisma.survey.findFirst({
+    where: { id, partnerId },
     include: { _count: { select: { responses: true } } },
   });
-  if (!existing) redirect("/company/surveys");
+  if (!existing) redirect(redirectBase);
 
   // Editing questions after people have answered would orphan their answers and
   // silently change what the results mean, so it's blocked. Title, description
   // and status stay editable.
   if (existing._count.responses > 0) {
     await prisma.survey.update({ where: { id }, data });
-    refreshSurveys(id);
-    redirect(`/company/surveys?ok=updated&locked=1`);
+    refreshSurveys(routeBase, id);
+    redirect(`${redirectBase}?ok=updated&locked=1`);
   }
 
   // Only reached with zero responses, so every attachment here is one somebody
@@ -741,38 +786,47 @@ export async function updateSurvey(formData: FormData) {
     }),
   ]);
 
-  refreshSurveys(id);
-  redirect("/company/surveys?ok=updated");
+  refreshSurveys(routeBase, id);
+  redirect(`${redirectBase}?ok=updated`);
 }
 
 export async function setSurveyStatus(formData: FormData) {
-  await requireCompanyUser();
+  const { partnerId, redirectBase, routeBase } = await surveyScope(formData);
 
   const id = s(formData, "id");
   const status = s(formData, "status");
   if (id && ["DRAFT", "OPEN", "CLOSED"].includes(status)) {
-    await prisma.survey.update({
-      where: { id },
+    // updateMany with the scope in the WHERE - an out-of-scope id updates zero rows
+    // rather than flipping another org's survey.
+    await prisma.survey.updateMany({
+      where: { id, partnerId },
       data: { status: status as SurveyStatus },
     });
   }
 
-  refreshSurveys(id);
-  redirect("/company/surveys");
+  refreshSurveys(routeBase, id);
+  redirect(redirectBase);
 }
 
 export async function deleteSurvey(formData: FormData) {
-  await requireCompanyUser();
+  const { partnerId, redirectBase, routeBase } = await surveyScope(formData);
 
   const id = s(formData, "id");
   if (id) {
-    // Before the delete, not after: the cascade takes the rows that hold the paths.
-    await dropSurveyFiles(id);
-    await prisma.survey.delete({ where: { id } });
+    // Ownership first - a survey outside this org matches nothing and is left alone.
+    const owned = await prisma.survey.findFirst({
+      where: { id, partnerId },
+      select: { id: true },
+    });
+    if (owned) {
+      // Before the delete, not after: the cascade takes the rows that hold the paths.
+      await dropSurveyFiles(id);
+      await prisma.survey.delete({ where: { id } });
+    }
   }
 
-  refreshSurveys();
-  redirect("/company/surveys?ok=deleted");
+  refreshSurveys(routeBase);
+  redirect(`${redirectBase}?ok=deleted`);
 }
 
 // ---- the Roblox picker, for /company -----------------------------

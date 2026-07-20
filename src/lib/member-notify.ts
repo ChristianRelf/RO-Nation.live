@@ -263,7 +263,7 @@ export async function notifyEventAudience(
   event: { id: string; slug: string; partnerId: string | null },
   notice: MemberNotice,
   opts: { deleted?: boolean } = {},
-): Promise<void> {
+): Promise<number> {
   try {
     const [holders, followers] = await Promise.all([
       prisma.ticket.findMany({
@@ -279,7 +279,7 @@ export async function notifyEventAudience(
     const userIds = [
       ...new Set([...holders, ...followers].map((r) => r.userId)),
     ];
-    if (userIds.length === 0) return;
+    if (userIds.length === 0) return 0;
 
     // A cancelled or deleted show has no live page to point at. Otherwise link to the event -
     // absolute for a partner (a relative /events/<slug> 404s under RNL's own scope), relative
@@ -302,8 +302,12 @@ export async function notifyEventAudience(
         url,
       })),
     });
+    // How many members this reached - the change-notice callers ignore it, but the
+    // partner broadcast (actions/broadcast.ts) reports and audits it.
+    return userIds.length;
   } catch (err) {
     // Swallow, like notify(): the edit succeeded, and a missed notice is not worth failing it.
     console.error("notifyEventAudience failed", err);
+    return 0;
   }
 }

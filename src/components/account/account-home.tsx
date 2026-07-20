@@ -4,6 +4,7 @@ import { Kicker, StatusBadge } from "@/components/ui";
 import { partnerOrigin } from "@/lib/partners/urls";
 import { formatDate, formatDateTime, isPast } from "@/lib/format";
 import type { AccountHome as AccountHomeData, TicketWithEvent } from "@/lib/account";
+import type { LoyaltyStatus } from "@/lib/loyalty";
 
 // The signed-in member's home. A presentational server component: getAccountHome() does the
 // reads, this lays them out. Every show link routes correctly across hosts - a partner event
@@ -32,7 +33,7 @@ export function AccountHome({
   displayName: string;
   username: string;
 }) {
-  const { notifications, unseenCount, upcoming, attended, watchlist, discord } =
+  const { notifications, unseenCount, upcoming, attended, loyalty, watchlist, discord } =
     home;
   const nothingYet =
     upcoming.length === 0 && watchlist.length === 0 && attended.length === 0;
@@ -146,7 +147,11 @@ export function AccountHome({
 
         {/* Shows attended - derived from door check-in. */}
         {attended.length ? (
-          <Section title="Shows you've been to">
+          <Section
+            title="Shows you've been to"
+            hint={loyalty.current ? loyalty.current.name : undefined}
+          >
+            <LoyaltyBanner loyalty={loyalty} />
             <ul className="divide-y divide-line border-y border-line">
               {attended.map((t) => (
                 <li
@@ -202,6 +207,61 @@ export function AccountHome({
             tell you the moment you next open the site.
           </p>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The member's standing, from door check-ins. Only rendered where there IS a
+ * standing (attended ≥ 1), so `current` is never null here - but it is guarded
+ * anyway, because a component that trusts its caller is a component that breaks
+ * the day the caller changes. See lib/loyalty.
+ */
+function LoyaltyBanner({ loyalty }: { loyalty: LoyaltyStatus }) {
+  if (!loyalty.current) return null;
+
+  // Progress across the CURRENT rung: how far from this tier's threshold to the
+  // next one. At the top tier there is no next, so the bar is full and the line
+  // just celebrates rather than nagging.
+  const progress =
+    loyalty.next && loyalty.toNext !== null
+      ? Math.min(
+          100,
+          Math.round(
+            ((loyalty.attended - loyalty.current.min) /
+              (loyalty.next.min - loyalty.current.min)) *
+              100,
+          ),
+        )
+      : 100;
+
+  return (
+    <div className="mb-5 card flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-accent/30 bg-accent-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-accent">
+            {loyalty.current.name}
+          </span>
+          <span className="text-sm text-muted">
+            {loyalty.attended} show{loyalty.attended === 1 ? "" : "s"} attended
+          </span>
+        </p>
+        {loyalty.next && loyalty.toNext !== null ? (
+          <p className="mt-2 text-sm text-faint">
+            {loyalty.toNext} more to{" "}
+            <span className="font-semibold text-fg">{loyalty.next.name}</span>
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-faint">
+            Top of the list - thanks for coming to so many.
+          </p>
+        )}
+      </div>
+      <div className="w-full sm:w-40">
+        <div className="h-1.5 overflow-hidden rounded-full bg-bg">
+          <div className="h-full rounded-full bg-accent" style={{ width: `${progress}%` }} />
+        </div>
       </div>
     </div>
   );

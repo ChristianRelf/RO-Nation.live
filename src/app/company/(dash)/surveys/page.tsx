@@ -20,7 +20,11 @@ export default async function CompanySurveysPage({
 }) {
   await requireCompanyUser();
 
+  // partnerId: null - RNL's own surveys. A partner's live in its studio now
+  // (Survey.partnerId), and without this filter they would list here inside RNL's
+  // dashboard, the same scope leak lib/queries.ts exists to prevent.
   const surveys = await prisma.survey.findMany({
+    where: { partnerId: null },
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { responses: true, questions: true } },

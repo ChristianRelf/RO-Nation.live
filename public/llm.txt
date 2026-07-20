@@ -428,6 +428,7 @@ is no.
 | `payments_off`      | Priced tier, and Robux sales are off. Nobody can have it.      |
 | `payment_required`  | Priced tier, on a path that collects no money. Use `/purchase`.|
 | `not_purchasable`   | You called `/purchase` for a **free** tier. Don't charge them. |
+| `already_owned`     | `/purchase` only. They already hold this tier or better - don't charge; refund if you did. |
 
 ---
 
@@ -475,9 +476,13 @@ send it again. So:
   out, before it is past, before the tier is deactivated. Somebody who has already
   been charged must never be told they have no ticket because the room filled up
   while their receipt was in flight.
-- If they already hold a ticket for this show, the payment **upgrades** it (one
-  ticket per person per show, always). It is never silently swallowed: taking Robux
-  and changing nothing is theft with extra steps.
+- If they already hold a ticket for this show, a payment for a **dearer** tier
+  **upgrades** it (one ticket per person per show, always) - a GA holder buying VIP
+  moves up, seat and all. But a payment for the **same tier or a cheaper one** is
+  refused `already_owned` and **nothing is recorded**: there is no second ticket to
+  give them, and banking the Robux for a ticket they already hold is theft with extra
+  steps. This is the guard that stops a tier sold on **both** rails - a game pass on
+  the site and a Developer Product in here - being charged twice. See below.
 
 #### Granting the receipt
 
@@ -488,6 +493,25 @@ answered `issued: true`. If it answers `issued: false`, do not grant - return
 And do not prompt at all for a tier that `GET /api/v1/events/<id>` says is
 `available: false`. `payments_off` after you have taken somebody's Robux is a
 refund, not an error message.
+
+#### Do not prompt someone who already holds the ticket
+
+A tier can be on sale on **both** rails at once - a game pass on the website and a
+Developer Product in here - because it is the same seat sold in two places. So a
+player can walk in already holding this show's ticket, bought on the site. Prompt
+them the Developer Product for it and you have charged them twice for a ticket they
+cannot hold twice.
+
+**Before `PromptProductPurchase`, ask what they already hold** -
+`GET /api/v1/players/<robloxId>/tickets?eventId=<id>` (see "What the player already
+holds") - and do not prompt if they already hold this tier or a better one. Only
+*offer the upgrade* to a GA holder; a VIP holder gets let in, not sold to.
+
+This endpoint is the **backstop**, not the gate. A purchase that reaches it for a
+tier they already hold at that tier or better is refused `already_owned` and nothing
+is charged on our side - but Roblox has already taken the Robux by the time
+`ProcessReceipt` fires, so all that is left then is a manual refund. The check above
+is what stops you needing one.
 
 > Paid tiers are switched off platform-wide today, so this endpoint answers
 > `payments_off` for every priced tier right now. It is real and it works - build

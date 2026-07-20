@@ -68,6 +68,8 @@ export function SurveyBuilder({
   questions,
   error,
   locked,
+  scope,
+  cancelHref = "/company/surveys",
 }: {
   action: (formData: FormData) => void;
   survey?: Survey;
@@ -75,6 +77,14 @@ export function SurveyBuilder({
   error?: string;
   /** Someone has already answered - questions are frozen. */
   locked?: boolean;
+  /**
+   * The partner slug this survey belongs to, posted as a hidden field so the one
+   * survey action guards and scopes to the right org. Absent (undefined) means
+   * RNL's own, authored in /company. See createSurvey in actions/company.ts.
+   */
+  scope?: string;
+  /** Where Cancel goes back to - the studio list on a partner, /company by default. */
+  cancelHref?: string;
 }) {
   const [items, setItems] = useState<Draft[]>(() =>
     questions?.length
@@ -138,6 +148,7 @@ export function SurveyBuilder({
   return (
     <form action={action} className="space-y-6">
       {survey ? <input type="hidden" name="id" value={survey.id} /> : null}
+      {scope ? <input type="hidden" name="scope" value={scope} /> : null}
       <input type="hidden" name="questions" value={payload} />
 
       {error === "required" ? (
@@ -517,7 +528,7 @@ export function SurveyBuilder({
         >
           {survey ? "Save survey" : "Create survey"}
         </button>
-        <a href="/company/surveys" className="btn btn-ghost">
+        <a href={cancelHref} className="btn btn-ghost">
           Cancel
         </a>
         {problems.length > 0 && !locked ? (

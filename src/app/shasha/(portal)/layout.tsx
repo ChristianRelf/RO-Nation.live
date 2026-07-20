@@ -37,6 +37,16 @@ export default async function PortalLayout({
         // read-only staffer rather than handing them a link that bounces.
         showsLink
         doorLink
+        // RNL's own performance numbers, NULL-partnered. Always on: SHASHA has shows.
+        analyticsLink
+        // Robux settlement statement - managers only.
+        payoutsLink={user.canWrite}
+        // Announce to a show's audience - managers only, like keys.
+        announceLink={user.canWrite}
+        // Comp the VIP list into a show - managers only.
+        compLink={user.canWrite}
+        // Post-show survey invites (RNL's surveys are authored in /company).
+        feedbackLink={user.canWrite}
         keysLink={user.canWrite}
         user={{
           displayName: user.displayName,

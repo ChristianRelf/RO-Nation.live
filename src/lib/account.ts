@@ -2,6 +2,7 @@ import "server-only";
 import type { Event, MemberNotification, Ticket } from "@prisma/client";
 import { prisma } from "./db";
 import { getDiscordLinkByUser } from "./discord-link";
+import { loyaltyStatus, type LoyaltyStatus } from "./loyalty";
 
 // The member's own home. The analogue of lib/hub.ts - but hub.ts is the STAFF backstage
 // launcher on the portal host, and this is the MEMBER surface on ronation.live. They do not
@@ -22,6 +23,11 @@ export type AccountHome = {
   unseenCount: number;
   upcoming: TicketWithEvent[];
   attended: TicketWithEvent[];
+  /**
+   * Standing derived from the FULL check-in count, not the capped `attended`
+   * list above (which is only the ten most recent, for display). See lib/loyalty.
+   */
+  loyalty: LoyaltyStatus;
   watchlist: Event[];
   discord: { username: string | null } | null;
 };
@@ -29,8 +35,15 @@ export type AccountHome = {
 export async function getAccountHome(userId: string): Promise<AccountHome> {
   const now = new Date();
 
-  const [notifications, unseenCount, upcoming, attended, follows, discord] =
-    await Promise.all([
+  const [
+    notifications,
+    unseenCount,
+    upcoming,
+    attended,
+    attendedCount,
+    follows,
+    discord,
+  ] = await Promise.all([
       // A record of recent change-notices, seen and unseen. The modal shows the unseen ones;
       // this is where they persist afterwards.
       prisma.memberNotification.findMany({
@@ -65,6 +78,10 @@ export async function getAccountHome(userId: string): Promise<AccountHome> {
         orderBy: { checkedInAt: "desc" },
         take: 10,
       }),
+      // The FULL count behind the loyalty standing - the list above is capped at ten
+      // for display, but a Legend has been to twenty-five and the badge must count
+      // all of them. Served by the same @@index([userId, checkedInAt]).
+      prisma.ticket.count({ where: { userId, checkedInAt: { not: null } } }),
       // The watchlist. PUBLISHED only, so a show later pulled from sale drops out quietly
       // rather than linking to a dead page.
       prisma.eventFollow.findMany({
@@ -80,6 +97,7 @@ export async function getAccountHome(userId: string): Promise<AccountHome> {
     unseenCount,
     upcoming,
     attended,
+    loyalty: loyaltyStatus(attendedCount),
     watchlist: follows.map((f) => f.event),
     discord: discord ? { username: discord.discordUsername } : null,
   };

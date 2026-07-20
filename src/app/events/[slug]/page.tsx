@@ -6,7 +6,9 @@ import { getEventBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
 import { StatusBadge, Kicker } from "@/components/ui";
 import { TierSummary } from "@/components/ticket/tier-summary";
+import { CrowdFacepile } from "@/components/ticket/crowd-facepile";
 import { FollowButton } from "@/components/account/follow-button";
+import { WaitlistButton } from "@/components/account/waitlist-button";
 import {
   dateBlock,
   formatDate,
@@ -81,6 +83,17 @@ export default async function EventPage({
   const following = session
     ? Boolean(
         await prisma.eventFollow.findUnique({
+          where: {
+            userId_eventId: { userId: session.uid, eventId: event.id },
+          },
+        }),
+      )
+    : false;
+
+  // Whether they are queued for this show - drives the waitlist CTA when it is full.
+  const onWaitlist = session
+    ? Boolean(
+        await prisma.waitlist.findUnique({
           where: {
             userId_eventId: { userId: session.uid, eventId: event.id },
           },
@@ -240,6 +253,10 @@ export default async function EventPage({
                 <p className="mb-4 text-sm text-muted">Unlimited entry</p>
               )}
 
+              {/* The crowd, as faces. Reframes the same holders the capacity line
+                  counts into a reason to come - see components/ticket/crowd-facepile. */}
+              <CrowdFacepile eventId={event.id} />
+
               <TierSummary offers={offers} />
 
               {error ? (
@@ -308,6 +325,20 @@ export default async function EventPage({
               </p>
             </div>
           </div>
+
+          {/* Waitlist - only when the room is genuinely full (not when a priced tier
+              is merely locked with seats still free) and they could still take a
+              spot: not ended, and not already holding one. */}
+          {soldOut && !ended && !hasTicket ? (
+            <div className="mt-4">
+              <WaitlistButton
+                eventId={event.id}
+                onWaitlist={onWaitlist}
+                signedIn={Boolean(session)}
+                returnTo={`/events/${event.slug}`}
+              />
+            </div>
+          ) : null}
 
           {/* Watchlist + calendar. Follow tells us to notify this member if the show
               moves or is cancelled; the .ics is a plain download for anyone. */}

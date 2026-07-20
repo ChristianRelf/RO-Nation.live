@@ -19,8 +19,10 @@ export default async function EditSurveyPage({
 }) {
   await requireCompanyUser();
 
-  const survey = await prisma.survey.findUnique({
-    where: { id: params.id },
+  // findFirst with partnerId: null, not findUnique on the id - a partner's survey
+  // id pasted into this URL must 404, not open in RNL's dashboard.
+  const survey = await prisma.survey.findFirst({
+    where: { id: params.id, partnerId: null },
     include: {
       questions: { orderBy: { order: "asc" } },
       _count: { select: { responses: true } },
