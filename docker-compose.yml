@@ -120,8 +120,8 @@ services:
   # Daily maintenance. Reuses the web image (so it has tsx, the Prisma client and a
   # DATABASE_URL) and runs `npm run cull` once a day - scripts/cull.ts - to delete the
   # throwaway rows that would otherwise grow forever: spent SSO tickets, ended
-  # rate-limit windows, expired seat holds. No ports and no volumes; it only talks to
-  # the database. Change the hour with CULL_HOUR (UTC); see docker-cron.sh.
+  # rate-limit windows, expired seat holds. No ports. Change the hour with CULL_HOUR
+  # (UTC); see docker-cron.sh.
   cron:
     build: .
     image: ronation-web:latest
@@ -133,6 +133,17 @@ services:
       DATABASE_URL: postgresql://ronation:${POSTGRES_PASSWORD:-ronation}@db:5432/ronation?schema=public
       CULL_HOUR: ${CULL_HOUR:-4}
       TZ: ${TZ:-UTC}
+    volumes:
+      # The cull used to talk only to the database. It now also deletes BYTES -
+      # survey attachments that were uploaded and never submitted - and bytes need
+      # the volume they live on.
+      #
+      # Without this the container falls back to /app/private-uploads, which is the
+      # empty directory baked into the image rather than the volume `web` writes to.
+      # Every unlink would miss, be swallowed by its own catch, and the row would be
+      # deleted anyway - leaving the file on the real volume with nothing left that
+      # knows where it is. Silent, permanent, and reported in the log as a success.
+      - private-uploads:/app/private-uploads
     entrypoint: ["./docker-cron.sh"]
 
   # TLS terminator. Gets and renews Let's Encrypt certificates automatically for

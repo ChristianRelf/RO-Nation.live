@@ -88,6 +88,17 @@ const SURVEY_PATHS = [
   "/api/auth/sso",
   "/api/auth/logout",
   "/api/health",
+  // Attachments for a FILE_UPLOAD question. The respondent's browser posts each
+  // file here from the survey page, so it has to be servable on THIS host: the
+  // fallback below is a redirect, and a redirected POST arrives at the main site
+  // without the body - and without the session, which is a cookie scoped to this
+  // host. The same trap as the /api/auth/sso note on the merch list.
+  //
+  // Note how specific this is. `matches` takes the exact path or a subpath, so
+  // this opens /api/uploads/survey and nothing else - the staff image door at
+  // /api/uploads stays unreachable from the survey host, which is right: nobody
+  // answering a form has any business there.
+  "/api/uploads/survey",
 ];
 
 /**

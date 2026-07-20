@@ -4,6 +4,13 @@ import { useState } from "react";
 import type { QuestionType, Survey, SurveyQuestion } from "@prisma/client";
 import { toDateTimeInput } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_MAX_FILES,
+  DEFAULT_MAX_FILE_MB,
+  FILE_SIZE_CHOICES,
+  MAX_FILES_LIMIT,
+  SURVEY_FILE_CHOICES,
+} from "@/lib/survey-files";
 
 const inputClass =
   "w-full rounded-xl border border-line bg-bg px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent";
@@ -17,6 +24,10 @@ type Draft = {
   helpText: string;
   required: boolean;
   options: string[];
+  /** FILE_UPLOAD only - see the file settings block below. */
+  maxFiles: number;
+  maxFileMb: number;
+  fileTypes: string[];
 };
 
 const TYPES: { value: QuestionType; label: string; hint: string }[] = [
@@ -26,9 +37,11 @@ const TYPES: { value: QuestionType; label: string; hint: string }[] = [
   { value: "CHECKBOXES", label: "Checkboxes", hint: "Pick any number" },
   { value: "RATING", label: "Rating", hint: "1 to 5" },
   { value: "YES_NO", label: "Yes / No", hint: "Two options" },
+  { value: "FILE_UPLOAD", label: "File upload", hint: "Attach files" },
 ];
 
 const hasOptions = (t: QuestionType) => t === "CHOICE" || t === "CHECKBOXES";
+const hasFiles = (t: QuestionType) => t === "FILE_UPLOAD";
 
 let seq = 0;
 const newKey = () => `q${seq++}`;
@@ -41,6 +54,11 @@ function blank(): Draft {
     helpText: "",
     required: false,
     options: [],
+    maxFiles: DEFAULT_MAX_FILES,
+    maxFileMb: DEFAULT_MAX_FILE_MB,
+    // Empty means every type the door accepts - the same convention the column
+    // uses, so a question nobody configured behaves like one that ticked them all.
+    fileTypes: [],
   };
 }
 
@@ -67,6 +85,9 @@ export function SurveyBuilder({
           helpText: q.helpText ?? "",
           required: q.required,
           options: q.options,
+          maxFiles: q.maxFiles ?? DEFAULT_MAX_FILES,
+          maxFileMb: q.maxFileMb ?? DEFAULT_MAX_FILE_MB,
+          fileTypes: q.fileTypes,
         }))
       : [blank()],
   );
@@ -98,6 +119,12 @@ export function SurveyBuilder({
       options: hasOptions(q.type)
         ? q.options.map((o) => o.trim()).filter(Boolean)
         : [],
+      // Nulled off the other types for the same reason options are emptied: a
+      // question switched from File upload to Short text should not keep a stale
+      // size cap in the column, waiting to confuse whoever reads the row next.
+      maxFiles: hasFiles(q.type) ? q.maxFiles : null,
+      maxFileMb: hasFiles(q.type) ? q.maxFileMb : null,
+      fileTypes: hasFiles(q.type) ? q.fileTypes : [],
     })),
   );
 
@@ -344,6 +371,99 @@ export function SurveyBuilder({
                       + Add option
                     </button>
                   ) : null}
+                </div>
+              ) : null}
+
+              {hasFiles(q.type) ? (
+                <div className="space-y-4 border-t border-line pt-4">
+                  <p className={labelClass}>What people may attach</p>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className={labelClass}>How many files</label>
+                      <select
+                        value={q.maxFiles}
+                        disabled={locked}
+                        onChange={(e) =>
+                          patch(q.key, { maxFiles: Number(e.target.value) })
+                        }
+                        className={cn(inputClass, locked && "opacity-60")}
+                      >
+                        {Array.from({ length: MAX_FILES_LIMIT }, (_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {i === 0 ? "1 file" : `Up to ${i + 1} files`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className={labelClass}>Max size per file</label>
+                      <select
+                        value={q.maxFileMb}
+                        disabled={locked}
+                        onChange={(e) =>
+                          patch(q.key, { maxFileMb: Number(e.target.value) })
+                        }
+                        className={cn(inputClass, locked && "opacity-60")}
+                      >
+                        {FILE_SIZE_CHOICES.map((mb) => (
+                          <option key={mb} value={mb}>
+                            {mb} MB
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>
+                      File types (none ticked = all of them)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {SURVEY_FILE_CHOICES.map((c) => {
+                        const on = q.fileTypes.includes(c.mime);
+                        return (
+                          <label
+                            key={c.mime}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors",
+                              on
+                                ? "border-accent bg-accent-soft text-accent"
+                                : "border-line bg-bg hover:border-line-strong",
+                              locked && "cursor-not-allowed opacity-60",
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              disabled={locked}
+                              onChange={() =>
+                                patch(q.key, {
+                                  fileTypes: on
+                                    ? q.fileTypes.filter((t) => t !== c.mime)
+                                    : [...q.fileTypes, c.mime],
+                                })
+                              }
+                              className="h-4 w-4 accent-accent"
+                            />
+                            <span className="font-semibold">{c.label}</span>
+                            <span className="text-xs text-faint">{c.hint}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {/* The honest version of the size cap. lib/uploads.ts keeps a
+                        5 MB ceiling on images whatever is chosen above, so a 25 MB
+                        setting on a photo question would be a promise the upload
+                        door refuses to keep - better said here than discovered by a
+                        respondent whose file bounces. */}
+                    <p className="mt-2 text-xs text-faint">
+                      Images are capped at 5 MB however high you set the size -
+                      only PDFs use the full 25 MB. Files are private: only
+                      Studio users can open them from the results page.
+                    </p>
+                  </div>
                 </div>
               ) : null}
             </div>

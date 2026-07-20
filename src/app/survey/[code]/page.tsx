@@ -8,6 +8,8 @@ import { SURVEY_CODE_RE } from "@/lib/utils";
 import { formatDateTime } from "@/lib/format";
 import { site } from "@/lib/site";
 import { OfficialMark } from "@/components/official-mark";
+import { SurveyFileField } from "@/components/survey-file-field";
+import { DEFAULT_MAX_FILES, DEFAULT_MAX_FILE_MB } from "@/lib/survey-files";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +59,30 @@ export default async function SurveyPage({
     : null;
 
   const done = Boolean(existing) || searchParams.ok === "1";
+
+  // Files this person has already uploaded and not yet submitted.
+  //
+  // Without this a reload is a trap. The upload door counts unclaimed rows to
+  // enforce the author's file limit, and that count survives a refresh while the
+  // field's own state does not - so a one-file question would come back empty,
+  // refuse the next upload as "already at the limit", offer nothing to remove
+  // (Remove only knows about files in local state) and then fail submit as
+  // required. The respondent would be locked out until the cull ran, up to a day.
+  //
+  // Handing the rows back makes the form agree with the database again: the files
+  // are listed, removable, and already attached.
+  const pending =
+    session && !done && !closed
+      ? await prisma.surveyUpload.findMany({
+          where: {
+            question: { surveyId: survey.id },
+            userId: session.uid,
+            responseId: null,
+          },
+          select: { id: true, questionId: true, filename: true, size: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
 
   return (
     <main className="relative min-h-dvh">
@@ -143,6 +169,7 @@ export default async function SurveyPage({
                     q={q}
                     index={i}
                     invalid={searchParams.q === q.id}
+                    pending={pending.filter((u) => u.questionId === q.id)}
                   />
                 ))}
 
@@ -167,10 +194,13 @@ function Question({
   q,
   index,
   invalid,
+  pending,
 }: {
   q: SurveyQuestion;
   index: number;
   invalid: boolean;
+  /** FILE_UPLOAD only: files already uploaded against this question. */
+  pending: { id: string; filename: string; size: number }[];
 }) {
   const name = `q_${q.id}`;
   const inputClass =
@@ -275,6 +305,22 @@ function Question({
               </label>
             ))}
           </div>
+        ) : null}
+
+        {q.type === "FILE_UPLOAD" ? (
+          // No `required` on the picker: the value posted is a hidden input that
+          // only exists once a file is up, and the browser cannot validate that.
+          // submitSurveyResponse enforces it, the same way it does for every other
+          // type it cannot trust the client about.
+          <SurveyFileField
+            name={name}
+            questionId={q.id}
+            maxFiles={q.maxFiles ?? DEFAULT_MAX_FILES}
+            maxFileMb={q.maxFileMb ?? DEFAULT_MAX_FILE_MB}
+            fileTypes={q.fileTypes}
+            required={q.required}
+            defaultFiles={pending}
+          />
         ) : null}
 
         {q.type === "YES_NO" ? (

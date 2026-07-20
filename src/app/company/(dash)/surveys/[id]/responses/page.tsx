@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireCompanyUser } from "@/lib/company";
 import { AdminHeader, StatCard } from "@/components/admin-ui";
 import { formatDateTime } from "@/lib/format";
+import { formatBytes } from "@/lib/survey-files";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Survey results" };
@@ -32,6 +33,18 @@ export default async function SurveyResponsesPage({
   if (!survey) notFound();
 
   const total = survey.responses.length;
+
+  // Attachments, keyed by upload id, so a FILE_UPLOAD answer's `values` (which
+  // holds ids) can be turned into named links. Only submitted ones - an unclaimed
+  // upload is an abandoned draft and /files/survey/[id] will not serve it either.
+  const attachments = new Map(
+    (
+      await prisma.surveyUpload.findMany({
+        where: { question: { surveyId: survey.id }, responseId: { not: null } },
+        select: { id: true, filename: true, size: true },
+      })
+    ).map((u) => [u.id, u]),
+  );
 
   return (
     <div>
@@ -87,6 +100,7 @@ export default async function SurveyResponsesPage({
                   options={q.options}
                   answers={q.answers}
                   total={total}
+                  attachments={attachments}
                 />
               </div>
             </section>
@@ -122,6 +136,7 @@ function label(type: QuestionType) {
     CHECKBOXES: "Checkboxes",
     RATING: "Rating 1–5",
     YES_NO: "Yes / No",
+    FILE_UPLOAD: "File upload",
   }[type];
 }
 
@@ -130,12 +145,63 @@ function QuestionSummary({
   options,
   answers,
   total,
+  attachments,
 }: {
   type: QuestionType;
   options: string[];
   answers: { id: string; value: string; values: string[] }[];
   total: number;
+  attachments: Map<string, { id: string; filename: string; size: number }>;
 }) {
+  // Files: one group per answer, linking each attachment. There is nothing to
+  // count here - a bar chart of filenames would say nothing - so it reads like the
+  // free-text case, as a list of what came in.
+  if (type === "FILE_UPLOAD") {
+    if (!answers.length) {
+      return <p className="text-sm text-faint">Nobody answered this one.</p>;
+    }
+    return (
+      <ul className="space-y-3">
+        {answers.map((a) => (
+          <li key={a.id} className="border-l-2 border-line pl-3">
+            <ul className="space-y-1.5">
+              {a.values.map((id) => {
+                const file = attachments.get(id);
+                // The row is gone but the id is still in the answer - a deleted
+                // upload, or one that never got attached. Say so rather than
+                // rendering a link that 404s.
+                if (!file) {
+                  return (
+                    <li key={id} className="text-sm text-faint">
+                      File no longer available
+                    </li>
+                  );
+                }
+                return (
+                  <li key={id} className="flex items-center gap-3 text-sm">
+                    {/* Not next/link: this is a file download off a route
+                        handler, not a page in the router. */}
+                    <a
+                      href={`/files/survey/${file.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="min-w-0 flex-1 truncate text-accent hover:underline"
+                    >
+                      {file.filename}
+                    </a>
+                    <span className="tnum shrink-0 text-xs text-faint">
+                      {formatBytes(file.size)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   // Free text: just list what people wrote.
   if (type === "SHORT_TEXT" || type === "LONG_TEXT") {
     if (!answers.length) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCompanyUser } from "@/lib/company";
 import { slugify } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,20 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // Attachments, for the FILE_UPLOAD columns. A spreadsheet is for working from,
+  // so the cell carries a LINK rather than just the filename the answer's `value`
+  // already holds - absolute, because a relative path in a downloaded CSV has
+  // nothing to resolve against. The links are still gated: opening one without a
+  // Studio session gets the same 404 as a made-up id.
+  const attachments = new Map(
+    (
+      await prisma.surveyUpload.findMany({
+        where: { question: { surveyId: survey.id }, responseId: { not: null } },
+        select: { id: true, filename: true },
+      })
+    ).map((u) => [u.id, u]),
+  );
+
   const header = [
     "Roblox username",
     "Submitted at",
@@ -58,7 +73,17 @@ export async function GET(
       ...survey.questions.map((q) => {
         const a = byQuestion.get(q.id);
         if (!a) return "";
-        return q.type === "CHECKBOXES" ? a.values.join("; ") : a.value;
+        if (q.type === "CHECKBOXES") return a.values.join("; ");
+        if (q.type === "FILE_UPLOAD") {
+          return a.values
+            .map((id) => {
+              const file = attachments.get(id);
+              if (!file) return "(file no longer available)";
+              return `${file.filename} ${absoluteUrl(`/files/survey/${file.id}`)}`;
+            })
+            .join("; ");
+        }
+        return a.value;
       }),
     ];
   });

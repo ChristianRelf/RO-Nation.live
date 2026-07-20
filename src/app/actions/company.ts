@@ -14,6 +14,14 @@ import { prisma } from "@/lib/db";
 import { requireCompanyUser } from "@/lib/company";
 import { resolveRobloxUser, searchRobloxUsers } from "@/lib/roblox-users";
 import { generateSurveyCode } from "@/lib/utils";
+import { removePrivateFiles } from "@/lib/uploads";
+import {
+  DEFAULT_MAX_FILES,
+  DEFAULT_MAX_FILE_MB,
+  FILE_SIZE_CHOICES,
+  MAX_FILES_LIMIT,
+  SURVEY_FILE_MIMES,
+} from "@/lib/survey-files";
 import {
   parseDate,
   readEventForm,
@@ -590,18 +598,55 @@ const QuestionSchema = z
       "CHECKBOXES",
       "RATING",
       "YES_NO",
+      "FILE_UPLOAD",
     ]),
     prompt: z.string().trim().min(1).max(500),
     helpText: z.string().trim().max(300).optional().nullable(),
     required: z.boolean().default(false),
     options: z.array(z.string().trim().min(1).max(120)).max(20).default([]),
+
+    // ---- FILE_UPLOAD limits ------------------------------------------
+    //
+    // Clamped rather than merely checked, because the builder is a client
+    // component and this is the only thing between its JSON and the columns.
+    // These are also the numbers api/uploads/survey enforces, so a value that
+    // got past here would be a real limit somebody never agreed to.
+    maxFiles: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_FILES_LIMIT)
+      .optional()
+      .nullable(),
+    maxFileMb: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(Math.max(...FILE_SIZE_CHOICES))
+      .optional()
+      .nullable(),
+    // Unknown mimes are dropped, not rejected: the list is a filter, and a
+    // filter that fails the whole save because it contained one stale string is
+    // worse than one that quietly narrows to what it recognises.
+    fileTypes: z
+      .array(z.string())
+      .max(SURVEY_FILE_MIMES.length)
+      .default([])
+      .transform((t) => SURVEY_FILE_MIMES.filter((m) => t.includes(m))),
   })
-  .transform((q) => ({
-    ...q,
-    // Options are meaningless on the other types - drop them so they can't
-    // linger after someone switches a question's type in the builder.
-    options: q.type === "CHOICE" || q.type === "CHECKBOXES" ? q.options : [],
-  }))
+  .transform((q) => {
+    const files = q.type === "FILE_UPLOAD";
+    return {
+      ...q,
+      // Options are meaningless on the other types - drop them so they can't
+      // linger after someone switches a question's type in the builder. Same for
+      // the file limits, in the other direction.
+      options: q.type === "CHOICE" || q.type === "CHECKBOXES" ? q.options : [],
+      maxFiles: files ? (q.maxFiles ?? DEFAULT_MAX_FILES) : null,
+      maxFileMb: files ? (q.maxFileMb ?? DEFAULT_MAX_FILE_MB) : null,
+      fileTypes: files ? q.fileTypes : [],
+    };
+  })
   .refine(
     (q) =>
       (q.type !== "CHOICE" && q.type !== "CHECKBOXES") || q.options.length >= 2,
@@ -637,6 +682,24 @@ function readSurveyForm(form: FormData) {
     // notices until they need to reopen a survey.
     closesAt: parseDate(s(form, "closesAt")),
   };
+}
+
+/**
+ * Remove the files attached to a survey's questions, before the rows cascade away.
+ *
+ * Both callers below destroy SurveyQuestion rows, and SurveyUpload cascades off
+ * those - so without this the bytes stay on the private volume forever, with the
+ * only record of their location deleted. The cull cannot help: it sweeps by row,
+ * and the rows are exactly what has gone.
+ */
+async function dropSurveyFiles(surveyId: string) {
+  const uploads = await prisma.surveyUpload.findMany({
+    where: { question: { surveyId } },
+    select: { storagePath: true },
+  });
+  if (uploads.length) {
+    await removePrivateFiles(uploads.map((u) => u.storagePath));
+  }
 }
 
 /** A code that isn't already taken. Collisions are vanishingly unlikely. */
@@ -708,6 +771,11 @@ export async function updateSurvey(formData: FormData) {
     redirect(`/company/surveys?ok=updated&locked=1`);
   }
 
+  // Only reached with zero responses, so every attachment here is one somebody
+  // uploaded and never submitted - and the questions they belong to are about to
+  // be replaced wholesale. Bytes first; the rows follow via the cascade below.
+  await dropSurveyFiles(id);
+
   await prisma.$transaction([
     prisma.surveyQuestion.deleteMany({ where: { surveyId: id } }),
     prisma.survey.update({
@@ -745,7 +813,11 @@ export async function deleteSurvey(formData: FormData) {
   await requireCompanyUser();
 
   const id = s(formData, "id");
-  if (id) await prisma.survey.delete({ where: { id } });
+  if (id) {
+    // Before the delete, not after: the cascade takes the rows that hold the paths.
+    await dropSurveyFiles(id);
+    await prisma.survey.delete({ where: { id } });
+  }
 
   refreshSurveys();
   redirect("/company/surveys?ok=deleted");

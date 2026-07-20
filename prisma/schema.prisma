@@ -58,6 +58,7 @@ model User {
   tickets         Ticket[]
   applications    Application[]
   surveyResponses SurveyResponse[]
+  surveyUploads   SurveyUpload[]
   enquiries       Enquiry[]
 
   /// Holds this person is PAYING for.
@@ -913,6 +914,7 @@ enum QuestionType {
   CHECKBOXES // pick any number of `options`
   RATING // 1–5
   YES_NO
+  FILE_UPLOAD // attach files - see SurveyUpload
 }
 
 model Survey {
@@ -945,7 +947,20 @@ model SurveyQuestion {
   required Boolean      @default(false)
   options  String[]     @default([]) // CHOICE / CHECKBOXES only
 
+  // ---- FILE_UPLOAD only -------------------------------------------------
+  //
+  // The three limits the survey's author sets. All nullable/empty on every other
+  // type, and all of them TIGHTEN what lib/uploads.ts already permits - none can
+  // loosen it. A creator asking for 100 MB of .exe gets whatever the upload module
+  // was going to allow anyway; these only ever narrow that.
+  maxFiles  Int? // how many files may be attached, 1–10
+  maxFileMb Int? // per-file cap in MB, on top of the module's own per-type cap
+  /// Allowed content types, from SURVEY_FILE_TYPES. Empty means "all of them".
+  /// These are sniffed mimes, never the browser's claim - see lib/uploads.ts.
+  fileTypes String[] @default([])
+
   answers SurveyAnswer[]
+  uploads SurveyUpload[]
 
   @@index([surveyId, order])
   @@map("survey_questions")
@@ -961,6 +976,7 @@ model SurveyResponse {
   createdAt      DateTime @default(now())
 
   answers SurveyAnswer[]
+  uploads SurveyUpload[]
 
   @@unique([surveyId, userId]) // one response per Roblox account
   @@index([surveyId])
@@ -974,11 +990,63 @@ model SurveyAnswer {
   question   SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   questionId String
   value      String         @db.Text // text, "YES"/"NO", "1".."5", or the chosen option
-  values     String[]       @default([]) // CHECKBOXES only
+  /// CHECKBOXES: the options picked. FILE_UPLOAD: the SurveyUpload ids attached -
+  /// in both cases `value` is the same list rendered for a human, so anything that
+  /// only wants to print an answer can keep reading `value` and ignore this.
+  values     String[]       @default([])
 
   @@unique([responseId, questionId])
   @@index([questionId])
   @@map("survey_answers")
+}
+
+// ------------------------------------------------------------------
+// A file attached to a FILE_UPLOAD answer.
+//
+// The bytes go to the PRIVATE volume, the one Caddy does not mount - a survey
+// answer is somebody's CV or a photo of their setup, and "unguessable URL" is not
+// an access control. The only reader is app/files/survey/[id], which checks for a
+// company user on every request.
+//
+// The row is written when the file is uploaded, which is BEFORE the response
+// exists: the respondent picks files, they go up out-of-band (a server action's
+// body caps at 1 MB), and only the ids ride along with the submit. So responseId
+// is nullable, and a null one means "uploaded, never submitted" - the tab was
+// closed, the file was swapped for another. Those are orphans and scripts/cull.ts
+// sweeps them, bytes included.
+//
+// Attaching is therefore a CLAIM: submit only accepts an upload that is this
+// user's, for this question, and not yet spoken for (responseId null). Without
+// that last condition a respondent could post someone else's id and read the file
+// back through the results page.
+// ------------------------------------------------------------------
+model SurveyUpload {
+  id String @id @default(cuid())
+
+  question   SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
+
+  /// Who uploaded it. Recorded at upload time, when there is no response to hang
+  /// it off yet, and re-checked at submit - this is what stops one respondent
+  /// claiming another's file.
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  /// Set when the response is submitted. Null means unclaimed - see above.
+  response   SurveyResponse? @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  responseId String?
+
+  /// "<scope>/<uuid>.<ext>", relative to PRIVATE_UPLOAD_DIR. Ours, never the
+  /// client's - the uploader's own filename is display-only and below.
+  storagePath String
+  mime        String // sniffed from the bytes
+  size        Int
+  filename    String // what they called it, for the results page
+  createdAt   DateTime @default(now())
+
+  @@index([questionId, userId, responseId])
+  @@index([responseId])
+  @@map("survey_uploads")
 }
 
 // ------------------------------------------------------------------

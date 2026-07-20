@@ -1,7 +1,8 @@
 import "server-only";
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
+import { SURVEY_FILE_MIMES } from "@/lib/survey-files";
 
 // Where uploaded images live, and how one is accepted.
 //
@@ -90,6 +91,27 @@ export const ASSET_TYPES: readonly string[] = [
   ...IMAGE_TYPES,
   "application/pdf",
 ];
+
+/**
+ * What a survey respondent may attach to an answer.
+ *
+ * ASSET_TYPES minus SVG, and the missing one is the point. Everywhere else that
+ * takes an SVG, the uploader is staff or a vetted partner; a survey link is handed
+ * to the public, so this door's callers are strangers by design. An SVG is the one
+ * accepted type that can carry script, and while the sandbox CSP on the serving
+ * route means it cannot do anything with it, the person who would eat that risk is
+ * the staff member opening the results page. Nobody needs to submit a survey answer
+ * as an SVG, so nobody gets to.
+ *
+ * A creator narrows this further per question (SurveyQuestion.fileTypes); this is
+ * the ceiling they narrow from, and their list is intersected with it rather than
+ * trusted, so a hand-posted "application/x-msdownload" selects nothing.
+ *
+ * The list itself lives in lib/survey-files.ts because the survey builder is a
+ * client component and has to offer exactly what this door will take. Re-exported
+ * here so the door's policy still reads alongside IMAGE_TYPES and ASSET_TYPES.
+ */
+export const SURVEY_FILE_TYPES: readonly string[] = SURVEY_FILE_MIMES;
 
 /**
  * The types we accept, keyed by the bytes a real file of that type starts with.
@@ -195,13 +217,21 @@ async function store(
   scope: string,
   root: string,
   accept: readonly string[],
+  maxBytes?: number,
 ): Promise<StoredFile | UploadFailure> {
   if (file.size === 0) return { ok: false, error: "empty" };
 
   // The outer wall first, on the declared size, so an oversized body is refused
   // before it is read into memory.
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return { ok: false, error: "too-large", limit: MAX_UPLOAD_BYTES };
+  //
+  // A caller's own cap joins the wall here rather than waiting for the sniffed
+  // check below. The declared size is still just a claim and proves nothing - but
+  // a claim of 25 MB against a 1 MB question is an admission, and refusing it now
+  // saves reading 25 MB into memory to reach the same answer. Anything that lies
+  // low is caught by the authoritative check on the real bytes further down.
+  const declaredWall = Math.min(MAX_UPLOAD_BYTES, maxBytes ?? Infinity);
+  if (file.size > declaredWall) {
+    return { ok: false, error: "too-large", limit: declaredWall };
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -222,7 +252,12 @@ async function store(
 
   // And now the cap that actually applies, decided by what the bytes turned out
   // to BE - not by what the outer wall let through. A 25 MB PNG dies here.
-  const limit = limitFor(type.mime);
+  //
+  // `maxBytes` is a caller asking for something STRICTER - a survey author who
+  // wants 2 MB attachments, say. It is min()'d rather than assigned so that a
+  // caller passing a bigger number gets no more than the type was already worth:
+  // the door may narrow the gap, it may not widen it.
+  const limit = Math.min(limitFor(type.mime), maxBytes ?? Infinity);
   if (bytes.byteLength > limit) {
     return { ok: false, error: "too-large", limit };
   }
@@ -265,13 +300,31 @@ export async function saveUpload(
 export async function savePrivateUpload(
   file: File,
   scope: string,
-  opts: { accept?: readonly string[] } = {},
+  opts: { accept?: readonly string[]; maxBytes?: number } = {},
 ): Promise<PrivateUploadResult> {
-  return store(file, scope, PRIVATE_UPLOAD_DIR, opts.accept ?? IMAGE_TYPES);
+  return store(
+    file,
+    scope,
+    PRIVATE_UPLOAD_DIR,
+    opts.accept ?? IMAGE_TYPES,
+    opts.maxBytes,
+  );
 }
 
 /** The directory a scope's files live in. "rnl" for RNL's own. */
 export const RNL_SCOPE = "rnl";
+
+/**
+ * Survey attachments, on the private root.
+ *
+ * Deliberately not a partner slug and not RNL_SCOPE: every other scope names an
+ * ORGANISATION whose staff uploaded the file, and these were uploaded by members
+ * of the public answering a form. Keeping them in their own directory means the
+ * cull can sweep abandoned ones by path without ever walking a folder that holds
+ * brand assets. The hyphen also puts it out of reach of the partner registry,
+ * whose slugs are single words.
+ */
+export const SURVEY_SCOPE = "survey-responses";
 
 /**
  * Resolve a stored path against its root, refusing anything that escapes.
@@ -286,4 +339,28 @@ export function resolveInRoot(root: string, storagePath: string): string | null 
   const target = path.resolve(base, storagePath);
   if (target !== base && !target.startsWith(base + path.sep)) return null;
   return target;
+}
+
+/**
+ * Delete files from the private volume, given the paths their rows held.
+ *
+ * For the case a cascade cannot cover. `onDelete: Cascade` takes the ROW - which
+ * is the only thing that knows where the bytes are - so a delete that relies on it
+ * alone leaves the file on the volume with nothing left pointing at it, reachable
+ * by no query and no sweeper. Deleting a survey with two hundred attachments would
+ * quietly strand two hundred files.
+ *
+ * So callers about to trigger such a cascade read the paths first and pass them
+ * here. Order matters: this runs BEFORE the rows go, because a path that is gone
+ * cannot be looked up afterwards.
+ *
+ * A missing file is not an error. Rows outliving their bytes is the normal case
+ * for anything the respondent already removed by hand, and a maintenance delete
+ * that throws halfway leaves a worse mess than one that shrugs.
+ */
+export async function removePrivateFiles(storagePaths: readonly string[]) {
+  for (const storagePath of storagePaths) {
+    const target = resolveInRoot(PRIVATE_UPLOAD_DIR, storagePath);
+    if (target) await unlink(target).catch(() => {});
+  }
 }
