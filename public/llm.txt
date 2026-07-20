@@ -35,6 +35,16 @@ Mint one in your portal, under **API keys**:
 | Sleep Token    | `portal.ronation.live/sleeptokenro/keys` | STRO group rank **253+** (Co-Founder and above) |
 | Any partner       | `portal.ronation.live/<slug>/keys`       | that partner's managers, or RNL 250+  |
 
+Every address on `portal.ronation.live` now goes through one sign-in first. Open any
+of the links above while signed out and you land on **`portal.ronation.live/login`**,
+which sends you on to where you were headed once you have signed in with Roblox - so
+you can paste a deep link to a keys page at somebody and it will still work.
+
+Signing in is not the same as getting in. Any Roblox account can complete the
+sign-in; the rank column above is what decides whether the page then opens. If you
+are signed in and still refused, `portal.ronation.live/hub` lists every area your
+account actually holds.
+
 Minting is a **write**, so read-only staff cannot do it. On a partner governed by
 their own Roblox group, that is a rank: Sleep Token's crew read the portal at
 249+ and write at 253+, so the people who can work the door are deliberately not
@@ -1049,15 +1059,25 @@ needs tonight's show picked for the same reason.
 ## Ticket anatomy, briefly
 
 - **Code** - `RN-4K9QW2` (RNL) or `ST-4K9QW2` (a partner's prefix). What the
-  barcode and the QR carry. This is what you send to the API.
+  **barcode** carries, and what you send to the API. The QR does **not** carry it
+  (see below).
 - **Barcode** - Code 128, down the left of the ticket. A cheap USB laser scanner
-  reads it.
+  reads it, which is what the manual door above is built for.
 - **QR** - on the stub. It encodes the ticket's *URL*, not its code, so scanning it
-  with a phone opens the ticket page.
+  with a phone opens the ticket page. There is nothing to send to this API in it.
 - **Reference** - the ticket's opaque id (`cmrij…`). Not secret; it is what the URL
   is addressed by.
 - **Seal** - six characters, e.g. `PVZFNR`. Anti-forgery, optional to check, see
   above.
+- **Terms** - the ticket terms in force for that show, frozen onto the ticket the
+  moment it is issued. Your `/reserve`, `/gift` and `/purchase` calls record them
+  too. Not returned by this API, and nothing to act on - it is here so you know a
+  ticket your game issues carries the same record one bought on the website does.
 - **Sealed until activated** - the code, barcode and QR are hidden until the holder
   activates the ticket. A reserved-but-not-activated ticket is still valid, and
   `/redeem` activates it for them.
+
+**None of the above is how anybody actually gets in.** A player joins the experience,
+your server reads `Player.UserId`, and you call `/redeem` with `robloxId` + `eventId`.
+The code is the fallback for a human at a keyboard - a crew member looking somebody up
+by hand on the manual door. Build the automatic path first.

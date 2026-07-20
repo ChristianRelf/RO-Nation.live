@@ -556,6 +556,13 @@ export default async function ApiDocsPage() {
           the same set as the people who can mint a credential that works the door
           from anywhere in the world.
         </p>
+        <p className="mt-3 text-muted">
+          Every address on the portal goes through one sign-in first, so a keys link
+          opened while signed out lands on{" "}
+          <Mono>portal.ronation.live/login</Mono> and carries on to where it was
+          pointed afterwards - deep links to a keys page still work when you paste
+          them at somebody.
+        </p>
 
         <h3 className="mt-6 text-fg">It belongs to one organisation.</h3>
         <p className="text-muted">
@@ -1426,19 +1433,21 @@ POST /api/v1/discord/unlink  { "discordId": "<id>" }   → drop the link (or rob
         <ul className="space-y-2 text-muted">
           <li>
             <span className="text-fg">Code</span> - <Mono>RN-…</Mono> (RNL) or{" "}
-            <Mono>ST-…</Mono> (a partner&rsquo;s prefix). What the barcode and QR carry,
-            and what you send to the API. Treat it as an{" "}
+            <Mono>ST-…</Mono> (a partner&rsquo;s prefix). What the{" "}
+            <span className="text-fg">barcode</span> carries, and what you send to the
+            API - the QR does not carry it, see below. Treat it as an{" "}
             <span className="text-fg">opaque string</span>: it is unique on its own, so
             nothing looks a ticket up by parsing it - don&rsquo;t assume a fixed length.
           </li>
           <li>
             <span className="text-fg">Barcode</span> - Code 128, down the left of the
-            ticket. A cheap USB laser scanner reads it.
+            ticket. A cheap USB laser scanner reads it, which is what the manual door
+            is built for.
           </li>
           <li>
             <span className="text-fg">QR</span> - on the stub. It encodes the
             ticket&rsquo;s <em>URL</em>, not its code, so a phone scan opens the ticket
-            page.
+            page. There is nothing to send to this API in it.
           </li>
           <li>
             <span className="text-fg">Reference</span> - the ticket&rsquo;s opaque id
@@ -1449,12 +1458,28 @@ POST /api/v1/discord/unlink  { "discordId": "<id>" }   → drop the link (or rob
             <Mono>PVZFNR</Mono>. Anti-forgery, optional to check - see above.
           </li>
           <li>
+            <span className="text-fg">Terms</span> - the show&rsquo;s ticket terms,
+            frozen onto the ticket at issue. Your <Mono>/reserve</Mono>,{" "}
+            <Mono>/gift</Mono> and <Mono>/purchase</Mono> calls record them too. Not
+            returned by the API and nothing to act on - it is here so you know a ticket
+            your game issues carries the same record one bought on the site does.
+          </li>
+          <li>
             <span className="text-fg">Sealed until activated</span> - the code, barcode
             and QR are hidden until the holder activates the ticket. A
             reserved-but-not-activated ticket is still valid, and <Mono>/redeem</Mono>{" "}
             activates it for them.
           </li>
         </ul>
+
+        <p className="mt-5 text-muted">
+          <span className="text-fg">None of that is how anybody actually gets in.</span>{" "}
+          A player joins the experience, your server reads <Mono>Player.UserId</Mono>,
+          and you call <Mono>/redeem</Mono> with <Mono>robloxId</Mono> +{" "}
+          <Mono>eventId</Mono>. The code is the fallback for a human at a keyboard -
+          a crew member looking somebody up by hand on the manual door. Build the
+          automatic path first.
+        </p>
       </Section>
 
       <p className="mt-10 text-sm text-faint">
