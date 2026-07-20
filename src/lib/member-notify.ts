@@ -28,6 +28,10 @@ import { partnerOrigin } from "./partners/urls";
 //     a "this show was cancelled" notice has to outlive the show.
 
 /** The subset of an edit this cares about - what readEventForm(content.ts) returns. */
+// A STRUCTURAL SUBSET, and what it leaves out is the point: only the facts a
+// ticket-holder would want waking up to. Notably NOT Event.ticketTerms - a clause
+// reworded is not a rescheduled show, and a notification for every copy edit is how
+// people learn to dismiss notifications without reading them.
 type EventChangeInput = {
   title: string;
   startsAt: Date | null;

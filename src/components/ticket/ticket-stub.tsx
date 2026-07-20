@@ -8,8 +8,25 @@ import type { TicketArtStatus } from "./ticket-art";
 // seam, cream stub - shrunk to a list item, so a ticket looks like the same
 // ticket whether it is in the wallet or open on the table.
 //
-// The QR here is small and real. It is a preview, not the thing you present at
-// the door: that is the big one on the detail page, which this links to.
+// The QR here is small and real, and it is decoration with a use: it opens this
+// ticket's page. Nobody scans it at a door - the door knows you by your Roblox
+// account (lib/tickets/verify.ts). It is here because a ticket without a mark on
+// the stub does not look like a ticket.
+//
+// ---- The seal reaches this far too ----------------------------------------
+//
+// `code` is NULLABLE, and that is not a convenience.
+//
+// The detail page goes to real lengths to keep the code out of the markup until
+// the holder activates - it is why the ticket is addressed by opaque id and not
+// by code (app/tickets/[id]/page.tsx). This row used to take the code
+// unconditionally and print it under the QR, so every sealed ticket in the wallet
+// showed a "Sealed" placeholder with the code in plain text directly beneath it.
+// The lock was drawn with the key taped to it, one click from the page that
+// bothered.
+//
+// So: the wallet passes null while sealed, and the code line gets the same
+// withheld treatment the mark already got.
 
 const STATUS: Record<TicketArtStatus, { label: string; className: string }> = {
   RESERVED: {
@@ -36,11 +53,14 @@ export function TicketStub({
   seatLabel,
   status,
   activated,
+  revoked,
+  past,
   brandMark,
   qrValue,
   href,
 }: {
-  code: string;
+  /** The printed code. NULL while the ticket is sealed - see the note above. */
+  code: string | null;
   eventTitle: string;
   startsAt: Date | string;
   venue?: string | null;
@@ -50,6 +70,17 @@ export function TicketStub({
   seatLabel?: string | null;
   status: TicketArtStatus;
   activated: boolean;
+  /**
+   * Withdrawn by the crew, rather than cancelled by the holder.
+   *
+   * A SEPARATE FLAG, not a fourth key in STATUS above, because revocation is
+   * orthogonal to status: a revoked ticket is a CANCELLED one that also carries a
+   * stamp. Fold it into the status record and the two facts can no longer both be
+   * true, which is exactly the mistake the schema spends twenty lines avoiding.
+   */
+  revoked?: boolean;
+  /** The show has been. Changes how the row is drawn - see the note at the Link. */
+  past?: boolean;
   brandMark: string;
   /** The URL the QR encodes. NULL while the ticket is still sealed. */
   qrValue: string | null;
@@ -60,10 +91,19 @@ export function TicketStub({
   const cancelled = status === "CANCELLED";
 
   return (
+    // ---- Three treatments, not two -----------------------------------------
+    //
+    // `opacity-55 saturate-0` used to apply to everything in the old "Past &
+    // cancelled" bucket, which drew a show somebody actually went to in the exact
+    // visual language of a void one: greyed out and drained. A cancelled ticket
+    // SHOULD look dead. A stub you kept should look like a stub you kept.
+    //
+    // So: cancelled stays drained; a past ticket dims a little and keeps its
+    // colour; a live one is untouched.
     <Link
       href={href}
       className={`group ticket-mini block transition-transform duration-300 hover:-translate-y-0.5 ${
-        cancelled ? "opacity-55 saturate-0" : ""
+        cancelled ? "opacity-55 saturate-0" : past ? "opacity-80" : ""
       }`}
     >
       <div className="flex">
@@ -83,7 +123,10 @@ export function TicketStub({
               <span
                 className={`inline-flex items-center rounded-brand border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] ${s.className}`}
               >
-                {s.label}
+                {/* "Withdrawn" rather than "Cancelled" when it was the crew's doing.
+                    Member language: the staff surfaces say REVOKED in caps and that
+                    is their vocabulary, not the holder's. */}
+                {revoked ? "Withdrawn" : s.label}
               </span>
               {activated && !cancelled ? (
                 <span className="inline-flex items-center rounded-brand border border-line px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
@@ -131,8 +174,11 @@ export function TicketStub({
               </span>
             </div>
           )}
+          {/* Withheld with the mark, never beside it. */}
           <span className="font-mono text-[10px] font-bold tracking-[0.14em] text-paper-ink">
-            {code}
+            {code ?? (
+              <span className="tracking-[0.24em] text-paper-ink/40">------</span>
+            )}
           </span>
         </div>
       </div>

@@ -181,6 +181,19 @@ model Event {
   endsAt       DateTime?
   doorsAt      DateTime?
   capacity     Int         @default(0) // 0 = unlimited
+
+  /// This show's ticket terms, ONE CLAUSE PER ELEMENT.
+  ///
+  /// EMPTY means "use the issuer's standard terms" (lib/tickets/terms.ts), which is
+  /// what every show that exists today does - so this ships with no backfill and
+  /// changes nothing until somebody types into the box.
+  ///
+  /// Not indexed, and deliberately: it is only ever read alongside the event row
+  /// that owns it, so there is nothing to look it up BY. That also keeps it clear of
+  /// the `prisma db push` trap documented on Ticket.seatKey - the safest index is
+  /// the one nobody was tempted to add.
+  ticketTerms  String[]    @default([])
+
   status       EventStatus @default(DRAFT)
   featured     Boolean     @default(false)
   createdAt    DateTime    @default(now())
@@ -422,6 +435,21 @@ model Ticket {
   createdAt       DateTime     @default(now())
   checkedInAt     DateTime?
   termsAcceptedAt DateTime? // when the holder accepted the ticket T&Cs at checkout
+
+  /// WHAT THEY ACTUALLY AGREED TO. Frozen at issue, one clause per element.
+  ///
+  /// Same reasoning as tierName and seatLabel below, and the same reason
+  /// SurveyResponse keeps a denormalised username: the organiser may rewrite these
+  /// terms tomorrow, and what this person accepted is what their ticket says,
+  /// forever. termsAcceptedAt has always recorded WHEN they agreed; without this it
+  /// recorded agreement to a text nobody could reconstruct afterwards, which is the
+  /// half of the record that actually matters if it is ever disputed.
+  ///
+  /// EMPTY on every ticket issued before this column existed, and the UI reads that
+  /// as "not recorded" and says nothing - which is the honest answer, because we
+  /// genuinely did not record it. No backfill: inventing a snapshot from today's
+  /// terms would be worse than admitting the gap.
+  termsSnapshot   String[]  @default([])
   activatedAt     DateTime? // when the holder "activated" the ticket (reveals QR)
 
   // Which tier they hold. SetNull, not Cascade: deleting a tier must not delete
@@ -530,6 +558,21 @@ model Ticket {
   @@unique([eventId, seatKey]) // and one person per seat. See the note above.
   @@index([eventId])
   @@index([eventId, sectionKey])
+  /// THE WALLET'S INDEX, and it was missing.
+  ///
+  /// Every index above leads with eventId, which is the door's question ("who is
+  /// coming to this show"). Nothing served the HOLDER's question ("what am I
+  /// holding") - and @@unique([eventId, userId]) cannot: a composite index is only
+  /// reachable from its leading column, so a userId-only lookup walks past it and
+  /// scans. That is what /tickets, the account hub and lib/account.ts all do.
+  ///
+  /// checkedInAt rides along because attendance is counted by it and by nothing else
+  /// - `status` can be flipped back to RESERVED by staff, the timestamp cannot - so
+  /// "how many shows has this person been to" is answerable out of the index alone.
+  ///
+  /// A PLAIN index, which is the only kind worth writing here: `prisma db push` runs
+  /// on every boot and silently drops partial ones. See the note on seatKey above.
+  @@index([userId, checkedInAt])
   @@map("tickets")
 }
 

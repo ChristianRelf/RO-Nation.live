@@ -70,3 +70,16 @@ export function currentOrigin() {
 export function ticketUrl(id: string) {
   return `${currentOrigin()}/tickets/${id}`;
 }
+
+/**
+ * The absolute URL of a SHOW, on the host the visitor is actually on.
+ *
+ * The sibling of ticketUrl above, and the one that is safe to hand to somebody
+ * else: a ticket link is private and 404s for anybody but its holder, an event link
+ * is the public page. Same host rule, so sharing from a partner's site sends people
+ * to the partner's site - `<slug>.ronation.live/events/<slug>` is real, and the
+ * middleware rewrites it to /p/<slug>/events/<slug>.
+ */
+export function eventUrl(slug: string) {
+  return `${currentOrigin()}/events/${slug}`;
+}

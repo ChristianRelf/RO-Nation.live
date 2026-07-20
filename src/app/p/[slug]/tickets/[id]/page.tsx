@@ -6,8 +6,11 @@ import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getUserSession } from "@/lib/session";
 import { TicketDetail } from "@/components/ticket/ticket-detail";
 import { ticketBrand } from "@/lib/tickets/brand";
+import { ticketCrowd } from "@/lib/tickets/crowd";
+import { attendanceOrdinal } from "@/lib/tickets/history";
 import { ticketSeal } from "@/lib/tickets/seal";
-import { ticketUrl } from "@/lib/origin";
+import { admissionWindow } from "@/lib/tickets/state";
+import { eventUrl, ticketUrl } from "@/lib/origin";
 import { venueMapFor } from "@/lib/venue/form";
 
 export const dynamic = "force-dynamic";
@@ -59,10 +62,23 @@ export default async function PartnerTicketDetailPage({
       ? await venueMapFor(ticket.event.venueMapId, partner.slug)
       : null;
 
+  // Who else is coming. See RNL's copy of this page, and lib/tickets/crowd.ts.
+  const crowd = await ticketCrowd(ticket.event.id, {
+    live: admissionWindow(ticket.event).live,
+  });
+
+  // Their attendance across EVERY org, not just this partner's - the wallet has
+  // always been one wallet, and "your 7th show" is a fact about the person.
+  const milestone = ticket.checkedInAt
+    ? await attendanceOrdinal(session.uid, ticket.checkedInAt)
+    : null;
+
   return (
     <TicketDetail
       ticket={ticket}
       event={ticket.event}
+      crowd={crowd}
+      milestone={milestone}
       seatMap={
         map?.layout
           ? {
@@ -78,6 +94,7 @@ export default async function PartnerTicketDetailPage({
       brandLogo={brand.logo}
       seal={ticketSeal(ticket.id, ticket.code)}
       ticketUrl={ticketUrl(ticket.id)}
+      eventUrl={eventUrl(ticket.event.slug)}
       justIssued={searchParams.issued === "1"}
     />
   );

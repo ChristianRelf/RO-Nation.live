@@ -108,6 +108,24 @@ export function EventForm({
             className={`${inputClass} resize-y`}
           />
         </div>
+        <div>
+          <label className={labelClass}>Ticket terms</label>
+          <textarea
+            name="ticketTerms"
+            rows={5}
+            defaultValue={event?.ticketTerms?.join("\n") ?? ""}
+            placeholder="One clause per line. Leave blank to use the standard terms."
+            className={`${inputClass} resize-y`}
+          />
+          {/* Says what blank MEANS, because an empty box that silently substitutes
+              five clauses is otherwise indistinguishable from an empty box that
+              means "no terms at all". */}
+          <p className="mt-1.5 text-xs text-faint">
+            One clause per line, shown at checkout. Leave blank for the standard
+            terms. Whatever is here when somebody reserves is frozen onto their
+            ticket - editing this later never changes a ticket already issued.
+          </p>
+        </div>
       </div>
 
       <div className="card space-y-5 p-6">

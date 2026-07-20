@@ -10,6 +10,7 @@ import { CheckoutForm } from "@/components/ticket/checkout-form";
 import { isPast } from "@/lib/format";
 import { offersForEvent } from "@/lib/tickets/offers";
 import { anyAvailable } from "@/lib/tickets/pricing";
+import { organiserFor, ticketTermsFor } from "@/lib/tickets/terms";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Reserve ticket" };
@@ -69,17 +70,13 @@ export default async function PartnerReservePage({
   // option is dead. Sold out is the event page's news to break.
   if (!anyAvailable(offers)) redirect(`/events/${event.slug}?error=soldout`);
 
-  // The terms name the partner as the organiser, not RNL - they run the show,
-  // and a ticket holder should know who they are actually dealing with. The
-  // last line is the honest one: this is a fan event and the ticket is not a
-  // ticket to anything the band is putting on.
-  const terms = [
-    `Your ticket admits one person and is tied to your Roblox account - it can't be transferred or resold.`,
-    `Entry is verified in-experience at the door using your ticket code. Have it ready.`,
-    `${partner.name} may cancel, reschedule, or change the line-up of any show.`,
-    `You agree to follow Roblox Community Standards and event moderation while attending.`,
-    `${partner.name} is an unofficial, fan-run event series. Your ticket admits you to a Roblox event staged by fans - it is not connected to the band or to any of their official events.`,
-  ];
+  // The terms name the PARTNER as the organiser, not RNL - they run the show, and a
+  // ticket holder should know who they are actually dealing with. organiserFor()
+  // does that from the show's partner scope, and pulls the fan-event disclaimer off
+  // the Partner record rather than repeating it: the sentence under their footer and
+  // the sentence in their terms are the same sentence, and this file used to hold a
+  // third, slightly different copy of it.
+  const terms = ticketTermsFor(event, organiserFor(partner.slug));
 
   return (
     <div className="relative">

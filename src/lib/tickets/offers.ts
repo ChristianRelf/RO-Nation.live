@@ -6,6 +6,7 @@ import type { EventWithCount } from "@/lib/queries";
 import {
   buildOffers,
   effectiveTiers,
+  gamePassSalesAllowed,
   robuxSalesAllowed,
   type TierOffer,
 } from "./pricing";
@@ -36,6 +37,8 @@ export async function offersForEvent(
     sold.map((g) => [g.tierId ?? "", g._count._all] as const),
   );
 
+  const partner = partnerBySlug(event.partnerId);
+
   return buildOffers({
     tiers: effectiveTiers(tiers),
     soldPerTier,
@@ -43,9 +46,14 @@ export async function offersForEvent(
       event.capacity > 0
         ? Math.max(0, event.capacity - event.ticketsCount)
         : null,
-    robuxAllowed: robuxSalesAllowed(
-      partnerBySlug(event.partnerId),
+    robuxAllowed: robuxSalesAllowed(partner, env.robuxTickets),
+    // The WEB rail specifically. A priced tier the browser cannot sell is not
+    // broken and is not sold out - it is bought at the booth inside the show, and
+    // the checkout now says so before the buyer picks it. See TierOffer.
+    gamePassAllowed: gamePassSalesAllowed(
+      partner,
       env.robuxTickets,
+      env.robuxGamePass,
     ),
   });
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { partnerBySlug } from "@/lib/partners/registry";
 import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getUserSession } from "@/lib/session";
+import { showsAttended } from "@/lib/tickets/history";
 import { TicketWallet } from "@/components/ticket/ticket-wallet";
 
 export const dynamic = "force-dynamic";
@@ -27,16 +28,27 @@ export default async function PartnerTicketsPage({
   // This partner's tickets only. Someone's RNL tickets are theirs to see on
   // ronation.live - showing them here would put another brand's shows inside
   // Sleep Token's wallet, which is confusing at best.
-  const tickets = await prisma.ticket.findMany({
-    where: { userId: session.uid, event: { partnerId: partner.slug } },
-    include: { event: true },
-    orderBy: { event: { startsAt: "asc" } },
-  });
+  const [tickets, attended] = await Promise.all([
+    prisma.ticket.findMany({
+      where: { userId: session.uid, event: { partnerId: partner.slug } },
+      include: { event: true },
+      orderBy: { event: { startsAt: "asc" } },
+    }),
+    // NOT scoped to this partner, and that is not a hole in the rule above.
+    //
+    // The rule is about LISTINGS: another brand's shows must not appear inside this
+    // one's wallet. This is a single integer about the visitor themselves, carrying
+    // no title, no date and no brand - there is nothing in it that belongs to
+    // anybody else. Scoping it would also make it wrong, because "how many shows
+    // have you been to" does not have a different answer per website.
+    showsAttended(session.uid),
+  ]);
 
   return (
     <TicketWallet
       tickets={tickets}
       holder={session.displayName}
+      attended={attended}
       browseLabel="Browse shows"
     />
   );

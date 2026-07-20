@@ -4,8 +4,11 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
 import { TicketDetail } from "@/components/ticket/ticket-detail";
 import { ticketBrand } from "@/lib/tickets/brand";
+import { ticketCrowd } from "@/lib/tickets/crowd";
+import { attendanceOrdinal } from "@/lib/tickets/history";
 import { ticketSeal } from "@/lib/tickets/seal";
-import { ticketUrl } from "@/lib/origin";
+import { admissionWindow } from "@/lib/tickets/state";
+import { eventUrl, ticketUrl } from "@/lib/origin";
 import { venueMapFor } from "@/lib/venue/form";
 
 export const dynamic = "force-dynamic";
@@ -50,10 +53,24 @@ export default async function TicketDetailPage({
       ? await venueMapFor(event.venueMapId, event.partnerId)
       : null;
 
+  // Who else is coming. `live` decides whether the "inside right now" count is worth
+  // a query at all - see lib/tickets/crowd.ts.
+  const crowd = await ticketCrowd(event.id, {
+    live: admissionWindow(event).live,
+  });
+
+  // Which show of theirs this was. Only for a ticket that actually went through the
+  // door - on any other, there is no number to give and nothing to ask the database.
+  const milestone = ticket.checkedInAt
+    ? await attendanceOrdinal(session.uid, ticket.checkedInAt)
+    : null;
+
   return (
     <TicketDetail
       ticket={ticket}
       event={event}
+      crowd={crowd}
+      milestone={milestone}
       seatMap={
         map?.layout
           ? {
@@ -69,6 +86,7 @@ export default async function TicketDetailPage({
       brandLogo={brand.logo}
       seal={ticketSeal(ticket.id, ticket.code)}
       ticketUrl={ticketUrl(ticket.id)}
+      eventUrl={eventUrl(event.slug)}
       justIssued={searchParams.issued === "1"}
     />
   );

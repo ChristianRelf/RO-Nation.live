@@ -13,6 +13,7 @@ import {
   robuxSalesAllowed,
 } from "@/lib/tickets/pricing";
 import { resolveSeat, type SeatAssignment } from "@/lib/tickets/seating";
+import { organiserFor, ticketTermsFor } from "@/lib/tickets/terms";
 import { parseLayout } from "@/lib/venue/schema";
 
 // The one place that decides whether somebody GETS a ticket.
@@ -373,6 +374,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
       partnerId: true,
       tiers: true,
       seatMode: true,
+      ticketTerms: true,
       venueMap: { select: { layout: true } },
     },
   });
@@ -566,6 +568,16 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
     tierName: tier.name,
     priceRobux: tier.priceRobux,
     termsAcceptedAt: new Date(),
+    // Beside the timestamp, because this is the only place both facts are known -
+    // and putting it HERE rather than in the web checkout is what makes it free for
+    // the game API too: /reserve, /purchase and /gift all come through this
+    // function, so every rail snapshots identically without any of them knowing.
+    //
+    // A restore reuses this whole object, so a re-issued ticket re-snapshots the
+    // CURRENT terms rather than resurrecting the old ones. That is right - they
+    // accepted again, just now - but it looks like a bug from a distance, hence
+    // this paragraph.
+    termsSnapshot: ticketTermsFor(event, organiserFor(partnerId)),
     ...(mode.kind === "gift"
       ? { issuedByRobloxId: mode.byRobloxId, issuedByName: mode.byName }
       : {}),

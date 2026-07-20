@@ -14,6 +14,8 @@ type WalletTicket = {
   code: string;
   status: "RESERVED" | "CHECKED_IN" | "CANCELLED";
   activatedAt: Date | null;
+  /** Withdrawn by the crew. See the bucketing note below - it is not "cancelled". */
+  revokedAt: Date | null;
   tierName: string | null;
   priceRobux: number;
   /** Frozen at issue. Null on an unseated show. See Ticket.seatLabel. */
@@ -30,20 +32,32 @@ type WalletTicket = {
 export function TicketWallet({
   tickets,
   holder,
+  attended,
   browseHref = "/events",
   browseLabel = "Browse events",
 }: {
   tickets: WalletTicket[];
   holder: string;
+  /**
+   * Shows they have actually turned up to, across every org - see
+   * lib/tickets/history.ts. Counted from check-ins, not from what is in this list:
+   * the wallet only ever holds the tickets for ONE site's shows, and how many gigs
+   * somebody has been to is not a fact about which site they are standing on.
+   */
+  attended?: number;
   browseHref?: string;
   browseLabel?: string;
 }) {
-  const upcoming = tickets.filter(
-    (t) => t.status !== "CANCELLED" && !isPast(t.event.startsAt),
-  );
-  const rest = tickets.filter(
-    (t) => t.status === "CANCELLED" || isPast(t.event.startsAt),
-  );
+  // ---- Three buckets, not two ----------------------------------------------
+  //
+  // "Past & cancelled" used to hold both, which meant a show you turned up to and a
+  // ticket the crew took off you sat in the same list under the same heading. Those
+  // are not the same news. A past ticket is a thing that HAPPENED; a cancelled or
+  // withdrawn one is a thing that did not.
+  const dead = (t: WalletTicket) => t.status === "CANCELLED";
+  const upcoming = tickets.filter((t) => !dead(t) && !isPast(t.event.startsAt));
+  const past = tickets.filter((t) => !dead(t) && isPast(t.event.startsAt));
+  const voided = tickets.filter(dead);
 
   const render = (t: WalletTicket) => {
     const brand = ticketBrand(t.event.partnerId);
@@ -51,7 +65,9 @@ export function TicketWallet({
     return (
       <TicketStub
         key={t.id}
-        code={t.code}
+        // Sealed means sealed here too, not just on the mark. This row used to print
+        // the code under a "Sealed" placeholder - see the note in ticket-stub.tsx.
+        code={sealed ? null : t.code}
         eventTitle={t.event.title}
         startsAt={t.event.startsAt}
         venue={t.event.venue}
@@ -60,8 +76,15 @@ export function TicketWallet({
         seatLabel={t.seatLabel}
         status={t.status}
         activated={Boolean(t.activatedAt)}
+        revoked={Boolean(t.revokedAt)}
+        past={isPast(t.event.startsAt)}
         brandMark={brand.mark}
-        qrValue={sealed ? null : ticketUrl(t.code)}
+        // ticketUrl takes the ticket's opaque ID, not its code - its own doc comment
+        // in lib/origin.ts says so, and the detail page has always got this right.
+        // This passed the CODE, so every wallet QR encoded /tickets/RN-7F3A9C: a URL
+        // that 404s (the page looks up by id) and that puts the withheld code in an
+        // address bar on the way there.
+        qrValue={sealed ? null : ticketUrl(t.id)}
         href={`/tickets/${t.id}`}
       />
     );
@@ -76,8 +99,16 @@ export function TicketWallet({
         <h1 className="display mt-5 text-5xl sm:text-6xl">My tickets</h1>
         <p className="mt-4 text-muted">
           Signed in as <span className="font-semibold text-fg">{holder}</span>.
-          Open a ticket to activate it and reveal the QR you show at the door.
+          Join the show and you&apos;re in - the door knows your Roblox account.
         </p>
+        {/* The tally that was one query away for as long as this page has existed.
+            Suppressed at zero: "0 shows" is a worse greeting than silence. */}
+        {attended ? (
+          <p className="mt-3 text-sm text-muted">
+            <span className="display tnum text-fg">{attended}</span>{" "}
+            {attended === 1 ? "show" : "shows"} you&apos;ve been to so far.
+          </p>
+        ) : null}
       </div>
 
       <section className="shell py-10">
@@ -93,32 +124,43 @@ export function TicketWallet({
           </div>
         ) : (
           <div className="space-y-12">
-            {upcoming.length ? (
-              <div>
-                <div className="mb-5 flex items-baseline gap-3">
-                  <h2 className="display text-2xl">Upcoming</h2>
-                  <span className="tnum text-sm text-faint">
-                    {upcoming.length}
-                  </span>
-                </div>
-                <div className="grid gap-5">{upcoming.map(render)}</div>
-              </div>
-            ) : null}
-
-            {rest.length ? (
-              <div>
-                <div className="mb-5 flex items-baseline gap-3">
-                  <h2 className="display text-2xl text-muted">
-                    Past &amp; cancelled
-                  </h2>
-                  <span className="tnum text-sm text-faint">{rest.length}</span>
-                </div>
-                <div className="grid gap-5">{rest.map(render)}</div>
-              </div>
-            ) : null}
+            <Bucket title="Upcoming" tickets={upcoming} render={render} />
+            <Bucket title="Past" tickets={past} render={render} muted />
+            <Bucket
+              title="Cancelled & withdrawn"
+              tickets={voided}
+              render={render}
+              muted
+            />
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function Bucket({
+  title,
+  tickets,
+  render,
+  muted,
+}: {
+  title: string;
+  tickets: WalletTicket[];
+  render: (t: WalletTicket) => React.ReactNode;
+  muted?: boolean;
+}) {
+  if (!tickets.length) return null;
+
+  return (
+    <div>
+      <div className="mb-5 flex items-baseline gap-3">
+        <h2 className={`display text-2xl ${muted ? "text-muted" : ""}`}>
+          {title}
+        </h2>
+        <span className="tnum text-sm text-faint">{tickets.length}</span>
+      </div>
+      <div className="grid gap-5">{tickets.map(render)}</div>
     </div>
   );
 }

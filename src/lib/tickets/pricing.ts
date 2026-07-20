@@ -203,6 +203,23 @@ export type TierOffer = Tier & {
   locked: boolean;
   /** The one reason it cannot be taken right now, if it cannot. */
   blockedReason: "soldout" | "locked" | null;
+
+  /**
+   * On sale, but NOT ON THIS RAIL: bought at the booth inside the experience.
+   *
+   * ---- Why this is not a third blockedReason -----------------------------
+   *
+   * anyAvailable() below is `offers.some(o => !o.blockedReason)`, and it drives the
+   * sold-out redirect on the reserve page. Fold this into blockedReason and a show
+   * whose only tier is bought in-experience starts sending people to
+   * `?error=soldout` - a flat lie about a show that is very much on sale, and one
+   * that hides the actual instruction.
+   *
+   * So it is a separate, NON-BLOCKING fact: the tier is real, it is available, and
+   * you buy it somewhere else. The checkout says that up front instead of letting
+   * the buyer pick it and bounce off `ERRORS.payment_required` a screen later.
+   */
+  inExperienceOnly: boolean;
 };
 
 /**
@@ -217,13 +234,24 @@ export function buildOffers({
   soldPerTier,
   eventRemaining,
   robuxAllowed,
+  gamePassAllowed,
 }: {
   tiers: readonly Tier[];
   /** Live (non-cancelled) tickets per tier id. The implicit tier keys on "". */
   soldPerTier: ReadonlyMap<string, number>;
   eventRemaining: number | null;
   robuxAllowed: boolean;
+  /**
+   * Whether the WEB rail can sell at all - the game-pass switch, not the master one.
+   *
+   * Defaults to `robuxAllowed` so a caller that has not thought about it behaves
+   * exactly as before this existed: no tier is marked in-experience-only, and
+   * nothing about the checkout changes.
+   */
+  gamePassAllowed?: boolean;
 }): TierOffer[] {
+  const webRail = gamePassAllowed ?? robuxAllowed;
+
   return tiers.map((tier) => {
     const sold = soldPerTier.get(tier.id ?? "") ?? 0;
 
@@ -241,6 +269,18 @@ export function buildOffers({
     const soldOut = remaining !== null && remaining <= 0;
     const locked = tier.priceRobux > 0 && !robuxAllowed;
 
+    // Priced, and sellable - just not from a browser. Either it carries no game
+    // pass (so the web has nothing to sell) or the web rail is switched off, and
+    // in both cases the dev product inside the experience is what buys it. Not
+    // said about a tier that is already sold out or locked: those have a more
+    // useful thing to say.
+    const inExperienceOnly =
+      !soldOut &&
+      !locked &&
+      tier.priceRobux > 0 &&
+      Boolean(tier.devProductId) &&
+      (!webRail || !tier.gamePassId);
+
     return {
       ...tier,
       remaining,
@@ -248,6 +288,7 @@ export function buildOffers({
       locked,
       // Sold out is the more useful thing to say when both are true.
       blockedReason: soldOut ? "soldout" : locked ? "locked" : null,
+      inExperienceOnly,
     };
   });
 }

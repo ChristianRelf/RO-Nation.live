@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
 import { partnerSiteRoute, partnerPortalUrl } from "@/lib/partners/urls";
@@ -248,12 +249,34 @@ export async function cancelTicket(formData: FormData) {
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    include: { event: { select: { slug: true, partnerId: true } } },
+    include: {
+      event: { select: { slug: true, partnerId: true, startsAt: true } },
+    },
   });
   if (!ticket || ticket.userId !== session.uid) return;
 
-  await prisma.ticket.update({
-    where: { id: ticket.id },
+  // ---- What may actually be cancelled --------------------------------------
+  //
+  // Ownership was the ONLY thing checked here, and ownership is not enough. The
+  // detail page hides this button once the holder is through the door or the show
+  // has started - but a hidden button is not an enforcement, it is a decoration on
+  // one of several ways to reach this action.
+  //
+  // Cancelling a CHECKED_IN ticket is the one that actually costs something: it
+  // overwrites the status that says they turned up and NULLs the seat they were
+  // sitting in, so an attendance record becomes a void ticket with no way back.
+  // checkedInAt survives, which is the only reason the damage is recoverable at all.
+  //
+  // And a show that has already started is not a spot anyone can be given, so
+  // "freeing it for someone else" is not true after curtain-up.
+  //
+  // The status guard also doubles as the lock, same as in redeemTicket(): put it in
+  // the WHERE and two concurrent submits produce one cancellation, not two.
+  if (ticket.status !== "RESERVED") return;
+  if (ticket.event.startsAt.getTime() <= Date.now()) return;
+
+  const { count } = await prisma.ticket.updateMany({
+    where: { id: ticket.id, status: "RESERVED" },
     data: {
       status: "CANCELLED",
 
@@ -271,6 +294,10 @@ export async function cancelTicket(formData: FormData) {
     },
   });
 
+  // Lost the race - somebody else's submit got there first. Nothing changed, so
+  // there is nothing to revalidate.
+  if (count === 0) return;
+
   const { partnerId, slug } = ticket.event;
   refreshTicketViews(partnerId, slug);
   revalidatePath(
@@ -278,6 +305,50 @@ export async function cancelTicket(formData: FormData) {
       ? partnerSiteRoute(partnerId, `/tickets/${ticket.id}`)
       : `/tickets/${ticket.id}`,
   );
+}
+
+/**
+ * "Has anything happened to my ticket?" - asked on a loop by the holder's own page
+ * while doors are open.
+ *
+ * ---- Why this exists at all ----------------------------------------------
+ *
+ * CHECK-IN IS SILENT. The holder does nothing: they join the experience, the game
+ * server calls /api/v1/tickets/redeem with their Roblox id, and the row flips to
+ * CHECKED_IN somewhere they cannot see. Their ticket page - server-rendered once,
+ * with no live channel of any kind on this site - goes on saying "doors are open"
+ * for as long as the tab stays open. The one moment the ticket does its job is the
+ * one moment the ticket never mentions.
+ *
+ * ---- Why it returns almost nothing ---------------------------------------
+ *
+ * This is a read a hostile caller can hammer, and unlike the page it has no
+ * rendering to hide behind - whatever it returns, it returns in full, in JSON, on
+ * demand. So it returns the smallest true thing: two facts that the caller, who by
+ * definition owns this ticket, could already see by refreshing.
+ *
+ * NEVER the code, the seal, or the reason for anything. The moment the answer needs
+ * to be richer than this, the right move is to let the PAGE re-render - it already
+ * knows how to decide what this holder may see - which is exactly what the client
+ * does with router.refresh() when the answer here changes.
+ */
+export async function ticketPulse(
+  ticketId: string,
+): Promise<{ status: TicketStatus; checkedIn: boolean } | null> {
+  const session = await getUserSession();
+  if (!session) return null;
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { userId: true, status: true, checkedInAt: true },
+  });
+
+  // Same ownership rule as every other action here, and the same answer for "not
+  // yours" as for "not there": null. A poller that could tell the two apart would
+  // be a way to ask whether a ticket id exists.
+  if (!ticket || ticket.userId !== session.uid) return null;
+
+  return { status: ticket.status, checkedIn: Boolean(ticket.checkedInAt) };
 }
 
 /**

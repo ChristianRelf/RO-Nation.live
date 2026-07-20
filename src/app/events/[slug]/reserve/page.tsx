@@ -9,18 +9,10 @@ import { Kicker } from "@/components/ui";
 import { isPast } from "@/lib/format";
 import { offersForEvent } from "@/lib/tickets/offers";
 import { anyAvailable } from "@/lib/tickets/pricing";
-import { site } from "@/lib/site";
+import { organiserFor, ticketTermsFor } from "@/lib/tickets/terms";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Reserve ticket" };
-
-const terms = [
-  "Your ticket admits one person and is tied to your Roblox account - it can't be transferred or resold.",
-  "Entry is verified in-experience at the door using your ticket code. Have it ready.",
-  `${site.name} may cancel, reschedule, or change the line-up of any event.`,
-  "You agree to follow Roblox Community Standards and event moderation while attending.",
-  "Reserving a ticket you don't use may affect priority for future events.",
-];
 
 /** Refusals bounced back here by the checkout step. */
 const ERRORS: Record<string, string> = {
@@ -110,7 +102,10 @@ export default async function ReservePage({
           startsAt={event.startsAt}
           venue={event.venue}
           offers={offers}
-          terms={terms}
+          // One copy, shared with the partner reserve page. This used to be a
+          // hardcoded array here and a second, drifted one over there - see the
+          // header of lib/tickets/terms.ts.
+          terms={ticketTermsFor(event, organiserFor(null))}
           checkoutHref={
             event.seatMode === "NONE"
               ? `/events/${event.slug}/checkout`

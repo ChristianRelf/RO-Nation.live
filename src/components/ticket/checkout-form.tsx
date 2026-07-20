@@ -199,6 +199,14 @@ export function CheckoutForm({
                           <LockIcon className="h-3 w-3" />
                           Robux payments coming soon
                         </span>
+                      ) : /* On sale, but at the booth inside the show rather than
+                            here. Said BEFORE they pick it: this used to be
+                            discoverable only by choosing the tier, submitting, and
+                            being bounced back to ERRORS.payment_required. */
+                      offer.inExperienceOnly ? (
+                        <span className="pill border-accent/30 text-accent">
+                          Sold inside the experience
+                        </span>
                       ) : offer.remaining !== null && offer.remaining <= 20 ? (
                         <span className="pill border-amber-400/30 text-amber-300">
                           Only {offer.remaining} left

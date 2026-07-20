@@ -120,6 +120,16 @@ export function readEventForm(form: FormData) {
     status: (s(form, "status") as EventStatus) || EventStatus.DRAFT,
     // Drawing a map does not put seats on sale. THIS does. See SeatMode in the schema.
     seatMode: readSeatMode(form),
+    // One clause per line, blanks dropped. EMPTY means "use the standard terms" -
+    // see lib/tickets/terms.ts - so a promoter clearing the box is not deleting the
+    // terms, it is going back to the default ones, which is what they expect.
+    //
+    // Parsed HERE and only here: this one reader serves the RNL dashboard and every
+    // partner studio, so the two cannot disagree about what a clause is.
+    ticketTerms: s(form, "ticketTerms")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean),
     featured: form.get("featured") === "on",
   };
 }
