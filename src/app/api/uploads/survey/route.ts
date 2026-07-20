@@ -68,13 +68,17 @@ async function openQuestion(questionId: string, userId: string) {
     (survey.closesAt !== null && survey.closesAt.getTime() < Date.now());
   if (closed) return "This survey is closed." as const;
 
-  // Already answered - the unique constraint would refuse a second response, so
-  // anything uploaded now could never be attached to anything.
-  const existing = await prisma.surveyResponse.findUnique({
-    where: { surveyId_userId: { surveyId: survey.id, userId } },
-    select: { id: true },
-  });
-  if (existing) return "You've already answered this survey." as const;
+  // Already answered - but only a problem when the survey takes one response per
+  // account, in which case the unique index would refuse a second one and anything
+  // uploaded now could never be attached to anything. Where repeat answers are
+  // allowed, a past response says nothing about this upload.
+  if (!survey.multipleResponses) {
+    const existing = await prisma.surveyResponse.findFirst({
+      where: { surveyId: survey.id, userId },
+      select: { id: true },
+    });
+    if (existing) return "You've already answered this survey." as const;
+  }
 
   return question;
 }

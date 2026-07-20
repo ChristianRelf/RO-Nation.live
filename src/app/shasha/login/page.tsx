@@ -79,7 +79,8 @@ export default async function PortalLoginPage({
 
                 <p className="mt-4 text-center text-xs text-faint">
                   Sign in with the Roblox account that holds your rank in the
-                  group. Rank {env.shasha.minRank} or above is required.
+                  group - rank {env.shasha.minRank} or above - or the one RNL
+                  granted access to directly.
                 </p>
               </div>
             ) : (
@@ -96,16 +97,21 @@ export default async function PortalLoginPage({
                   <span className="font-semibold text-fg">
                     {env.shasha.minRank}
                   </span>{" "}
-                  or above.
+                  or above, plus anyone RNL has granted access to directly.
                 </p>
                 <p className="mt-3 text-sm text-muted">
                   {membership
                     ? `Your rank is ${membership.rank} (${membership.roleName}).`
-                    : "That account isn't in the group."}
+                    : "That account isn't in the group."}{" "}
+                  {/* The grant is checked on this account too, and it did not find
+                      one - so "ask for a rank" is no longer the only way out, and
+                      saying so saves a round of the wrong request. */}
+                  There&apos;s no direct grant on it either.
                 </p>
                 <p className="mt-3 text-xs text-faint">
-                  Just been promoted? It can take a few minutes to take effect
-                  here. Otherwise, ask management about your rank.
+                  Just been promoted or just been granted access? It can take a
+                  few minutes to take effect here. Otherwise, ask management about
+                  your rank - or to be added directly.
                 </p>
 
                 <div className="mt-6 flex flex-col gap-2">

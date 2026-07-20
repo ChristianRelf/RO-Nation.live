@@ -181,6 +181,30 @@ export function SurveyBuilder({
         </div>
 
         <div>
+          <label
+            className={cn(
+              "flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-bg px-4 py-3",
+            )}
+          >
+            <input
+              type="checkbox"
+              name="multipleResponses"
+              defaultChecked={survey?.multipleResponses ?? false}
+              className="mt-0.5 h-4 w-4 accent-accent"
+            />
+            <span className="text-sm">
+              <span className="font-semibold">Allow multiple responses</span>
+              <span className="mt-1 block text-xs text-faint">
+                Off, each Roblox account can answer once - the usual choice for a
+                poll or a post-event survey. On, the same person can submit as
+                often as they like, which suits a suggestion box or a recurring
+                check-in. People still sign in either way.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div>
           <label className={labelClass}>Status</label>
           <select
             name="status"

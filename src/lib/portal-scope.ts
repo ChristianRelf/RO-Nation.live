@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { activePartners, partnerBySlug } from "./partners/registry";
 import { partnerPortalPath, partnerPortalRoute } from "./partners/urls";
 import { getPartnerAccess } from "./partners/guard";
-import { getPortalAccess } from "./shasha";
+import { getPortalAccess, SHASHA_SCOPE } from "./shasha";
 
 // The VIP list and the blacklist are the same tool pointed at a different org.
 //
@@ -15,7 +15,8 @@ import { getPortalAccess } from "./shasha";
 // The two differ in exactly two ways, and this module is where both are
 // resolved so that nothing downstream has to care:
 //
-//   who may write   SHASHA ranks off RNL's Roblox group (lib/shasha.ts).
+//   who may write   SHASHA ranks off RNL's Roblox group, and now also accepts an
+//                   explicit grant that composes with it (lib/shasha.ts).
 //                   A partner's own people hold explicit grants - RNL does not
 //                   own their group, so it cannot rank off it - while RNL staff
 //                   ranked PARTNER_STAFF_RANK+ get in on the override. Both are
@@ -26,11 +27,15 @@ import { getPortalAccess } from "./shasha";
 // Everything else - the queries, the audit trail, the forms - is shared.
 
 /**
- * RNL's own list. Safe as a sentinel `partnerId` because the registry's
- * RESERVED set already forbids any partner from taking the "shasha" slug, so
- * this value can never collide with a real one.
+ * RNL's own list, re-exported.
+ *
+ * It is DEFINED in lib/shasha.ts, which this module already imports - putting it
+ * there and re-exporting here keeps the dependency running one way. The other
+ * arrangement (defined here, imported there) is an import cycle, and a cycle
+ * around a `const` fails at module-init time rather than at the call, which is a
+ * miserable thing to debug in an auth path.
  */
-export const SHASHA_SCOPE = "shasha";
+export { SHASHA_SCOPE };
 
 export type RosterScope = {
   /** The `partnerId` column value. Every roster query filters on this. */

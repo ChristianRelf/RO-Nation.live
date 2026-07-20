@@ -1,10 +1,12 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, QuestionType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Answering a survey. Respondents sign in with Roblox and get one response each.
 
@@ -122,6 +124,26 @@ export async function submitSurveyResponse(formData: FormData) {
     (survey.closesAt !== null && survey.closesAt.getTime() < Date.now());
   if (closed) back("error=closed");
 
+  // A ceiling on repeat submissions.
+  //
+  // Not needed while every survey took one response per account - the unique index
+  // was the limit. A multiple-response survey has no such backstop, so a signed-in
+  // account could hold the submit button down and write rows (and, on a file
+  // question, files) as fast as the server accepts them. Generous enough that a
+  // real suggestion box never notices, low enough that it is not a firehose.
+  //
+  // Only checked where it applies: on a single-response survey the constraint
+  // still does this job, and spending a rate-limit window on a submit that was
+  // going to be refused as a duplicate would be a way to lock someone out of a
+  // survey they have not answered yet.
+  if (survey.multipleResponses) {
+    const limit = await rateLimit(`survey-submit:${session.uid}`, {
+      limit: 20,
+      windowSeconds: 10 * 60,
+    });
+    if (!limit.ok) back("error=slowdown");
+  }
+
   // The respondent's pending uploads, in one query, scoped to this survey's file
   // questions and to them. Everything readAnswer is allowed to attach is in here.
   const fileQuestionIds = survey.questions
@@ -165,6 +187,12 @@ export async function submitSurveyResponse(formData: FormData) {
           surveyId: survey.id,
           userId: session.uid,
           robloxUsername: session.username,
+          // "" collides with this user's other rows on this survey, so the unique
+          // index refuses a second one; a cuid() collides with nothing, so it lets
+          // them all through. The survey's setting is read HERE, once, and turned
+          // into a value the database enforces - rather than being consulted as an
+          // `if` around a check that two concurrent submits both pass.
+          dedupeKey: survey.multipleResponses ? randomUUID() : "",
           answers: { createMany: { data: answers } },
         },
       });
@@ -185,8 +213,10 @@ export async function submitSurveyResponse(formData: FormData) {
       }
     });
   } catch (err) {
-    // The @@unique([surveyId, userId]) is what actually enforces one response
-    // per account - two tabs submitting at once both pass the earlier check.
+    // The @@unique([surveyId, userId, dedupeKey]) is what actually enforces one
+    // response per account - two tabs submitting at once both pass the earlier
+    // check. On a multiple-response survey every dedupeKey is a fresh cuid, so
+    // this cannot fire and the branch is simply never taken.
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === "P2002"

@@ -33,6 +33,9 @@ export default async function SurveyResponsesPage({
   if (!survey) notFound();
 
   const total = survey.responses.length;
+  // Distinct respondents. Differs from `total` only where repeat answers are
+  // allowed - see the stat tiles below.
+  const people = new Set(survey.responses.map((r) => r.userId)).size;
 
   // Attachments, keyed by upload id, so a FILE_UPLOAD answer's `values` (which
   // holds ids) can be turned into named links. Only submitted ones - an unclaimed
@@ -56,7 +59,13 @@ export default async function SurveyResponsesPage({
 
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <StatCard label="Responses" value={total} />
-        <StatCard label="Questions" value={survey.questions.length} />
+        {/* Only worth the tile where the two numbers can differ. On a one-per-
+            account survey "People" would always equal "Responses" and say nothing. */}
+        {survey.multipleResponses ? (
+          <StatCard label="People" value={people} />
+        ) : (
+          <StatCard label="Questions" value={survey.questions.length} />
+        )}
         <div className="card flex flex-col justify-center p-5">
           <a
             href={`/api/company/surveys/${survey.id}/export`}

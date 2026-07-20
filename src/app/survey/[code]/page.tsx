@@ -52,13 +52,22 @@ export default async function SurveyPage({
     survey.closesAt !== null && survey.closesAt.getTime() < Date.now();
   const closed = survey.status === "CLOSED" || expired;
 
+  // findFirst, not findUnique: (surveyId, userId) stopped being unique when
+  // multiple responses became allowed. The most recent one, so the confirmation
+  // below names the answer they just sent rather than one from a month ago.
   const existing = session
-    ? await prisma.surveyResponse.findUnique({
-        where: { surveyId_userId: { surveyId: survey.id, userId: session.uid } },
+    ? await prisma.surveyResponse.findFirst({
+        where: { surveyId: survey.id, userId: session.uid },
+        orderBy: { createdAt: "desc" },
       })
     : null;
 
-  const done = Boolean(existing) || searchParams.ok === "1";
+  // On a multiple-response survey a past answer closes nothing - the form is
+  // offered again. `ok=1` still shows the confirmation for the submit that just
+  // landed, so the page does not silently look as though nothing happened.
+  const done = survey.multipleResponses
+    ? searchParams.ok === "1"
+    : Boolean(existing) || searchParams.ok === "1";
 
   // Files this person has already uploaded and not yet submitted.
   //
@@ -113,8 +122,17 @@ export default async function SurveyPage({
               <p>
                 Your answers have been recorded
                 {existing ? ` on ${formatDateTime(existing.createdAt)}` : ""}.
-                You can only answer once, so there&apos;s nothing more to do.
+                {survey.multipleResponses
+                  ? " You're welcome to send another whenever you like."
+                  : " You can only answer once, so there's nothing more to do."}
               </p>
+              {survey.multipleResponses ? (
+                // A plain link back to the bare URL: it drops `ok=1`, which is the
+                // only thing holding this panel open, so the form comes back.
+                <a href={`/${code}`} className="btn btn-ghost mt-5 w-full">
+                  Answer again
+                </a>
+              ) : null}
             </Panel>
           ) : closed ? (
             <Panel tone="muted" title="This survey is closed.">
@@ -150,6 +168,11 @@ export default async function SurveyPage({
                 <p className="mb-5 border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-sm text-amber-200">
                   This survey closed while you had it open.
                 </p>
+              ) : searchParams.error === "slowdown" ? (
+                <p className="mb-5 border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-sm text-amber-200">
+                  That&apos;s a lot of responses in a short time. Give it a few
+                  minutes and try again.
+                </p>
               ) : null}
 
               <p className="mb-6 text-sm text-faint">
@@ -157,7 +180,12 @@ export default async function SurveyPage({
                 <span className="font-semibold text-fg">
                   {session.displayName}
                 </span>
-                . You can only submit once.
+                {survey.multipleResponses
+                  ? ". You can answer this one as often as you like."
+                  : ". You can only submit once."}
+                {survey.multipleResponses && existing
+                  ? ` You last answered on ${formatDateTime(existing.createdAt)}.`
+                  : ""}
               </p>
 
               <form action={submitSurveyResponse} className="space-y-5">

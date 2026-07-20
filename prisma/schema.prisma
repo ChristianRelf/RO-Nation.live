@@ -926,6 +926,13 @@ model Survey {
   authorRobloxId String?
   authorName     String
   closesAt       DateTime? // optional deadline; past it, treated as CLOSED
+
+  /// Off: one response per Roblox account, which is the default and what every
+  /// survey did before this existed. On: the same person may answer as often as
+  /// they like - for a recurring check-in, a bug report form, a suggestion box.
+  ///
+  /// Enforced by SurveyResponse.dedupeKey, not by reading this at insert time.
+  multipleResponses Boolean @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -975,11 +982,32 @@ model SurveyResponse {
   robloxUsername String // denormalised so results survive a rename
   createdAt      DateTime @default(now())
 
+  /// What makes "one response per account" a DATABASE fact rather than a hopeful
+  /// check, while still letting a survey opt out of it.
+  ///
+  /// Empty string when the survey takes one response per account: every row for a
+  /// given user then collides on the unique below, so two tabs submitting at once
+  /// cannot both win - one gets P2002 and is turned away. That is the same
+  /// guarantee @@unique([surveyId, userId]) used to give, and it is deliberately
+  /// not softened into an application-level "does a response exist yet?", which
+  /// two concurrent requests both answer "no".
+  ///
+  /// A fresh cuid() when the survey allows multiple responses: every row is then
+  /// unique on its own and the constraint never fires.
+  ///
+  /// The default is "" ON PURPOSE. `prisma db push` backfills existing rows with
+  /// it, so every survey written before this column existed keeps exactly the
+  /// protection it had. A nullable column would have been the obvious shape and
+  /// would have quietly broken that: Postgres treats NULLs as distinct, so the
+  /// unique index would not have applied to the old rows at all.
+  dedupeKey String @default("")
+
   answers SurveyAnswer[]
   uploads SurveyUpload[]
 
-  @@unique([surveyId, userId]) // one response per Roblox account
+  @@unique([surveyId, userId, dedupeKey])
   @@index([surveyId])
+  @@index([surveyId, userId])
   @@map("survey_responses")
 }
 

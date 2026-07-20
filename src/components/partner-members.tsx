@@ -23,7 +23,7 @@ import { cn, robloxProfileUrl } from "@/lib/utils";
 // via="company" from the partner's page gets you requireCompanyUser(), which a partner is
 // not, and a redirect. See the header of actions/partner-members.ts.
 
-const ROLES: { value: PartnerRole; label: string; blurb: string }[] = [
+const ALL_ROLES: { value: PartnerRole; label: string; blurb: string }[] = [
   { value: "STAFF", label: "Staff", blurb: "Read the lists. Work the door. Change nothing." },
   { value: "MANAGER", label: "Manager", blurb: "Edit the lists and mint API keys." },
   { value: "OWNER", label: "Owner", blurb: "A manager who can also grant and revoke access." },
@@ -36,15 +36,31 @@ export function PartnerMembers({
   search,
   /** RNL staff may remove the last owner. The partner's own owner may not. */
   canRemoveLastOwner,
+  /**
+   * Which roles this door offers. Defaults to all three.
+   *
+   * SHASHA passes [STAFF, MANAGER] because its membership is administered from
+   * the Studio and nowhere else - there is no "may grant others" tier to hand
+   * out, so an Owner button there would set a role that behaves exactly like
+   * Manager. Offering a choice that changes nothing is worse than not offering
+   * it: somebody picks it believing it did something.
+   */
+  roles = ALL_ROLES.map((r) => r.value),
+  /** Replaces the "nobody at this partner can sign in" line, which SHASHA outgrows. */
+  emptyNote,
 }: {
   slug: string;
   via: "company" | "portal";
   members: PartnerMember[];
   search: (query: string) => Promise<RobloxProfile[]>;
   canRemoveLastOwner: boolean;
+  roles?: PartnerRole[];
+  emptyNote?: string;
 }) {
+  const ROLES = ALL_ROLES.filter((r) => roles.includes(r.value));
+
   const [picked, setPicked] = useState<RobloxProfile | null>(null);
-  const [role, setRole] = useState<PartnerRole>("STAFF");
+  const [role, setRole] = useState<PartnerRole>(roles[0] ?? "STAFF");
 
   const owners = members.filter((m) => m.role === "OWNER");
   const lastOwner = (m: PartnerMember) =>
@@ -83,7 +99,14 @@ export function PartnerMembers({
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
             What they can do
           </label>
-          <div className="grid gap-1.5 sm:grid-cols-3">
+          {/* Written out rather than interpolated: Tailwind scans for whole class
+              names, so a `sm:grid-cols-${n}` would be purged from the build. */}
+          <div
+            className={cn(
+              "grid gap-1.5",
+              ROLES.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2",
+            )}
+          >
             {ROLES.map((r) => (
               <button
                 key={r.value}
@@ -208,8 +231,8 @@ export function PartnerMembers({
         <div className="card grid place-items-center px-6 py-16 text-center">
           <p className="font-display text-2xl">Nobody has access</p>
           <p className="mt-2 max-w-md text-muted">
-            Until somebody is added here, nobody at this partner can sign in to their
-            portal at all.
+            {emptyNote ??
+              "Until somebody is added here, nobody at this partner can sign in to their portal at all."}
           </p>
         </div>
       )}

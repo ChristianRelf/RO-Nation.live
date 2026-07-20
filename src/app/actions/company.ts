@@ -681,6 +681,11 @@ function readSurveyForm(form: FormData) {
     // it would make the date un-clearable once set, which is the kind of thing nobody
     // notices until they need to reopen a survey.
     closesAt: parseDate(s(form, "closesAt")),
+    // Editable at any time, including after people have answered - unlike the
+    // questions, which freeze. Turning it ON is harmless; turning it OFF stops
+    // NEW second responses without retroactively deleting any already collected,
+    // which is the only behaviour that does not destroy data somebody has.
+    multipleResponses: form.get("multipleResponses") === "on",
   };
 }
 

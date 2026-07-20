@@ -8,6 +8,7 @@ import { requireCompanyUser } from "@/lib/company";
 import { requirePartnerOwner } from "@/lib/partners/guard";
 import { partnerBySlug } from "@/lib/partners/registry";
 import { partnerPortalPath, partnerPortalRoute } from "@/lib/partners/urls";
+import { SHASHA_SCOPE } from "@/lib/shasha";
 import { resolveRobloxUser } from "@/lib/roblox-users";
 import { s } from "@/lib/content";
 
@@ -59,6 +60,23 @@ type Door = { slug: string; actor: { robloxId: string; displayName: string } };
 async function open(formData: FormData): Promise<Door> {
   const claimed = s(formData, "slug");
 
+  // SHASHA is not in the registry and never will be - it is RNL's own portal, and the
+  // RESERVED set exists to stop a partner ever taking the slug. So it is matched here,
+  // ahead of the registry lookup that would otherwise turn it away.
+  //
+  // Note that `via` is not consulted: this door is requireCompanyUser() and nothing else.
+  // There is no "SHASHA owner" to be - a partner OWNER manages their own crew because it
+  // is their organisation, whereas SHASHA is RNL's, so RNL staff administer it. Honouring
+  // via="portal" here would be asking requirePartnerOwner("shasha") a question that has no
+  // answer, since getPartnerAccess() returns null for a slug the registry does not know.
+  if (claimed === SHASHA_SCOPE) {
+    const user = await requireCompanyUser();
+    return {
+      slug: SHASHA_SCOPE,
+      actor: { robloxId: user.robloxId, displayName: user.displayName },
+    };
+  }
+
   // Validated against the registry before it is ever used as a scope. An unregistered slug
   // is not a partner with no members - it is a typo or a probe, and it must not reach a
   // query as a partnerId.
@@ -82,11 +100,20 @@ async function open(formData: FormData): Promise<Door> {
 
 /** Where to send them back to, by the door they came in by. */
 const home = (formData: FormData, slug: string, params = "") =>
-  s(formData, "via") === "company"
-    ? `/company/partners/${slug}${params}`
-    : `${partnerPortalPath(slug, "/members")}${params}`;
+  slug === SHASHA_SCOPE
+    ? `/company/shasha${params}`
+    : s(formData, "via") === "company"
+      ? `/company/partners/${slug}${params}`
+      : `${partnerPortalPath(slug, "/members")}${params}`;
 
 function refresh(slug: string) {
+  // SHASHA has one admin screen, and no /pp/<slug> route to revalidate - it is not a
+  // partner, so partnerPortalRoute() would build a path that matches nothing.
+  if (slug === SHASHA_SCOPE) {
+    revalidatePath("/company/shasha");
+    return;
+  }
+
   // INTERNAL route. The public path (/<slug>/members) matches no route in this app.
   revalidatePath(partnerPortalRoute(slug, "/members"));
   revalidatePath(`/company/partners/${slug}`);
