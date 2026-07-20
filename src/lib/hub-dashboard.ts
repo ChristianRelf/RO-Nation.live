@@ -50,6 +50,13 @@ export type NextShow = {
   external?: boolean;
   when: string;
   relative: string;
+  /**
+   * The raw start, kept alongside the two formatted strings because the hub now
+   * leads with the soonest show ACROSS areas and has to sort them to find it.
+   * `when` and `relative` are display text and are not orderable - comparing them
+   * would sort "Fri" against "In 2 weeks".
+   */
+  at: Date;
   sold: number;
   /** 0 means unlimited - render the count, never a bar. See lib/tickets/crowd.ts. */
   capacity: number;
@@ -264,6 +271,7 @@ export async function getHubDashboard(): Promise<HubDashboard> {
             external: isCompany,
             when: formatDateTime(event.startsAt),
             relative: relativeDays(event.startsAt),
+            at: event.startsAt,
             sold: soldByEvent.get(event.id) ?? 0,
             capacity: event.capacity,
           }

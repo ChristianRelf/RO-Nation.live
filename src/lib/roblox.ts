@@ -115,16 +115,33 @@ export const BASE_SCOPES = ["openid", "profile"] as const;
  *
  * `user.inventory-item:read` is what lets us ask Roblox whether they own the pass -
  * the check that makes the game-pass rail verifiable, and the whole reason it exists.
+ * It is the ONE scope to tick on the OAuth app, and it is the only one here that is
+ * not an ordinary sign-in scope.
  *
- * `offline_access` is what makes Roblox issue a REFRESH TOKEN at all, and without it
- * this rail simply does not work: an access token lasts fifteen minutes, and a buyer
- * who comes back to their ticket tomorrow would find us unable to look anything up.
- * It is easy to leave out, and the failure it causes turns up hours later.
+ * ---- There is deliberately no `offline_access` -----------------------------
+ *
+ * This list used to carry it, on the reasonable assumption that Roblox works like
+ * every other OIDC provider, where `offline_access` is what makes a refresh token
+ * appear. IT DOES NOT EXIST HERE. Roblox's discovery document
+ * (apis.roblox.com/oauth/.well-known/openid-configuration) advertises exactly
+ * `openid, profile, email, verification, credentials, age, premium, roles,
+ * attributes`, there is no such entry in the Creator Dashboard's permission picker,
+ * and Roblox's own OAuth overview says the token response carries "an access token,
+ * an ID token, and a refresh token" with nothing to opt into.
+ *
+ * So the refresh token this rail depends on arrives on its own, from the ordinary
+ * authorization-code exchange. Asking for a scope the provider has never heard of
+ * bought nothing and risked an `invalid_scope` rejection of the entire consent trip,
+ * which would have taken the rail down whole rather than degrading it.
+ *
+ * If a refresh token ever stops coming back, the thing to suspect is the token
+ * exchange itself - NOT a missing scope here. saveGrant() (lib/roblox-tokens.ts)
+ * refuses to store a grant without one, so that failure surfaces as "consent did
+ * nothing" rather than as an error, which is the shape to recognise it by.
  */
 export const INVENTORY_SCOPES = [
   ...BASE_SCOPES,
   "user.inventory-item:read",
-  "offline_access",
 ] as const;
 
 export function buildAuthorizeUrl(params: {

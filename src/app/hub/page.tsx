@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { robloxConfigured } from "@/lib/env";
 import { getHubDashboard, type HubAreaLive } from "@/lib/hub-dashboard";
-import type { HubLink } from "@/lib/hub";
 import { PortalFooter } from "@/components/portal-footer";
 import { HubHeader } from "@/components/hub/hub-header";
-import { HubAnchor } from "@/components/hub/hub-anchor";
-import { AreaCard } from "@/components/hub/area-card";
+import { HubButton, HubChip } from "@/components/hub/hub-button";
+import { NowBoard } from "@/components/hub/now-board";
+import { AttentionBoard } from "@/components/hub/attention-board";
+import { AreaRow } from "@/components/hub/area-row";
 import { ActivityFeed } from "@/components/hub/activity-feed";
 import { MarkSeen } from "@/components/hub/mark-seen";
 
@@ -13,9 +14,29 @@ import { MarkSeen } from "@/components/hub/mark-seen";
 //
 // It began as a launcher: every door you hold, so you did not have to know the URL.
 // That was the right first problem to solve and the wrong place to stop - a list of
-// links tells you where you may go and nothing about whether you need to. So each
-// card now carries the state of the area behind it, and a feed says what has
-// happened across all of them.
+// links tells you where you may go and nothing about whether you need to. So the
+// page carries the state of the areas behind it, and a feed says what has happened
+// across all of them.
+//
+// ---- Why this is a column and not a grid ----------------------------------
+//
+// The second version was a grid of equal cards with the feed in a sidebar, and it
+// had one flaw that no amount of styling fixes: equal cards make an equal claim.
+// A house opening in two hours and a docs area nobody has touched in a month were
+// the same size, in the same place, carrying the same furniture. The reader did
+// the triage the page should have done.
+//
+// So it is now ordered by urgency, top to bottom, and each band is a different
+// weight on purpose:
+//
+//   1. Up next    - the single closest show ANYWHERE you hold a door.
+//   2. Needs you  - every flag, across every area, hoisted out of the cards.
+//   3. Your doors - the areas, as rows, for when neither of the above applies.
+//   4. Lately     - the audit trail, full width.
+//
+// Bands 1 and 2 are absent when empty rather than zeroed, which is what makes the
+// ordering trustworthy: if something is at the top of this page, it is because
+// there is something there.
 //
 // The data comes from getHubDashboard() (lib/hub-dashboard.ts), NOT getHubData().
 // The distinction is load-bearing and is argued at both ends - see the note on
@@ -46,35 +67,60 @@ export default async function HubPage() {
     );
   }
 
+  // The closest show anywhere. Sorted on NextShow.at, which exists for this -
+  // `relative` and `when` are display strings and would sort "Fri" against
+  // "In 2 weeks".
+  const upNext =
+    areas
+      .filter((a) => a.nextShow)
+      .sort((a, b) => a.nextShow!.at.getTime() - b.nextShow!.at.getTime())[0] ??
+    null;
+
   return (
     <div className="flex min-h-dvh flex-col">
       <HubHeader session={session} />
 
       <main className="shell flex-1 py-10 sm:py-14">
-        <div className="fade-in-1 mb-10">
-          <h1 className="display text-4xl sm:text-5xl">
-            Welcome back, {session.displayName.split(" ")[0]}.
-          </h1>
-          <p className="mt-3 text-sm text-muted">{summarise(areas)}</p>
-
-          {quickLinks.length ? (
-            <div className="mt-6 flex flex-wrap gap-2">
-              {quickLinks.map((l) => (
-                <QuickLink key={l.href} link={l} />
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <Masthead
+          name={session.displayName.split(" ")[0]}
+          areas={areas}
+          quickLinks={quickLinks}
+        />
 
         {areas.length ? (
-          <div className="fade-in-2 grid items-start gap-6 lg:grid-cols-[1fr_360px]">
-            <div className="grid gap-4 md:grid-cols-2">
-              {areas.map((area) => (
-                <AreaCard key={area.id} area={area} />
-              ))}
+          <div className="mt-12 space-y-14">
+            {upNext ? (
+              <div className="fade-in-2">
+                <NowBoard area={upNext} scopeCount={areas.length} />
+              </div>
+            ) : null}
+
+            <div className="fade-in-2">
+              <AttentionBoard areas={areas} />
             </div>
 
-            <ActivityFeed entries={feed} />
+            <section className="fade-in-3">
+              <div className="flex items-baseline gap-3">
+                <h2 className="display text-lg leading-none">Your doors</h2>
+                <span aria-hidden className="h-px flex-1 bg-line" />
+                <span className="tnum text-[10px] font-bold uppercase tracking-kicker text-faint">
+                  {areas.length}
+                </span>
+              </div>
+
+              {/* border-t on each row, plus one on the list's end, so the run of
+                  rules closes rather than trailing off after the last name. */}
+              <ul className="mt-2 border-b border-line">
+                {areas.map((area, i) => (
+                  <AreaRow key={area.id} area={area} index={i} />
+                ))}
+              </ul>
+            </section>
+
+            <div className="fade-in-3">
+              <ActivityFeed entries={feed} />
+            </div>
+
             {/* Advances the "last here" cookie once the page has rendered. A
                 render cannot set a cookie in Next 14, hence the round trip. */}
             <MarkSeen />
@@ -90,35 +136,87 @@ export default async function HubPage() {
 }
 
 /**
- * The one-line state of the whole estate: how many areas, how many shows are close,
- * and whether anything is asking to be looked at.
+ * Who you are, and the state of the whole estate as three figures.
  *
- * "1 thing needs attention" is deliberately a count and not a list. The chips on
- * the cards are the list; repeating them here would mean reading the same warning
- * twice before finding out which area it belongs to.
+ * This replaced a sentence - "4 areas · 2 shows coming up · 1 thing to look at."
+ * The sentence was accurate and it was still prose, which is the one shape a
+ * number should never take on a dashboard: it has to be read left to right before
+ * it can be compared to how it looked yesterday. Three tabular figures under three
+ * fixed labels can be compared without being read.
+ *
+ * "Needs you" is deliberately a count and not a list. AttentionBoard is the list;
+ * repeating it here would mean reading the same warning twice before finding out
+ * which area it belongs to.
  */
-function summarise(areas: HubAreaLive[]) {
-  const parts = [`${areas.length} area${areas.length === 1 ? "" : "s"}`];
-
+function Masthead({
+  name,
+  areas,
+  quickLinks,
+}: {
+  name: string;
+  areas: HubAreaLive[];
+  quickLinks: { label: string; href: string; external?: boolean }[];
+}) {
   const shows = areas.filter((a) => a.nextShow).length;
-  if (shows) parts.push(`${shows} show${shows === 1 ? "" : "s"} coming up`);
-
   const flags = areas.reduce((n, a) => n + a.attention.length, 0);
-  if (flags) parts.push(`${flags} thing${flags === 1 ? "" : "s"} to look at`);
 
-  return `${parts.join(" · ")}.`;
+  return (
+    <div className="fade-in-1">
+      <div className="flex flex-col gap-8 border-b border-line pb-8 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-kicker text-accent">
+            Backstage
+          </p>
+          <h1 className="display mt-3 text-4xl leading-none sm:text-5xl">
+            Welcome back, {name}.
+          </h1>
+        </div>
+
+        <dl className="flex gap-8 sm:gap-12">
+          <Readout label="Areas" value={areas.length} />
+          <Readout label="Shows ahead" value={shows} />
+          <Readout label="Needs you" value={flags} tone={flags ? "alert" : undefined} />
+        </dl>
+      </div>
+
+      {quickLinks.length ? (
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-[10px] font-bold uppercase tracking-kicker text-faint">
+            Pinned
+          </span>
+          {quickLinks.map((l) => (
+            <HubChip key={l.href} href={l.href} external={l.external}>
+              {l.label}
+            </HubChip>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
-function QuickLink({ link }: { link: HubLink }) {
+function Readout({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "alert";
+}) {
   return (
-    <HubAnchor
-      href={link.href}
-      external={link.external}
-      className="rounded-brand border border-line px-3 py-1.5 text-sm text-muted transition-colors hover:border-line-strong hover:text-fg"
-    >
-      {link.label}
-      {link.external ? " ↗" : ""}
-    </HubAnchor>
+    <div>
+      <dd
+        className={`tnum display text-4xl leading-none ${
+          tone === "alert" ? "text-amber-300" : ""
+        }`}
+      >
+        {value}
+      </dd>
+      <dt className="mt-2 text-[10px] font-bold uppercase tracking-kicker text-faint">
+        {label}
+      </dt>
+    </div>
   );
 }
 
@@ -126,30 +224,44 @@ function SignedOut({ signInHref }: { signInHref: string }) {
   return (
     <div className="relative">
       <div className="accent-glow pointer-events-none absolute inset-x-0 top-0 h-72" />
-      <div className="relative flex min-h-[50vh] items-center justify-center">
-        <div className="w-full max-w-md text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
+
+      {/* Left-aligned against a rule rather than floated in the middle of the
+          viewport. The signed-in page is a column with a hard left edge; the door
+          into it should stand in the same place. */}
+      <div className="relative flex min-h-[60vh] items-center">
+        <div className="w-full max-w-xl">
+          <p className="text-[10px] font-bold uppercase tracking-kicker text-accent">
             RO. Nation LIVE
           </p>
-          <h1 className="display mt-4 text-5xl sm:text-6xl">Backstage hub</h1>
-          <p className="mt-5 text-sm text-muted">
+          <h1 className="display mt-4 text-5xl leading-none sm:text-7xl">
+            Backstage
+            <br />
+            hub
+          </h1>
+
+          <div aria-hidden className="mt-8 h-px w-full max-w-xs bg-line-strong" />
+
+          <p className="mt-8 max-w-md text-sm text-muted">
             Sign in to see every area your account can open - SHASHA, a partner
             portal, the Company dashboard, the docs.
           </p>
 
-          <a
-            href={robloxConfigured ? signInHref : undefined}
-            className={`btn mt-8 w-full ${
-              robloxConfigured
-                ? "btn-accent"
-                : "btn-ghost pointer-events-none opacity-40"
-            }`}
-            aria-disabled={!robloxConfigured}
-          >
-            Sign in with Roblox
-          </a>
+          <div className="mt-8">
+            {robloxConfigured ? (
+              <HubButton href={signInHref} variant="accent">
+                Sign in with Roblox
+              </HubButton>
+            ) : (
+              <span
+                aria-disabled
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-brand border border-line px-5 py-2.5 text-[11px] font-bold uppercase tracking-kicker text-faint opacity-50"
+              >
+                Sign in unavailable
+              </span>
+            )}
+          </div>
 
-          <p className="mt-6 text-xs text-faint">
+          <p className="mt-10 text-xs text-faint">
             Looking for shows and tickets?{" "}
             <a
               href="https://ronation.live"
@@ -166,9 +278,9 @@ function SignedOut({ signInHref }: { signInHref: string }) {
 
 function NoAreas() {
   return (
-    <div className="card p-8 text-center">
-      <h3 className="font-display text-xl uppercase">Nothing assigned yet</h3>
-      <p className="mx-auto mt-3 max-w-md text-sm text-muted">
+    <div className="mt-12 border-t border-line pt-10">
+      <h3 className="display text-2xl leading-none">Nothing assigned yet</h3>
+      <p className="mt-4 max-w-md text-sm text-muted">
         You&apos;re signed in, but your account doesn&apos;t hold access to any
         backstage area yet. Access is a rank in RO. Nation LIVE&apos;s Roblox
         group, or a grant from a partner - if you were expecting a door here, ask

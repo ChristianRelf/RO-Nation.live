@@ -562,9 +562,21 @@ There is **no `.env`** in this checkout — copy `.env.example`.
 
 ### Turning the paid rails on, when the day comes
 
-1. Add `user.inventory-item:read` and **`offline_access`** to the Roblox OAuth app. Leave
-   `offline_access` out and Roblox issues **no refresh token**, the grant dies in fifteen
-   minutes, and the rail breaks *hours later* with nothing on any screen to say why.
+1. ✅ **DONE (confirmed 2026-07-20).** `user.inventory-item:read` is registered on the Roblox
+   OAuth app. That is the only scope needed, and the only one that *can* be added.
+
+   > **`offline_access` is not a Roblox scope — do not go looking for it in the dashboard.**
+   > An earlier version of this runbook said to add it. That instruction was wrong and cost
+   > somebody a search. Roblox's discovery document
+   > (`apis.roblox.com/oauth/.well-known/openid-configuration`) lists
+   > `openid, profile, email, verification, credentials, age, premium, roles, attributes` and
+   > nothing else, and Roblox's own OAuth overview says the token response carries "an access
+   > token, an ID token, and a refresh token" with no opt-in. **Refresh tokens are automatic
+   > here**, unlike most OIDC providers.
+   >
+   > `INVENTORY_SCOPES` in `lib/roblox.ts` asked for it until 2026-07-20 and no longer does.
+   > Nothing was lost by removing it: the refresh token this rail depends on comes back from
+   > the ordinary code exchange.
 2. `ROBUX_TICKETS_ENABLED=true` (the master switch).
 3. `ROBUX_GAMEPASS_ENABLED=true` (the third key — it exists *because* step 1 is a thing the
    other two switches cannot possibly know about).
@@ -574,6 +586,64 @@ There is **no `.env`** in this checkout — copy `.env.example`.
 5. On each priced tier: paste the **game pass id** and press **Verify pass**. It will tell you
    if the pass is off-sale, priced differently, or — the expensive one — **already on another
    tier**.
+
+**The preflight catches half of step 1.** `src/instrumentation.ts` refuses to boot in production
+with `ROBUX_GAMEPASS_ENABLED=true` while `ROBLOX_CLIENT_ID`/`ROBLOX_CLIENT_SECRET` are unset, and
+warns (without refusing — the combination is inert, not dangerous) if the game-pass key is on
+while the master switch is off. It **cannot** see whether the OAuth app carries the two scopes:
+that is a property of an application record at Roblox, and the only way to read it is to spend a
+real grant. Step 1 stays a thing a human has to go and look at.
+
+### The authorize-URL check (60 seconds, do this first)
+
+Before anything else, prove Roblox accepts the scope string we send — that the inventory
+scope is really ticked on the app, which is the one prerequisite nothing in this stack can
+check for you. Paste this into a browser with your real client id substituted; the
+redirect_uri does not have to work, you are only reading Roblox's response to the *scopes*:
+
+```text
+https://apis.roblox.com/oauth/v1/authorize
+  ?client_id=<YOUR_CLIENT_ID>
+  &redirect_uri=https://authorise.ronation.live/api/auth/roblox/callback
+  &scope=openid%20profile%20user.inventory-item%3Aread
+  &response_type=code
+  &state=test
+  &code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+  &code_challenge_method=S256
+```
+
+- **A consent screen naming inventory access** → the app is configured. Proceed.
+- **`invalid_scope`** → `user.inventory-item:read` is not actually ticked on the OAuth app,
+  whatever the dashboard appears to show. The rail cannot work until this screen appears.
+- **An error about `client_id` or `redirect_uri`** → those are wrong; fix them and re-run. It
+  says nothing about the scopes yet.
+
+Then check the token exchange actually yields a refresh token: `saveGrant()` silently stores
+**nothing** when `refresh_token` is absent (deliberately — see its note), so a missing refresh
+token looks like "consent did nothing" rather than like an error. If consent appears to
+succeed and `hasInventoryGrant()` still says no, that is what happened.
+
+### Proving it actually works, before a real customer finds out
+
+Enabling the switches is not the same as the rail working, and the gap between them is somebody
+else's money. On a **staging** deployment, or against a throwaway pass:
+
+1. Sign in as a test account that has **never** consented. Reach a priced game-pass tier.
+2. The checkout must show the **consent** prompt, not a buy button. If it shows the buy button
+   straight away, `hasInventoryGrant()` is answering yes for an account that never granted —
+   stop, because that is the state where somebody pays before being asked.
+3. Consent. Roblox must show a screen naming inventory access. Approve it.
+4. Buy the pass. Come back. The claim should poll for a few seconds — Roblox's inventory lags
+   every purchase — and then issue.
+5. Press claim **again**. You must get the *same* ticket back, and
+   `SELECT count(*) FROM ticket_purchases WHERE "purchaseId" = 'gp:<passId>:<robloxId>'` must be
+   **1**. Two rows means the idempotency key is not doing its job and a refund is coming.
+6. Revoke the app's access from the Roblox account's settings, then claim once more. You must
+   get the re-consent prompt — **not** "you did not pay".
+
+Steps 5 and 6 are the two the automated suite already pins down
+(`tests/gamepass-rail.test.ts`), so a failure there is a real regression rather than a
+staging quirk. Steps 1–4 are the ones no test can reach, because they are the OAuth round trip.
 
 ---
 

@@ -59,6 +59,18 @@ services:
       GAME_API_KEY: ${GAME_API_KEY:-change-me}
       ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-false}
       PORTAL_URL: ${PORTAL_URL:-}
+      # Paid ticketing. BOTH must be passed through or setting them in .env does
+      # nothing at all - the container never sees them, env.robuxTickets stays false,
+      # and every priced tier renders locked with nothing on any screen to say why.
+      # This is the same silent-ignore trap the STRO_HOST and MERCH_HOST notes under
+      # `caddy` describe, on the two variables where the symptom is "we cannot sell".
+      #
+      # Defaults are "false" here as well as in lib/env.ts, so an unset value can
+      # never read as on at either end. See .env.example for what has to be true
+      # before either of these is worth setting - the game-pass one has a prerequisite
+      # (the OAuth app's inventory scope) that nothing in this stack can check.
+      ROBUX_TICKETS_ENABLED: ${ROBUX_TICKETS_ENABLED:-false}
+      ROBUX_GAMEPASS_ENABLED: ${ROBUX_GAMEPASS_ENABLED:-false}
       # The rank ladder. One Roblox group, three thresholds - see .env.example.
       # ADMIN_USERNAME/ADMIN_PASSWORD used to sit here; the shared-password door
       # they opened is gone, so they are not passed and nothing reads them.

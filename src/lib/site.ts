@@ -49,7 +49,7 @@ type Socials = { discord: string; roblox: string } & Partial<
 const socials: Socials = {
   discord: "https://discord.gg/pxE7KRWgTY",
   roblox: "https://www.roblox.com/communities/33033115/RoNation-Live#!/about",
-  // x: "https://x.com/…",              ← add when the account exists
+  x: "https://x.com/ronation_live",
   // youtube: "https://youtube.com/@…", ← add when the account exists
 };
 

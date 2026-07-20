@@ -64,8 +64,9 @@ export function robuxSalesAllowed(
  * prerequisite the other two cannot see.
  *
  * The game-pass rail needs something that lives outside this codebase entirely: the
- * Roblox OAuth application must be registered with the `user.inventory-item:read` and
- * `offline_access` scopes. Without them, a buyer goes to roblox.com, pays real Robux,
+ * Roblox OAuth application must be registered with the `user.inventory-item:read`
+ * scope - the only one it needs, and the only one that exists for this. Without it, a
+ * buyer goes to roblox.com, pays real Robux,
  * comes back - and we cannot ask Roblox whether they own the pass, because we were
  * never granted permission to look. They are charged, and they have no ticket.
  *

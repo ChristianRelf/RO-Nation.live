@@ -31,6 +31,9 @@
       "Bash(git fsck *)",
       "Bash(echo \"tsc exit: $?\")",
       "Bash(docker exec *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\chris\\.claude\\projects\\c--Users-chris-Desktop-RO-Nation-live\\memory"
     ]
   }
 }

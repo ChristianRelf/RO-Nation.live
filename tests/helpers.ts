@@ -6,6 +6,9 @@ import { prisma } from "@/lib/db";
 let seq = 0;
 const uniq = () => `${Date.now().toString(36)}-${(seq += 1)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
 
+/** A unique all-digit id, in the shape Roblox actually issues. See makeUser(). */
+const uniqDigits = () => `${Date.now()}${(seq += 1).toString().padStart(4, "0")}`;
+
 /**
  * Wipe every table a ticketing test touches, in FK-safe order. Called in
  * beforeEach so each test starts from empty - the concurrency being tested has to
@@ -20,11 +23,23 @@ export async function resetDb() {
   await prisma.user.deleteMany();
 }
 
-export async function makeUser() {
+/**
+ * `numericRobloxId` matters more than it looks.
+ *
+ * resolveUserId() (intents.ts, and its twin in issue.ts) validates the shape of a
+ * Roblox id before it does anything else - `/^\d{1,20}$/` - so the default `t-<id>`
+ * below is rejected out of hand and comes back as "no_player". That is invisible to
+ * every test that identifies people by `{ userId }`, which is most of them, and it
+ * bites the moment a test passes a robloxId instead: the refusal under test is never
+ * reached, and the assertion fails somewhere that looks nothing like the cause.
+ *
+ * So: opt in wherever a fixture's robloxId actually crosses that boundary.
+ */
+export async function makeUser(opts: { numericRobloxId?: boolean } = {}) {
   const id = uniq();
   return prisma.user.create({
     data: {
-      robloxId: `t-${id}`,
+      robloxId: opts.numericRobloxId ? uniqDigits() : `t-${id}`,
       username: `user-${id}`,
       displayName: `User ${id}`,
     },
@@ -55,6 +70,28 @@ export async function makePaidTier(eventId: string) {
       name: "General Admission",
       priceRobux: 100,
       devProductId: `dp-${id}`,
+      active: true,
+      sortOrder: 0,
+    },
+  });
+}
+
+/**
+ * A paid tier sold on the GAME PASS rail (the roblox.com web path).
+ *
+ * gamePassId is `@unique` across the whole table - a pass may only ever buy one
+ * tier - so it is generated per call rather than fixed. Two fixtures sharing a
+ * literal would collide on the second test, and the failure would look like a
+ * bug in the rail rather than in the fixture.
+ */
+export async function makeGamePassTier(eventId: string) {
+  const id = uniq();
+  return prisma.ticketTier.create({
+    data: {
+      eventId,
+      name: "Front Row",
+      priceRobux: 250,
+      gamePassId: `gp-${id}`,
       active: true,
       sortOrder: 0,
     },

@@ -67,10 +67,15 @@ export async function hasInventoryGrant(userId: string): Promise<boolean> {
  */
 export async function saveGrant(userId: string, tokens: RobloxTokens) {
   if (!tokens.refresh_token) {
-    // No refresh token means `offline_access` was not granted, and the access token dies
-    // in fifteen minutes. Storing it would be storing a fact that expires before anybody
-    // reads it - and worse, hasInventoryGrant() would start answering "yes" to a grant
-    // that is about to stop working. Store nothing; the caller re-consents.
+    // No refresh token, and the access token dies in fifteen minutes. Storing it would be
+    // storing a fact that expires before anybody reads it - and worse, hasInventoryGrant()
+    // would start answering "yes" to a grant that is about to stop working. Store nothing;
+    // the caller re-consents.
+    //
+    // This is NOT a missing scope, however much it looks like one. Roblox has no
+    // `offline_access` to forget (see INVENTORY_SCOPES in lib/roblox.ts) - a refresh token
+    // is part of the ordinary authorization-code response here. So if this branch is being
+    // taken, suspect the token exchange, not the consent screen.
     return;
   }
 

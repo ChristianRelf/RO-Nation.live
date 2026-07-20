@@ -19,6 +19,12 @@ export default defineConfig({
     env: {
       AUTH_SECRET: "test-secret-not-a-default-0123456789",
       ROBUX_TICKETS_ENABLED: "true",
+      // The third key. Both are required by gamePassSalesAllowed(), so without this
+      // every game-pass test would pass for the wrong reason: "payments_off" is a
+      // refusal, and a suite that only ever sees the switch shut proves nothing about
+      // the rail behind it. The pure-function matrix in gamepass-rail.test.ts passes
+      // its switches explicitly and does not read these.
+      ROBUX_GAMEPASS_ENABLED: "true",
     },
   },
   resolve: {

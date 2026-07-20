@@ -69,6 +69,44 @@ export async function register() {
     );
   }
 
+  // ---- The game-pass rail ------------------------------------------
+  //
+  // This is the only check here that guards MONEY rather than access, and it is
+  // worth being precise about what it can and cannot see.
+  //
+  // The web rail sells a game pass on roblox.com and then verifies the purchase by
+  // asking Roblox whether the buyer owns it - authorised by the buyer's own OAuth
+  // grant (lib/roblox-gamepass.ts). That requires the OAuth app to be registered
+  // with `user.inventory-item:read` and `offline_access`. If it is not, the buyer
+  // pays real Robux and we cannot look, which is the failure the third switch
+  // exists to prevent.
+  //
+  // NO BOOT CHECK CAN SEE THAT. The scopes are a property of an application record
+  // at Roblox, not of this environment, and the only way to find out is to spend a
+  // real grant - which we do not have at startup and must not manufacture. So this
+  // catches the half that IS visible from here: the rail switched on with no OAuth
+  // application at all, which is unambiguously broken. .env.example says the rest.
+  const gamePassOn = process.env.ROBUX_GAMEPASS_ENABLED === "true";
+  const ticketsOn = process.env.ROBUX_TICKETS_ENABLED === "true";
+
+  if (gamePassOn && !(process.env.ROBLOX_CLIENT_ID && process.env.ROBLOX_CLIENT_SECRET)) {
+    problems.push(
+      "ROBUX_GAMEPASS_ENABLED is 'true' but ROBLOX_CLIENT_ID/ROBLOX_CLIENT_SECRET are unset - " +
+        "buyers would be sent to roblox.com to pay and could never be verified as having paid.",
+    );
+  }
+
+  // Not fatal, and deliberately so: gamePassSalesAllowed() requires BOTH keys, so
+  // this combination sells nothing. It fails closed. But an operator who set this
+  // one believes they have switched the web rail on, and they have not - so it is
+  // said out loud rather than left to be discovered on show night.
+  if (gamePassOn && !ticketsOn) {
+    console.warn(
+      "[config] ROBUX_GAMEPASS_ENABLED is 'true' but ROBUX_TICKETS_ENABLED is not - " +
+        "the game-pass rail is INERT. Both keys are required; see .env.example.",
+    );
+  }
+
   if (problems.length > 0) {
     const line = "═".repeat(60);
     const message = [

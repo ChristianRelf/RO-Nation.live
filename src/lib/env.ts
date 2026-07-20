@@ -64,7 +64,9 @@ export const env = {
   // A game pass is bought on roblox.com in a browser, and afterwards we verify it by
   // asking Roblox's Open Cloud whether the buyer owns it - using THEIR OAuth grant. That
   // requires the Roblox OAuth application to be registered with the
-  // `user.inventory-item:read` and `offline_access` scopes.
+  // `user.inventory-item:read` scope. (That is the only one. `offline_access` is NOT a
+  // Roblox scope - refresh tokens come back on their own; see INVENTORY_SCOPES in
+  // lib/roblox.ts, which used to ask for one that does not exist.)
   //
   // If it is not, the failure is the bad kind: the buyer goes to Roblox, pays real
   // Robux, comes back, and we cannot look. They are charged and they have no ticket.

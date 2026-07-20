@@ -9,14 +9,19 @@ import type { FeedEntry } from "@/lib/hub-dashboard";
 // Every line carries WHOSE it is. On one area that is noise; on four it is the
 // difference between "a key was revoked" and "a key was revoked *on Sleep Token*",
 // and the second is the only version worth showing.
+//
+// It was a 360px sidebar card, which fixed the feed's width to the narrowest
+// column on the page and then wrapped every summary onto three lines inside it.
+// Full width and two columns, so a line is a line.
 
 export function ActivityFeed({ entries }: { entries: FeedEntry[] }) {
   const fresh = entries.filter((e) => e.isNew).length;
 
   return (
-    <aside className="card p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-xl uppercase">Recent</h2>
+    <section>
+      <div className="flex items-baseline gap-3">
+        <h2 className="display text-lg leading-none">Lately</h2>
+        <span aria-hidden className="h-px flex-1 bg-line" />
         {/* A count of what is new SINCE LAST TIME, not an unread badge - it can
             only ever be as large as one visit's worth, so it stays meaningful.
             See lib/hub-seen.ts for why there is no persistent unread state. */}
@@ -26,30 +31,34 @@ export function ActivityFeed({ entries }: { entries: FeedEntry[] }) {
           </span>
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-faint">
-        Everything you can see, newest first.
-      </p>
 
       {entries.length ? (
-        <ul className="mt-5 space-y-4">
+        <ul className="mt-5 grid gap-x-10 gap-y-0 lg:grid-cols-2">
           {entries.map((entry) => (
             <li
               key={entry.id}
-              className={
-                entry.isNew
-                  ? "border-l-2 border-accent pl-3"
-                  : "border-l border-line pl-3"
-              }
+              className="group relative flex gap-4 border-b border-line py-3.5"
             >
-              <p className="text-sm leading-snug text-muted">{entry.summary}</p>
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[10px] font-bold uppercase tracking-kicker text-faint">
-                <span className="text-accent">{entry.scopeName}</span>
-                <span aria-hidden>·</span>
-                <span>{entry.when}</span>
-                {entry.isNew ? (
-                  <span className="text-accent">· New</span>
-                ) : null}
-              </p>
+              {/* The marker carries "new" on its own, so the label at the end of
+                  the line is a confirmation rather than the only signal. */}
+              <span
+                aria-hidden
+                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                  entry.isNew ? "bg-accent" : "bg-line-strong"
+                }`}
+              />
+
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-snug text-muted">{entry.summary}</p>
+                <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[10px] font-bold uppercase tracking-kicker text-faint">
+                  <span className={entry.isNew ? "text-accent" : "text-muted"}>
+                    {entry.scopeName}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span>{entry.when}</span>
+                  {entry.isNew ? <span className="text-accent">· New</span> : null}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
@@ -62,6 +71,6 @@ export function ActivityFeed({ entries }: { entries: FeedEntry[] }) {
           here as they happen.
         </p>
       )}
-    </aside>
+    </section>
   );
 }
