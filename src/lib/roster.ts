@@ -37,15 +37,40 @@ export function rosterWhere(
   };
 }
 
-export function findRoster(partnerId: string, kind: RosterKind, q?: string) {
+/** How many entries one page of a roster shows. */
+export const ROSTER_PAGE_SIZE = 50;
+
+/**
+ * A page of one org's list, most recently added first.
+ *
+ * `limit` is REQUIRED, for the same reason `partnerId` is: an unbounded roster
+ * query does not fail loudly either. It works perfectly for a year and then a
+ * blacklist that grew to five thousand people renders five thousand cards, and
+ * the page that dies is the one somebody is standing at a door trying to use.
+ * A caller that genuinely wants everything (an export) can ask for a big take -
+ * but it has to say so.
+ */
+export function findRoster(
+  partnerId: string,
+  kind: RosterKind,
+  q: string | undefined,
+  limit: { take: number; skip?: number },
+) {
   return prisma.rosterEntry.findMany({
     where: rosterWhere(partnerId, kind, q),
     orderBy: { createdAt: "desc" },
+    take: limit.take,
+    skip: limit.skip,
   });
 }
 
-export function countRoster(partnerId: string, kind: RosterKind) {
-  return prisma.rosterEntry.count({ where: { partnerId, kind } });
+/**
+ * How many entries match. Pass `q` to count the SEARCH, omit it for the list
+ * total - paging needs the former ("page 3 of 7 matches") and the header shows
+ * the latter ("of 312 people").
+ */
+export function countRoster(partnerId: string, kind: RosterKind, q?: string) {
+  return prisma.rosterEntry.count({ where: rosterWhere(partnerId, kind, q) });
 }
 
 /** This org's change history, most recent first. */

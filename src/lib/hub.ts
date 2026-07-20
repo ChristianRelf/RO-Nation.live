@@ -53,6 +53,43 @@ export type HubData = {
   signInHref: string;
 };
 
+/** One entry in the portal nav's org switcher - an area, reduced to its front door. */
+export type SwitcherArea = {
+  id: string;
+  kind: HubArea["kind"];
+  name: string;
+  roleLabel: string;
+  canWrite: boolean;
+  href: string;
+  external?: boolean;
+};
+
+/**
+ * The areas, for the switcher in PortalNav's brand slot.
+ *
+ * Crossing from Sleep Token's portal to SHASHA used to mean going up to /hub and
+ * back down again, because the nav is built from ONE basePath and knows nothing
+ * about the others. This is that missing list.
+ *
+ * It is deliberately getHubData() and not a cheaper bespoke query: the whole point
+ * of the hub's design is that one function decides what you may open, by asking the
+ * real guards. A second, faster path to the same answer is exactly how the two
+ * would eventually disagree - and the direction that would hurt is a switcher
+ * offering a door that then bounces you.
+ */
+export async function getPortalSwitcher(): Promise<SwitcherArea[]> {
+  const { areas } = await getHubData();
+  return areas.map((a) => ({
+    id: a.id,
+    kind: a.kind,
+    name: a.name,
+    roleLabel: a.roleLabel,
+    canWrite: a.canWrite,
+    href: a.home.href,
+    external: a.home.external,
+  }));
+}
+
 /** An absolute URL onto the MAIN site - /company lives on ronation.live, not the portal host. */
 const main = (sub: string) => new URL(sub, env.siteUrl).toString();
 

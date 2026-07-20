@@ -1,15 +1,29 @@
 import type { RosterKind } from "@prisma/client";
 import type { RosterScope } from "@/lib/portal-scope";
-import { countRoster, findRoster } from "@/lib/roster";
+import { countRoster, findRoster, ROSTER_PAGE_SIZE } from "@/lib/roster";
 import { RosterAddForm } from "@/components/roster-add-form";
 import { RosterList } from "@/components/roster-list";
+import { RosterPagination } from "@/components/roster-pagination";
 import { RosterSearch } from "@/components/roster-search";
 
 export type RosterSearchParams = {
   q?: string;
+  page?: string;
   ok?: string;
   error?: string;
 };
+
+/**
+ * `?page=` is user input like any other: it arrives from a bookmark, a shared
+ * link, or somebody typing in the address bar. Anything that isn't a page that
+ * exists lands on page 1 rather than erroring - being wrong about which page you
+ * wanted is not worth a 400.
+ */
+function clampPage(raw: string | undefined, pageCount: number) {
+  const n = Number.parseInt(raw ?? "", 10);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, pageCount);
+}
 
 const MESSAGES: Record<string, { tone: "ok" | "bad"; text: string }> = {
   added: { tone: "ok", text: "Added to the list." },
@@ -44,10 +58,24 @@ export async function RosterPage({
   searchParams: RosterSearchParams;
 }) {
   const query = searchParams.q?.trim() || "";
-  const [entries, total] = await Promise.all([
-    findRoster(scope.id, kind, query),
-    countRoster(scope.id, kind),
+
+  // Count before fetching, so the page number can be clamped against something
+  // real. Otherwise ?page=999 - a stale bookmark, or a link shared after some
+  // entries were removed - renders an empty list, which reads as "somebody
+  // deleted the blacklist" rather than "you are past the end".
+  const [matches, totalWhenSearching] = await Promise.all([
+    countRoster(scope.id, kind, query || undefined),
+    query ? countRoster(scope.id, kind) : Promise.resolve(null),
   ]);
+  const total = totalWhenSearching ?? matches;
+
+  const pageCount = Math.max(1, Math.ceil(matches / ROSTER_PAGE_SIZE));
+  const page = clampPage(searchParams.page, pageCount);
+
+  const entries = await findRoster(scope.id, kind, query || undefined, {
+    take: ROSTER_PAGE_SIZE,
+    skip: (page - 1) * ROSTER_PAGE_SIZE,
+  });
 
   const isVip = kind === "VIP";
   const banner = MESSAGES[searchParams.ok ?? searchParams.error ?? ""];
@@ -68,9 +96,11 @@ export async function RosterPage({
               : `Players barred from ${scope.name} events.`}
           </p>
         </div>
+        {/* `matches`, not `entries.length` - that is now one page of them, and
+            "50 of 312 people" for a search that found 200 would be a lie. */}
         <p className="tnum shrink-0 text-sm text-faint">
           {query
-            ? `${entries.length} of ${total} ${total === 1 ? "person" : "people"}`
+            ? `${matches} of ${total} ${total === 1 ? "person" : "people"}`
             : `${total} ${total === 1 ? "person" : "people"}`}
         </p>
       </div>
@@ -102,6 +132,7 @@ export async function RosterPage({
             canWrite={canWrite}
             query={query}
           />
+          <RosterPagination page={page} pageCount={pageCount} />
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">

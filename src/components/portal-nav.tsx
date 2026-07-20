@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { SwitcherArea } from "@/lib/hub";
+import { PortalSwitcher } from "@/components/portal-switcher";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,6 +21,8 @@ export function PortalNav({
   doorLink = false,
   keysLink = false,
   membersLink = false,
+  scopeId,
+  areas = [],
   user,
 }: {
   /** Wordmark in the top-left - "SHASHA", "Sleep Token". */
@@ -50,6 +54,16 @@ export function PortalNav({
    * membership IS a rank in RNL's Roblox group, so there is no list to manage.
    */
   membersLink?: boolean;
+  /**
+   * Which portal this is - "shasha" or the partner slug. Only used to mark the
+   * current entry in the switcher; it authorises nothing.
+   */
+  scopeId: string;
+  /**
+   * Every area this person holds, for the wordmark's switcher. Resolved server-side
+   * by getPortalSwitcher(). Fewer than two and the wordmark stays a plain link.
+   */
+  areas?: SwitcherArea[];
   user: {
     displayName: string;
     // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
@@ -80,16 +94,22 @@ export function PortalNav({
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-bg/85 backdrop-blur">
-      <div className="shell flex h-16 items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <Link href={basePath} className="flex items-baseline gap-2">
-            <span className="display text-2xl tracking-tight">{brand}</span>
-            <span className="hidden text-[10px] font-bold uppercase tracking-kicker text-accent sm:inline">
-              Portal
-            </span>
-          </Link>
+      <div className="shell flex h-16 items-center justify-between gap-4 sm:gap-6">
+        {/* min-w-0 on both this and the nav below is what actually lets the link
+            row scroll. A flex child defaults to min-width:auto - it refuses to
+            shrink below its content - so without these the row of links pushes
+            the header wider than the viewport and the whole PAGE scrolls
+            sideways instead. On an owner's partner portal that is nine links,
+            and the door is a phone tool. */}
+        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+          <PortalSwitcher
+            brand={brand}
+            basePath={basePath}
+            currentId={scopeId}
+            areas={areas}
+          />
 
-          <nav className="flex items-center gap-1">
+          <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
             {links.map((l) => {
               // The overview matches exactly; the rest match by prefix. Without
               // that special case, "/sleeptokenro" would light up on every page.
@@ -116,7 +136,9 @@ export function PortalNav({
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* shrink-0: who you are signed in as, and the way out, never compress
+            to make room for the link row - the link row scrolls instead. */}
+        <div className="flex shrink-0 items-center gap-3">
           <div className="hidden text-right sm:block">
             <p className="text-sm font-semibold leading-tight">
               {user.displayName}

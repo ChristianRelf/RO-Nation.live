@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { partnerBySlug, partnerHasFeature } from "@/lib/partners/registry";
 import { getPartnerUser } from "@/lib/partners/guard";
 import { partnerPortalPath } from "@/lib/partners/urls";
+import { getPortalSwitcher } from "@/lib/hub";
 import { PortalNav } from "@/components/portal-nav";
 import { PortalFooter } from "@/components/portal-footer";
 
@@ -47,6 +48,10 @@ export default async function PartnerPortalLayout({
   const user = await getPartnerUser(partner.slug);
   if (!user) redirect(`${partnerPortalPath(partner.slug)}/login`);
 
+  // Chrome, like the rest of this layout: the switcher lists the doors this person
+  // already holds, and each one guards itself on arrival.
+  const areas = await getPortalSwitcher();
+
   return (
     // Column layout so the footer sits at the bottom of the viewport on short
     // pages rather than floating under the content.
@@ -54,6 +59,8 @@ export default async function PartnerPortalLayout({
       <PortalNav
         brand={partner.name}
         basePath={partnerPortalPath(partner.slug)}
+        scopeId={partner.slug}
+        areas={areas}
         // Every partner has a studio - at minimum they can edit their homepage
         // - so this is always on. Which SECTIONS it offers is what the registry's
         // features decide, inside the studio layout.

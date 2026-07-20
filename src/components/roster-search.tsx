@@ -33,6 +33,10 @@ export function RosterSearch({
     // Result banners shouldn't outlive the search that follows them.
     params.delete("ok");
     params.delete("error");
+    // Nor should the page number. Searching from page 4 with the old one still
+    // set lands you on page 4 of a result set that may only have one page - an
+    // empty list, for a query that actually matched.
+    params.delete("page");
 
     const query = params.toString();
     startTransition(() => {

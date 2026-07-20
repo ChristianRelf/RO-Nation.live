@@ -5,6 +5,9 @@ import { formatDateTime } from "@/lib/format";
 import { RosterSearch } from "@/components/roster-search";
 import { RosterList } from "@/components/roster-list";
 
+/** How many hits per list this preview shows before deferring to the paged list. */
+const PREVIEW_HITS = 8;
+
 /**
  * The portal landing page: one search box over both lists, or - with no query -
  * the counts and the latest changes.
@@ -25,17 +28,31 @@ export async function RosterOverview({
 }) {
   const query = searchParams.q?.trim() || "";
 
-  const [vipCount, blacklistCount, vipHits, blacklistHits, recent] =
+  // This page is a PREVIEW of both lists at once, not either list in full - so it
+  // takes a handful of hits and the true count beside them, and sends you to the
+  // paged list for the rest. A search for "a" here used to fetch and render every
+  // matching entry on both lists.
+  const [vipCount, blacklistCount, vipHits, vipMatches, blacklistHits, blacklistMatches, recent] =
     await Promise.all([
       countRoster(scope.id, "VIP"),
       countRoster(scope.id, "BLACKLIST"),
-      query ? findRoster(scope.id, "VIP", query) : Promise.resolve([]),
-      query ? findRoster(scope.id, "BLACKLIST", query) : Promise.resolve([]),
+      query
+        ? findRoster(scope.id, "VIP", query, { take: PREVIEW_HITS })
+        : Promise.resolve([]),
+      query ? countRoster(scope.id, "VIP", query) : Promise.resolve(0),
+      query
+        ? findRoster(scope.id, "BLACKLIST", query, { take: PREVIEW_HITS })
+        : Promise.resolve([]),
+      query ? countRoster(scope.id, "BLACKLIST", query) : Promise.resolve(0),
       findRosterAudit(scope.id, 6),
     ]);
 
   const vipPath = `${scope.basePath}/vip`;
   const blacklistPath = `${scope.basePath}/blacklist`;
+  // Carry the search through to the full list, so "Open list" continues what you
+  // were doing instead of dropping you at an unfiltered page 1.
+  const withQuery = (path: string) =>
+    query ? `${path}?q=${encodeURIComponent(query)}` : path;
 
   return (
     <div>
@@ -63,12 +80,12 @@ export async function RosterOverview({
 
       {query ? (
         <div className="mt-10 space-y-10">
-          {blacklistHits.length ? (
+          {blacklistMatches ? (
             <section>
               <SectionTitle
                 title="Blacklisted"
-                count={blacklistHits.length}
-                href={blacklistPath}
+                count={blacklistMatches}
+                href={withQuery(blacklistPath)}
                 danger
               />
               <RosterList
@@ -77,14 +94,15 @@ export async function RosterOverview({
                 canWrite={canWrite}
                 query={query}
               />
+              <MoreHits shown={blacklistHits.length} total={blacklistMatches} href={withQuery(blacklistPath)} />
             </section>
           ) : null}
 
           <section>
             <SectionTitle
               title="VIP list"
-              count={vipHits.length}
-              href={vipPath}
+              count={vipMatches}
+              href={withQuery(vipPath)}
             />
             <RosterList
               scope={scope.id}
@@ -92,6 +110,7 @@ export async function RosterOverview({
               canWrite={canWrite}
               query={query}
             />
+            <MoreHits shown={vipHits.length} total={vipMatches} href={withQuery(vipPath)} />
           </section>
         </div>
       ) : (
@@ -144,6 +163,32 @@ export async function RosterOverview({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Only appears when the preview is actually hiding something. Without it, a
+ * search matching 60 people shows 8 and looks like it matched 8.
+ */
+function MoreHits({
+  shown,
+  total,
+  href,
+}: {
+  shown: number;
+  total: number;
+  href: string;
+}) {
+  if (total <= shown) return null;
+
+  return (
+    <Link
+      href={href}
+      className="mt-3 block text-sm text-muted transition-colors hover:text-fg"
+    >
+      Showing {shown} of {total} matches -{" "}
+      <span className="font-semibold text-accent">see them all →</span>
+    </Link>
   );
 }
 
