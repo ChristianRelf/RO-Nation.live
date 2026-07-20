@@ -32,6 +32,11 @@ export default async function PortalLayout({
         basePath="/shasha"
         scopeId="shasha"
         areas={areas}
+        // RNL's own line-up and its door, on the portal host. Both are read tier -
+        // the pages guard themselves, and ShowsTable hides the edit links from a
+        // read-only staffer rather than handing them a link that bounces.
+        showsLink
+        doorLink
         keysLink={user.canWrite}
         user={{
           displayName: user.displayName,

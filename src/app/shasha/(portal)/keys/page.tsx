@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ALL_SCOPES, SCOPE_LABELS } from "@/lib/apikey";
-import { loadApiKeys } from "@/lib/api/keys-view";
+import { keysSummary, loadApiKeys } from "@/lib/api/keys-view";
 import { env } from "@/lib/env";
 import { requireScopeManager, SHASHA_SCOPE } from "@/lib/portal-scope";
 import { ApiKeysPanel } from "@/components/portal/api-keys";
@@ -62,6 +62,7 @@ export default async function ShashaKeysPage() {
         scopeId={SHASHA_SCOPE}
         orgName="RO. Nation LIVE"
         keys={keys}
+        summary={keysSummary(keys)}
         scopeLabels={SCOPE_LABELS}
         allScopes={[...ALL_SCOPES]}
       />

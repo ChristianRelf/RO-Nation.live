@@ -94,6 +94,29 @@ export const ALL_SCOPES: readonly ApiKeyScope[] = [
   "DISCORD_LINK",
 ];
 
+/**
+ * The scopes worth flagging on a key that already holds them.
+ *
+ * Not a permission list and not a warning shown at mint time - the mint form
+ * already explains every scope, and somebody ticking one has decided. This is for
+ * the OTHER moment: reading a list of keys minted months ago by people who have
+ * since left, and wanting to know which of them could take money or take tickets
+ * away. Those two are the ones you would want to find first.
+ *
+ *   TICKETS_PURCHASE  asserts somebody paid, and we cannot check (see llm.txt).
+ *                     A leak here is free paid tickets, forever, silently.
+ *   TICKETS_VOID      cancels a ticket and bars its holder from the show. A leak
+ *                     is a queue of people refused at a door they paid for.
+ *
+ * TICKETS_ISSUE is deliberately NOT here: handing out a free ticket is what a
+ * lobby booth does all night, and flagging the normal case teaches people to
+ * ignore the flag.
+ */
+export const DANGEROUS_SCOPES: readonly ApiKeyScope[] = [
+  "TICKETS_PURCHASE",
+  "TICKETS_VOID",
+];
+
 /** What each scope is called, and what it hands over, in the portal's own words. */
 export const SCOPE_LABELS: Record<
   ApiKeyScope,

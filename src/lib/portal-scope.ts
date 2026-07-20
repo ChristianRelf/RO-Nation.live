@@ -46,6 +46,23 @@ export type RosterScope = {
   basePath: string;
   /** Internal path Next renders at - for revalidatePath(). See partners/urls.ts. */
   routeBase: string;
+  /**
+   * The `partnerId` value on Event, Ticket and ApiKey - the tables that are NOT
+   * roster tables.
+   *
+   * NULL for SHASHA, and that is the whole trap this field exists to close. The
+   * roster is scoped by the STRING "shasha" (see `id` above, and RosterEntry's
+   * default), but RNL's own events, tickets and keys carry NULL, exactly as
+   * Event.partnerId documents. One org, spelled two different ways depending on
+   * which table you are looking at.
+   *
+   * It was already hand-copied in two places - keyPartnerId() in
+   * actions/api-keys.ts and the same expression in lib/api/keys-view.ts - and the
+   * door, the studio and the hub dashboard were about to make it five. It belongs
+   * here for the same reason basePath and routeBase do: resolved once, where the
+   * scope is built, so nothing downstream has to remember the difference.
+   */
+  eventScope: string | null;
 };
 
 export type ScopedActor = {
@@ -64,6 +81,8 @@ export function rosterScope(id: string): RosterScope | null {
       // its public and internal paths are the same string. A partner's are not.
       basePath: "/shasha",
       routeBase: "/shasha",
+      // RNL's own. NULL, not "shasha" - see the field's note.
+      eventScope: null,
     };
   }
 
@@ -75,6 +94,8 @@ export function rosterScope(id: string): RosterScope | null {
     name: partner.name,
     basePath: partnerPortalPath(partner.slug),
     routeBase: partnerPortalRoute(partner.slug),
+    // A partner spells it the same way in every table.
+    eventScope: partner.slug,
   };
 }
 

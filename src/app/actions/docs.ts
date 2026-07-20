@@ -18,6 +18,13 @@ import {
   s,
   uniqueSlug,
 } from "@/lib/content";
+import {
+  AuditAction,
+  AuditActorKind,
+  AuditTarget,
+  COMPANY_SCOPE,
+  recordAudit,
+} from "@/lib/audit";
 
 // The docs are authored here - on the main site, from /company - and read on the
 // portal host at /docs. Same Next app, two hosts; nothing about the write path
@@ -26,6 +33,40 @@ import {
 // Every action opens with requireCompanyUser(). Not one of them takes a partner
 // scope: there is one docs library and it is RNL's, so there is no scope to get
 // wrong. See the note on the Guide model in prisma/schema.prisma.
+
+/**
+ * One audit line for a docs write.
+ *
+ * COMPANY_SCOPE, not SHASHA. The docs library has no partnerId column at all -
+ * there is one library and it is the company's - which is exactly the case that
+ * scope is for. See lib/audit.ts: an RNL *event* is SHASHA's because it has a
+ * partnerId that happens to be NULL; a guide has no such column and is the
+ * company's outright.
+ */
+function logDocs(
+  actor: { robloxId: string; displayName: string },
+  input: {
+    action: AuditAction;
+    target: AuditTarget;
+    targetId?: string;
+    targetName: string;
+    did: string;
+  },
+) {
+  return recordAudit({
+    scope: COMPANY_SCOPE,
+    action: input.action,
+    target: input.target,
+    targetId: input.targetId,
+    targetName: input.targetName,
+    actor: {
+      id: actor.robloxId,
+      name: actor.displayName,
+      kind: AuditActorKind.COMPANY,
+    },
+    summary: `${actor.displayName} ${input.did}`,
+  });
+}
 
 function refreshGuides(slug?: string) {
   revalidatePath("/company/docs");
@@ -46,7 +87,7 @@ export async function createGuide(formData: FormData) {
   }
 
   const slug = await uniqueSlug(data.title, "guide");
-  await prisma.guide.create({
+  const guide = await prisma.guide.create({
     data: {
       ...data,
       slug,
@@ -56,12 +97,21 @@ export async function createGuide(formData: FormData) {
     },
   });
 
+  await logDocs(user, {
+    action:
+      data.status === "PUBLISHED" ? AuditAction.PUBLISHED : AuditAction.CREATED,
+    target: AuditTarget.GUIDE,
+    targetId: guide.id,
+    targetName: guide.title,
+    did: `${data.status === "PUBLISHED" ? "published" : "drafted"} the guide "${guide.title}"`,
+  });
+
   refreshGuides(slug);
   redirect("/company/docs/guides");
 }
 
 export async function updateGuide(formData: FormData) {
-  await requireCompanyUser();
+  const user = await requireCompanyUser();
 
   const id = s(formData, "id");
   const data = readGuideForm(formData);
@@ -82,16 +132,44 @@ export async function updateGuide(formData: FormData) {
     },
   });
 
+  await logDocs(user, {
+    action:
+      existing.status !== "PUBLISHED" && data.status === "PUBLISHED"
+        ? AuditAction.PUBLISHED
+        : AuditAction.UPDATED,
+    target: AuditTarget.GUIDE,
+    targetId: id,
+    targetName: data.title,
+    did:
+      existing.status !== "PUBLISHED" && data.status === "PUBLISHED"
+        ? `published the guide "${data.title}"`
+        : `edited the guide "${data.title}"`,
+  });
+
   refreshGuides(existing.slug);
   redirect("/company/docs/guides");
 }
 
 export async function deleteGuide(formData: FormData) {
-  await requireCompanyUser();
+  const user = await requireCompanyUser();
 
   const id = s(formData, "id");
   if (id) {
     const gone = await prisma.guide.delete({ where: { id } }).catch(() => null);
+
+    // Only if the delete actually returned a row. The .catch above swallows a
+    // missing id into null, and a line about deleting something that was not
+    // there is a line that will be believed later.
+    if (gone) {
+      await logDocs(user, {
+        action: AuditAction.DELETED,
+        target: AuditTarget.GUIDE,
+        targetId: id,
+        targetName: gone.title,
+        did: `deleted the guide "${gone.title}"`,
+      });
+    }
+
     refreshGuides(gone?.slug);
   }
 
@@ -167,7 +245,7 @@ export async function createBrandAsset(formData: FormData) {
     redirect(`${ASSETS}?error=file`);
   }
 
-  await prisma.brandAsset.create({
+  const asset = await prisma.brandAsset.create({
     data: {
       category: s(formData, "category") || "Logos",
       title,
@@ -184,6 +262,17 @@ export async function createBrandAsset(formData: FormData) {
     },
   });
 
+  await logDocs(user, {
+    action: AuditAction.CREATED,
+    target: AuditTarget.ASSET,
+    targetId: asset.id,
+    targetName: asset.title,
+    // Worth naming the visibility: an INTERNAL asset lives on a volume Caddy does
+    // not mount and is reachable only through the gated /files route, so which of
+    // the two somebody uploaded is the interesting half of the act.
+    did: `uploaded the ${asset.visibility === AssetVisibility.INTERNAL ? "internal" : "public"} asset "${asset.title}"`,
+  });
+
   refreshAssets();
   redirect(ASSETS);
 }
@@ -198,7 +287,7 @@ export async function createBrandAsset(formData: FormData) {
  * is somewhere it isn't. To change it, re-upload it.
  */
 export async function updateBrandAsset(formData: FormData) {
-  await requireCompanyUser();
+  const user = await requireCompanyUser();
 
   const id = s(formData, "id");
   const title = s(formData, "title");
@@ -218,12 +307,20 @@ export async function updateBrandAsset(formData: FormData) {
     },
   });
 
+  await logDocs(user, {
+    action: AuditAction.UPDATED,
+    target: AuditTarget.ASSET,
+    targetId: id,
+    targetName: title,
+    did: `edited the asset "${title}"`,
+  });
+
   refreshAssets();
   redirect(ASSETS);
 }
 
 export async function deleteBrandAsset(formData: FormData) {
-  await requireCompanyUser();
+  const user = await requireCompanyUser();
 
   const id = s(formData, "id");
   if (!id) redirect(ASSETS);
@@ -246,6 +343,19 @@ export async function deleteBrandAsset(formData: FormData) {
   }
 
   await prisma.brandAsset.delete({ where: { id } });
+
+  await logDocs(user, {
+    action: AuditAction.DELETED,
+    target: AuditTarget.ASSET,
+    targetId: id,
+    targetName: asset.title,
+    // Says whether the bytes went too, because the two are different acts with
+    // different consequences and the row is gone either way. See the note above.
+    did:
+      asset.visibility === AssetVisibility.INTERNAL
+        ? `deleted the internal asset "${asset.title}" and its file`
+        : `removed the public asset "${asset.title}" from the docs (its file is kept)`,
+  });
 
   refreshAssets();
   redirect(ASSETS);

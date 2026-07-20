@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ALL_SCOPES, SCOPE_LABELS } from "@/lib/apikey";
-import { loadApiKeys } from "@/lib/api/keys-view";
+import { keysSummary, loadApiKeys } from "@/lib/api/keys-view";
 import { requirePartnerManager } from "@/lib/partners/guard";
 import { ApiKeysPanel } from "@/components/portal/api-keys";
 
@@ -45,6 +45,7 @@ export default async function PartnerKeysPage({
         scopeId={user.partner.slug}
         orgName={user.partner.name}
         keys={keys}
+        summary={keysSummary(keys)}
         scopeLabels={SCOPE_LABELS}
         allScopes={[...ALL_SCOPES]}
       />

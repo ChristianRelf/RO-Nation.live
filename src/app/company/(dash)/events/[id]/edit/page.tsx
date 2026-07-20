@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AdminHeader } from "@/components/admin-ui";
 import { EventForm } from "@/components/event-form";
-import { updateEvent } from "@/app/actions/company";
+import { updateStudioEvent } from "@/app/actions/studio-events";
 import { requireCompanyUser } from "@/lib/company";
 import { env } from "@/lib/env";
 import { robuxSalesAllowed } from "@/lib/tickets/pricing";
@@ -41,7 +41,7 @@ export default async function CompanyEditEventPage({
         }}
       />
       <EventForm
-        action={updateEvent}
+        action={updateStudioEvent}
         event={event}
         error={searchParams.error}
         cancelHref="/company/events"

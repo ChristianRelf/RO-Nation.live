@@ -168,19 +168,19 @@ enum SeatMode {
 }
 
 model Event {
-  id           String      @id @default(cuid())
-  slug         String      @unique
+  id           String    @id @default(cuid())
+  slug         String    @unique
   title        String
   tagline      String?
-  description  String      @db.Text
-  category     String      @default("Live Show")
+  description  String    @db.Text
+  category     String    @default("Live Show")
   venue        String? // in-experience location / stage name
   placeUrl     String? // Roblox experience link
   thumbnailUrl String?
   startsAt     DateTime
   endsAt       DateTime?
   doorsAt      DateTime?
-  capacity     Int         @default(0) // 0 = unlimited
+  capacity     Int       @default(0) // 0 = unlimited
 
   /// This show's ticket terms, ONE CLAUSE PER ELEMENT.
   ///
@@ -192,12 +192,12 @@ model Event {
   /// that owns it, so there is nothing to look it up BY. That also keeps it clear of
   /// the `prisma db push` trap documented on Ticket.seatKey - the safest index is
   /// the one nobody was tempted to add.
-  ticketTerms  String[]    @default([])
+  ticketTerms String[] @default([])
 
-  status       EventStatus @default(DRAFT)
-  featured     Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  status    EventStatus @default(DRAFT)
+  featured  Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   /// The Roblox place id, as a STRING (Roblox ids passed 2^31 long ago - same
   /// reasoning as MerchProduct.assetId).
@@ -299,7 +299,7 @@ model MemberNotification {
 
   kind  MemberNotificationKind
   title String
-  body  String? @db.Text
+  body  String?                @db.Text
   url   String?
 
   seenAt    DateTime?
@@ -449,8 +449,8 @@ model Ticket {
   /// as "not recorded" and says nothing - which is the honest answer, because we
   /// genuinely did not record it. No backfill: inventing a snapshot from today's
   /// terms would be worse than admitting the gap.
-  termsSnapshot   String[]  @default([])
-  activatedAt     DateTime? // when the holder "activated" the ticket (reveals QR)
+  termsSnapshot String[]  @default([])
+  activatedAt   DateTime? // when the holder "activated" the ticket (reveals QR)
 
   // Which tier they hold. SetNull, not Cascade: deleting a tier must not delete
   // the tickets people are already holding to a show that is still happening.
@@ -975,9 +975,9 @@ model Survey {
   /// they like - for a recurring check-in, a bug report form, a suggestion box.
   ///
   /// Enforced by SurveyResponse.dedupeKey, not by reading this at insert time.
-  multipleResponses Boolean @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  multipleResponses Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   questions SurveyQuestion[]
   responses SurveyResponse[]
@@ -1205,6 +1205,135 @@ model RosterAudit {
 
   @@index([partnerId, createdAt])
   @@map("roster_audit")
+}
+
+// ------------------------------------------------------------------
+// The universal audit trail.
+//
+// RosterAudit above covers the VIP list and the blacklist, and for a long time it
+// was the ONLY trail in the application. Everything else recorded an actor on the
+// row it wrote - Ticket.issuedByName, ApiKey.createdByName, VenueMap.updatedByName,
+// PartnerMember.addedByName - which answers "who last touched this" and cannot
+// answer "what happened here this week", because there is nothing to order and
+// nothing to read for a row that was deleted.
+//
+// This is that missing table: one append-only line per act, scoped the way the
+// portal is scoped, so the hub can show a person everything that has happened
+// across every area they hold.
+//
+// ---- Why it does not replace RosterAudit (yet) ----------------------------
+//
+// RosterAudit has TYPED columns - kind, robloxId, robloxUsername - and the page
+// that renders it turns them into structured chips with a link to the Roblox
+// profile. Flattened into `meta` below, that page gets worse, not better. It is
+// also the only accountability record that exists, and `prisma db push` runs on
+// every boot, which is not the tooling you want under a backfill.
+//
+// So both are written for now, which costs exactly one insert because all three
+// roster writes already funnel through one helper (actions/portal.ts). Once this
+// table holds ~90 days of ROSTER_ENTRY rows and /audit renders from it, RosterAudit
+// becomes read-only history and can be dropped. That is the plan; without this
+// paragraph it would just be a duplicate nobody dared touch.
+// ------------------------------------------------------------------
+enum AuditAction {
+  CREATED
+  UPDATED
+  DELETED
+  PUBLISHED
+  ARCHIVED
+  /// Access given to a person - a partner member, a SHASHA grant.
+  GRANTED
+  /// Access or a credential taken away - a member removed, a key revoked.
+  REVOKED
+  CHECKED_IN
+  ISSUED
+  VOIDED
+}
+
+enum AuditTarget {
+  ROSTER_ENTRY
+  API_KEY
+  MEMBER
+  EVENT
+  TICKET
+  TIER
+  VENUE_MAP
+  POST
+  CAREER
+  APPLICATION
+  CONTENT
+  GUIDE
+  ASSET
+  SURVEY
+  ENQUIRY
+  MERCH
+  TEAM
+  TESTIMONIAL
+}
+
+/// Which door the write came through. Presentation and filtering only - it
+/// authorises nothing, and must never be read to decide anything.
+enum AuditActorKind {
+  /// A person in portal.ronation.live.
+  PORTAL
+  /// A person in /company on the main site.
+  COMPANY
+  /// An API key, on behalf of a game server. actorId is the ApiKey id.
+  API
+  /// Us - a scheduled job, a migration, a cascade.
+  SYSTEM
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  /// "company", "shasha", or a partner slug - the SAME id namespace as
+  /// RosterScope.id and HubArea.id, so readableScopes() filters this directly.
+  /// Plain column, not an FK - see RosterEntry.partnerId.
+  ///
+  /// Scope follows the DATA, not the door: a ticket checked in at /company/door
+  /// and one checked in at /shasha/door are the same act on the same row, and both
+  /// land here as `partnerId ?? "shasha"`. "company" is reserved for rows that have
+  /// no partnerId column at all - a survey, an enquiry, a team member.
+  scope String
+
+  action AuditAction
+  target AuditTarget
+
+  /// The row this is about, when there is one. Opaque, and never joined on: the
+  /// row may since have been deleted, and this line still has to read.
+  targetId String?
+
+  /// What it was CALLED at the time. Frozen, for the same reason Ticket.tierName
+  /// is - renaming a key must not silently rewrite its history.
+  targetName String
+
+  actorId   String
+  actorName String
+  actorKind AuditActorKind @default(PORTAL)
+
+  /// One human sentence, written at the call site. The feed renders this and
+  /// nothing else, so it has to stand on its own without the columns around it.
+  summary String @db.Text
+
+  /// Structured extras for a detail view: { before, after, role, scopes }.
+  /// Never rendered raw, and nothing authorises off it.
+  meta Json?
+
+  createdAt DateTime @default(now())
+
+  /// The feed's index, and the one that matters: every read filters on scope and
+  /// orders by time.
+  ///
+  /// All three are PLAIN indexes. `prisma db push` runs on every boot and silently
+  /// drops partial indexes and CHECK constraints, so nothing here may depend on
+  /// one - the same warning Ticket.seatKey carries.
+  @@index([scope, createdAt])
+  @@index([scope, target, createdAt])
+  /// "what has this API key actually done" - for the key health surface, once the
+  /// /api/v1 write routes log with actorKind: API.
+  @@index([actorId, createdAt])
+  @@map("audit_log")
 }
 
 // ------------------------------------------------------------------
@@ -1586,14 +1715,14 @@ model BrandAsset {
   id String @id @default(cuid())
 
   /// The heading it sits under. Free text, same reasoning as Guide.section.
-  category    String          @default("Logos")
+  category    String  @default("Logos")
   title       String
-  description String?         @db.Text
+  description String? @db.Text
 
   /// Brand asset, or reusable template/download. See AssetKind. Existing rows
   /// are ASSET.
-  kind AssetKind @default(ASSET)
-  visibility  AssetVisibility @default(PUBLIC)
+  kind       AssetKind       @default(ASSET)
+  visibility AssetVisibility @default(PUBLIC)
 
   /// "rnl/<uuid>.pdf" - relative to the root `visibility` selects. Never a URL,
   /// never absolute, and never built from a name the uploader chose: the stored

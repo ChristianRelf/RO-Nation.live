@@ -26,12 +26,13 @@ export function EventForm({
   /** Where "Cancel" goes - /company and every partner portal share this form. */
   cancelHref?: string;
   /**
-   * The partner whose show this is, when the form is used in a partner portal.
-   * Omitted by RNL's own tools, whose actions don't read it.
+   * Which org's show this is: a partner slug, "shasha" from RNL's own studio, or
+   * omitted entirely by /company (which is how the action knows to run the company
+   * guard rather than a portal one).
    *
-   * Safe to carry in the body: the action does not trust it for authorization -
-   * it re-reads the caller's grant on that partner from the database. See
-   * app/actions/partner-events.ts.
+   * Safe to carry in the body: the action does not trust it for authorization - it
+   * re-reads the caller's standing in that org from the database. See the header
+   * of app/actions/studio-events.ts.
    */
   scope?: string;
   /** The event's existing tiers. Empty = a single free General Admission. */

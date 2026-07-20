@@ -16,6 +16,14 @@ import { cn } from "@/lib/utils";
 // reveal is a panel that has to be dismissed, not a line of text in a table that
 // scrolls away while somebody is looking at their other monitor.
 
+/**
+ * Something worth saying about a key that already exists - "never used", "can
+ * assert a payment". Computed server-side by keyHealth() in lib/api/keys-view.ts,
+ * because it is a judgement about dates and a judgement made in the browser is
+ * made in the browser's clock.
+ */
+export type KeyHealth = { tone: "warn" | "danger"; label: string };
+
 export type KeyRow = {
   id: string;
   name: string;
@@ -26,12 +34,14 @@ export type KeyRow = {
   lastUsedAt: string | null;
   revokedAt: string | null;
   revokedByName: string | null;
+  health: KeyHealth[];
 };
 
 export function ApiKeysPanel({
   scopeId,
   orgName,
   keys,
+  summary,
   scopeLabels,
   allScopes,
 }: {
@@ -39,6 +49,8 @@ export function ApiKeysPanel({
   scopeId: string;
   orgName: string;
   keys: KeyRow[];
+  /** One line for the whole list, from keysSummary() in lib/api/keys-view.ts. */
+  summary?: string;
   scopeLabels: Record<string, { title: string; detail: string }>;
   allScopes: string[];
 }) {
@@ -69,6 +81,13 @@ export function ApiKeysPanel({
               A key lets a Roblox experience talk to {orgName}&rsquo;s tickets - and only{" "}
               {orgName}&rsquo;s. It can never see another organisation&rsquo;s shows.
             </p>
+            {/* The state of the whole list, before you scan it. Per-row chips are
+                easy to miss precisely when there are enough keys to matter. */}
+            {summary ? (
+              <p className="tnum mt-2 text-xs font-semibold uppercase tracking-kicker text-faint">
+                {summary}
+              </p>
+            ) : null}
           </div>
           <button
             type="button"
@@ -275,6 +294,27 @@ function KeyCard({
         )}
       </div>
 
+      {/* Above the scopes, not among them: a scope is what the key may do, and
+          these are what somebody should do about it. Same palette as the hub's
+          attention chips and the roster's audit rows. */}
+      {row.health.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {row.health.map((h) => (
+            <span
+              key={h.label}
+              className={cn(
+                "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                h.tone === "danger"
+                  ? "border-red-500/30 bg-red-500/10 text-red-300"
+                  : "border-amber-400/30 bg-amber-400/10 text-amber-300",
+              )}
+            >
+              {h.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="mt-3 flex flex-wrap gap-1.5">
         {row.scopes.map((s) => (
           <span
@@ -292,7 +332,11 @@ function KeyCard({
         {" · "}
         {/* "Never used" is the useful thing to say about a key somebody is about
             to delete - it means nothing is pointing at it and it is safe to go. */}
-        {row.lastUsedAt ? `last used ${row.lastUsedAt}` : "never used"}
+        {/* touch() is throttled to once a minute and not awaited (lib/apikey.ts),
+            because it sits on the hot path of every door scan. So this is accurate
+            to about the day, and saying so beats implying a precision it has not
+            got - somebody debugging a scanner should not trust it to the minute. */}
+        {row.lastUsedAt ? `last used around ${row.lastUsedAt}` : "never used"}
         {revoked && row.revokedByName ? ` · revoked by ${row.revokedByName}` : ""}
       </p>
     </div>

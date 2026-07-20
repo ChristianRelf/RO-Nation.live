@@ -62,6 +62,14 @@ const PORTAL_PATHS = [
   "/api/auth/dev",
   "/api/auth/logout",
   "/api/health",
+  // Small portal-only endpoints that the pages here call. Today that is the hub's
+  // "you were last here at" marker (a render cannot set a cookie in Next 14, so it
+  // takes a round trip). Without this line the portal branch below forwards it to
+  // the main site, where the fetch would land cross-origin and silently do nothing.
+  //
+  // It is under /api, so PORTAL_PUBLIC_PATHS already lets it past the sign-in gate
+  // - which means the route MUST guard itself. app/api/portal/seen/route.ts does.
+  "/api/portal",
 ];
 
 /**
@@ -368,8 +376,9 @@ function merchRewrite(req: NextRequest, pathname: string) {
   return proceed(req, url);
 }
 
-// `/` on the portal host used to rewrite to the static "backstage portal" landing
-// page (app/portal/page.tsx). It no longer does, and the rewrite is gone with it.
+// `/` on the portal host used to rewrite to a static "backstage portal" landing
+// page. The rewrite went first; the page itself (app/portal/page.tsx) has now been
+// deleted too, having sat unreachable behind the redirects below.
 //
 // That page existed to greet a visitor who might be anybody: it named the host,
 // said "staff and partners only", and offered one link to /hub. Both halves of its
@@ -568,7 +577,9 @@ export function middleware(req: NextRequest) {
     const rewritten = partnerPortalRewrite(req, pathname);
     if (rewritten) return rewritten;
 
-    // The internal path of the page above. It has no URL of its own - `/` is it.
+    // The deleted landing page's old path. Kept as a redirect rather than left to
+    // 404, because it was a real URL people bookmarked and pasted at each other -
+    // and `/` sends them on to /hub, which is where they were trying to get.
     if (pathname === "/portal" || pathname.startsWith("/portal/")) {
       return NextResponse.redirect(new URL("/", req.nextUrl.origin));
     }

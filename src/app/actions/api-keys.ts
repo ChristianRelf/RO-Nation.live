@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import type { ApiKeyScope } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { ALL_SCOPES, mintApiKey } from "@/lib/apikey";
-import { requireScopeManager, SHASHA_SCOPE } from "@/lib/portal-scope";
+import { AuditAction, AuditTarget, recordAudit } from "@/lib/audit";
+import { requireScopeManager } from "@/lib/portal-scope";
 
 // Minting and revoking API keys, from the portal.
 //
@@ -18,16 +19,6 @@ import { requireScopeManager, SHASHA_SCOPE } from "@/lib/portal-scope";
 // trusted: `requireScopeManager(scopeId)` redirects unless the caller genuinely
 // manages that org. Putting it in the body would let anybody who can reach their
 // own portal mint a key for anybody else's, which is the whole game.
-
-/**
- * A portal id ("shasha", "sleeptokenro") → the `partnerId` a key is stamped with.
- *
- * SHASHA is RNL, and RNL's own events carry `partnerId: null` - the same NULL that
- * Event.partnerId uses. That mapping is the reason a key's scope can be compared
- * to an event's partner with a single equality and no special cases.
- */
-const keyPartnerId = (scopeId: string) =>
-  scopeId === SHASHA_SCOPE ? null : scopeId;
 
 export type MintState =
   | { ok: true; token: string; name: string }
@@ -64,12 +55,31 @@ export async function createApiKey(
     };
   }
 
-  const { token } = await mintApiKey({
-    partnerId: keyPartnerId(scope.id),
+  const { key, token } = await mintApiKey({
+    // "shasha" → NULL, which is what RNL's own events carry. That mapping is the
+    // reason a key's org can be compared to an event's with a single equality and
+    // no special cases. See RosterScope.eventScope.
+    partnerId: scope.eventScope,
     name,
     scopes,
     createdById: actor.robloxId,
     createdByName: actor.displayName,
+  });
+
+  // Announced: a new credential that can act on this org from anywhere in the
+  // world is exactly the kind of write somebody should hear about without having
+  // to go and look. The scopes go in meta, so "what could that key do" survives
+  // the key being revoked and forgotten.
+  await recordAudit({
+    scope: scope.id,
+    action: AuditAction.CREATED,
+    target: AuditTarget.API_KEY,
+    targetId: key.id,
+    targetName: name,
+    actor: { id: actor.robloxId, name: actor.displayName },
+    summary: `${actor.displayName} minted the API key "${name}" (${scopes.length} scope${scopes.length === 1 ? "" : "s"})`,
+    meta: { scopes },
+    announce: true,
   });
 
   revalidatePath(`${scope.routeBase}/keys`);
@@ -93,14 +103,41 @@ export async function revokeApiKey(scopeId: string, formData: FormData) {
   const id = String(formData.get("id") || "");
   if (!id) return;
 
-  const partnerId = keyPartnerId(scope.id);
+  const partnerId = scope.eventScope;
 
-  await prisma.apiKey.updateMany({
+  const { count } = await prisma.apiKey.updateMany({
     // The partnerId in the WHERE is the guard, not decoration. An id belonging to
     // another org matches zero rows and writes nothing.
     where: { id, partnerId, revokedAt: null },
     data: { revokedAt: new Date(), revokedByName: actor.displayName },
   });
+
+  // Gated on the write having actually happened. `updateMany` reports zero for
+  // both of the ways this can miss - somebody else's key, or one already revoked -
+  // and neither is a thing to write history about. An audit line saying a manager
+  // revoked a key they never touched is a false accusation with a timestamp on it.
+  if (count > 0) {
+    // Read after the write, not before it: the row is only ours to name once the
+    // scoped update has proved it is ours. `select` rather than the whole row -
+    // `hash` has no business being read here (see lib/api/keys-view.ts).
+    const key = await prisma.apiKey.findFirst({
+      where: { id, partnerId },
+      select: { name: true, scopes: true },
+    });
+    const name = key?.name ?? "a key";
+
+    await recordAudit({
+      scope: scope.id,
+      action: AuditAction.REVOKED,
+      target: AuditTarget.API_KEY,
+      targetId: id,
+      targetName: name,
+      actor: { id: actor.robloxId, name: actor.displayName },
+      summary: `${actor.displayName} revoked the API key "${name}"`,
+      meta: key ? { scopes: key.scopes } : undefined,
+      announce: true,
+    });
+  }
 
   revalidatePath(`${scope.routeBase}/keys`);
 }

@@ -24,20 +24,22 @@ import {
 } from "@/lib/survey-files";
 import {
   parseDate,
-  readEventForm,
   readPostForm,
   resolvePublishedAt,
   s,
   uniqueSlug,
 } from "@/lib/content";
-import { readTiersForm, syncEventTiers } from "@/lib/tickets/tiers-form";
 import { unrevokeTicket, voidTicket } from "@/lib/tickets/issue";
+import {
+  AuditAction,
+  AuditActorKind,
+  AuditTarget,
+  recordAudit,
+  scopeFromPartnerId,
+} from "@/lib/audit";
 import { effectiveTiers } from "@/lib/tickets/pricing";
 import {
-  cancelledNotice,
-  diffEventChange,
   diffTicketChange,
-  notifyEventAudience,
   notifyTicketHolder,
   ticketVoidedNotice,
 } from "@/lib/member-notify";
@@ -84,119 +86,13 @@ function refreshTestimonials() {
 }
 
 // ---- events ------------------------------------------------------
-export async function createEvent(formData: FormData) {
-  await requireCompanyUser();
-
-  const data = readEventForm(formData);
-  const tiers = readTiersForm(formData);
-  if (!data.title || !data.startsAt || !data.description) {
-    redirect("/company/events/new?error=required");
-  }
-  if (tiers === null) redirect("/company/events/new?error=tiers");
-
-  const slug = await uniqueSlug(data.title, "event");
-  const event = await prisma.event.create({
-    data: { ...data, startsAt: data.startsAt!, slug },
-  });
-
-  // A game pass id already spoken for by another tier. The show exists but its tiers did
-  // not save (the sync rolls back whole), so send them back to the editor to fix it rather
-  // than leaving them on a list page wondering where their VIP tier went.
-  const synced = await syncEventTiers(event.id, tiers);
-  if (!synced.ok) {
-    refreshEvents();
-    redirect(`/company/events/${event.id}/edit?error=${synced.reason}`);
-  }
-
-  refreshEvents();
-  redirect("/company/events");
-}
-
-// The Company manages RNL's OWN events. Both writes below match on
-// `partnerId: null` as well as the id, and use the *Many form so that a miss
-// affects zero rows instead of throwing.
 //
-// Rank in RNL's group is what gets you in here, and by itself it says nothing
-// about a partner's shows - without this, a company user could edit or delete a
-// Sleep Token show by pasting its id into the URL. Staff ranked 250+ genuinely
-// may touch a partner's shows, but they do it through that partner's own portal,
-// where the guard has authorised them FOR that partner. Passing one guard is not
-// the same as being allowed to touch the row.
-export async function updateEvent(formData: FormData) {
-  await requireCompanyUser();
-
-  const id = s(formData, "id");
-  const data = readEventForm(formData);
-  const tiers = readTiersForm(formData);
-  if (!id || !data.title || !data.startsAt || !data.description) {
-    redirect(`/company/events/${id}/edit?error=required`);
-  }
-  if (tiers === null) redirect(`/company/events/${id}/edit?error=tiers`);
-
-  // The row as it was, read before the write, so a material change (a new time, a
-  // pulled show) can be diffed and the ticket-holders told. Scoped to RNL's own,
-  // exactly like the update below.
-  const before = await prisma.event.findFirst({
-    where: { id, partnerId: null },
-  });
-
-  const { count } = await prisma.event.updateMany({
-    where: { id, partnerId: null },
-    data: { ...data, startsAt: data.startsAt! },
-  });
-
-  // Fire-and-forget a change-notice to everyone holding or following this show.
-  // Started here, before the tier sync that may redirect, so a saved edit always
-  // notifies. Never throws (see member-notify.ts), so it cannot break the write.
-  if (count > 0 && before) {
-    const notice = diffEventChange(before, data);
-    if (notice) {
-      void notifyEventAudience(
-        { id, slug: before.slug, partnerId: null },
-        notice,
-      );
-    }
-  }
-
-  // Gated on the same check the event write just made: the tier sync matches on
-  // eventId alone, so without this a company user could rewrite a partner's tiers
-  // by pasting their event id - the exact hole `partnerId: null` above closes.
-  if (count > 0) {
-    const synced = await syncEventTiers(id, tiers);
-    if (!synced.ok) {
-      refreshEvents();
-      redirect(`/company/events/${id}/edit?error=${synced.reason}`);
-    }
-  }
-
-  refreshEvents();
-  redirect("/company/events");
-}
-
-export async function deleteEvent(formData: FormData) {
-  await requireCompanyUser();
-
-  const id = s(formData, "id");
-  if (id) {
-    // Deleting a show cascades its tickets and follows away - so the audience for a
-    // "this was cancelled" notice must be gathered BEFORE the delete, not after.
-    // notifyEventAudience is awaited here for exactly that reason.
-    const event = await prisma.event.findFirst({
-      where: { id, partnerId: null },
-    });
-    if (event) {
-      await notifyEventAudience(
-        { id: event.id, slug: event.slug, partnerId: null },
-        cancelledNotice(event.title),
-        { deleted: true },
-      );
-      await prisma.event.deleteMany({ where: { id, partnerId: null } });
-    }
-  }
-
-  refreshEvents();
-  redirect("/company/events");
-}
+// MOVED. createEvent/updateEvent/deleteEvent now live in actions/studio-events.ts,
+// merged with their partner twins into one scoped implementation - they were the
+// same hundred lines written out twice, differing only in the guard, the partnerId
+// and which paths to revalidate. /company/events posts no `scope`, which is how
+// that module knows to run requireCompanyUser() rather than a portal guard, so the
+// rank required here has not changed.
 
 // ---- tickets (attendees) -----------------------------------------
 export async function setTicketStatus(formData: FormData) {
@@ -396,6 +292,32 @@ export async function voidCompanyTicket(formData: FormData) {
     redirect(`/company/tickets/${id}?error=${result.reason}`);
   }
 
+  // Gated on the same alreadyVoid check as the dialog below, and for a related
+  // reason: re-voiding to add a ban writes nothing new about the CANCELLING, so a
+  // second "cancelled this ticket" line would be a second event that never
+  // happened. A ban being added IS news, and is recorded as its own act.
+  await recordAudit({
+    // Scope follows the data, not the door this came through. companyTicket()
+    // matches on `event: { partnerId: null }`, so the show is RNL's by
+    // construction - there is no partnerId to read here because there is only
+    // ever one answer. Written through the helper anyway so the rule stays
+    // visible at the call site rather than baked into a literal.
+    scope: scopeFromPartnerId(null),
+    action: result.banned ? AuditAction.REVOKED : AuditAction.VOIDED,
+    target: AuditTarget.TICKET,
+    targetId: ticket.id,
+    targetName: ticket.code,
+    actor: {
+      id: user.robloxId,
+      name: user.displayName,
+      kind: AuditActorKind.COMPANY,
+    },
+    summary: result.banned
+      ? `${user.displayName} revoked ${ticket.code} and barred its holder from ${ticket.event.title}`
+      : `${user.displayName} voided ${ticket.code} for ${ticket.event.title}`,
+    meta: { reason: reason || null, eventId: ticket.eventId },
+  });
+
   // Only tell them if it was live a moment ago. Re-voiding an already-cancelled ticket to
   // add a ban is idempotent on the write, and it must be idempotent on the dialog too -
   // otherwise a staff member tightening a void into a ban pops a second "your ticket has
@@ -431,15 +353,40 @@ export async function voidCompanyTicket(formData: FormData) {
  * the ban took away.
  */
 export async function liftTicketRevocation(formData: FormData) {
-  await requireCompanyUser();
+  const user = await requireCompanyUser();
 
   const id = s(formData, "ticketId");
   const eventId = s(formData, "eventId");
   if (!id) return;
 
+  // Read before the write, and scoped the same way, so the audit line can name the
+  // ticket rather than its id - and so a pasted partner ticket id names nothing.
+  const ticket = await companyTicket(id);
+
   // null = RNL's own shows. The primitive now takes the scope as a required argument, so
   // this cannot reach a partner's ticket even with a pasted id.
   await unrevokeTicket(id, null);
+
+  // Un-banning is exactly as worth recording as banning. It is the deliberate act
+  // this function's header describes, and a trail that logs only the punishment is
+  // a trail that makes every lifted ban look permanent forever after.
+  if (ticket) {
+    await recordAudit({
+      // RNL's by construction - see the note in voidCompanyTicket above.
+      scope: scopeFromPartnerId(null),
+      action: AuditAction.UPDATED,
+      target: AuditTarget.TICKET,
+      targetId: ticket.id,
+      targetName: ticket.code,
+      actor: {
+        id: user.robloxId,
+        name: user.displayName,
+        kind: AuditActorKind.COMPANY,
+      },
+      summary: `${user.displayName} lifted the ban on ${ticket.code} for ${ticket.event.title}`,
+      meta: { eventId: ticket.eventId },
+    });
+  }
 
   refreshTickets(id);
   if (eventId) revalidatePath(`/company/events/${eventId}/attendees`);

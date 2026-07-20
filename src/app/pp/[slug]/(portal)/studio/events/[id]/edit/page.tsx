@@ -8,9 +8,9 @@ import {
 } from "@/lib/partners/guard";
 import { partnerPortalPath } from "@/lib/partners/urls";
 import {
-  deletePartnerEvent,
-  updatePartnerEvent,
-} from "@/app/actions/partner-events";
+  deleteStudioEvent,
+  updateStudioEvent,
+} from "@/app/actions/studio-events";
 import { EventForm } from "@/components/event-form";
 import { ConfirmButton } from "@/components/confirm-button";
 import { env } from "@/lib/env";
@@ -57,7 +57,7 @@ export default async function EditPartnerShowPage({
             {event.venueMapId ? "Venue & seating" : "+ Add a venue"}
           </Link>
 
-          <form action={deletePartnerEvent}>
+          <form action={deleteStudioEvent}>
             <input type="hidden" name="scope" value={partner.slug} />
             <input type="hidden" name="id" value={event.id} />
             <ConfirmButton
@@ -71,7 +71,7 @@ export default async function EditPartnerShowPage({
       </div>
 
       <EventForm
-        action={updatePartnerEvent}
+        action={updateStudioEvent}
         event={event}
         error={searchParams.error}
         cancelHref={base}

@@ -12,6 +12,15 @@ import {
   saveVenueLayout,
 } from "@/lib/venue/form";
 import { presetLayout } from "@/lib/venue/presets";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import {
+  AuditAction,
+  AuditActorKind,
+  AuditTarget,
+  recordAudit,
+  scopeFromPartnerId,
+} from "@/lib/audit";
 
 // Venue maps, for RNL and for every partner.
 //
@@ -25,6 +34,56 @@ import { presetLayout } from "@/lib/venue/presets";
 // scope each one passes to the lib is the scope its own guard just proved.
 
 const s = (form: FormData, key: string) => String(form.get(key) || "");
+
+/**
+ * One audit line for a venue write.
+ *
+ * `scope` here is the partnerId the guard proved - null for RNL - so it goes
+ * through scopeFromPartnerId() like every other non-roster table. The pairs of
+ * exports above deliberately do not share a guard; they can share this, because it
+ * takes the already-proven scope rather than reading one.
+ */
+/**
+ * A venue map's name, for the audit line.
+ *
+ * It lives on the VenueMap row, not in the layout JSON the form posts - the layout
+ * is geometry, and the name is what a person calls the room. Scoped, so an id from
+ * another org names nothing rather than leaking a title.
+ */
+async function venueName(id: string, scope: string | null) {
+  const map = await prisma.venueMap.findFirst({
+    where: { id, partnerId: scope },
+    select: { name: true },
+  });
+  return map?.name ?? "a venue";
+}
+
+function logVenue(
+  scope: string | null,
+  actor: { robloxId: string; username: string },
+  input: {
+    action: AuditAction;
+    targetId?: string;
+    targetName: string;
+    did: string;
+    meta?: Prisma.InputJsonValue;
+  },
+) {
+  return recordAudit({
+    scope: scopeFromPartnerId(scope),
+    action: input.action,
+    target: AuditTarget.VENUE_MAP,
+    targetId: input.targetId,
+    targetName: input.targetName,
+    actor: {
+      id: actor.robloxId,
+      name: actor.username,
+      kind: scope ? AuditActorKind.PORTAL : AuditActorKind.COMPANY,
+    },
+    summary: `${actor.username} ${input.did}`,
+    meta: input.meta,
+  });
+}
 
 // ---- RNL's own -------------------------------------------------------------
 
@@ -54,6 +113,14 @@ export async function saveCompanyVenue(formData: FormData) {
     );
   }
 
+  const savedName = await venueName(id, null);
+  await logVenue(null, user, {
+    action: AuditAction.UPDATED,
+    targetId: id,
+    targetName: savedName,
+    did: `edited the venue "${savedName}"`,
+  });
+
   revalidatePath("/company/venues");
   revalidatePath(`/company/venues/${id}/edit`);
   redirect("/company/venues");
@@ -77,6 +144,13 @@ export async function createCompanyVenue(formData: FormData) {
     actorName: user.username,
   });
 
+  await logVenue(null, user, {
+    action: AuditAction.CREATED,
+    targetId: map.id,
+    targetName: name,
+    did: `created the venue "${name}"`,
+  });
+
   revalidatePath("/company/venues");
   redirect(`/company/venues/${map.id}/edit`);
 }
@@ -95,6 +169,18 @@ export async function attachCompanyVenue(formData: FormData) {
     actorId: user.robloxId,
     actorName: user.username,
   });
+
+  // Only on success. cloneTemplateOnto refuses a template that is not this org's,
+  // and a line saying a room was attached when it was not is worse than silence.
+  if (result.ok) {
+    await logVenue(null, user, {
+      action: AuditAction.UPDATED,
+      targetId: eventId,
+      targetName: "seating",
+      did: "attached a venue map to a show",
+      meta: { eventId, templateId },
+    });
+  }
 
   revalidatePath(`/company/events/${eventId}/edit`);
   redirect(
@@ -137,6 +223,14 @@ export async function savePartnerVenue(formData: FormData) {
   // browser is on. `base` is the public path and is right for the redirect below - hand it
   // to revalidatePath instead and it matches no route, throws nothing, and the venue list
   // simply keeps serving the layout you just replaced. See lib/partners/urls.ts.
+  const savedName = await venueName(id, partner.slug);
+  await logVenue(partner.slug, user, {
+    action: AuditAction.UPDATED,
+    targetId: id,
+    targetName: savedName,
+    did: `edited the venue "${savedName}"`,
+  });
+
   revalidatePath(partnerPortalRoute(partner.slug, "/studio/venues"));
   revalidatePath(partnerPortalRoute(partner.slug, `/studio/venues/${id}/edit`));
   redirect(base);
@@ -162,6 +256,13 @@ export async function createPartnerVenue(formData: FormData) {
     actorName: user.username,
   });
 
+  await logVenue(partner.slug, user, {
+    action: AuditAction.CREATED,
+    targetId: map.id,
+    targetName: name,
+    did: `created the venue "${name}"`,
+  });
+
   revalidatePath(partnerPortalRoute(partner.slug, "/studio/venues"));
   redirect(`${base}/${map.id}/edit`);
 }
@@ -184,6 +285,16 @@ export async function attachPartnerVenue(formData: FormData) {
     actorId: user.robloxId,
     actorName: user.username,
   });
+
+  if (result.ok) {
+    await logVenue(partner.slug, user, {
+      action: AuditAction.UPDATED,
+      targetId: eventId,
+      targetName: "seating",
+      did: "attached a venue map to a show",
+      meta: { eventId, templateId },
+    });
+  }
 
   revalidatePath(partnerPortalRoute(partner.slug, `/studio/events/${eventId}/edit`));
   revalidatePath(partnerPortalRoute(partner.slug, `/studio/events/${eventId}/venue`));

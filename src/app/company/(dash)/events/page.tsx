@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
-import { deleteEvent } from "@/app/actions/company";
+import { deleteStudioEvent } from "@/app/actions/studio-events";
 import { formatDateTime, isPast } from "@/lib/format";
 import { requireCompanyUser } from "@/lib/company";
 
@@ -76,7 +76,7 @@ export default async function CompanyEventsPage() {
                         >
                           Edit
                         </Link>
-                        <form action={deleteEvent}>
+                        <form action={deleteStudioEvent}>
                           <input type="hidden" name="id" value={e.id} />
                           <ConfirmButton
                             className="text-faint hover:text-red-400"

@@ -76,6 +76,17 @@ export type SwitcherArea = {
  * real guards. A second, faster path to the same answer is exactly how the two
  * would eventually disagree - and the direction that would hurt is a switcher
  * offering a door that then bounces you.
+ *
+ * It is just as deliberately NOT getHubDashboard() (lib/hub-dashboard.ts). That
+ * function is this one plus around eight aggregates - next show, tickets sold,
+ * roster counts, drafts, key health, the activity feed - and it exists because the
+ * hub wants them and no other page does. THIS function runs inside PortalNav, on
+ * every SHASHA and every partner page load. Reaching for the richer one here
+ * because it "has everything" would put a capacity meter's groupBy in the path of
+ * somebody opening a blacklist at a door, on a laptop, mid-queue.
+ *
+ * The split between them is DATA, never authorization: the dashboard decorates the
+ * areas this returns and has no way to add one.
  */
 export async function getPortalSwitcher(): Promise<SwitcherArea[]> {
   const { areas } = await getHubData();
@@ -145,6 +156,12 @@ export async function getHubData(): Promise<HubData> {
       blurb: "RO. Nation LIVE's own VIP list and blacklist.",
       home: { label: "Open SHASHA", href: "/shasha" },
       links: [
+        // RNL's own line-up and door, on the portal host rather than over on
+        // /company. Both read tier, so they are offered to everybody who gets this
+        // far - which is the point of them existing. Kept in the same order as
+        // PortalNav's items so the hub card and the nav read as one thing.
+        { label: "Shows", href: "/shasha/shows" },
+        { label: "Door", href: "/shasha/door" },
         { label: "VIP list", href: "/shasha/vip" },
         { label: "Blacklist", href: "/shasha/blacklist" },
         { label: "History", href: "/shasha/audit" },

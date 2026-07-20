@@ -4,7 +4,7 @@ import {
   requirePartnerManager,
 } from "@/lib/partners/guard";
 import { partnerPortalPath } from "@/lib/partners/urls";
-import { createPartnerEvent } from "@/app/actions/partner-events";
+import { createStudioEvent } from "@/app/actions/studio-events";
 import { EventForm } from "@/components/event-form";
 import { env } from "@/lib/env";
 import { robuxSalesAllowed } from "@/lib/tickets/pricing";
@@ -39,7 +39,7 @@ export default async function NewPartnerShowPage({
       </div>
 
       <EventForm
-        action={createPartnerEvent}
+        action={createStudioEvent}
         error={searchParams.error}
         cancelHref={base}
         scope={partner.slug}

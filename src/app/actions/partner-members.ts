@@ -9,6 +9,12 @@ import { requirePartnerOwner } from "@/lib/partners/guard";
 import { partnerBySlug } from "@/lib/partners/registry";
 import { partnerPortalPath, partnerPortalRoute } from "@/lib/partners/urls";
 import { SHASHA_SCOPE } from "@/lib/shasha";
+import {
+  AuditAction,
+  AuditActorKind,
+  AuditTarget,
+  recordAudit,
+} from "@/lib/audit";
 import { resolveRobloxUser } from "@/lib/roblox-users";
 import { s } from "@/lib/content";
 
@@ -49,7 +55,16 @@ import { s } from "@/lib/content";
 //      public path matches no route, throws nothing, and the list simply keeps serving
 //      stale after a write."
 
-type Door = { slug: string; actor: { robloxId: string; displayName: string } };
+type Door = {
+  slug: string;
+  actor: { robloxId: string; displayName: string };
+  /**
+   * Which door was actually opened, for the audit trail's actorKind. Recorded, not
+   * consulted - it is presentation, exactly as the enum's comment says, and the
+   * guard above it has already decided everything that matters.
+   */
+  kind: AuditActorKind;
+};
 
 /**
  * Run the guard that matches where this request came from, and return the partner slug
@@ -74,6 +89,7 @@ async function open(formData: FormData): Promise<Door> {
     return {
       slug: SHASHA_SCOPE,
       actor: { robloxId: user.robloxId, displayName: user.displayName },
+      kind: AuditActorKind.COMPANY,
     };
   }
 
@@ -88,6 +104,7 @@ async function open(formData: FormData): Promise<Door> {
     return {
       slug: partner.slug,
       actor: { robloxId: user.robloxId, displayName: user.displayName },
+      kind: AuditActorKind.COMPANY,
     };
   }
 
@@ -95,6 +112,7 @@ async function open(formData: FormData): Promise<Door> {
   return {
     slug: partner.slug,
     actor: { robloxId: user.robloxId, displayName: user.displayName },
+    kind: AuditActorKind.PORTAL,
   };
 }
 
@@ -130,7 +148,7 @@ async function isLastOwner(slug: string, robloxId: string): Promise<boolean> {
 }
 
 export async function addPartnerMember(formData: FormData) {
-  const { slug, actor } = await open(formData);
+  const { slug, actor, kind } = await open(formData);
 
   const query = s(formData, "robloxId");
   const role = s(formData, "role").toUpperCase();
@@ -170,12 +188,28 @@ export async function addPartnerMember(formData: FormData) {
     throw err;
   }
 
+  // Announced. Granting somebody access to an organisation's blacklist, door and
+  // keys is the write this file's header calls the most dangerous in the
+  // application - "and nothing anywhere would show it had happened". Now something
+  // does, in two places: the trail, and the org's Discord channel.
+  await recordAudit({
+    scope: slug,
+    action: AuditAction.GRANTED,
+    target: AuditTarget.MEMBER,
+    targetId: profile.robloxId,
+    targetName: profile.username,
+    actor: { id: actor.robloxId, name: actor.displayName, kind },
+    summary: `${actor.displayName} gave ${profile.username} ${role} access`,
+    meta: { role, robloxId: profile.robloxId },
+    announce: true,
+  });
+
   refresh(slug);
   redirect(home(formData, slug, "?ok=added"));
 }
 
 export async function setPartnerMemberRole(formData: FormData) {
-  const { slug } = await open(formData);
+  const { slug, actor, kind } = await open(formData);
 
   const id = s(formData, "id");
   const role = s(formData, "role").toUpperCase();
@@ -202,17 +236,33 @@ export async function setPartnerMemberRole(formData: FormData) {
 
   // { id, partnerId } together, via updateMany. A miss affects zero rows rather than
   // reaching into another partner's list.
-  await prisma.partnerMember.updateMany({
+  const { count } = await prisma.partnerMember.updateMany({
     where: { id, partnerId: slug },
     data: { role: role as PartnerRole },
   });
+
+  // Gated on the write, not the request - see the note in lib/audit.ts. `member`
+  // was read above under the same { id, partnerId } match, so it names the right
+  // person; `count` is what proves the change actually landed.
+  if (count > 0) {
+    await recordAudit({
+      scope: slug,
+      action: AuditAction.UPDATED,
+      target: AuditTarget.MEMBER,
+      targetId: member.robloxId,
+      targetName: member.robloxUsername,
+      actor: { id: actor.robloxId, name: actor.displayName, kind },
+      summary: `${actor.displayName} changed ${member.robloxUsername} from ${member.role} to ${role}`,
+      meta: { from: member.role, to: role, robloxId: member.robloxId },
+    });
+  }
 
   refresh(slug);
   redirect(home(formData, slug, "?ok=role"));
 }
 
 export async function removePartnerMember(formData: FormData) {
-  const { slug } = await open(formData);
+  const { slug, actor, kind } = await open(formData);
 
   const id = s(formData, "id");
   if (!id) redirect(home(formData, slug));
@@ -230,7 +280,26 @@ export async function removePartnerMember(formData: FormData) {
     redirect(home(formData, slug, "?error=lastowner"));
   }
 
-  await prisma.partnerMember.deleteMany({ where: { id, partnerId: slug } });
+  const { count } = await prisma.partnerMember.deleteMany({
+    where: { id, partnerId: slug },
+  });
+
+  // Announced, for the same reason the grant is: access quietly disappearing is as
+  // worth hearing about as access quietly appearing, and the person it happened to
+  // will otherwise find out by being bounced at a door mid-show.
+  if (count > 0) {
+    await recordAudit({
+      scope: slug,
+      action: AuditAction.REVOKED,
+      target: AuditTarget.MEMBER,
+      targetId: member.robloxId,
+      targetName: member.robloxUsername,
+      actor: { id: actor.robloxId, name: actor.displayName, kind },
+      summary: `${actor.displayName} removed ${member.robloxUsername}'s access`,
+      meta: { role: member.role, robloxId: member.robloxId },
+      announce: true,
+    });
+  }
 
   refresh(slug);
   redirect(home(formData, slug, "?ok=removed"));

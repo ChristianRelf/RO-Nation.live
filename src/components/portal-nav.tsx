@@ -19,6 +19,7 @@ export function PortalNav({
   basePath,
   studioLink = false,
   doorLink = false,
+  showsLink = false,
   keysLink = false,
   membersLink = false,
   scopeId,
@@ -36,10 +37,24 @@ export function PortalNav({
    */
   studioLink?: boolean;
   /**
-   * The manual ticket check. Only for an org that HAS shows - SHASHA has none,
-   * and a partner without the events feature has no tickets to check.
+   * The manual ticket check. Only for an org that HAS shows - a partner without
+   * the events feature has no tickets to check.
+   *
+   * SHASHA has shows: RNL's own, the NULL-partnered ones. It simply had no door of
+   * its own until the portal grew one, and its crew were sent to /company/door on
+   * the main site instead - a different host, and a page a read-only staffer
+   * cannot even open. See authorise() in app/actions/door.ts.
    */
   doorLink?: boolean;
+  /**
+   * The line-up, on the portal host.
+   *
+   * SHASHA only. A partner's shows are reached through Studio, and their /shows
+   * path is a permanent redirect into it - so a second item pointing at the same
+   * place would be one item too many. RNL has both because /company/events still
+   * exists on the main site; this is the copy that does not leave the portal.
+   */
+  showsLink?: boolean;
   /**
    * API keys. Managers only - the page itself refuses read-only staff, and a nav
    * item that bounces you is worse than no nav item. Hiding it is courtesy;
@@ -83,6 +98,7 @@ export function PortalNav({
     // retyping a URL. An absolute portal-host path, so it is right from a partner portal too.
     { label: "◈ Hub", href: "/hub" },
     { label: "Overview", href: basePath },
+    ...(showsLink ? [{ label: "Shows", href: `${basePath}/shows` }] : []),
     ...(doorLink ? [{ label: "Door", href: `${basePath}/door` }] : []),
     ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),
     { label: "VIP list", href: `${basePath}/vip` },

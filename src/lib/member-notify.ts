@@ -8,8 +8,9 @@ import { partnerOrigin } from "./partners/urls";
 // Telling the people who care when something changes under them.
 //
 // The whole point: a member holding a ticket to a show that gets rescheduled or cancelled
-// must not learn it at the (wrong) door. So the four event write actions - updateEvent,
-// deleteEvent and their partner twins - run a diff and fan a notice out to everyone affected.
+// must not learn it at the (wrong) door. So the event write actions - updateStudioEvent and
+// deleteStudioEvent, which serve RNL and every partner alike (actions/studio-events.ts) -
+// run a diff and fan a notice out to everyone affected.
 //
 // Two halves, in this order: the EVENT half (a broadcast - one change, every holder and
 // follower) and the TICKET half further down (one member, because their own row was edited

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AdminHeader } from "@/components/admin-ui";
 import { EventForm } from "@/components/event-form";
-import { createEvent } from "@/app/actions/company";
+import { createStudioEvent } from "@/app/actions/studio-events";
 import { requireCompanyUser } from "@/lib/company";
 import { env } from "@/lib/env";
 import { robuxSalesAllowed } from "@/lib/tickets/pricing";
@@ -22,7 +22,7 @@ export default async function CompanyNewEventPage({
         subtitle="Fill in the details, then publish when you're ready to open tickets."
       />
       <EventForm
-        action={createEvent}
+        action={createStudioEvent}
         error={searchParams.error}
         cancelHref="/company/events"
         robuxEnabled={robuxSalesAllowed(null, env.robuxTickets)}

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, RosterAction, RosterKind } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { AuditAction, AuditTarget, recordAudit } from "@/lib/audit";
 import {
   requireScopeManager,
   requireScopeUser,
@@ -74,6 +75,22 @@ function refresh(scope: RosterScope, kind: RosterKind) {
   revalidatePath(`${scope.routeBase}/audit`);
 }
 
+/** RosterAudit's verbs, in the universal trail's vocabulary. */
+const AUDIT_ACTION: Record<RosterAction, AuditAction> = {
+  ADDED: AuditAction.CREATED,
+  UPDATED: AuditAction.UPDATED,
+  REMOVED: AuditAction.DELETED,
+};
+
+/**
+ * Write the history for a roster change - to BOTH trails.
+ *
+ * RosterAudit is the typed, roster-shaped one the /audit page renders as chips
+ * with a profile link. AuditLog is the universal one the hub's cross-area feed
+ * reads. They coexist deliberately and this is the single place that has to know
+ * it, because all three roster writes come through here. See the AuditLog model's
+ * comment for the deprecation path.
+ */
 async function audit(
   { scope, actor }: ScopedActor,
   action: RosterAction,
@@ -91,6 +108,18 @@ async function audit(
       actorName: actor.displayName,
       summary,
     },
+  });
+
+  await recordAudit({
+    scope: scope.id,
+    action: AUDIT_ACTION[action],
+    target: AuditTarget.ROSTER_ENTRY,
+    targetName: entry.robloxUsername,
+    actor: { id: actor.robloxId, name: actor.displayName },
+    summary,
+    // The typed columns RosterAudit has and the universal table does not. Kept so
+    // the feed can render a kind chip and link a profile without a second read.
+    meta: { kind: entry.kind, robloxId: entry.robloxId },
   });
 }
 
