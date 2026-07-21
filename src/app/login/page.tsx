@@ -54,16 +54,19 @@ import { PortalFooter } from "@/components/portal-footer";
 
 // ---- Why this page looks the way it does ----------------------------------
 //
-// It used to be a centred card under a marketing-sized headline, which is the
-// shape of a signup page for a product you are about to buy. This is neither: it
-// is the front door of a staff system, and it should say so before anybody reads
-// a word - a portal bar across the top, the doors this credential opens listed
-// beside the panel, and the destination you were heading for quoted back at you.
+// A single sign-on screen, on purpose. It has been two shapes before this and both
+// were wrong: a marketing-sized headline over a centred card (a signup page for a
+// product you are about to buy), and then a two-column estate-and-panel layout that
+// still led with product copy. This is neither. It is the front door of a staff
+// system reached through ONE identity provider - Roblox, via authorise.ronation.live,
+// which every host borrows (lib/sso.ts) - so it now looks like exactly that: a
+// focused, centred sign-on card that names the provider, quotes the destination you
+// were heading for, and lists - compactly, as chips - the areas one credential opens.
 //
-// The list on the left is deliberately static copy, NOT resolved access. Nobody
-// is signed in on this page, so there is nothing to resolve; /hub is the page
-// that knows which of these you actually hold, and it says so per account. This
-// is a description of the estate, which is the same for everyone.
+// The area list is deliberately static copy, NOT resolved access. Nobody is signed
+// in on this page, so there is nothing to resolve; /hub is the page that knows which
+// of these you actually hold, and it says so per account. This is a description of
+// the estate, which is the same for everyone.
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -167,121 +170,132 @@ export default async function PortalLoginPage({
         <div className="accent-glow pointer-events-none absolute inset-x-0 top-0 h-72" />
         <div className="hairline-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(120%_80%_at_50%_0%,#000,transparent_70%)]" />
 
-        <div className="shell relative py-12 sm:py-20">
-          <div className="grid items-start gap-10 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-16">
-            {/* ---- What is behind the door ---------------------------------- */}
-            <div className="max-w-xl">
-              <p className="text-[11px] font-semibold uppercase tracking-kicker text-accent">
-                Staff sign-in
+        {/* One focused column, centred. A single sign-on screen, not a landing page. */}
+        <div className="shell relative flex min-h-full items-center justify-center py-12 sm:py-16">
+          <div className="w-full max-w-md">
+            {/* Who you are signing in to. The mark + realm, the way an SSO screen
+                names the thing you are about to be let into. */}
+            <div className="mb-8 flex flex-col items-center text-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/brandassets/square/RNL_square_logo_no_fan.jpg"
+                alt="RO. Nation LIVE"
+                width={56}
+                height={56}
+                className="h-14 w-14 rounded-brand border border-line object-contain"
+              />
+              <p className="mt-4 text-[11px] font-semibold uppercase tracking-kicker text-accent">
+                Single sign-on
               </p>
-              <h1 className="display mt-4 text-5xl sm:text-6xl">
-                Everything behind
-                <br />
-                the curtain.
-              </h1>
-              <p className="mt-5 text-sm text-muted">
+              <h1 className="display mt-2 text-4xl">Backstage sign-in</h1>
+              <p className="mt-3 max-w-sm text-sm text-muted">
                 One Roblox account opens every backstage area you hold. Sign in
-                once here and every portal on this host knows who you are.
+                once and every portal on this host knows who you are.
               </p>
-
-              <dl className="mt-8 border-t border-line">
-                {AREAS.map((area) => (
-                  <div
-                    key={area.name}
-                    className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line py-3"
-                  >
-                    <dt className="w-40 shrink-0 text-[11px] font-bold uppercase tracking-kicker text-fg">
-                      {area.name}
-                    </dt>
-                    <dd className="flex-1 text-sm text-muted">{area.blurb}</dd>
-                  </div>
-                ))}
-              </dl>
             </div>
 
-            {/* ---- The panel ------------------------------------------------ */}
-            <div className="w-full">
-              <div className="card overflow-hidden">
-                <div className="flex items-center justify-between gap-3 border-b border-line bg-elev px-6 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-kicker text-faint">
-                    Access
-                  </p>
-                  <p className="font-mono text-[10px] uppercase tracking-wide text-faint">
-                    Roblox OAuth
-                  </p>
-                </div>
+            {/* The sign-on card, named by its identity provider. */}
+            <div className="card overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-line bg-elev px-6 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-kicker text-faint">
+                  Identity provider
+                </p>
+                <p className="font-mono text-[10px] uppercase tracking-wide text-faint">
+                  Roblox OAuth
+                </p>
+              </div>
 
-                <div className="p-6">
-                  {message ? (
-                    <p
-                      role="alert"
-                      className="mb-4 rounded-brand border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
-                    >
-                      {message}
+              <div className="p-6">
+                {message ? (
+                  <p
+                    role="alert"
+                    className="mb-4 rounded-brand border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                  >
+                    {message}
+                  </p>
+                ) : null}
+
+                {/* Quote the destination back - the "to continue to X" every SSO
+                    screen shows. A deep link that bounced here reads as "sign in
+                    and carry on", not "you were moved". */}
+                <div className="mb-5 rounded-brand border border-line bg-elev px-4 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-kicker text-faint">
+                    Signing in to continue to
+                  </p>
+                  <p className="mt-1 break-all font-mono text-sm text-fg">
+                    {returnTo}
+                  </p>
+                  {!resuming ? (
+                    <p className="mt-1 text-xs text-faint">
+                      Your hub - every door your account holds.
                     </p>
                   ) : null}
-
-                  {/* Quote the destination back. A deep link that bounced here
-                      reads as "sign in and carry on", not "you were moved". */}
-                  <div className="mb-5 border-l-2 border-accent/60 pl-3">
-                    <p className="text-[10px] font-bold uppercase tracking-kicker text-faint">
-                      Continuing to
-                    </p>
-                    <p className="mt-1 break-all font-mono text-sm text-fg">
-                      {returnTo}
-                    </p>
-                    {!resuming ? (
-                      <p className="mt-1 text-xs text-faint">
-                        Your hub - every door your account holds.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <a
-                    href={robloxConfigured ? signInHref : undefined}
-                    className={`btn w-full ${
-                      robloxConfigured
-                        ? "btn-accent"
-                        : "btn-ghost pointer-events-none opacity-40"
-                    }`}
-                    aria-disabled={!robloxConfigured}
-                  >
-                    Sign in with Roblox
-                  </a>
-
-                  {/* Says the thing that makes the NEXT screen make sense. Signing
-                      in always works - any Roblox account can complete the round
-                      trip - and it is not the same as being let in. Somebody who
-                      reads this first is not surprised by a "no access" card. */}
-                  <p className="mt-4 text-xs text-faint">
-                    {robloxConfigured ? (
-                      <>
-                        Use the Roblox account your access is on. Signing in
-                        identifies you; what you can open is decided by your rank
-                        in RNL&apos;s group or the access a partner granted you.
-                      </>
-                    ) : (
-                      <>{ERRORS["not-configured"]}</>
-                    )}
-                  </p>
                 </div>
-              </div>
 
-              <div className="mt-5 space-y-2">
-                <p className="text-xs text-faint">
-                  Just been promoted or granted access? Ranks can take a few
-                  minutes to take effect here.
-                </p>
-                <p className="text-xs text-faint">
-                  Looking for shows and tickets?{" "}
-                  <a
-                    href="https://ronation.live"
-                    className="font-semibold text-muted transition-colors hover:text-accent"
-                  >
-                    ronation.live
-                  </a>
+                <a
+                  href={robloxConfigured ? signInHref : undefined}
+                  className={`btn w-full ${
+                    robloxConfigured
+                      ? "btn-accent"
+                      : "btn-ghost pointer-events-none opacity-40"
+                  }`}
+                  aria-disabled={!robloxConfigured}
+                >
+                  Sign in with Roblox
+                </a>
+
+                {/* Says the thing that makes the NEXT screen make sense. Signing
+                    in always works - any Roblox account can complete the round
+                    trip - and it is not the same as being let in. Somebody who
+                    reads this first is not surprised by a "no access" card. */}
+                <p className="mt-4 text-xs text-faint">
+                  {robloxConfigured ? (
+                    <>
+                      Use the Roblox account your access is on. Signing in
+                      identifies you; what you can open is decided by your rank in
+                      RNL&apos;s group or the access a partner granted you.
+                    </>
+                  ) : (
+                    <>{ERRORS["not-configured"]}</>
+                  )}
                 </p>
               </div>
+            </div>
+
+            {/* What this one credential opens - a compact strip, not a feature
+                list. Names only; /hub is where a signed-in account sees which it
+                actually holds. Blurbs ride along as tooltips. */}
+            <div className="mt-6">
+              <p className="text-center text-[10px] font-bold uppercase tracking-kicker text-faint">
+                One sign-in opens
+              </p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {AREAS.map((area) => (
+                  <span
+                    key={area.name}
+                    title={area.blurb}
+                    className="rounded-full border border-line px-3 py-1 text-[11px] font-semibold text-muted"
+                  >
+                    {area.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-2 text-center">
+              <p className="text-xs text-faint">
+                Just been promoted or granted access? Ranks can take a few minutes
+                to take effect here.
+              </p>
+              <p className="text-xs text-faint">
+                Looking for shows and tickets?{" "}
+                <a
+                  href="https://ronation.live"
+                  className="font-semibold text-muted transition-colors hover:text-accent"
+                >
+                  ronation.live
+                </a>
+              </p>
             </div>
           </div>
         </div>
