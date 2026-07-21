@@ -46,8 +46,22 @@ const groups: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "Testimonials", href: "/company/testimonials" },
       { label: "Enquiries", href: "/company/enquiries" },
       { label: "Partners", href: "/company/partners" },
-      { label: "Invoices", href: "/company/invoices" },
       { label: "SHASHA access", href: "/company/shasha" },
+    ],
+  },
+  {
+    // Money. Invoices used to sit under People, which was where it fitted least badly
+    // when it was the only one of these; with an accounting desk beside it, the two
+    // together are plainly their own thing.
+    //
+    // They stay SEPARATE links rather than one, because they are separate instruments:
+    // a payout statement is DERIVED from the ticket ledger and nobody types a figure
+    // into it, while everything in Accounting is hand-authored. One link would imply
+    // you can edit a payout, which is exactly what its whole design forbids.
+    title: "Money",
+    links: [
+      { label: "Accounting", href: "/company/accounting" },
+      { label: "Payout invoices", href: "/company/invoices" },
     ],
   },
 ];

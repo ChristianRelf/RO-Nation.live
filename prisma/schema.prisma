@@ -1365,6 +1365,10 @@ enum AuditTarget {
   MERCH
   TEAM
   TESTIMONIAL
+  /// A hand-authored accounting document - an invoice, payment advice, receipt or
+  /// credit note. Every state change on one is money changing hands on the record,
+  /// which is precisely the kind of write this trail exists for.
+  ACCOUNTING_DOCUMENT
 }
 
 /// Which door the write came through. Presentation and filtering only - it
@@ -2308,4 +2312,177 @@ enum InvoiceStatus {
   DRAFT
   /// Sent to the partner. Now readable in their portal; still immutable.
   SENT
+}
+
+// ------------------------------------------------------------------
+// The accounting desk.
+//
+// Invoice (above) is a DERIVED document: it is generated from the ticket ledger and
+// nobody types a figure into it. Everything here is the opposite - hand-authored
+// documents for the money that never touches TicketPurchase. Paying a builder,
+// billing a sponsor, receipting a payment, crediting back a mistake.
+//
+// One table for four document kinds, because they differ in WORDING far more than in
+// SHAPE: all four are "a payee, some lines, a total, frozen at issue". Four tables
+// would be four near-identical schemas and four near-identical write paths. What
+// actually varies per kind - the heading, who owes whom, the number prefix - is
+// config in lib/accounting/kinds.ts, not columns here.
+//
+// The same freeze rule as Invoice, for the same reason: a DRAFT is editable, and the
+// moment it is ISSUED every figure is a promise already made to somebody. There is no
+// edit path after that - a CREDIT_NOTE is how an issued document is corrected, which
+// is also how real books work. lib/accounting/documents.ts is the only writer.
+// ------------------------------------------------------------------
+
+enum DocumentKind {
+  /// RNL bills someone. A sponsor, a brand, a partner for something off-ledger.
+  INVOICE
+  /// RNL pays someone. A builder, an artist, a dev - "here is what we owe you and why".
+  CONTRACTOR_PAYMENT
+  /// Proof money moved. Usually against an INVOICE or CONTRACTOR_PAYMENT via `relatedId`.
+  RECEIPT
+  /// Cancels or partly refunds an already-issued document. The ONLY way to correct one.
+  CREDIT_NOTE
+}
+
+enum DocumentStatus {
+  /// Being written. The only status in which anything may be edited.
+  DRAFT
+  /// Frozen and numbered. Readable on its share link.
+  ISSUED
+  /// Settled. Terminal, and reached only from ISSUED.
+  PAID
+  /// Cancelled. Terminal. The document still exists and still reads - a void
+  /// document is history, not a deletion, and its number is never reused.
+  VOID
+}
+
+model AccountingDocument {
+  id String @id @default(cuid())
+
+  kind   DocumentKind
+  status DocumentStatus @default(DRAFT)
+
+  /// The human number - RNL-INV-2026-0007. Assigned at ISSUE, not at creation, so a
+  /// discarded draft never burns a number and the issued sequence has no holes.
+  /// Null while DRAFT. Unique when set.
+  number String? @unique
+
+  // ---- The other party ---------------------------------------------------
+  //
+  // Free text, all of it. A contractor is a Roblox account, a Discord handle or an
+  // email - not necessarily a User row - so there is no FK here and there should not
+  // be. What is typed is what prints.
+
+  /// Who the document is to. The payee on a payment, the bill-to on an invoice.
+  counterpartyName String
+  /// How to reach or identify them - @handle, roblox id, email. Optional, prints under the name.
+  counterpartyRef String?
+  /// Free address / extra detail block. Optional.
+  counterpartyDetail String?
+
+  /// One line saying what this document is FOR - "Stage build, July shows". Prints
+  /// under the heading, and is what the list is scanned by.
+  title String
+
+  /// Set when this corrects or settles another document (RECEIPT → its invoice,
+  /// CREDIT_NOTE → what it credits). The id of another AccountingDocument. Not an FK:
+  /// same reason as the snapshot fields - the pointer must survive whatever happens to
+  /// the target, and nothing is ever joined through it.
+  relatedId String?
+
+  // ---- The money, all integer Robux --------------------------------------
+  //
+  // Robux is the only currency this org handles, so there is no currency column -
+  // adding one later would be a schema change on immutable rows, but inventing one now
+  // for money that does not exist would be worse. See lib/settlement.ts.
+
+  /// The lines, frozen as JSON:
+  /// [{ description, qtyCenti, unitRobux, amountRobux }]
+  /// qtyCenti is quantity × 100, so "7.5 hours" is 750 and everything stays integer.
+  /// amountRobux is computed server-side from the other two and stored, never posted.
+  lineItems Json
+
+  /// Sum of the line amounts.
+  subtotal Int
+
+  /// An optional single adjustment off the subtotal - a deduction, an advance already
+  /// paid, a discount. MAY be negative. Its label is what prints beside it.
+  adjustmentLabel String?
+  adjustmentRobux Int     @default(0)
+
+  /// subtotal + adjustmentRobux. Stored rather than derived so the arithmetic on an
+  /// issued document can never be re-run differently by a later version of this code.
+  total Int
+
+  // ---- Terms and notes ---------------------------------------------------
+
+  /// "Due on receipt", "Net 14", "Paid via group payout". Free text, prints in the terms block.
+  terms String?
+  /// Anything else that should print - bank/handle for payment, scope caveats.
+  notes String?
+
+  /// The date the document is dated - defaults to issue, but a payment for last month's
+  /// work should be able to say so. Separate from issuedAt, which is when the row froze.
+  documentDate DateTime @default(now())
+  /// When payment is expected. Optional and kind-dependent.
+  dueDate DateTime?
+
+  // ---- The share link ----------------------------------------------------
+
+  /// The unguessable path segment at /doc/<token>. Minted at ISSUE, alongside the
+  /// number - a draft has no token because a draft has nothing to share.
+  ///
+  /// This is a BEARER capability: anyone holding it reads the document, which is the
+  /// point (a contractor has no account here). It is therefore high-entropy, it is
+  /// never listed anywhere public, and the page it serves is noindex. Revoking is
+  /// rotating: see rotateShareToken().
+  shareToken String? @unique
+
+  /// When the link was first opened, and how many times. Courtesy telemetry for the
+  /// company - "have they seen it yet" - and nothing authorises off either.
+  firstViewedAt DateTime?
+  viewCount     Int       @default(0)
+
+  // ---- Provenance --------------------------------------------------------
+
+  /// Who created the draft, and who froze it. Snapshotted names, like Invoice: a later
+  /// rename must not rewrite a document already sent.
+  createdByRobloxId String
+  createdByName     String
+  issuedByRobloxId  String?
+  issuedByName      String?
+
+  /// When it froze. Null while DRAFT.
+  issuedAt DateTime?
+  /// When it was marked settled. Null unless PAID.
+  paidAt DateTime?
+  /// When it was cancelled, and why. Null unless VOID.
+  voidedAt DateTime?
+  voidReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The list view: newest first, filtered by kind or status.
+  @@index([kind, status, createdAt])
+  @@index([status, createdAt])
+  @@index([relatedId])
+  @@map("accounting_documents")
+}
+
+/// One row per (kind, year), holding the last number handed out.
+///
+/// Document numbers have to be gapless and unique per kind per year, and `count() + 1`
+/// is a race: two people issuing at once both read the same count and mint the same
+/// number. This table makes the increment atomic - an `update` with `increment` inside
+/// the issue transaction, which Postgres serialises on the row lock. See nextNumber().
+model DocumentCounter {
+  kind DocumentKind
+  year Int
+  /// The last number issued for this (kind, year). Starts at 0; first issue gets 1.
+  seq  Int          @default(0)
+
+  @@id([kind, year])
+  @@map("document_counters")
 }

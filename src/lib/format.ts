@@ -3,11 +3,14 @@
 // TWO families live here, and the difference is WHOSE clock:
 //
 //   formatDate / formatTime / formatDateTime / dateBlock
-//       Format in the RUNTIME's timezone with no zone set - the SERVER's clock for
-//       anything server-rendered, which is one time for everyone. Kept for the places
-//       that must be one canonical string: text frozen into a stored notification, a
-//       reminder or an audit line (which cannot be re-localised per reader after the
-//       fact), and machine/SEO strings.
+//       Format in the RUNTIME's timezone - the SERVER's clock for anything
+//       server-rendered, which is one time for everyone. Kept for the places that must
+//       be one canonical string: text frozen into a stored notification, a reminder or
+//       an audit line (which cannot be re-localised per reader after the fact), and
+//       machine/SEO strings. The clock variants (formatTime, formatDateTime) NAME the
+//       zone - "16:30 GMT", never a bare "16:30" - so a frozen server-zone time cannot
+//       be mistaken for a contradiction of a live page showing the reader's own zone.
+//       The two are the same instant; the labels are what say so.
 //
 //   formatInstant / zoneLabel / dateParts  (below)
 //       Format in a GIVEN timezone, defaulting to the runtime's. Passed `undefined` on
@@ -24,12 +27,6 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
-
-const timeFmt = new Intl.DateTimeFormat("en-GB", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
 });
 
 const monthDayFmt = new Intl.DateTimeFormat("en-GB", {
@@ -76,11 +73,14 @@ export function formatBytes(bytes: number) {
 }
 
 export function formatTime(d: Date | string) {
-  return timeFmt.format(new Date(d));
+  // Zone-labelled, in the runtime's timezone. See the header: a bare "16:30" frozen
+  // into a reminder reads as a contradiction of a live page in another zone; "16:30 GMT"
+  // does not.
+  return formatInstant(d, "time", undefined, true);
 }
 
 export function formatDateTime(d: Date | string) {
-  return `${dateFmt.format(new Date(d))} · ${timeFmt.format(new Date(d))}`;
+  return formatInstant(d, "datetime", undefined, true);
 }
 
 /** { day: "12", month: "AUG" } for ticket-stub style date blocks. */

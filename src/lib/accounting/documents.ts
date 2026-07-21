@@ -1,0 +1,396 @@
+import "server-only";
+import { randomBytes } from "crypto";
+import type { AccountingDocument, Prisma } from "@prisma/client";
+import { DocumentKind, DocumentStatus } from "@prisma/client";
+import { prisma } from "../db";
+import { kindConfig } from "./kinds";
+import type { DocumentTotals } from "./lines";
+
+// The only writer of accounting_documents.
+//
+// Two rules live in here rather than in the pages, because a rule enforced by a page is
+// a rule enforced by whichever page remembered:
+//
+//   1. FREEZE. A document is editable while DRAFT and never again. Every mutating
+//      function below re-reads the row and checks its status itself - it does not
+//      believe the caller's claim about what state the document was in when the form
+//      was rendered. A stale tab is the ordinary case, not the attack.
+//
+//   2. NUMBERS AND TOKENS ARE MINTED AT ISSUE, once. Not at creation: a discarded draft
+//      must not burn a number out of the sequence. Not again on a re-issue: the number
+//      on a document somebody has already been sent is not ours to change.
+
+/**
+ * The share-token alphabet - lowercase and digits, minus the pairs that get misread
+ * when a link is copied off a screen or read down a call: 0/o, 1/l/i.
+ */
+const TOKEN_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+const TOKEN_LENGTH = 24;
+
+/**
+ * A share token: ~118 bits over the alphabet above.
+ *
+ * This is a bearer capability - whoever holds the link reads the document - so it has
+ * to be unguessable in the same way a session id is, not merely "long". Two bytes per
+ * character then modulo, exactly as lib/apikey.ts does and for the reason documented
+ * there: one byte modulo 31 skews the early letters, because 31 does not divide 256.
+ */
+function mintToken(): string {
+  const bytes = randomBytes(TOKEN_LENGTH * 2);
+  let out = "";
+  for (let i = 0; i < TOKEN_LENGTH; i++) {
+    out +=
+      TOKEN_ALPHABET[((bytes[i * 2] << 8) | bytes[i * 2 + 1]) % TOKEN_ALPHABET.length];
+  }
+  return out;
+}
+
+/** Everything a draft is written from. Totals arrive already computed - see lines.ts. */
+export type DocumentInput = {
+  kind: DocumentKind;
+  title: string;
+  counterpartyName: string;
+  counterpartyRef?: string | null;
+  counterpartyDetail?: string | null;
+  relatedId?: string | null;
+  totals: DocumentTotals;
+  adjustmentLabel?: string | null;
+  terms?: string | null;
+  notes?: string | null;
+  documentDate: Date;
+  dueDate?: Date | null;
+};
+
+/** The fields a draft write sets - everything except `kind`, which is fixed at creation. */
+export type DocumentFields = Omit<DocumentInput, "kind">;
+
+function writeData(input: DocumentFields) {
+  return {
+    title: input.title,
+    counterpartyName: input.counterpartyName,
+    counterpartyRef: input.counterpartyRef || null,
+    counterpartyDetail: input.counterpartyDetail || null,
+    relatedId: input.relatedId || null,
+    // Cast through unknown for the same reason lib/invoices.ts does: a named type has no
+    // index signature, and InputJsonValue wants one. The value is already valid JSON.
+    lineItems: input.totals.lines as unknown as Prisma.InputJsonValue,
+    subtotal: input.totals.subtotal,
+    adjustmentRobux: input.totals.adjustmentRobux,
+    adjustmentLabel: input.adjustmentLabel || null,
+    total: input.totals.total,
+    terms: input.terms || null,
+    notes: input.notes || null,
+    documentDate: input.documentDate,
+    dueDate: input.dueDate ?? null,
+  };
+}
+
+/** Start a draft. Unnumbered, unshared, editable - nothing is promised yet. */
+export function createDraft(
+  input: DocumentInput,
+  by: { robloxId: string; displayName: string },
+): Promise<AccountingDocument> {
+  return prisma.accountingDocument.create({
+    data: {
+      kind: input.kind,
+      ...writeData(input),
+      createdByRobloxId: by.robloxId,
+      createdByName: by.displayName,
+    },
+  });
+}
+
+/**
+ * Rewrite a draft.
+ *
+ * `updateMany` scoped to `status: DRAFT` rather than a read-then-write: the status check
+ * and the write are then one statement, so an issue landing between them cannot be
+ * overwritten. A count of 0 means it was not a draft any more, and the caller says so.
+ */
+export async function updateDraft(
+  id: string,
+  input: DocumentFields,
+): Promise<boolean> {
+  const { count } = await prisma.accountingDocument.updateMany({
+    where: { id, status: DocumentStatus.DRAFT },
+    // `kind` is absent by type: what a document IS gets chosen once, at creation. An
+    // edit that could change it would change the number it is about to be given.
+    data: writeData(input),
+  });
+  return count === 1;
+}
+
+/** Discard a draft. Only ever a draft - an issued document is history and stays. */
+export async function deleteDraft(id: string): Promise<boolean> {
+  const { count } = await prisma.accountingDocument.deleteMany({
+    where: { id, status: DocumentStatus.DRAFT },
+  });
+  return count === 1;
+}
+
+export type IssueResult =
+  | { ok: true; document: AccountingDocument }
+  | { ok: false; reason: "missing" | "already" };
+
+/**
+ * Freeze a draft: give it its number and its share link, and stop it being editable.
+ *
+ * All of it in ONE transaction, because the number comes from a shared counter. Two
+ * people issuing at the same instant must not be handed the same number, and
+ * `count() + 1` would do exactly that - both read the same count before either writes.
+ * The upsert-with-increment below compiles to an atomic INSERT … ON CONFLICT DO UPDATE,
+ * so Postgres serialises the pair on the counter row and the second gets the next value.
+ *
+ * A RECEIPT also settles what it points at, in the same transaction: recording that
+ * money arrived and leaving the invoice reading "issued" is how books go wrong.
+ */
+export async function issueDocument(
+  id: string,
+  by: { robloxId: string; displayName: string },
+): Promise<IssueResult> {
+  try {
+    const document = await prisma.$transaction(async (tx) => {
+      const existing = await tx.accountingDocument.findUnique({ where: { id } });
+      if (!existing) throw new IssueError("missing");
+      if (existing.status !== DocumentStatus.DRAFT) throw new IssueError("already");
+
+      // The year of the DOCUMENT's own date, not today's - a January payment advice
+      // dated to December's work belongs in December's sequence.
+      const year = existing.documentDate.getFullYear();
+      const counter = await tx.documentCounter.upsert({
+        where: { kind_year: { kind: existing.kind, year } },
+        create: { kind: existing.kind, year, seq: 1 },
+        update: { seq: { increment: 1 } },
+      });
+
+      const segment = kindConfig(existing.kind).numberSegment;
+      const number = `RNL-${segment}-${year}-${String(counter.seq).padStart(4, "0")}`;
+
+      const issued = await tx.accountingDocument.update({
+        where: { id },
+        data: {
+          status: DocumentStatus.ISSUED,
+          number,
+          shareToken: mintToken(),
+          issuedAt: new Date(),
+          issuedByRobloxId: by.robloxId,
+          issuedByName: by.displayName,
+        },
+      });
+
+      // Only from ISSUED: a receipt against a draft would settle something that was
+      // never sent, and one against a void document would resurrect it.
+      if (issued.kind === DocumentKind.RECEIPT && issued.relatedId) {
+        await tx.accountingDocument.updateMany({
+          where: { id: issued.relatedId, status: DocumentStatus.ISSUED },
+          data: { status: DocumentStatus.PAID, paidAt: new Date() },
+        });
+      }
+
+      return issued;
+    });
+
+    return { ok: true, document };
+  } catch (err) {
+    if (err instanceof IssueError) return { ok: false, reason: err.reason };
+    throw err;
+  }
+}
+
+class IssueError extends Error {
+  constructor(public reason: "missing" | "already") {
+    super(reason);
+  }
+}
+
+/**
+ * Mark an issued document settled.
+ *
+ * Scoped to ISSUED, so it is a no-op on a draft (nothing was owed yet), on an already
+ * paid document (idempotent - paidAt never moves) and on a void one.
+ */
+export async function markPaid(id: string): Promise<boolean> {
+  const { count } = await prisma.accountingDocument.updateMany({
+    where: { id, status: DocumentStatus.ISSUED },
+    data: { status: DocumentStatus.PAID, paidAt: new Date() },
+  });
+  return count === 1;
+}
+
+/**
+ * Cancel a document.
+ *
+ * From ISSUED or PAID, never from DRAFT - a draft is discarded, not voided, and a void
+ * unissued document would be a number-less entry in the cancelled column. The row and
+ * its number survive: voiding is a correction on the record, not a deletion.
+ */
+export async function voidDocument(id: string, reason: string): Promise<boolean> {
+  const { count } = await prisma.accountingDocument.updateMany({
+    where: { id, status: { in: [DocumentStatus.ISSUED, DocumentStatus.PAID] } },
+    data: {
+      status: DocumentStatus.VOID,
+      voidedAt: new Date(),
+      voidReason: reason.slice(0, 500) || null,
+    },
+  });
+  return count === 1;
+}
+
+/**
+ * Mint a fresh share token, killing the old link.
+ *
+ * The only way to un-share a document that went to the wrong address. It changes
+ * nothing about the document itself - the number, the figures and the issue date are
+ * still frozen - which is why this is allowed on an issued document at all.
+ */
+export async function rotateShareToken(id: string): Promise<string | null> {
+  const { count } = await prisma.accountingDocument.updateMany({
+    where: { id, status: { not: DocumentStatus.DRAFT } },
+    data: { shareToken: mintToken(), firstViewedAt: null, viewCount: 0 },
+  });
+  if (count !== 1) return null;
+  const row = await prisma.accountingDocument.findUnique({
+    where: { id },
+    select: { shareToken: true },
+  });
+  return row?.shareToken ?? null;
+}
+
+// ---- Reads ---------------------------------------------------------------
+
+export function getDocument(id: string): Promise<AccountingDocument | null> {
+  return prisma.accountingDocument.findUnique({ where: { id } });
+}
+
+/**
+ * Resolve a share link.
+ *
+ * DRAFT is excluded in the WHERE, not filtered after: an unissued document has no token
+ * at all today, and scoping it here means it stays unreachable even if some future path
+ * mints one early.
+ */
+export function getDocumentByToken(
+  token: string,
+): Promise<AccountingDocument | null> {
+  if (!token) return Promise.resolve(null);
+  return prisma.accountingDocument.findFirst({
+    where: { shareToken: token, status: { not: DocumentStatus.DRAFT } },
+  });
+}
+
+/**
+ * Note that a share link was opened. Never throws - failing to count a view must not
+ * turn reading a document into an error page, exactly as markInvoiceOpened has it.
+ */
+export async function recordShareView(id: string): Promise<void> {
+  try {
+    await Promise.all([
+      prisma.accountingDocument.update({
+        where: { id },
+        data: { viewCount: { increment: 1 } },
+      }),
+      // `firstViewedAt: null` in the WHERE makes this a no-op on every view after the
+      // first, so the timestamp records when they first opened it and never moves -
+      // the same trick markInvoiceOpened() uses, and for the same reason.
+      prisma.accountingDocument.updateMany({
+        where: { id, firstViewedAt: null },
+        data: { firstViewedAt: new Date() },
+      }),
+    ]);
+  } catch (err) {
+    console.error("recordShareView failed", err);
+  }
+}
+
+export type DocumentFilter = {
+  kind?: DocumentKind;
+  status?: DocumentStatus;
+};
+
+/** The list, newest first. Capped - the desk is a list to work from, not an archive. */
+export function listDocuments(
+  filter: DocumentFilter = {},
+  take = 200,
+): Promise<AccountingDocument[]> {
+  return prisma.accountingDocument.findMany({
+    where: {
+      ...(filter.kind ? { kind: filter.kind } : {}),
+      ...(filter.status ? { status: filter.status } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+  });
+}
+
+/**
+ * Issued documents another one may point at - the picker on a receipt or credit note.
+ *
+ * Only ISSUED: a draft is not yet a thing to receipt, and a paid or void one is
+ * already settled. Excludes `self` so a document cannot be made to reference itself.
+ */
+export function listRelatable(self?: string): Promise<AccountingDocument[]> {
+  return prisma.accountingDocument.findMany({
+    where: {
+      status: DocumentStatus.ISSUED,
+      kind: { in: [DocumentKind.INVOICE, DocumentKind.CONTRACTOR_PAYMENT] },
+      ...(self ? { id: { not: self } } : {}),
+    },
+    orderBy: { issuedAt: "desc" },
+    take: 100,
+  });
+}
+
+export type AccountingSummary = {
+  /** Issued and unsettled, by direction. */
+  owedToUs: number;
+  owedByUs: number;
+  /** Settled this calendar year, by direction. */
+  receivedYtd: number;
+  paidYtd: number;
+  draftCount: number;
+};
+
+/**
+ * The figures on the hub.
+ *
+ * Grouped in the DATABASE rather than by pulling rows and reducing: these are sums over
+ * the whole table, and the one thing a summary must not do is get slower as the desk
+ * fills up. Drafts and voids are excluded from every money figure - see isOutstanding().
+ */
+export async function accountingSummary(): Promise<AccountingSummary> {
+  const yearStart = new Date(new Date().getFullYear(), 0, 1);
+
+  const [outstanding, settled, draftCount] = await Promise.all([
+    prisma.accountingDocument.groupBy({
+      by: ["kind"],
+      where: { status: DocumentStatus.ISSUED },
+      _sum: { total: true },
+    }),
+    prisma.accountingDocument.groupBy({
+      by: ["kind"],
+      where: { status: DocumentStatus.PAID, paidAt: { gte: yearStart } },
+      _sum: { total: true },
+    }),
+    prisma.accountingDocument.count({ where: { status: DocumentStatus.DRAFT } }),
+  ]);
+
+  const sumWhere = (
+    rows: { kind: DocumentKind; _sum: { total: number | null } }[],
+    kinds: DocumentKind[],
+  ) =>
+    rows
+      .filter((r) => kinds.includes(r.kind))
+      .reduce((n, r) => n + (r._sum.total ?? 0), 0);
+
+  // A credit note reduces what is owed, so it sits on the opposite side of the ledger
+  // from the invoice it corrects - money we will not now be receiving.
+  return {
+    owedToUs:
+      sumWhere(outstanding, [DocumentKind.INVOICE]) -
+      sumWhere(outstanding, [DocumentKind.CREDIT_NOTE]),
+    owedByUs: sumWhere(outstanding, [DocumentKind.CONTRACTOR_PAYMENT]),
+    receivedYtd: sumWhere(settled, [DocumentKind.RECEIPT]),
+    paidYtd: sumWhere(settled, [DocumentKind.CONTRACTOR_PAYMENT]),
+    draftCount,
+  };
+}
