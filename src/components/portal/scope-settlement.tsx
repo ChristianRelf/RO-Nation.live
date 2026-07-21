@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { RosterScope } from "@/lib/portal-scope";
 import { getSettlement } from "@/lib/settlement";
+import { listSentInvoicesForPartner } from "@/lib/invoices";
 import { StatCard } from "@/components/admin-ui";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { groupCount } from "@/lib/tickets/crowd";
@@ -17,9 +18,16 @@ export async function ScopeSettlement({ scope }: { scope: RosterScope }) {
 
   // A partner is a PAYEE (RNL owes them their share); RNL's own shows (SHASHA,
   // eventScope null) have no external party, so their statement is a REVENUE one.
-  // Both get a printable document - the wording and the fee stack just differ.
   const isSelf = !scope.eventScope;
-  const invoiceHref = `${scope.basePath}/invoice`;
+
+  // The two sides of "who makes the document":
+  //   SHASHA   prints its OWN live revenue statement - there is no external party, and
+  //            nothing to send, so the self-serve /shasha/invoice route stays.
+  //   partner  reads the invoices RNL has ISSUED to them. They cannot generate their own
+  //            any more; issuance moved to /company/invoices. So a partner sees a LIST of
+  //            what was sent, and `openedAt` on each drives the "new" indicator.
+  const invoices = isSelf ? [] : await listSentInvoicesForPartner(scope.id);
+  const newCount = invoices.filter((inv) => !inv.openedAt).length;
 
   return (
     <section>
@@ -88,15 +96,85 @@ export async function ScopeSettlement({ scope }: { scope: RosterScope }) {
         </dl>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Link href={invoiceHref} className="btn btn-accent">
-            {isSelf ? "Generate statement" : "Generate invoice"}
-          </Link>
-          <span className="text-xs text-faint">
-            A printable {isSelf ? "revenue statement" : "payout statement"} - save it as a
-            PDF from your browser.
-          </span>
+          {isSelf ? (
+            <>
+              <Link href={`${scope.basePath}/invoice`} className="btn btn-accent">
+                Generate statement
+              </Link>
+              <span className="text-xs text-faint">
+                A printable revenue statement - save it as a PDF from your browser.
+              </span>
+            </>
+          ) : (
+            <span className="text-xs text-faint">
+              Payout statements are issued by RO. Nation LIVE. When one is sent, it appears
+              below.
+            </span>
+          )}
         </div>
       </div>
+
+      {/* A partner's issued invoices. Not shown for SHASHA (it has none - it prints its
+          own live statement above). Unopened ones carry a "new" tag; opening one clears
+          it, which is the in-portal notice that a payout has arrived. */}
+      {!isSelf ? (
+        <div className="mt-8">
+          <div className="mb-3 flex items-center gap-3">
+            <h3 className="font-display text-lg uppercase">Your invoices</h3>
+            {newCount > 0 ? (
+              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {newCount} new
+              </span>
+            ) : null}
+          </div>
+
+          {invoices.length ? (
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
+                      <th className="px-5 py-3 font-semibold">Invoice</th>
+                      <th className="px-5 py-3 font-semibold">Period</th>
+                      <th className="px-5 py-3 text-right font-semibold">Payable</th>
+                      <th className="px-5 py-3 font-semibold">Issued</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {invoices.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-fg/[0.02]">
+                        <td className="px-5 py-4">
+                          <Link
+                            href={`${scope.basePath}/invoice/${inv.id}`}
+                            className="inline-flex items-center gap-2 font-medium tabular-nums text-fg hover:text-accent"
+                          >
+                            {inv.number}
+                            {!inv.openedAt ? (
+                              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                                New
+                              </span>
+                            ) : null}
+                          </Link>
+                        </td>
+                        <td className="px-5 py-4 text-muted">{inv.periodLabel}</td>
+                        <td className="px-5 py-4 text-right tabular-nums font-semibold text-fg">
+                          {formatRobux(inv.partnerPayout)}
+                        </td>
+                        <td className="px-5 py-4 text-muted">{formatDate(inv.issuedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="card p-5 text-sm text-muted">
+              No payout statements have been issued to you yet. When RO. Nation LIVE sends
+              one, it&apos;ll appear here.
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {shows.length ? (
         <div className="mt-8">

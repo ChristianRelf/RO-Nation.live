@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCompanyAccess } from "@/lib/company";
-import { CompanyNav } from "@/components/company-nav";
+import { CompanyShell } from "@/components/company-shell";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -28,18 +28,5 @@ export default async function CompanyDashLayout({
   const access = await getCompanyAccess();
   if (access.state !== "allowed") redirect("/company/access");
 
-  return (
-    <div className="shell py-10">
-      <div className="grid gap-8 lg:grid-cols-[210px_1fr]">
-        <CompanyNav
-          user={{
-            displayName: access.user.displayName,
-            roleName: access.user.roleName,
-            rank: access.user.rank,
-          }}
-        />
-        <div className="min-w-0">{children}</div>
-      </div>
-    </div>
-  );
+  return <CompanyShell user={access.user}>{children}</CompanyShell>;
 }

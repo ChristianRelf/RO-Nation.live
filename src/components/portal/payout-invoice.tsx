@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Settlement } from "@/lib/settlement";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -33,6 +34,9 @@ export function PayoutInvoice({
   generatedOn,
   settlement,
   backHref,
+  backLabel = "Back to payouts",
+  statusBadge,
+  actions,
 }: {
   variant: "partner" | "self";
   /** Who the statement is for - the partner, or "RO. Nation LIVE" for its own shows. */
@@ -42,6 +46,12 @@ export function PayoutInvoice({
   generatedOn: Date;
   settlement: Settlement;
   backHref: string;
+  /** The toolbar's back link text. Defaults to the partner/SHASHA payouts wording. */
+  backLabel?: string;
+  /** Screen-only chip beside the back link - e.g. a Draft/Sent status. Never prints. */
+  statusBadge?: ReactNode;
+  /** Screen-only toolbar actions beside Print - e.g. the company's Send button. Never prints. */
+  actions?: ReactNode;
 }) {
   const { shows, payout, capped } = settlement;
   const isSelf = variant === "self";
@@ -65,11 +75,17 @@ export function PayoutInvoice({
 
       <div className="mx-auto max-w-3xl px-6 py-8 sm:px-8 sm:py-10 print:px-0 print:py-0">
         {/* Toolbar - screen only */}
-        <div className="no-print mb-6 flex items-center justify-between">
-          <a href={backHref} className="text-sm text-slate-500 hover:text-slate-900">
-            ← Back to payouts
-          </a>
-          <PrintButton />
+        <div className="no-print mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <a href={backHref} className="text-sm text-slate-500 hover:text-slate-900">
+              ← {backLabel}
+            </a>
+            {statusBadge}
+          </div>
+          <div className="flex items-center gap-3">
+            {actions}
+            <PrintButton />
+          </div>
         </div>
 
         {/* The sheet - a white document sitting on the grey desk (screen); plain white

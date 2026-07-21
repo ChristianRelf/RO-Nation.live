@@ -2215,3 +2215,97 @@ model RateLimit {
   @@index([resetAt])
   @@map("rate_limits")
 }
+
+// ------------------------------------------------------------------
+// A payout invoice RNL issues to a partner.
+//
+// The one place money leaves the building, made a DOCUMENT. Only the company mints
+// these - the /company/invoices pages are rank-gated (lib/company.ts) - and a partner
+// may read the ones ISSUED to them but can mint none of their own. That is the whole
+// reason the row exists: the old settlement page let a partner's own manager conjure a
+// live statement from the ledger, and a statement about what you are owed should be
+// handed to you by the party that owes it, not printed by you.
+//
+// ---- Frozen at issue ------------------------------------------------------
+//
+// Every figure below is a SNAPSHOT taken from lib/settlement at the moment of
+// generation, never a live read afterwards. An invoice is a promise about a past
+// window; a late sale that lands in that month must not silently change a number the
+// partner has already been shown. Same rule Ticket.tierName and MemberNotification.body
+// follow, and for the same reason. lib/invoices.ts is the only writer, and it snapshots
+// on the way in and reconstructs a Settlement on the way out.
+model Invoice {
+  id String @id @default(cuid())
+
+  /// The partner this is payable to - the `slug`, which is also Event.partnerId for a
+  /// partner's shows. NOT an FK: partners are a code registry (partners/registry.ts),
+  /// not a table, so this is validated through partnerBySlug() at the write, never by
+  /// the database. Always a real partner - RNL's own revenue (eventScope null) has no
+  /// external payee and so no invoice.
+  partnerId String
+
+  /// The human invoice number a person reads on the page, e.g. RNL-SLEEPTOKENRO-2026-07.
+  /// The URL keys on `id` (a cuid); this is display only, and is snapshotted like the
+  /// rest so re-slugging a partner can never rewrite an issued document.
+  number String
+
+  /// Who it is payable to, frozen at issue - the partner's display name at that moment.
+  payeeName String
+
+  /// The billing window. `tag` drove the number and the ledger query; `label` is the
+  /// human copy ("July 2026", "All time").
+  periodTag   String
+  periodLabel String
+
+  status InvoiceStatus @default(DRAFT)
+
+  // ---- The frozen fee stack, in Robux ------------------------------------
+  //
+  // Snapshotted from payoutFor() so the reconciliation it guarantees -
+  // robloxFee + rnlFee + partnerPayout === gross - still holds months later, even if
+  // the live ledger for this window has moved on.
+  gross         Int
+  robloxFee     Int
+  afterRoblox   Int
+  rnlFee        Int
+  partnerPayout Int
+
+  /// True when the settlement was capped (more ledger rows than the cap) at issue, so
+  /// the totals cover a window rather than the whole period. Carried onto the document.
+  capped Boolean @default(false)
+
+  /// The per-show line items, frozen as JSON:
+  /// [{ eventId, title, startsAt (ISO), payments, robux }]. A relation would re-read
+  /// live titles and dates and let a since-deleted show vanish off an issued invoice -
+  /// exactly what a snapshot exists to prevent.
+  lineItems Json
+
+  /// Who generated it, and when. robloxId is not an FK - staff are Roblox accounts,
+  /// not necessarily User rows - and the name is snapshotted so a later rename does not
+  /// rewrite the issuer on a document already sent.
+  issuedByRobloxId String
+  issuedByName     String
+  issuedAt         DateTime @default(now())
+
+  /// When the company SENT it (status → SENT). Null while it is still a DRAFT the
+  /// partner cannot see.
+  sentAt DateTime?
+
+  /// When the partner first OPENED it in their portal. Null until then - this single
+  /// timestamp is what drives the "new invoice" indicator on their payouts page, the
+  /// in-portal notice that a payout has arrived.
+  openedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId, status, issuedAt])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  /// Generated, visible to the company only. Figures are already frozen.
+  DRAFT
+  /// Sent to the partner. Now readable in their portal; still immutable.
+  SENT
+}
