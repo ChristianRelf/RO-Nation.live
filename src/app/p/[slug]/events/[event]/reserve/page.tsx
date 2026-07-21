@@ -54,6 +54,7 @@ export default async function PartnerReservePage({
     );
   }
 
+  if (event.presale) redirect(`/events/${event.slug}`);
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
   // Already holding an active ticket? Go and look at it. (This used to double as

@@ -67,6 +67,9 @@ export async function GET(req: NextRequest) {
       capacity: e.capacity,
       reserved: e.ticketsCount,
       remaining: e.capacity > 0 ? Math.max(0, e.capacity - e.ticketsCount) : null,
+      // Presale: listed and readable, but not on sale yet. Do not prompt a purchase
+      // for one - see GET /events/<id> and Event.presale.
+      onSale: !e.presale,
     })),
   });
 }

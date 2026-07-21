@@ -361,6 +361,10 @@ are left:
 - `locked` - it is priced, and Robux sales are off. Nobody can buy it today, and
   taking somebody's money for a ticket that cannot be issued is the worst bug in
   this whole document.
+- `presale` - the whole **show** is in presale: published and readable, but not on
+  sale yet. Every tier comes back this way, the event carries `presale: true` /
+  `onSale: false`, and issuing refuses `not_on_sale` on every rail but a gift. Do not
+  prompt anything until the organiser opens sales.
 
 A tier `id` of `null` is the **implicit tier**: an event nobody configured tiers
 for is one free General Admission. Send `tierId: null`, or leave it out entirely.
@@ -426,6 +430,7 @@ is no.
 | `no_player`         | Roblox has never heard of that `robloxId`.                     |
 | `revoked`           | They were **revoked** from this show. They may not have another.|
 | `payments_off`      | Priced tier, and Robux sales are off. Nobody can have it.      |
+| `not_on_sale`       | The show is in **presale** - visible, but not on sale yet. Every rail but a gift is refused. |
 | `payment_required`  | Priced tier, on a path that collects no money. Use `/purchase`.|
 | `not_purchasable`   | You called `/purchase` for a **free** tier. Don't charge them. |
 | `already_owned`     | `/purchase` only. They already hold this tier or better - don't charge; refund if you did. |

@@ -118,6 +118,9 @@ export function readEventForm(form: FormData) {
     endsAt: parseDate(s(form, "endsAt")),
     capacity: Math.max(0, parseInt(s(form, "capacity") || "0", 10) || 0),
     status: (s(form, "status") as EventStatus) || EventStatus.DRAFT,
+    // Presale: visible but not yet buyable. Parsed here so /company and every studio
+    // agree on what it means. See Event.presale.
+    presale: form.get("presale") === "on",
     // Drawing a map does not put seats on sale. THIS does. See SeatMode in the schema.
     seatMode: readSeatMode(form),
     // One clause per line, blanks dropped. EMPTY means "use the standard terms" -

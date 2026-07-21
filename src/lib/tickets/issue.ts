@@ -75,6 +75,15 @@ export type IssueReason =
   | "not_purchasable"
 
   /**
+   * The show is in PRESALE - published and visible, but tickets are not on sale yet.
+   *
+   * Refuses every PUBLIC rail (reserve, purchase, game_pass); a gift/comp is allowed
+   * through, so an organiser can seed VIPs before doors open. The website's ticket
+   * button reads "Tickets unavailable" while this holds. See Event.presale.
+   */
+  | "not_on_sale"
+
+  /**
    * They ALREADY HOLD this show's ticket, at this tier or a better one, and a paid
    * purchase has arrived for it anyway.
    *
@@ -393,6 +402,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
     select: {
       id: true,
       partnerId: true,
+      presale: true,
       tiers: true,
       seatMode: true,
       ticketTerms: true,
@@ -406,6 +416,15 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
   const partnerId = event.partnerId ?? null;
   if (input.scope !== undefined && partnerId !== input.scope) {
     return fail("not_found");
+  }
+
+  // Presale. Visible, but not on sale: every PUBLIC rail is refused here, so a hidden
+  // button is not the only thing stopping a sale. A gift/comp passes on purpose -
+  // seeding VIPs before doors open is exactly what presale is for. Checked AFTER the
+  // settleExisting() replay guard above, so a ProcessReceipt retry for a payment made
+  // before presale was toggled still hands back the ticket it bought.
+  if (event.presale && mode.kind !== "gift") {
+    return fail("not_on_sale");
   }
 
   const partner = partnerBySlug(partnerId);

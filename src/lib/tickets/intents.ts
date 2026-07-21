@@ -56,6 +56,8 @@ export type IntentReason =
   | "tier_soldout"
   | "seat_taken"
   | "payments_off"
+  /** The show is in presale - visible, but tickets are not on sale yet. */
+  | "not_on_sale"
   /** A priced tier with no game pass and no dev product. Misconfigured, not sold out. */
   | "unsellable"
   /** Asked for a rail this tier does not offer. */
@@ -117,6 +119,7 @@ export async function createPurchaseIntent(
     select: {
       id: true,
       partnerId: true,
+      presale: true,
       seatMode: true,
       capacity: true,
       tiers: true,
@@ -132,6 +135,10 @@ export async function createPurchaseIntent(
   if (input.scope !== undefined && partnerId !== input.scope) {
     return fail("not_found");
   }
+
+  // Presale: there is no seat to hold for a sale that has not opened. Refuse before we
+  // reserve a chair for ten minutes for a purchase issue.ts is only going to refuse.
+  if (event.presale) return fail("not_on_sale");
 
   const tiers = effectiveTiers(event.tiers);
   const tier = tiers.find((t) => (t.id ?? "") === (input.tierId ?? ""));

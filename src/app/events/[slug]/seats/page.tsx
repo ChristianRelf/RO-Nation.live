@@ -47,6 +47,7 @@ export default async function SeatsPage({
     redirect(`/account?returnTo=${encodeURIComponent(reserveHref)}`);
   }
 
+  if (event.presale) redirect(`/events/${event.slug}`);
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
   // Already holding one? A seat map is no use to them - they have a seat.

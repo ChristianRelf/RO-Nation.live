@@ -199,8 +199,20 @@ model Event {
 
   status    EventStatus @default(DRAFT)
   featured  Boolean     @default(false)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+
+  /// Presale: PUBLISHED and fully VISIBLE, but tickets are not on sale yet.
+  ///
+  /// A "coming soon" state that sits on top of PUBLISHED rather than being a fourth
+  /// EventStatus - so every listing, the event page, the SEO and the sitemap keep
+  /// treating it as live (which it is, to a browser), and the ONE thing it changes is
+  /// that the buy rails refuse it. issueTicket returns `not_on_sale` for reserve /
+  /// purchase / game_pass while this is true (a gift/comp still works, so organisers
+  /// can seed VIPs before doors open), and the ticket buttons render "Tickets
+  /// unavailable". Default false: every existing show is on sale exactly as before.
+  presale Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// When the "doors soon" reminder was fanned out to this show's holders.
   ///

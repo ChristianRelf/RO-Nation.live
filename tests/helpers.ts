@@ -46,7 +46,7 @@ export async function makeUser(opts: { numericRobloxId?: boolean } = {}) {
   });
 }
 
-export async function makeEvent(opts: { capacity?: number } = {}) {
+export async function makeEvent(opts: { capacity?: number; presale?: boolean } = {}) {
   const id = uniq();
   return prisma.event.create({
     data: {
@@ -56,6 +56,7 @@ export async function makeEvent(opts: { capacity?: number } = {}) {
       startsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       capacity: opts.capacity ?? 0, // 0 = unlimited
       status: "PUBLISHED",
+      presale: opts.presale ?? false,
       // seatMode defaults NONE, partnerId defaults null - RNL's own, unseated.
     },
   });

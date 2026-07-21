@@ -50,6 +50,8 @@ export default async function ReservePage({
     );
   }
 
+  // Presale: not on sale yet. Back to the event page, where the button says so.
+  if (event.presale) redirect(`/events/${event.slug}`);
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
   // Already holding an active ticket? Go and look at it.

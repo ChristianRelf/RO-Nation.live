@@ -142,7 +142,9 @@ export default async function EventPage({
       url: absoluteUrl(`/events/${event.slug}`),
       availability: soldOut
         ? "https://schema.org/SoldOut"
-        : "https://schema.org/InStock",
+        : event.presale
+          ? "https://schema.org/PreOrder"
+          : "https://schema.org/InStock",
       ...(allFree ? { price: "0", priceCurrency: "USD" } : {}),
     },
   };
@@ -287,6 +289,15 @@ export default async function EventPage({
                     View my ticket
                   </Link>
                 </div>
+              ) : event.presale ? (
+                // Presale: visible, but not on sale yet. issueTicket refuses every
+                // buy rail too - this button is the courtesy, not the lock.
+                <button
+                  disabled
+                  className="btn w-full cursor-not-allowed border border-line text-muted"
+                >
+                  Tickets unavailable
+                </button>
               ) : notOnSale ? (
                 <button
                   disabled
@@ -320,8 +331,9 @@ export default async function EventPage({
               )}
 
               <p className="mt-4 text-center text-xs text-faint">
-                {allFree ? "Free entry · verified" : "Verified"} in-experience at
-                the door
+                {event.presale
+                  ? "Tickets go on sale soon - check back."
+                  : `${allFree ? "Free entry · verified" : "Verified"} in-experience at the door`}
               </p>
             </div>
           </div>

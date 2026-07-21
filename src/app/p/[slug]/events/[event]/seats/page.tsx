@@ -45,6 +45,7 @@ export default async function PartnerSeatsPage({
     redirect(`/account?returnTo=${encodeURIComponent(reserveHref)}`);
   }
 
+  if (event.presale) redirect(`/events/${event.slug}`);
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
   const existing = await prisma.ticket.findUnique({

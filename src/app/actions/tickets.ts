@@ -204,7 +204,12 @@ export async function reserveTicket(
       reason === "not_paid" ||
       reason === "verify_unavailable" ||
       reason === "needs_consent" ||
-      reason === "already_owned"
+      reason === "already_owned" ||
+      // Presale: the button is hidden and the reserve page redirects, so a web
+      // visitor should never reach this - fold it into the generic "unavailable"
+      // rather than adding a web error state nothing renders. The game API still
+      // gets the precise `not_on_sale` reason through issueTicket.
+      reason === "not_on_sale"
     ) {
       return fail("unavailable");
     }

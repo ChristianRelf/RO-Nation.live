@@ -28,6 +28,9 @@ export const ISSUE_MESSAGES: Record<Exclude<IssueReason, "ok">, string> = {
     "That tier costs Robux. Prompt the Developer Product, then call /purchase from ProcessReceipt.",
   not_purchasable: "That tier is free - don't charge for it. Use /reserve.",
 
+  not_on_sale:
+    "Tickets for this show aren't on sale yet - it's in presale. Nobody can reserve or buy until the organiser opens sales. A gift or comp still works.",
+
   // The double-sell guard. One ticket per player per show, and they already hold this one
   // at this tier or better - so a Developer Product purchase for it buys nothing. Do NOT
   // prompt a product for a tier a player already holds: call POST /verify with their
@@ -77,6 +80,8 @@ export const INTENT_MESSAGES: Record<IntentReason, string> = {
     "Every seat in that tier has gone. Do not prompt for payment - there is nothing to sell them. Offer another tier.",
 
   payments_off: "Paid tickets aren't switched on. That tier can't be sold to anybody.",
+  not_on_sale:
+    "Tickets for this show aren't on sale yet - it's in presale. There is nothing to hold until the organiser opens sales.",
   unsellable:
     "That tier is priced but has no Developer Product and no game pass, so nobody can buy it anywhere. It is misconfigured, not sold out - tell the organisers.",
   bad_rail:

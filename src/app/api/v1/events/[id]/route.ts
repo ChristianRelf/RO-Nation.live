@@ -118,6 +118,12 @@ export async function GET(
       tagline: event.tagline,
       category: event.category,
       status: event.status,
+      // Presale: PUBLISHED and readable, but tickets are not on sale yet. Every tier
+      // below is forced `available: false` with `blockedReason: "presale"`, and
+      // issueTicket() refuses the buy rails - so do not prompt anything while this is
+      // true. A gift/comp still works. See Event.presale.
+      presale: event.presale,
+      onSale: !event.presale,
       venue: event.venue,
       placeUrl: event.placeUrl,
       // The id a deep link is BUILT from:
@@ -152,8 +158,10 @@ export async function GET(
       priceRobux: t.priceRobux,
       kind: t.priceRobux > 0 ? "VIP" : "GA",
       remaining: t.remaining,
-      available: !t.blockedReason,
-      blockedReason: t.blockedReason,
+      // Presale forces every tier closed regardless of stock - visible, but not on
+      // sale. A caller must branch on `available`, so this is where presale is felt.
+      available: event.presale ? false : !t.blockedReason,
+      blockedReason: event.presale ? "presale" : t.blockedReason,
 
       // WHICH PRODUCT TO PROMPT. The booth needed this and had no way to get it - it was
       // holding a hand-written map of tier -> product, which drifts the first time somebody

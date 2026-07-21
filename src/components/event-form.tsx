@@ -270,6 +270,24 @@ export function EventForm({
             <span className="text-sm">Feature on homepage</span>
           </label>
         </div>
+
+        {/* Presale: live and visible, but not on sale yet. */}
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-bg px-4 py-3">
+          <input
+            type="checkbox"
+            name="presale"
+            defaultChecked={event?.presale ?? false}
+            className="mt-0.5 h-4 w-4 accent-accent"
+          />
+          <span className="text-sm">
+            <span className="font-semibold">Presale (tickets not on sale yet)</span>
+            <span className="mt-1 block text-xs text-faint">
+              The show is fully visible and shareable, but the ticket button reads
+              &ldquo;Tickets unavailable&rdquo; and nobody can reserve or buy until you
+              turn this off. Comps and VIP gifts still work.
+            </span>
+          </span>
+        </label>
       </div>
 
       <div className="flex items-center gap-3">

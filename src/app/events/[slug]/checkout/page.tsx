@@ -53,6 +53,7 @@ export default async function CheckoutPage({
     redirect(`/account?returnTo=${encodeURIComponent(reserveHref)}`);
   }
 
+  if (event.presale) redirect(`/events/${event.slug}`);
   if (isPast(event.startsAt)) redirect(`/events/${event.slug}?error=past`);
 
   // Already holding one? Don't put them through a purchase animation for a ticket
