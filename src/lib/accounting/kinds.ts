@@ -132,15 +132,59 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     },
     defaultTerms: "",
   },
+
+  [DocumentKind.TICKET_REFUND]: {
+    kind: DocumentKind.TICKET_REFUND,
+    label: "Ticket refund",
+    plural: "Ticket refunds",
+    heading: "Refund",
+    numberSegment: "REF",
+    direction: "outbound",
+    partyLabel: "Refund to",
+    partyFieldLabel: "Ticket holder",
+    totalLabel: "Amount refunded",
+    hint: "Money back to a ticket holder. Written against the ticket and capped at what they actually paid. Exceptional cases only.",
+    // Says plainly what the document can and cannot do. A Robux purchase is a Roblox
+    // transaction and CANNOT be reversed from here - see lib/accounting/refunds.ts. The
+    // document authorises and records a payout; a human still has to send the Robux.
+    smallPrint:
+      "Refund authorised by RO. Nation LIVE in Robux (R$). The original purchase was made through Roblox and cannot be reversed there; this amount is paid separately. Tickets are ordinarily non-refundable — this is an exceptional authorisation.",
+    hasDueDate: false,
+    relates: false,
+    defaultTerms: "Paid separately via Roblox group payout.",
+  },
 };
 
-/** The four kinds, in the order they should be offered. */
+/**
+ * The kinds that are WRITTEN BY HAND in the generic builder, in the order offered.
+ *
+ * TICKET_REFUND is deliberately absent: its lines are derived from a ticket and capped
+ * at what that ticket was paid, so it has its own guarded route (/company/accounting/
+ * refund) and must never be reachable through the free-form builder. Listing it here
+ * would offer a way to type any amount against any name.
+ */
 export const DOCUMENT_KINDS: KindConfig[] = [
   CONFIG[DocumentKind.INVOICE],
   CONFIG[DocumentKind.CONTRACTOR_PAYMENT],
   CONFIG[DocumentKind.RECEIPT],
   CONFIG[DocumentKind.CREDIT_NOTE],
 ];
+
+/** Every kind, including the ones with their own routes - for filters and labels. */
+export const ALL_DOCUMENT_KINDS: KindConfig[] = [
+  ...DOCUMENT_KINDS,
+  CONFIG[DocumentKind.TICKET_REFUND],
+];
+
+/**
+ * Is this kind written through the generic builder?
+ *
+ * The guard behind the builder routes AND behind editing: a refund draft opened in the
+ * free-form editor could have its amount raised past what the holder ever paid.
+ */
+export function isHandAuthored(kind: DocumentKind): boolean {
+  return kind !== DocumentKind.TICKET_REFUND;
+}
 
 export function kindConfig(kind: DocumentKind): KindConfig {
   return CONFIG[kind];

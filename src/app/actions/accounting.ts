@@ -7,8 +7,10 @@ import { DocumentKind, DocumentStatus } from "@prisma/client";
 import { requireCompanyUser, type CompanyUser } from "@/lib/company";
 import { AuditAction, AuditActorKind, AuditTarget, recordAudit, COMPANY_SCOPE } from "@/lib/audit";
 import { s, parseDate } from "@/lib/content";
-import { parseKind } from "@/lib/accounting/kinds";
-import { buildTotals, readLineItems } from "@/lib/accounting/lines";
+import { parseKind, kindConfig, isHandAuthored } from "@/lib/accounting/kinds";
+import { buildTotals, parseRobux, readLineItems } from "@/lib/accounting/lines";
+import { checkRefundAmount, lookupTicketForRefund } from "@/lib/accounting/refunds";
+import { voidTicket } from "@/lib/tickets/issue";
 import {
   createDraft,
   deleteDraft,
@@ -40,6 +42,9 @@ import { formatRobux } from "@/lib/tickets/pricing";
 // not a permission.
 
 export type DocumentFormState = { error: string } | null;
+
+/** Refund lookups keep the code in the state, so the page can re-render the ticket found. */
+export type RefundFormState = { error: string; code: string } | null;
 
 function refresh(id?: string) {
   revalidatePath("/company/accounting");
@@ -137,6 +142,12 @@ export async function createDocument(
 
   const kind = parseKind(s(formData, "kind"));
   if (!kind) return { error: "Unknown document type." };
+  // The free-form builder writes hand-authored documents ONLY. A refund reaching this
+  // path would be a refund with typed lines and no ticket behind it - which is to say,
+  // no ceiling on the amount. It has its own route for exactly that reason.
+  if (!isHandAuthored(kind)) {
+    return { error: "That document type is written from its own page, not here." };
+  }
 
   const parsed = readForm(formData);
   if (!parsed.ok) return { error: parsed.error };
@@ -167,6 +178,14 @@ export async function saveDocument(
   const id = s(formData, "id");
   const existing = await getDocument(id);
   if (!existing) return { error: "That document no longer exists." };
+  // Same reason as createDocument: editing a refund here would let its amount be raised
+  // past what the holder ever paid. A wrong refund draft is discarded and rewritten.
+  if (!isHandAuthored(existing.kind)) {
+    return {
+      error:
+        "A ticket refund can't be edited. Discard this draft and write a new one from the ticket.",
+    };
+  }
   if (existing.status !== DocumentStatus.DRAFT) {
     return {
       error:
@@ -193,6 +212,115 @@ export async function saveDocument(
   redirect(`/company/accounting/${id}`);
 }
 
+// ---- Ticket refunds ------------------------------------------------------
+
+/**
+ * Write a refund draft against a ticket.
+ *
+ * The ticket is re-resolved and the amount re-checked HERE, against the ledger, however
+ * carefully the page did it first: the page's ceiling was computed when it rendered, and
+ * a second refund may have been issued against the same ticket since. See
+ * checkRefundAmount, which re-reads rather than trusting what it is handed.
+ *
+ * The document's LINES are built from the ticket, never posted. There is exactly one
+ * line - the ticket, at the refunded amount - so there is no path by which a typed
+ * figure reaches the total.
+ */
+export async function createTicketRefund(
+  _prev: RefundFormState,
+  formData: FormData,
+): Promise<RefundFormState> {
+  const user = await requireCompanyUser();
+  const code = s(formData, "code");
+
+  const target = await lookupTicketForRefund(s(formData, "ticketId") || code);
+  if (!target) return { error: "That ticket no longer exists.", code };
+
+  const amount = parseRobux(s(formData, "amount"));
+  if (amount === null) {
+    return { error: "Enter the refund amount as whole Robux.", code };
+  }
+
+  const check = await checkRefundAmount(target, amount);
+  if (!check.ok) return { error: check.error, code };
+
+  const reason = s(formData, "reason");
+  if (!reason) {
+    return {
+      // Not decoration. Tickets are ordinarily non-refundable, so every refund is an
+      // exception, and an exception with no recorded reason is indistinguishable later
+      // from a mistake or a favour.
+      error: "Give a reason. Every refund is an exception and the record has to say why.",
+      code,
+    };
+  }
+
+  // Only offered when the ticket can actually be cancelled - a checked-in holder is
+  // already inside the room, and an already-cancelled ticket has nothing left to take.
+  const voidsTicket = target.canVoid && s(formData, "voidsTicket") === "on";
+
+  const line = {
+    description: `Ticket ${target.code} — ${target.eventTitle}${
+      target.tierName ? ` (${target.tierName})` : ""
+    }`,
+    qtyCenti: 100,
+    unitRobux: check.amount,
+    amountRobux: check.amount,
+  };
+
+  const doc = await createDraft(
+    {
+      kind: DocumentKind.TICKET_REFUND,
+      title: `Refund — ${target.eventTitle}`,
+      counterpartyName: target.holderName,
+      counterpartyRef: `Roblox ID ${target.holderRobloxId}`,
+      // Snapshotted onto the document, because ticketId is a plain column with nothing
+      // joined through it: this document has to still read after the ticket, the show
+      // or the holder's row is gone.
+      counterpartyDetail: [
+        `Ticket ${target.code}`,
+        target.tierName ? `Tier: ${target.tierName}` : null,
+        `Paid: ${formatRobux(target.paid)}${
+          target.payments > 1 ? ` across ${target.payments} payments` : ""
+        }`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      relatedId: null,
+      totals: {
+        lines: [line],
+        subtotal: check.amount,
+        adjustmentRobux: 0,
+        total: check.amount,
+      },
+      adjustmentLabel: null,
+      terms: kindConfig(DocumentKind.TICKET_REFUND).defaultTerms,
+      notes: `Reason: ${reason}${
+        voidsTicket
+          ? "\nThe ticket is cancelled by this refund."
+          : "\nThe ticket remains valid."
+      }`,
+      documentDate: new Date(),
+      dueDate: null,
+    },
+    user,
+    { ticketId: target.ticketId, voidsTicket },
+  );
+
+  await audit(user, AuditAction.CREATED, doc.id, `refund ${target.code}`, {
+    kind: DocumentKind.TICKET_REFUND,
+    ticketId: target.ticketId,
+    ticketCode: target.code,
+    total: check.amount,
+    paid: target.paid,
+    reason,
+    voidsTicket,
+  });
+
+  refresh(doc.id);
+  redirect(`/company/accounting/${doc.id}`);
+}
+
 // ---- Lifecycle -----------------------------------------------------------
 
 /** Freeze a draft: number it, mint its share link, and close it to editing. */
@@ -215,8 +343,42 @@ export async function issueDocumentAction(formData: FormData) {
     counterparty: doc.counterpartyName,
   });
 
+  // Issuing a refund is what cancels the ticket - not writing the draft. A draft may be
+  // discarded, and cancelling somebody's ticket on the strength of one that was never
+  // issued would take their seat away for a refund that never happened.
+  //
+  // AFTER the issue, deliberately, and not inside its transaction: voidTicket() frees
+  // the seat and pings the waitlist, which is a lot of unrelated work to hold a counter
+  // row's lock open for. The cost is that the void can fail on its own - so it is
+  // reported rather than swallowed, and the ok= below says which actually happened.
+  let voidOutcome: "voided" | "voidfailed" | null = null;
+  if (doc.kind === DocumentKind.TICKET_REFUND && doc.voidsTicket && doc.ticketId) {
+    const result = await voidTicket({
+      ticketId: doc.ticketId,
+      // Never a ban. They are being refunded, which is the opposite of being thrown
+      // out - revoking would stamp them as barred from the show on their way to a
+      // goodwill payment.
+      ban: false,
+      reason: `Refunded — ${doc.number}`,
+      actorName: user.displayName,
+    });
+    voidOutcome = result.ok ? "voided" : "voidfailed";
+
+    await audit(
+      user,
+      result.ok ? AuditAction.VOIDED : AuditAction.UPDATED,
+      doc.ticketId,
+      `ticket for refund ${doc.number}`,
+      { refundId: doc.id, ok: result.ok, reason: result.ok ? null : result.reason },
+    );
+  }
+
   refresh(id);
-  redirect(`/company/accounting/${id}?ok=issued`);
+  redirect(
+    `/company/accounting/${id}?ok=${voidOutcome === "voided" ? "issuedvoided" : "issued"}${
+      voidOutcome === "voidfailed" ? "&error=voidfailed" : ""
+    }`,
+  );
 }
 
 /** Record that an issued document has been settled. */

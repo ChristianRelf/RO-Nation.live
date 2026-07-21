@@ -6,7 +6,7 @@ import { requireCompanyUser } from "@/lib/company";
 import { CompanyShell } from "@/components/company-shell";
 import { AdminHeader } from "@/components/admin-ui";
 import { DocumentBuilder } from "@/components/accounting/document-builder";
-import { kindConfig } from "@/lib/accounting/kinds";
+import { kindConfig, isHandAuthored } from "@/lib/accounting/kinds";
 import { formatQty, readLineItems } from "@/lib/accounting/lines";
 import { getDocument, listRelatable } from "@/lib/accounting/documents";
 import { saveDocument } from "@/app/actions/accounting";
@@ -37,6 +37,13 @@ export default async function EditDocumentPage({
   if (!doc) notFound();
   if (doc.status !== DocumentStatus.DRAFT) {
     redirect(`/company/accounting/${doc.id}?error=frozen`);
+  }
+  // A refund's amount is capped at what the holder actually paid, and that cap only
+  // holds because the document was written from the ticket. Opening one in the
+  // free-form builder would hand it a text box where the ceiling used to be. A wrong
+  // refund draft is discarded and rewritten, not edited.
+  if (!isHandAuthored(doc.kind)) {
+    redirect(`/company/accounting/${doc.id}?error=noteditable`);
   }
 
   const cfg = kindConfig(doc.kind);

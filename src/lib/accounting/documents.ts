@@ -61,6 +61,20 @@ export type DocumentInput = {
   dueDate?: Date | null;
 };
 
+/**
+ * The extra couple of fields a TICKET_REFUND carries.
+ *
+ * Separate from DocumentInput, and only accepted by createDraft, because updateDraft
+ * must not be able to move them: re-pointing an existing refund at a different ticket
+ * would slip past the "never more than they paid" ceiling, which is checked against the
+ * ticket at the moment of writing. A refund is written once and then only issued,
+ * voided, or discarded.
+ */
+export type RefundBinding = {
+  ticketId: string;
+  voidsTicket: boolean;
+};
+
 /** The fields a draft write sets - everything except `kind`, which is fixed at creation. */
 export type DocumentFields = Omit<DocumentInput, "kind">;
 
@@ -89,11 +103,15 @@ function writeData(input: DocumentFields) {
 export function createDraft(
   input: DocumentInput,
   by: { robloxId: string; displayName: string },
+  refund?: RefundBinding,
 ): Promise<AccountingDocument> {
   return prisma.accountingDocument.create({
     data: {
       kind: input.kind,
       ...writeData(input),
+      ...(refund
+        ? { ticketId: refund.ticketId, voidsTicket: refund.voidsTicket }
+        : {}),
       createdByRobloxId: by.robloxId,
       createdByName: by.displayName,
     },
@@ -347,6 +365,8 @@ export type AccountingSummary = {
   /** Settled this calendar year, by direction. */
   receivedYtd: number;
   paidYtd: number;
+  /** Refunds settled this year - a subset of paidYtd, surfaced because it is watched. */
+  refundedYtd: number;
   draftCount: number;
 };
 
@@ -384,13 +404,23 @@ export async function accountingSummary(): Promise<AccountingSummary> {
 
   // A credit note reduces what is owed, so it sits on the opposite side of the ledger
   // from the invoice it corrects - money we will not now be receiving.
+  // An authorised refund is money RNL owes a ticket holder and has not yet sent, so it
+  // belongs beside contractor payments in "owed by us" - not in a column of its own and
+  // certainly not netted off revenue, which would hide it.
   return {
     owedToUs:
       sumWhere(outstanding, [DocumentKind.INVOICE]) -
       sumWhere(outstanding, [DocumentKind.CREDIT_NOTE]),
-    owedByUs: sumWhere(outstanding, [DocumentKind.CONTRACTOR_PAYMENT]),
+    owedByUs: sumWhere(outstanding, [
+      DocumentKind.CONTRACTOR_PAYMENT,
+      DocumentKind.TICKET_REFUND,
+    ]),
     receivedYtd: sumWhere(settled, [DocumentKind.RECEIPT]),
-    paidYtd: sumWhere(settled, [DocumentKind.CONTRACTOR_PAYMENT]),
+    paidYtd: sumWhere(settled, [
+      DocumentKind.CONTRACTOR_PAYMENT,
+      DocumentKind.TICKET_REFUND,
+    ]),
+    refundedYtd: sumWhere(settled, [DocumentKind.TICKET_REFUND]),
     draftCount,
   };
 }

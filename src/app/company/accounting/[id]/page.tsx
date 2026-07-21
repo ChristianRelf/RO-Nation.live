@@ -9,7 +9,7 @@ import { ShareLink } from "@/components/accounting/share-link";
 import { ConfirmButton } from "@/components/confirm-button";
 import { LocalTime } from "@/components/local-time";
 import { getDocument } from "@/lib/accounting/documents";
-import { kindConfig } from "@/lib/accounting/kinds";
+import { kindConfig, isHandAuthored } from "@/lib/accounting/kinds";
 import {
   creditNoteFromAction,
   discardDraftAction,
@@ -32,10 +32,18 @@ const ERRORS: Record<string, string> = {
   notopen: "That document isn't open, so it can't be changed.",
   notdraft: "That isn't a draft.",
   notissued: "That document hasn't been issued, so it has no share link.",
+  noteditable:
+    "A ticket refund can't be edited — its amount is capped by the ticket it was written from. Discard it and write a new one.",
+  // The refund issued; only the ticket cancellation failed. Said loudly, because the
+  // holder now has money coming AND a ticket that still scans at the door.
+  voidfailed:
+    "The refund was issued, but the ticket could NOT be cancelled — cancel it by hand from Tickets.",
 };
 
 const OK: Record<string, string> = {
   issued: "Issued. It's numbered, frozen, and the share link below is live.",
+  issuedvoided:
+    "Issued, and the ticket is cancelled — its seat is back in the room. Now pay the Robux out.",
   paid: "Marked as paid.",
   voided: "Voided. It stays on the record, marked cancelled.",
   rotated: "New share link minted. The old one is dead.",
@@ -83,24 +91,32 @@ export default async function DocumentPage({
       statusBadge={<DocumentStatusBadge status={doc.status} tone="light" />}
       actions={
         <>
+          {isDraft && isHandAuthored(doc.kind) ? (
+            <a
+              href={`/company/accounting/${doc.id}/edit`}
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black"
+            >
+              Edit
+            </a>
+          ) : null}
+
           {isDraft ? (
-            <>
-              <a
-                href={`/company/accounting/${doc.id}/edit`}
-                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black"
+            <form action={issueDocumentAction}>
+              <input type="hidden" name="id" value={doc.id} />
+              <ConfirmButton
+                message={
+                  // A refund's confirm names the consequence that is NOT on the paper:
+                  // issuing it cancels somebody's ticket. That belongs in the sentence
+                  // you read before clicking, not only in the document you read after.
+                  doc.kind === DocumentKind.TICKET_REFUND && doc.voidsTicket
+                    ? "Issue this refund? It will be numbered, every figure frozen, AND the ticket will be cancelled — its holder loses their place. You still have to pay the Robux out by hand."
+                    : `Issue this ${cfg.label.toLowerCase()}? It will be numbered and every figure frozen — after this it can only be voided or credited.`
+                }
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-80"
               >
-                Edit
-              </a>
-              <form action={issueDocumentAction}>
-                <input type="hidden" name="id" value={doc.id} />
-                <ConfirmButton
-                  message={`Issue this ${cfg.label.toLowerCase()}? It will be numbered and every figure frozen — after this it can only be voided or credited.`}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-80"
-                >
-                  Issue
-                </ConfirmButton>
-              </form>
-            </>
+                Issue
+              </ConfirmButton>
+            </form>
           ) : null}
 
           {isIssued ? (

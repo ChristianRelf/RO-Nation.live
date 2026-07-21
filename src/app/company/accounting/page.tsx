@@ -7,7 +7,13 @@ import { AdminHeader, StatCard } from "@/components/admin-ui";
 import { DocumentStatusBadge } from "@/components/accounting/document-status-badge";
 import { LocalTime } from "@/components/local-time";
 import { formatRobux } from "@/lib/tickets/pricing";
-import { DOCUMENT_KINDS, kindConfig, parseKind, STATUS_META } from "@/lib/accounting/kinds";
+import {
+  ALL_DOCUMENT_KINDS,
+  DOCUMENT_KINDS,
+  kindConfig,
+  parseKind,
+  STATUS_META,
+} from "@/lib/accounting/kinds";
 import { accountingSummary, listDocuments } from "@/lib/accounting/documents";
 
 export const dynamic = "force-dynamic";
@@ -88,7 +94,7 @@ export default async function CompanyAccountingPage({
         <StatCard
           label="Owed by us"
           value={formatRobux(summary.owedByUs)}
-          hint="Issued payment advices, unsettled"
+          hint="Payment advices and refunds, unsettled"
         />
         <StatCard
           label="Received this year"
@@ -98,7 +104,11 @@ export default async function CompanyAccountingPage({
         <StatCard
           label="Paid out this year"
           value={formatRobux(summary.paidYtd)}
-          hint="Contractor payments settled"
+          hint={
+            summary.refundedYtd
+              ? `Incl. ${formatRobux(summary.refundedYtd)} refunded`
+              : "Contractor payments and refunds settled"
+          }
         />
       </section>
 
@@ -122,6 +132,23 @@ export default async function CompanyAccountingPage({
             </Link>
           ))}
         </div>
+
+        {/* Set apart from the four cards above, and worded as the exception it is.
+            A refund sitting in the grid as a fifth equal option is an invitation; it
+            belongs on the page, but not as one of the things you routinely do. */}
+        <Link
+          href="/company/accounting/refund"
+          className="card mt-3 flex items-start justify-between gap-4 border-amber-400/20 p-4 transition-colors hover:border-amber-400/50"
+        >
+          <div className="min-w-0">
+            <p className="font-semibold text-fg">Refund a ticket</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Exceptional cases only. Written against the ticket, capped at what the
+              holder actually paid.
+            </p>
+          </div>
+          <span className="shrink-0 text-sm text-amber-300">Open →</span>
+        </Link>
 
         <Link
           href="/company/invoices"
@@ -154,7 +181,9 @@ export default async function CompanyAccountingPage({
         <div className="mb-4 flex flex-col gap-2">
           <div className="flex flex-wrap gap-1.5">
             <FilterPill href={query({ kind: "" })} active={!kind} label="All types" />
-            {DOCUMENT_KINDS.map((k) => (
+            {/* Every kind here, including refunds - you must be able to FIND a refund
+                even though you don't START one from the cards above. */}
+            {ALL_DOCUMENT_KINDS.map((k) => (
               <FilterPill
                 key={k.kind}
                 href={query({ kind: k.kind })}

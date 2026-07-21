@@ -2343,6 +2343,9 @@ enum DocumentKind {
   RECEIPT
   /// Cancels or partly refunds an already-issued document. The ONLY way to correct one.
   CREDIT_NOTE
+  /// Money back to a ticket holder. Written AGAINST a ticket rather than typed, and
+  /// capped at what that ticket was actually paid for. See lib/accounting/refunds.ts.
+  TICKET_REFUND
 }
 
 enum DocumentStatus {
@@ -2390,6 +2393,27 @@ model AccountingDocument {
   /// same reason as the snapshot fields - the pointer must survive whatever happens to
   /// the target, and nothing is ever joined through it.
   relatedId String?
+
+  // ---- Ticket refunds ----------------------------------------------------
+  //
+  // Set only on a TICKET_REFUND. Everything else leaves both alone.
+
+  /// The ticket being refunded. A PLAIN column, not a relation, and that is load-bearing
+  /// twice over: TicketPurchase cascades on ticket delete, and a refund document must
+  /// outlive the thing it refunds - the whole point of a financial record is that it
+  /// survives the tidying up. Nothing is ever joined through it; the document snapshots
+  /// what it needs (code, show, holder) into its own title and lines at creation.
+  ticketId String?
+
+  /// Whether issuing this refund should also CANCEL the ticket.
+  ///
+  /// True for the ordinary full refund - money back means the seat comes back, and a
+  /// refunded ticket that still scans at the door is somebody attending for free.
+  /// False for a partial or goodwill refund, where they keep their seat and get some
+  /// Robux back. Stored rather than inferred from the amount, because "full refund"
+  /// and "void the ticket" are two decisions and conflating them silently is how a
+  /// gesture of goodwill accidentally cancels somebody's night out.
+  voidsTicket Boolean @default(true)
 
   // ---- The money, all integer Robux --------------------------------------
   //
@@ -2468,6 +2492,9 @@ model AccountingDocument {
   @@index([kind, status, createdAt])
   @@index([status, createdAt])
   @@index([relatedId])
+  /// The double-refund guard reads this on every refund: "what has already been paid
+  /// back on this ticket". It runs before every refund is written, so it is indexed.
+  @@index([ticketId])
   @@map("accounting_documents")
 }
 
