@@ -15,9 +15,11 @@ export async function ScopeSettlement({ scope }: { scope: RosterScope }) {
     scope.eventScope,
   );
 
-  // A partner is a PAYEE - RNL owes them their share, so they get an invoice. RNL's
-  // own shows (SHASHA, eventScope null) have no external party to pay, so no invoice.
-  const invoiceHref = scope.eventScope ? `${scope.basePath}/invoice` : null;
+  // A partner is a PAYEE (RNL owes them their share); RNL's own shows (SHASHA,
+  // eventScope null) have no external party, so their statement is a REVENUE one.
+  // Both get a printable document - the wording and the fee stack just differ.
+  const isSelf = !scope.eventScope;
+  const invoiceHref = `${scope.basePath}/invoice`;
 
   return (
     <section>
@@ -60,27 +62,40 @@ export async function ScopeSettlement({ scope }: { scope: RosterScope }) {
         <dl className="space-y-2 text-sm">
           <FeeRow label="Gross (buyers paid)" value={formatRobux(payout.gross)} />
           <FeeRow label="Roblox fee (30%)" value={`− ${formatRobux(payout.robloxFee)}`} muted />
-          <FeeRow label="Received by RNL" value={formatRobux(payout.afterRoblox)} />
-          <FeeRow label="RNL platform fee (10%)" value={`− ${formatRobux(payout.rnlFee)}`} muted />
-          <div className="mt-1 border-t border-line pt-2">
-            <FeeRow
-              label={scope.eventScope ? `Payable to ${scope.name}` : "RNL retains"}
-              value={formatRobux(scope.eventScope ? payout.partnerPayout : payout.afterRoblox)}
-              strong
-            />
-          </div>
+          {isSelf ? (
+            // RNL's own shows: no platform fee to take from anyone. Gross less Roblox
+            // is what RNL keeps, full stop.
+            <div className="mt-1 border-t border-line pt-2">
+              <FeeRow label="Net revenue" value={formatRobux(payout.afterRoblox)} strong />
+            </div>
+          ) : (
+            <>
+              <FeeRow label="Received by RNL" value={formatRobux(payout.afterRoblox)} />
+              <FeeRow
+                label="RNL platform fee (10%)"
+                value={`− ${formatRobux(payout.rnlFee)}`}
+                muted
+              />
+              <div className="mt-1 border-t border-line pt-2">
+                <FeeRow
+                  label={`Payable to ${scope.name}`}
+                  value={formatRobux(payout.partnerPayout)}
+                  strong
+                />
+              </div>
+            </>
+          )}
         </dl>
 
-        {invoiceHref ? (
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Link href={invoiceHref} className="btn btn-accent">
-              Generate invoice
-            </Link>
-            <span className="text-xs text-faint">
-              A printable payout statement - save it as a PDF from your browser.
-            </span>
-          </div>
-        ) : null}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Link href={invoiceHref} className="btn btn-accent">
+            {isSelf ? "Generate statement" : "Generate invoice"}
+          </Link>
+          <span className="text-xs text-faint">
+            A printable {isSelf ? "revenue statement" : "payout statement"} - save it as a
+            PDF from your browser.
+          </span>
+        </div>
       </div>
 
       {shows.length ? (

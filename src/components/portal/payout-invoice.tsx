@@ -3,28 +3,38 @@ import { formatRobux } from "@/lib/tickets/pricing";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { PrintButton } from "./print-button";
 
-// A payout statement, as a printable document. White paper, black ink, RNL's mark
+// A settlement document, as a printable page. White paper, black ink, RNL's mark
 // top-left - built to be saved as a PDF from the browser (the print button below).
 //
-// It renders OUTSIDE the portal chrome (see app/pp/[slug]/invoice), so it is the whole
-// page: no nav, no footer, nothing to strip when it prints. It forces its own light
-// palette with explicit colours rather than theme tokens, because the portal it is
-// reached from is dark and a statement about money must look the same on every screen
-// and on paper.
+// It renders OUTSIDE the portal chrome (see app/pp/[slug]/invoice and
+// app/shasha/invoice), so it is the whole page: no nav, no footer, nothing to strip
+// when it prints. It forces its own light palette with explicit colours rather than
+// theme tokens, because the portal it is reached from is dark and a statement about
+// money must look the same on every screen and on paper.
 //
-// The numbers come from getSettlement/payoutFor - all revenue lands with RNL, Roblox
-// takes 30% at source, RNL keeps 10% of the rest, and the balance is what this
-// statement says is payable. See lib/settlement.ts.
+// TWO variants, because the money splits differently:
+//
+//   partner  A PAYOUT. RNL owes the partner their share - gross, minus Roblox's 30%,
+//            minus RNL's 10% platform fee, equals the amount payable to the partner.
+//
+//   self     RNL's OWN shows (SHASHA). There is no third party to pay and no platform
+//            fee to take from anyone, so it is a REVENUE statement: gross, minus
+//            Roblox's 30%, equals what RNL keeps.
+//
+// See lib/settlement.ts for the numbers; both variants read the same payout stack.
 
 export function PayoutInvoice({
-  partnerName,
+  variant,
+  payeeName,
   periodLabel,
   invoiceNo,
   generatedOn,
   settlement,
   backHref,
 }: {
-  partnerName: string;
+  variant: "partner" | "self";
+  /** Who the statement is for - the partner, or "RO. Nation LIVE" for its own shows. */
+  payeeName: string;
   periodLabel: string;
   invoiceNo: string;
   generatedOn: Date;
@@ -32,6 +42,7 @@ export function PayoutInvoice({
   backHref: string;
 }) {
   const { shows, payout, capped } = settlement;
+  const isSelf = variant === "self";
 
   return (
     <div className="min-h-dvh bg-white text-black">
@@ -76,7 +87,7 @@ export function PayoutInvoice({
           </div>
           <div className="text-right">
             <h1 className="text-2xl font-extrabold uppercase tracking-wide">
-              Payout statement
+              {isSelf ? "Revenue statement" : "Payout statement"}
             </h1>
             <p className="mt-1 text-xs text-neutral-500">No. {invoiceNo}</p>
             <p className="text-xs text-neutral-500">Issued {formatDate(generatedOn)}</p>
@@ -87,9 +98,9 @@ export function PayoutInvoice({
         <section className="mt-6 grid grid-cols-2 gap-6 text-sm">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">
-              Payable to
+              {isSelf ? "For" : "Payable to"}
             </p>
-            <p className="mt-1 text-base font-semibold">{partnerName}</p>
+            <p className="mt-1 text-base font-semibold">{payeeName}</p>
           </div>
           <div className="text-right">
             <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">
@@ -129,16 +140,29 @@ export function PayoutInvoice({
           </tbody>
         </table>
 
-        {/* Totals - the fee stack, ending in the amount payable */}
+        {/* Totals - the fee stack. The partner variant carries RNL's platform fee and
+            ends in the amount payable; the self variant stops at what RNL keeps. */}
         <section className="mt-6 flex justify-end">
           <dl className="w-full max-w-xs space-y-1.5 text-sm">
             <Line label="Gross (buyers paid)" value={formatRobux(payout.gross)} />
             <Line label="Roblox fee (30%)" value={`− ${formatRobux(payout.robloxFee)}`} muted />
-            <Line label="Received by RNL" value={formatRobux(payout.afterRoblox)} />
-            <Line label="RNL platform fee (10%)" value={`− ${formatRobux(payout.rnlFee)}`} muted />
-            <div className="mt-1 border-t-2 border-black pt-2">
-              <Line label="Amount payable" value={formatRobux(payout.partnerPayout)} strong />
-            </div>
+            {isSelf ? (
+              <div className="mt-1 border-t-2 border-black pt-2">
+                <Line label="Net revenue" value={formatRobux(payout.afterRoblox)} strong />
+              </div>
+            ) : (
+              <>
+                <Line label="Received by RNL" value={formatRobux(payout.afterRoblox)} />
+                <Line
+                  label="RNL platform fee (10%)"
+                  value={`− ${formatRobux(payout.rnlFee)}`}
+                  muted
+                />
+                <div className="mt-1 border-t-2 border-black pt-2">
+                  <Line label="Amount payable" value={formatRobux(payout.partnerPayout)} strong />
+                </div>
+              </>
+            )}
           </dl>
         </section>
 
@@ -146,8 +170,11 @@ export function PayoutInvoice({
         <footer className="mt-12 border-t border-neutral-300 pt-4 text-[11px] leading-relaxed text-neutral-500">
           <p>
             All ticket revenue is collected by RO. Nation LIVE. Roblox deducts 30% at
-            the point of sale; RO. Nation LIVE retains a 10% platform fee on the amount
-            received. All figures are in Robux (R$).
+            the point of sale
+            {isSelf
+              ? "; the balance is RO. Nation LIVE's own revenue."
+              : "; RO. Nation LIVE retains a 10% platform fee on the amount received, and the balance is payable to the organiser."}{" "}
+            All figures are in Robux (R$).
             {capped
               ? " Figures cover the most recent 5,000 payments in this period."
               : ""}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { SwitcherArea } from "@/lib/hub";
@@ -13,7 +14,20 @@ import { cn } from "@/lib/utils";
  * /sleeptokenro without knowing which it is. Note these are the PUBLIC paths on
  * the portal host, not the internal /pp/<slug> routes Next actually renders -
  * see lib/partners/urls.ts.
+ *
+ * ---- Why dropdowns rather than a flat row --------------------------------
+ *
+ * An owner's portal grew to a dozen-plus items - shows, door, analytics, payouts,
+ * announce, feedback, VIP, comp, blacklist, history, keys, access - and a flat row
+ * of them overflowed into a horizontal scroll nobody could see the end of. So the
+ * items are CATEGORISED: a couple of standalone links (Hub, Overview) and a handful
+ * of grouped dropdowns. A group with only ONE visible item (a read-only staffer's
+ * Insights is just Analytics) renders as a plain link, not a dropdown of one - the
+ * chrome should never be heavier than what it holds.
  */
+type NavItem = { label: string; href: string };
+type NavGroup = { key: string; label: string; items: NavItem[] };
+
 export function PortalNav({
   brand,
   basePath,
@@ -44,62 +58,26 @@ export function PortalNav({
   /**
    * The manual ticket check. Only for an org that HAS shows - a partner without
    * the events feature has no tickets to check.
-   *
-   * SHASHA has shows: RNL's own, the NULL-partnered ones. It simply had no door of
-   * its own until the portal grew one, and its crew were sent to /company/door on
-   * the main site instead - a different host, and a page a read-only staffer
-   * cannot even open. See authorise() in app/actions/door.ts.
    */
   doorLink?: boolean;
   /**
-   * The line-up, on the portal host.
-   *
-   * SHASHA only. A partner's shows are reached through Studio, and their /shows
-   * path is a permanent redirect into it - so a second item pointing at the same
-   * place would be one item too many. RNL has both because /company/events still
-   * exists on the main site; this is the copy that does not leave the portal.
+   * The line-up, on the portal host. SHASHA only - a partner's shows are reached
+   * through Studio.
    */
   showsLink?: boolean;
-  /**
-   * The read-only analytics dashboard. Only for an org that HAS shows - the page
-   * itself 404s a partner without the events feature, so this just spares them a
-   * dead item. Every role sees it: it counts, it never writes.
-   */
+  /** The read-only analytics dashboard. Only for an org that HAS shows. Every role sees it. */
   analyticsLink?: boolean;
-  /**
-   * The Robux settlement statement. Managers only (financial), and only for an org
-   * with shows. The page guards itself.
-   */
+  /** The Robux settlement statement. Managers only, and only for an org with shows. */
   payoutsLink?: boolean;
-  /**
-   * Compose an announcement to a show's audience. Managers only (it is a write that
-   * reaches every holder), and only for an org with shows. Same courtesy/lock split
-   * as keysLink - the page calls requireScopeManager itself.
-   */
+  /** Compose an announcement to a show's audience. Managers only. */
   announceLink?: boolean;
-  /**
-   * Comp the VIP list into a show. Managers only (it issues real tickets), and only
-   * for an org with shows. The page calls requireScopeManager itself.
-   */
+  /** Comp the VIP list into a show. Managers only. */
   compLink?: boolean;
-  /**
-   * Invite a past show's attendees to a survey. Managers only, and only for an org
-   * that has both shows and surveys. The page guards itself.
-   */
+  /** Invite a past show's attendees to a survey. Managers only, needs shows + surveys. */
   feedbackLink?: boolean;
-  /**
-   * API keys. Managers only - the page itself refuses read-only staff, and a nav
-   * item that bounces you is worse than no nav item. Hiding it is courtesy;
-   * requireScopeManager() in the page is the actual lock.
-   */
+  /** API keys. Managers only - the page itself refuses read-only staff. */
   keysLink?: boolean;
-  /**
-   * Who else may sign in here. OWNERS ONLY, and only on a partner portal.
-   *
-   * Same courtesy/lock split as keysLink: the page itself calls requirePartnerOwner(), and
-   * hiding the item just spares a manager a bounce. SHASHA has no equivalent - its
-   * membership IS a rank in RNL's Roblox group, so there is no list to manage.
-   */
+  /** Who else may sign in here. OWNERS ONLY, and only on a partner portal. */
   membersLink?: boolean;
   /**
    * Which portal this is - "shasha" or the partner slug. Only used to mark the
@@ -113,8 +91,6 @@ export function PortalNav({
   areas?: SwitcherArea[];
   user: {
     displayName: string;
-    // avatarUrl is optional: a Roblox session carries whatever picture the OAuth
-    // profile had, which can be nothing. Discord always handed us a default one.
     avatarUrl?: string;
     /** Shown under the name - "Management", "Read only", "Owner". */
     roleLabel: string;
@@ -124,37 +100,90 @@ export function PortalNav({
 }) {
   const pathname = usePathname();
 
-  const links = [
-    // The launcher above every portal. Always shown: anyone in a portal holds at least
-    // this one door, and it is how you cross from one org's tools to another's without
-    // retyping a URL. An absolute portal-host path, so it is right from a partner portal too.
-    { label: "◈ Hub", href: "/hub" },
-    { label: "Overview", href: basePath },
-    ...(showsLink ? [{ label: "Shows", href: `${basePath}/shows` }] : []),
-    ...(doorLink ? [{ label: "Door", href: `${basePath}/door` }] : []),
-    ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),
-    ...(analyticsLink ? [{ label: "Analytics", href: `${basePath}/analytics` }] : []),
-    ...(payoutsLink ? [{ label: "Payouts", href: `${basePath}/payouts` }] : []),
-    ...(announceLink ? [{ label: "Announce", href: `${basePath}/announce` }] : []),
-    ...(feedbackLink ? [{ label: "Feedback", href: `${basePath}/feedback` }] : []),
-    { label: "VIP list", href: `${basePath}/vip` },
-    ...(compLink ? [{ label: "Comp", href: `${basePath}/comp` }] : []),
-    { label: "Blacklist", href: `${basePath}/blacklist` },
-    { label: "History", href: `${basePath}/audit` },
-    ...(keysLink ? [{ label: "API keys", href: `${basePath}/keys` }] : []),
-    ...(membersLink ? [{ label: "Access", href: `${basePath}/members` }] : []),
-  ];
+  // One open menu at a time. Closed on navigation and on any click outside the nav.
+  const [open, setOpen] = useState<string | null>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setOpen(null), [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpen(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // The categories. Order matters left-to-right. Empty groups are dropped, and a
+  // one-item group is rendered as a plain link (see below).
+  const groups: NavGroup[] = [
+    {
+      key: "shows",
+      label: "Shows",
+      items: [
+        ...(showsLink ? [{ label: "Shows", href: `${basePath}/shows` }] : []),
+        ...(studioLink ? [{ label: "Studio", href: `${basePath}/studio` }] : []),
+        ...(doorLink ? [{ label: "Door", href: `${basePath}/door` }] : []),
+      ],
+    },
+    {
+      key: "insights",
+      label: "Insights",
+      items: [
+        ...(analyticsLink ? [{ label: "Analytics", href: `${basePath}/analytics` }] : []),
+        ...(payoutsLink ? [{ label: "Payouts", href: `${basePath}/payouts` }] : []),
+      ],
+    },
+    {
+      key: "audience",
+      label: "Audience",
+      items: [
+        ...(announceLink ? [{ label: "Announce", href: `${basePath}/announce` }] : []),
+        ...(feedbackLink ? [{ label: "Feedback", href: `${basePath}/feedback` }] : []),
+      ],
+    },
+    {
+      key: "roster",
+      label: "Roster",
+      items: [
+        { label: "VIP list", href: `${basePath}/vip` },
+        ...(compLink ? [{ label: "Comp", href: `${basePath}/comp` }] : []),
+        { label: "Blacklist", href: `${basePath}/blacklist` },
+      ],
+    },
+    {
+      key: "history",
+      label: "History",
+      items: [{ label: "History", href: `${basePath}/audit` }],
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      items: [
+        ...(keysLink ? [{ label: "API keys", href: `${basePath}/keys` }] : []),
+        ...(membersLink ? [{ label: "Access", href: `${basePath}/members` }] : []),
+      ],
+    },
+  ].filter((g) => g.items.length > 0);
+
+  const isActive = (href: string) => pathname.startsWith(href);
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-bg/85 backdrop-blur">
       <div className="shell flex h-16 items-center justify-between gap-4 sm:gap-6">
-        {/* min-w-0 on both this and the nav below is what actually lets the link
-            row scroll. A flex child defaults to min-width:auto - it refuses to
-            shrink below its content - so without these the row of links pushes
-            the header wider than the viewport and the whole PAGE scrolls
-            sideways instead. On an owner's partner portal that is nine links,
-            and the door is a phone tool. */}
-        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+        {/* No overflow-x-auto here any more: dropdowns need overflow: visible to
+            escape the header, and the whole point of grouping is that the row now
+            fits. min-w-0 still lets the flex children shrink rather than push the
+            page sideways. */}
+        <div ref={navRef} className="flex min-w-0 items-center gap-3 sm:gap-5">
           <PortalSwitcher
             brand={brand}
             basePath={basePath}
@@ -162,40 +191,38 @@ export function PortalNav({
             areas={areas}
           />
 
-          <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
-            {links.map((l) => {
-              // The overview matches exactly; the rest match by prefix. Without
-              // that special case, "/sleeptokenro" would light up on every page.
-              const active =
-                l.href === basePath
-                  ? pathname === basePath
-                  : pathname.startsWith(l.href);
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={cn(
-                    "shrink-0 px-3 py-2 text-sm font-medium transition-colors",
-                    active ? "text-fg" : "text-muted hover:text-fg",
-                  )}
-                >
-                  {l.label}
-                  {active ? (
-                    <span className="mt-1 block h-px bg-accent" />
-                  ) : null}
-                </Link>
-              );
-            })}
+          <nav className="flex min-w-0 items-center gap-0.5">
+            {/* The two standalone links. Hub crosses to other portals; Overview is
+                this portal's home and matches EXACTLY, or it lights up everywhere. */}
+            <NavLink href="/hub" label="◈ Hub" active={pathname === "/hub"} />
+            <NavLink href={basePath} label="Overview" active={pathname === basePath} />
+
+            {groups.map((g) =>
+              g.items.length === 1 ? (
+                <NavLink
+                  key={g.key}
+                  href={g.items[0].href}
+                  label={g.items[0].label}
+                  active={isActive(g.items[0].href)}
+                />
+              ) : (
+                <NavDropdown
+                  key={g.key}
+                  group={g}
+                  isOpen={open === g.key}
+                  anyActive={g.items.some((i) => isActive(i.href))}
+                  onToggle={() => setOpen((cur) => (cur === g.key ? null : g.key))}
+                  isActive={isActive}
+                />
+              ),
+            )}
           </nav>
         </div>
 
-        {/* shrink-0: who you are signed in as, and the way out, never compress
-            to make room for the link row - the link row scrolls instead. */}
+        {/* shrink-0: who you are signed in as, and the way out. */}
         <div className="flex shrink-0 items-center gap-3">
           <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold leading-tight">
-              {user.displayName}
-            </p>
+            <p className="text-sm font-semibold leading-tight">{user.displayName}</p>
             <p
               className={cn(
                 "text-[10px] font-bold uppercase tracking-kicker",
@@ -228,5 +255,89 @@ export function PortalNav({
         </div>
       </div>
     </header>
+  );
+}
+
+/** A top-level link, with the accent underline when it is the current area. */
+function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "shrink-0 whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors",
+        active ? "text-fg" : "text-muted hover:text-fg",
+      )}
+    >
+      {label}
+      {active ? <span className="mt-1 block h-px bg-accent" /> : null}
+    </Link>
+  );
+}
+
+/** A category button that opens a menu of its links. */
+function NavDropdown({
+  group,
+  isOpen,
+  anyActive,
+  onToggle,
+  isActive,
+}: {
+  group: NavGroup;
+  isOpen: boolean;
+  anyActive: boolean;
+  onToggle: () => void;
+  isActive: (href: string) => boolean;
+}) {
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        className={cn(
+          "flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors",
+          anyActive || isOpen ? "text-fg" : "text-muted hover:text-fg",
+        )}
+      >
+        {group.label}
+        <span
+          aria-hidden
+          className={cn(
+            "text-[10px] transition-transform",
+            isOpen ? "rotate-180" : "",
+          )}
+        >
+          ▾
+        </span>
+        {anyActive ? <span className="mt-1 block h-px w-full bg-accent" /> : null}
+      </button>
+
+      {isOpen ? (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-50 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-line bg-elev py-1 shadow-lg"
+        >
+          {group.items.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                role="menuitem"
+                className={cn(
+                  "block px-4 py-2 text-sm transition-colors",
+                  active
+                    ? "bg-accent-soft text-accent"
+                    : "text-muted hover:bg-fg/[0.04] hover:text-fg",
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
