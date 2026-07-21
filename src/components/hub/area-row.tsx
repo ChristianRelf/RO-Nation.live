@@ -1,4 +1,5 @@
 import type { HubAreaLive } from "@/lib/hub-dashboard";
+import { LocalTime } from "@/components/local-time";
 import { HubAnchor } from "./hub-anchor";
 import { HubChip } from "./hub-button";
 
@@ -79,7 +80,7 @@ export function AreaRow({ area, index }: { area: HubAreaLive; index: number }) {
                 </p>
                 <p className="tnum mt-1 text-xs text-muted">
                   <span className="text-fg">{area.nextShow.relative}</span> ·{" "}
-                  {area.nextShow.when}
+                  <LocalTime value={area.nextShow.at} mode="datetime" />
                 </p>
               </>
             ) : (

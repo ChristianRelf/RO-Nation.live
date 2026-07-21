@@ -5,7 +5,7 @@ import {
   requirePartnerUser,
 } from "@/lib/partners/guard";
 import { partnerPortalPath } from "@/lib/partners/urls";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { venueTemplates } from "@/lib/venue/form";
 import { parseLayout } from "@/lib/venue/schema";
 import { totalSeats } from "@/lib/venue/seats";
@@ -111,7 +111,7 @@ export default async function PartnerVenuesPage({
                       {v.seats === null ? "—" : v.seats || "standing"}
                     </td>
                     <td className="px-5 py-3 text-xs text-muted">
-                      {formatDateTime(v.updatedAt)}
+                      <LocalTime value={v.updatedAt} mode="datetime" />
                     </td>
                     <td className="px-5 py-3 text-right">
                       {canWrite ? (

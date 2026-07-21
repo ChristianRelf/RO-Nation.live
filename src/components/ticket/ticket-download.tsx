@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { barcodeBars } from "@/lib/tickets/barcode";
+import { formatInstant } from "@/lib/format";
 import { qrMatrix } from "@/lib/qr";
 
 // "Download ticket" - draws the ticket to a canvas and hands back a PNG.
@@ -58,7 +59,13 @@ function roundRect(
 export type DownloadTicket = {
   code: string;
   eventTitle: string;
-  when: string;
+  /**
+   * The show's start as an ISO instant - NOT pre-formatted. It is rendered into the
+   * PNG in the DOWNLOADER's own timezone at draw time (see draw()), so the ticket a
+   * holder saves reads in their clock, with the zone named. The download runs on the
+   * client, which is the one place the viewer's zone is known.
+   */
+  startsAtIso: string;
   venue: string | null;
   tierName: string;
   holder: string;
@@ -233,8 +240,9 @@ export function TicketDownload({ ticket }: { ticket: DownloadTicket }) {
 
       ctx.font = `600 15px ${sans}`;
       ctx.globalAlpha = 0.8;
+      const whenText = formatInstant(ticket.startsAtIso, "datetime", undefined, true);
       ctx.fillText(
-        fit(ctx, [ticket.when, ticket.venue].filter(Boolean).join("  ·  "), W - RAIL - STUB - 48),
+        fit(ctx, [whenText, ticket.venue].filter(Boolean).join("  ·  "), W - RAIL - STUB - 48),
         bx,
         170,
       );

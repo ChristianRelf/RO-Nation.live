@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { partnerBySlug } from "@/lib/partners/registry";
 import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getPostBySlug } from "@/lib/queries";
-import { formatDate } from "@/lib/format";
 import { Prose } from "@/components/prose";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +55,7 @@ export default async function PartnerPostPage({ params }: Params) {
 
       <header className="mt-8 border-b border-line pb-10">
         <p className="tnum text-sm text-faint">
-          {post.publishedAt ? formatDate(post.publishedAt) : ""}
+          {post.publishedAt ? <LocalTime value={post.publishedAt} mode="date" /> : ""}
         </p>
         <h1 className="display mt-4 text-4xl leading-tight sm:text-6xl">
           {post.title}

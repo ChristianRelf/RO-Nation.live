@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AdminHeader, Badge, StatCard } from "@/components/admin-ui";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { priceLabel } from "@/lib/tickets/pricing";
 import { requireCompanyUser } from "@/lib/company";
 
@@ -209,13 +209,13 @@ export default async function CompanyTicketsPage({
                       <td className="px-5 py-4">
                         <p className="font-mono text-xs">{t.code}</p>
                         <p className="mt-0.5 text-xs text-faint">
-                          {formatDateTime(t.createdAt)}
+                          <LocalTime value={t.createdAt} mode="datetime" />
                         </p>
                       </td>
                       <td className="px-5 py-4">
                         <p className="max-w-[14rem] truncate">{t.event.title}</p>
                         <p className="text-xs text-faint">
-                          {formatDateTime(t.event.startsAt)}
+                          <LocalTime value={t.event.startsAt} mode="datetime" />
                         </p>
                       </td>
                       <td className="px-5 py-4">

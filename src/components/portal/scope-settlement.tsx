@@ -5,7 +5,7 @@ import { listSentInvoicesForPartner } from "@/lib/invoices";
 import { StatCard } from "@/components/admin-ui";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { groupCount } from "@/lib/tickets/crowd";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 // The Robux settlement statement for one scope. Read-only. Shared by /shasha and a
 // partner portal, like analytics - and, like analytics, every figure is counted from
@@ -160,7 +160,7 @@ export async function ScopeSettlement({ scope }: { scope: RosterScope }) {
                         <td className="px-5 py-4 text-right tabular-nums font-semibold text-fg">
                           {formatRobux(inv.partnerPayout)}
                         </td>
-                        <td className="px-5 py-4 text-muted">{formatDate(inv.issuedAt)}</td>
+                        <td className="px-5 py-4 text-muted"><LocalTime value={inv.issuedAt} mode="date" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -199,7 +199,7 @@ export async function ScopeSettlement({ scope }: { scope: RosterScope }) {
                   {shows.map((s) => (
                     <tr key={s.eventId} className="hover:bg-fg/[0.02]">
                       <td className="px-5 py-4 font-medium">{s.title}</td>
-                      <td className="px-5 py-4 text-muted">{formatDate(s.startsAt)}</td>
+                      <td className="px-5 py-4 text-muted"><LocalTime value={s.startsAt} mode="date" /></td>
                       <td className="px-5 py-4 text-right tabular-nums">
                         {groupCount(s.payments)}
                       </td>

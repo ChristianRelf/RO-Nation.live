@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { dateBlock, formatTime, isPast, relativeDays } from "@/lib/format";
+import { isPast, relativeDays } from "@/lib/format";
+import { LocalTime, LocalDay, LocalMonth } from "@/components/local-time";
 import { StatusBadge } from "./ui";
 
 export type EventCardData = {
@@ -47,7 +48,6 @@ export function EventCard({
    */
   fallbackSrc?: string;
 }) {
-  const { day, month } = dateBlock(event.startsAt);
   const status = statusFor(event);
   const remaining =
     event.capacity > 0
@@ -71,9 +71,11 @@ export function EventCard({
 
         {/* date block */}
         <div className="absolute left-0 top-0 flex flex-col items-center border-b border-r border-fg/15 bg-bg/85 px-3.5 py-2 leading-none">
-          <span className="font-display text-2xl text-fg">{day}</span>
+          <span className="font-display text-2xl text-fg">
+            <LocalDay value={event.startsAt} />
+          </span>
           <span className="mt-1 text-[9px] font-bold tracking-[0.2em] text-accent">
-            {month}
+            <LocalMonth value={event.startsAt} />
           </span>
         </div>
 
@@ -86,7 +88,9 @@ export function EventCard({
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
           <span>{event.category}</span>
           <span className="text-faint">/</span>
-          <span className="tnum">{formatTime(event.startsAt)}</span>
+          <span className="tnum">
+            <LocalTime value={event.startsAt} mode="time" />
+          </span>
         </div>
         <h3 className="mt-2 font-display text-2xl leading-[0.95] text-fg transition-colors group-hover:text-accent">
           {event.title}

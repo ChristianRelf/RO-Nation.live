@@ -8,7 +8,7 @@ import {
   setEnquiryStatus,
 } from "@/app/actions/company";
 import { requireCompanyUser } from "@/lib/company";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { robloxProfileUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -114,7 +114,7 @@ export default async function EnquiriesPage({
                     <Badge value={e.status} />
                   </div>
                   <p className="mt-1 text-sm text-muted">
-                    {e.name} · {formatDateTime(e.createdAt)}
+                    {e.name} · <LocalTime value={e.createdAt} mode="datetime" />
                   </p>
                 </div>
 

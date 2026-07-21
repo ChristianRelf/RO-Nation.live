@@ -3,7 +3,7 @@ import { ApplicationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { assertPartnerFeature, requirePartnerUser } from "@/lib/partners/guard";
 import { setPartnerApplicationStatus } from "@/app/actions/partner-content";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { StatusBadge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +62,7 @@ export default async function PartnerApplicationsPage({
                     </StatusBadge>
                   </div>
                   <p className="mt-1 text-sm text-muted">
-                    {a.career.title} · {formatDate(a.createdAt)}
+                    {a.career.title} · <LocalTime value={a.createdAt} mode="date" />
                   </p>
                 </div>
 

@@ -1,4 +1,4 @@
-import { dateBlock } from "@/lib/format";
+import { LocalTime, LocalDay, LocalMonth } from "@/components/local-time";
 import type { HubAreaLive } from "@/lib/hub-dashboard";
 import { CapacityMeter } from "./capacity-meter";
 import { HubButton } from "./hub-button";
@@ -24,8 +24,6 @@ export function NowBoard({
   const show = area.nextShow;
   if (!show) return null;
 
-  const { day, month } = dateBlock(show.at);
-
   return (
     <section className="relative isolate overflow-hidden rounded-brand border border-line-strong">
       {/* The room's own light, borrowed. A restrained top tint, not a bloom. */}
@@ -39,9 +37,11 @@ export function NowBoard({
             listing, so a show reads the same on both sides of the login. */}
         <div className="flex shrink-0 items-center gap-5">
           <div className="text-center">
-            <p className="tnum display text-6xl leading-none text-accent">{day}</p>
+            <p className="tnum display text-6xl leading-none text-accent">
+              <LocalDay value={show.at} />
+            </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-kicker text-faint">
-              {month}
+              <LocalMonth value={show.at} />
             </p>
           </div>
           <div aria-hidden className="h-16 w-px bg-line-strong lg:h-20" />
@@ -63,7 +63,9 @@ export function NowBoard({
             <span aria-hidden className="text-faint">
               ·
             </span>
-            <span>{show.when}</span>
+            <span>
+              <LocalTime value={show.at} mode="datetime" />
+            </span>
             <span aria-hidden className="text-faint">
               ·
             </span>

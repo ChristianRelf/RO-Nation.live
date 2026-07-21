@@ -8,7 +8,8 @@ import {
   getUpcomingEvents,
   type EventWithCount,
 } from "@/lib/queries";
-import { dateBlock, formatDate, formatTime, relativeDays } from "@/lib/format";
+import { relativeDays } from "@/lib/format";
+import { LocalTime, LocalDay, LocalMonth } from "@/components/local-time";
 import { StatusBadge } from "@/components/ui";
 import { HeroCrest, PartnerDisclaimer, PartnerMark } from "@/components/partner/emblem";
 import { toLines } from "@/lib/utils";
@@ -192,7 +193,7 @@ export default async function PartnerHome({
                   className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-2 py-7 transition-colors hover:bg-surface"
                 >
                   <span className="tnum w-32 shrink-0 text-sm text-faint">
-                    {formatDate(event.startsAt)}
+                    <LocalTime value={event.startsAt} mode="date" />
                   </span>
                   <span className="display min-w-0 flex-1 text-2xl transition-colors group-hover:text-accent">
                     {event.title}
@@ -233,7 +234,7 @@ export default async function PartnerHome({
               {past.map((event) => (
                 <li key={event.id} className="bg-bg p-8">
                   <p className="tnum text-xs font-semibold tracking-kicker text-faint">
-                    {formatDate(event.startsAt)}
+                    <LocalTime value={event.startsAt} mode="date" />
                   </p>
                   <h3 className="display mt-4 text-2xl">{event.title}</h3>
                   {event.tagline ? (
@@ -336,7 +337,6 @@ function Wordmark({ name }: { name: string }) {
 }
 
 function FeaturedShow({ event }: { event: EventWithCount }) {
-  const { day, month } = dateBlock(event.startsAt);
   const remaining =
     event.capacity > 0 ? Math.max(0, event.capacity - event.ticketsCount) : null;
   const soldOut = remaining !== null && remaining <= 0;
@@ -346,9 +346,11 @@ function FeaturedShow({ event }: { event: EventWithCount }) {
       {/* Date block */}
       <div className="flex items-center justify-center border-b border-line px-12 py-10 md:border-b-0 md:border-r">
         <div className="text-center leading-none">
-          <p className="display text-6xl">{day}</p>
+          <p className="display text-6xl">
+            <LocalDay value={event.startsAt} />
+          </p>
           <p className="mt-3 text-xs font-bold tracking-kicker text-accent">
-            {month}
+            <LocalMonth value={event.startsAt} />
           </p>
         </div>
       </div>
@@ -371,7 +373,7 @@ function FeaturedShow({ event }: { event: EventWithCount }) {
               Doors
             </dt>
             <dd className="mt-1 font-medium">
-              {formatTime(event.doorsAt ?? event.startsAt)}
+              <LocalTime value={event.doorsAt ?? event.startsAt} mode="time" />
             </dd>
           </div>
           <div>

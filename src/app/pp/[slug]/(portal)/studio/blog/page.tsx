@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { assertPartnerFeature, requirePartnerUser } from "@/lib/partners/guard";
 import { partnerPortalPath } from "@/lib/partners/urls";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { StatusBadge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +72,7 @@ export default async function PartnerBlogPage({
                       </StatusBadge>
                     </td>
                     <td className="tnum px-5 py-4 text-muted">
-                      {p.publishedAt ? formatDate(p.publishedAt) : "-"}
+                      {p.publishedAt ? <LocalTime value={p.publishedAt} mode="date" /> : "-"}
                     </td>
                     <td className="px-5 py-4 text-right">
                       {canWrite ? (

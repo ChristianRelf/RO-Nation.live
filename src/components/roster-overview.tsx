@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { RosterScope } from "@/lib/portal-scope";
 import { countRoster, findRoster, findRosterAudit } from "@/lib/roster";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { RosterSearch } from "@/components/roster-search";
 import { RosterList } from "@/components/roster-list";
 
@@ -149,7 +149,7 @@ export async function RosterOverview({
                       </span>
                     </p>
                     <p className="text-xs text-faint">
-                      {formatDateTime(row.createdAt)}
+                      <LocalTime value={row.createdAt} mode="datetime" />
                     </p>
                   </li>
                 ))}

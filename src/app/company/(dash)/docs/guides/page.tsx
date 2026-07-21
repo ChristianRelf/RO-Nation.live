@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteGuide } from "@/app/actions/docs";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { requireCompanyUser } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
@@ -49,9 +49,14 @@ export default async function CompanyGuidesPage() {
                         </span>
                       ) : null}
                       <span className="block text-xs text-muted">
-                        {g.publishedAt
-                          ? formatDateTime(g.publishedAt)
-                          : `Created ${formatDateTime(g.createdAt)}`}
+                        {g.publishedAt ? (
+                          <LocalTime value={g.publishedAt} mode="datetime" />
+                        ) : (
+                          <>
+                            Created{" "}
+                            <LocalTime value={g.createdAt} mode="datetime" />
+                          </>
+                        )}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-muted">

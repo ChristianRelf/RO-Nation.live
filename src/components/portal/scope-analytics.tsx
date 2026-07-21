@@ -2,7 +2,7 @@ import type { RosterScope } from "@/lib/portal-scope";
 import { getScopeAnalytics, type ShowRow } from "@/lib/partner-analytics";
 import { StatCard } from "@/components/admin-ui";
 import { groupCount } from "@/lib/tickets/crowd";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 // The analytics dashboard, pointed at one scope. Sits on /shasha/analytics and
 // /<slug>/analytics, and - like the roster and the audit - is ONE component over
@@ -101,7 +101,7 @@ function ShowRowCells({ show: s }: { show: ShowRow }) {
           {s.capacity > 0 ? `cap ${groupCount(s.capacity)}` : "unlimited"}
         </p>
       </td>
-      <td className="px-5 py-4 text-muted">{formatDate(s.startsAt)}</td>
+      <td className="px-5 py-4 text-muted"><LocalTime value={s.startsAt} mode="date" /></td>
       <td className="px-5 py-4 text-right tabular-nums">{groupCount(s.reserved)}</td>
       <td className="px-5 py-4 text-right tabular-nums">{groupCount(s.checkedIn)}</td>
       <td className="px-5 py-4 text-right tabular-nums">

@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { formatDate, formatDateTime, isPast, relativeDays } from "@/lib/format";
+import { isPast, relativeDays } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { ticketCalendarHref } from "@/lib/tickets/ics";
 import { priceLabel } from "@/lib/tickets/pricing";
 import { groupCount, type Crowd } from "@/lib/tickets/crowd";
@@ -422,9 +424,14 @@ export function TicketDetail({
               <h2 className="display mt-3 text-2xl">You&apos;re in</h2>
               <p className="mt-2 text-sm text-muted">
                 Checked in
-                {ticket.checkedInAt
-                  ? ` at ${formatDateTime(ticket.checkedInAt)}`
-                  : ""}
+                {ticket.checkedInAt ? (
+                  <>
+                    {" "}
+                    at <LocalTime value={ticket.checkedInAt} mode="datetime" />
+                  </>
+                ) : (
+                  ""
+                )}
                 . Enjoy the show.
               </p>
               {/* The number nobody was counting. Their FIRST gets said properly -
@@ -606,7 +613,10 @@ export function TicketDetail({
             <Row label="Paid" value={priceLabel(ticket.priceRobux)} />
             <Row label="Holder" value={holder} />
             <Row label="Issued by" value={brandName} />
-            <Row label="Show" value={formatDate(event.startsAt)} />
+            <Row
+              label="Show"
+              value={<LocalTime value={event.startsAt} mode="date" />}
+            />
             {/* The reference is not secret - it is what this page's URL is
                 addressed by - so it shows from the moment the ticket exists. It
                 is what to quote to the crew if anything needs looking up before
@@ -646,7 +656,7 @@ export function TicketDetail({
                 ticket={{
                   code: ticket.code,
                   eventTitle: event.title,
-                  when: formatDateTime(event.startsAt),
+                  startsAtIso: event.startsAt.toISOString(),
                   venue: event.venue,
                   tierName,
                   holder,
@@ -670,9 +680,14 @@ export function TicketDetail({
             <details className="mt-6 border-t border-line pt-5">
               <summary className="cursor-pointer text-sm text-muted hover:text-fg">
                 The terms you accepted
-                {ticket.termsAcceptedAt
-                  ? ` · ${formatDate(ticket.termsAcceptedAt)}`
-                  : ""}
+                {ticket.termsAcceptedAt ? (
+                  <>
+                    {" · "}
+                    <LocalTime value={ticket.termsAcceptedAt} mode="date" />
+                  </>
+                ) : (
+                  ""
+                )}
               </summary>
               <ul className="mt-4 space-y-2.5">
                 {ticket.termsSnapshot.map((clause, i) => (
@@ -786,7 +801,7 @@ function Step({
           {label}
         </p>
         <p className="text-xs text-faint">
-          {at ? formatDateTime(at) : detail}
+          {at ? <LocalTime value={at} mode="datetime" /> : detail}
         </p>
       </div>
     </li>
@@ -799,7 +814,7 @@ function Row({
   mono,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   mono?: boolean;
 }) {
   return (

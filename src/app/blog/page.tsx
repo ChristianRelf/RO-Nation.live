@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getPublishedPosts } from "@/lib/queries";
 import { Reveal } from "@/components/reveal";
 import { Kicker } from "@/components/ui";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -51,7 +51,7 @@ export default async function BlogPage() {
                   <div className="flex flex-1 flex-col p-6">
                     {post.publishedAt ? (
                       <time className="text-xs font-semibold uppercase tracking-kicker text-faint">
-                        {formatDate(post.publishedAt)}
+                        <LocalTime value={post.publishedAt} mode="date" />
                       </time>
                     ) : null}
 

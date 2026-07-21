@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
 import { submitSurveyResponse } from "@/app/actions/survey";
 import { SURVEY_CODE_RE } from "@/lib/utils";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { site } from "@/lib/site";
 import { OfficialMark } from "@/components/official-mark";
 import { SurveyFileField } from "@/components/survey-file-field";
@@ -121,7 +121,15 @@ export default async function SurveyPage({
             <Panel tone="ok" title="Thanks - that's in.">
               <p>
                 Your answers have been recorded
-                {existing ? ` on ${formatDateTime(existing.createdAt)}` : ""}.
+                {existing ? (
+                  <>
+                    {" on "}
+                    <LocalTime value={existing.createdAt} mode="datetime" />
+                  </>
+                ) : (
+                  ""
+                )}
+                .
                 {survey.multipleResponses
                   ? " You're welcome to send another whenever you like."
                   : " You can only answer once, so there's nothing more to do."}
@@ -183,9 +191,14 @@ export default async function SurveyPage({
                 {survey.multipleResponses
                   ? ". You can answer this one as often as you like."
                   : ". You can only submit once."}
-                {survey.multipleResponses && existing
-                  ? ` You last answered on ${formatDateTime(existing.createdAt)}.`
-                  : ""}
+                {survey.multipleResponses && existing ? (
+                  <>
+                    {" You last answered on "}
+                    <LocalTime value={existing.createdAt} mode="datetime" />.
+                  </>
+                ) : (
+                  ""
+                )}
               </p>
 
               <form action={submitSurveyResponse} className="space-y-5">

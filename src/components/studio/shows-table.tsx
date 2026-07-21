@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Event } from "@prisma/client";
-import { formatDateTime, isPast } from "@/lib/format";
+import { isPast } from "@/lib/format";
 import { StatusBadge } from "@/components/ui";
+import { LocalTime } from "@/components/local-time";
 
 // An org's line-up, as a table. Shared by a partner's studio and SHASHA's /shows.
 //
@@ -65,7 +66,7 @@ export function ShowsTable({
                   <p className="text-xs text-faint">{e.venue ?? "Venue TBA"}</p>
                 </td>
                 <td className="tnum px-5 py-4 text-muted">
-                  {formatDateTime(e.startsAt)}
+                  <LocalTime value={e.startsAt} mode="datetime" />
                 </td>
                 <td className="px-5 py-4">
                   <StatusBadge

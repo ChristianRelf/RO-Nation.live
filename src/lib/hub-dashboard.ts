@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { TicketStatus } from "@prisma/client";
 import { prisma } from "./db";
 import { env } from "./env";
-import { formatDateTime, relativeDays } from "./format";
+import { relativeDays } from "./format";
 import { getHubData, type HubArea, type HubData } from "./hub";
 import { findAudit, COMPANY_SCOPE, type AuditEntry } from "./audit";
 import { SHASHA_SCOPE } from "./shasha";
@@ -48,13 +48,13 @@ export type NextShow = {
   title: string;
   href: string;
   external?: boolean;
-  when: string;
   relative: string;
   /**
-   * The raw start, kept alongside the two formatted strings because the hub now
-   * leads with the soonest show ACROSS areas and has to sort them to find it.
-   * `when` and `relative` are display text and are not orderable - comparing them
-   * would sort "Fri" against "In 2 weeks".
+   * The raw start, kept alongside the display text because the hub now leads with
+   * the soonest show ACROSS areas and has to sort them to find it - and because the
+   * clock is rendered per-viewer from this instant (see <LocalTime>). `relative` is
+   * display text and is not orderable - comparing it would sort "Fri" against "In 2
+   * weeks".
    */
   at: Date;
   sold: number;
@@ -69,7 +69,6 @@ export type FeedEntry = {
   scopeName: string;
   summary: string;
   actorName: string;
-  when: string;
   at: Date;
   /** Happened since this browser last opened the hub. See lib/hub-seen.ts. */
   isNew: boolean;
@@ -269,7 +268,6 @@ export async function getHubDashboard(): Promise<HubDashboard> {
             title: event.title,
             href: showHref ?? area.home.href,
             external: isCompany,
-            when: formatDateTime(event.startsAt),
             relative: relativeDays(event.startsAt),
             at: event.startsAt,
             sold: soldByEvent.get(event.id) ?? 0,
@@ -305,7 +303,6 @@ export async function getHubDashboard(): Promise<HubDashboard> {
         (row.scope === COMPANY_SCOPE ? "RO. Nation LIVE" : row.scope),
       summary: row.summary,
       actorName: row.actorName,
-      when: formatDateTime(row.createdAt),
       at: row.createdAt,
       isNew: lastSeen ? row.createdAt > lastSeen : false,
     })),

@@ -10,7 +10,7 @@ import { listInvoicesForPartner } from "@/lib/invoices";
 import { parseInvoicePeriod } from "@/lib/invoice-period";
 import { generateInvoice } from "@/app/actions/invoices";
 import { formatRobux } from "@/lib/tickets/pricing";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -151,7 +151,7 @@ export default async function CompanyPartnerInvoicesPage({
                     <td className="px-5 py-4">
                       <InvoiceStatusBadge status={inv.status} />
                     </td>
-                    <td className="px-5 py-4 text-muted">{formatDate(inv.issuedAt)}</td>
+                    <td className="px-5 py-4 text-muted"><LocalTime value={inv.issuedAt} mode="date" /></td>
                   </tr>
                 ))}
               </tbody>

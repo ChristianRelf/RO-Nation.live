@@ -17,7 +17,8 @@ import { QuoteMarquee } from "@/components/quote-marquee";
 import { Reveal } from "@/components/reveal";
 import { JsonLd } from "@/components/json-ld";
 import { Kicker, SectionHeading } from "@/components/ui";
-import { formatDate, formatTime } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { site } from "@/lib/site";
 import { env } from "@/lib/env";
 import { absoluteUrl } from "@/lib/url";
@@ -274,10 +275,10 @@ export default async function HomePage() {
                 <div className="flex items-center justify-between gap-4 p-4">
                   <div>
                     <p className="font-mono text-sm tnum text-fg">
-                      {formatDate(featured.startsAt)}
+                      <LocalTime value={featured.startsAt} mode="date" />
                     </p>
                     <p className="text-sm text-muted">
-                      {formatTime(featured.startsAt)}
+                      <LocalTime value={featured.startsAt} mode="time" />
                       {featured.venue ? ` · ${featured.venue}` : ""}
                     </p>
                   </div>
@@ -428,7 +429,7 @@ export default async function HomePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/30 to-transparent" />
                     <div className="absolute inset-x-4 bottom-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
-                        {formatDate(e.startsAt)}
+                        <LocalTime value={e.startsAt} mode="date" />
                       </p>
                       <h3 className="mt-1.5 font-display text-2xl leading-[0.95]">
                         {e.title}
@@ -506,7 +507,7 @@ export default async function HomePage() {
                   <div className="flex flex-1 flex-col p-6">
                     {p.publishedAt ? (
                       <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                        {formatDate(p.publishedAt)}
+                        <LocalTime value={p.publishedAt} mode="date" />
                       </span>
                     ) : null}
                     <h3 className="mt-2.5 font-display text-2xl leading-[0.95] transition-colors group-hover:text-accent">

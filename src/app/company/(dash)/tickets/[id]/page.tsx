@@ -8,7 +8,7 @@ import {
   updateTicket,
   voidCompanyTicket,
 } from "@/app/actions/company";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { effectiveTiers, priceLabel } from "@/lib/tickets/pricing";
 import { requireCompanyUser } from "@/lib/company";
 
@@ -269,7 +269,7 @@ export default async function CompanyTicketPage({
                       </p>
                     </div>
                     <p className="shrink-0 text-xs text-muted">
-                      {formatDateTime(p.createdAt)}
+                      <LocalTime value={p.createdAt} mode="datetime" />
                     </p>
                   </li>
                 ))}
@@ -296,7 +296,7 @@ export default async function CompanyTicketPage({
                 </p>
                 <p className="mt-1 text-xs text-red-300/60">
                   {ticket.revokedByName ?? "Unknown"} ·{" "}
-                  {formatDateTime(ticket.revokedAt)}
+                  <LocalTime value={ticket.revokedAt} mode="datetime" />
                 </p>
 
                 {/* Lifting the ban and handing the ticket back are two different acts, so
@@ -330,7 +330,9 @@ export default async function CompanyTicketPage({
                 >
                   {event.title}
                 </Link>
-                <p className="text-xs text-muted">{formatDateTime(event.startsAt)}</p>
+                <p className="text-xs text-muted">
+                  <LocalTime value={event.startsAt} mode="datetime" />
+                </p>
               </Fact>
               <Fact label="Admission">
                 <p>{ticket.tierName ?? "General Admission"}</p>
@@ -350,7 +352,9 @@ export default async function CompanyTicketPage({
                 </Fact>
               ) : null}
               <Fact label="Reserved">
-                <p>{formatDateTime(ticket.createdAt)}</p>
+                <p>
+                  <LocalTime value={ticket.createdAt} mode="datetime" />
+                </p>
               </Fact>
               {ticket.issuedByName ? (
                 <Fact label="Issued by">
@@ -362,14 +366,18 @@ export default async function CompanyTicketPage({
               ) : null}
               {ticket.checkedInAt ? (
                 <Fact label="Checked in">
-                  <p>{formatDateTime(ticket.checkedInAt)}</p>
+                  <p>
+                    <LocalTime value={ticket.checkedInAt} mode="datetime" />
+                  </p>
                 </Fact>
               ) : null}
               <Fact label="Activated">
                 <p className="text-muted">
-                  {ticket.activatedAt
-                    ? formatDateTime(ticket.activatedAt)
-                    : "Not yet - the code is still sealed"}
+                  {ticket.activatedAt ? (
+                    <LocalTime value={ticket.activatedAt} mode="datetime" />
+                  ) : (
+                    "Not yet - the code is still sealed"
+                  )}
                 </p>
               </Fact>
             </dl>

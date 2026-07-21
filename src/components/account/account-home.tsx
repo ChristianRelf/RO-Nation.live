@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Event } from "@prisma/client";
 import { Kicker, StatusBadge } from "@/components/ui";
+import { LocalTime } from "@/components/local-time";
 import { partnerOrigin } from "@/lib/partners/urls";
-import { formatDate, formatDateTime, isPast } from "@/lib/format";
+import { isPast } from "@/lib/format";
 import type { AccountHome as AccountHomeData, TicketWithEvent } from "@/lib/account";
 import type { LoyaltyStatus } from "@/lib/loyalty";
 
@@ -77,7 +78,7 @@ export function AccountHome({
                       <p className="mt-0.5 text-sm text-muted">{n.body}</p>
                     ) : null}
                     <p className="mt-1 text-xs text-faint">
-                      {formatDateTime(n.createdAt)}
+                      <LocalTime value={n.createdAt} mode="datetime" />
                       {n.url ? (
                         <>
                           {" · "}
@@ -133,7 +134,7 @@ export function AccountHome({
                       {e.title}
                     </span>
                     <span className="text-sm text-muted">
-                      {formatDate(e.startsAt)}
+                      <LocalTime value={e.startsAt} mode="date" />
                     </span>
                   </span>
                   <StatusBadge status={isPast(e.startsAt) ? "past" : "upcoming"}>
@@ -160,7 +161,7 @@ export function AccountHome({
                 >
                   <span className="font-medium text-fg">{t.event.title}</span>
                   <span className="font-mono text-xs uppercase tracking-[0.1em] text-faint">
-                    {formatDate(t.event.startsAt)}
+                    <LocalTime value={t.event.startsAt} mode="date" />
                   </span>
                 </li>
               ))}
@@ -312,7 +313,7 @@ function TicketCard({ ticket }: { ticket: TicketWithEvent }) {
     >
       <span className="min-w-0">
         <span className="block truncate font-display text-lg">{e.title}</span>
-        <span className="text-sm text-muted">{formatDate(e.startsAt)}</span>
+        <span className="text-sm text-muted"><LocalTime value={e.startsAt} mode="date" /></span>
       </span>
       <StatusBadge status={ticket.status === "CHECKED_IN" ? "past" : "upcoming"}>
         {ticket.status === "CHECKED_IN" ? "Checked in" : "Reserved"}

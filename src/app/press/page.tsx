@@ -3,8 +3,8 @@ import Link from "next/link";
 import { AssetViewer } from "@/components/asset-viewer";
 import { Reveal } from "@/components/reveal";
 import { Kicker, SectionHeading } from "@/components/ui";
+import { LocalTime } from "@/components/local-time";
 import { publicBrandLibraryGroups } from "@/lib/docs";
-import { formatDate } from "@/lib/format";
 import { getPublishedPosts } from "@/lib/queries";
 import { site, SOCIAL_LABELS, type Social } from "@/lib/site";
 import { getSiteStats, statTiles } from "@/lib/stats";
@@ -250,7 +250,7 @@ export default async function PressPage() {
                 <span className="font-display text-xl">{p.title}</span>
                 {p.publishedAt ? (
                   <span className="font-mono text-xs tnum text-faint">
-                    {formatDate(p.publishedAt)}
+                    <LocalTime value={p.publishedAt} mode="date" />
                   </span>
                 ) : null}
               </Link>

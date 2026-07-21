@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { dateBlock, formatDate, formatTime } from "@/lib/format";
+import { LocalTime, LocalDay, LocalMonth } from "@/components/local-time";
 import { priceLabel } from "@/lib/tickets/pricing";
 import { TicketQR } from "./ticket-qr";
 import type { TicketArtStatus } from "./ticket-art";
@@ -86,7 +86,6 @@ export function TicketStub({
   qrValue: string | null;
   href: string;
 }) {
-  const { day, month } = dateBlock(startsAt);
   const s = STATUS[status];
   const cancelled = status === "CANCELLED";
 
@@ -112,9 +111,11 @@ export function TicketStub({
           <div className="ticket-guilloche pointer-events-none absolute inset-0" />
 
           <div className="relative flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-brand border border-line bg-bg leading-none">
-            <span className="display text-xl">{day}</span>
+            <span className="display text-xl">
+              <LocalDay value={startsAt} />
+            </span>
             <span className="mt-1 text-[9px] font-bold tracking-[0.14em] text-accent">
-              {month}
+              <LocalMonth value={startsAt} />
             </span>
           </div>
 
@@ -138,7 +139,8 @@ export function TicketStub({
             <h3 className="display mt-2 truncate text-lg">{eventTitle}</h3>
 
             <p className="mt-1 truncate text-xs text-muted">
-              {formatTime(startsAt)} · {formatDate(startsAt)}
+              <LocalTime value={startsAt} mode="time" /> ·{" "}
+              <LocalTime value={startsAt} mode="date" />
               {venue ? ` · ${venue}` : ""}
             </p>
             <p className="mt-0.5 truncate text-xs">

@@ -1,6 +1,6 @@
 import type { RosterScope } from "@/lib/portal-scope";
 import { findAudit, AuditTarget } from "@/lib/audit";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 // Everything that happened in this org that ISN'T a roster change.
 //
@@ -63,7 +63,7 @@ export async function ScopeActivity({ scope }: { scope: RosterScope }) {
                 <span className="pill">{label(row.target)}</span>
                 <span className="font-semibold text-fg">{row.targetName}</span>
                 <span className="ml-auto text-xs text-faint">
-                  {formatDateTime(row.createdAt)}
+                  <LocalTime value={row.createdAt} mode="datetime" />
                 </span>
               </div>
 

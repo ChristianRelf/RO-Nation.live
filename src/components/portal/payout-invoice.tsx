@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Settlement } from "@/lib/settlement";
 import { formatRobux } from "@/lib/tickets/pricing";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { PrintButton } from "./print-button";
 
 // A settlement document, as a printable page. White paper, black ink, RNL's mark
@@ -106,7 +106,7 @@ export function PayoutInvoice({
               {isSelf ? "Revenue statement" : "Payout statement"}
             </h1>
             <p className="mt-1 text-xs text-neutral-500">No. {invoiceNo}</p>
-            <p className="text-xs text-neutral-500">Issued {formatDate(generatedOn)}</p>
+            <p className="text-xs text-neutral-500">Issued <LocalTime value={generatedOn} mode="date" /></p>
           </div>
         </header>
 
@@ -141,7 +141,7 @@ export function PayoutInvoice({
               shows.map((s) => (
                 <tr key={s.eventId} className="border-b border-neutral-200">
                   <td className="py-2.5 pr-4 font-medium">{s.title}</td>
-                  <td className="py-2.5 pr-4 text-neutral-600">{formatDate(s.startsAt)}</td>
+                  <td className="py-2.5 pr-4 text-neutral-600"><LocalTime value={s.startsAt} mode="date" /></td>
                   <td className="py-2.5 text-right tabular-nums">{s.payments}</td>
                   <td className="py-2.5 text-right tabular-nums">{formatRobux(s.robux)}</td>
                 </tr>
@@ -196,7 +196,7 @@ export function PayoutInvoice({
               : ""}
           </p>
           <p className="mt-2">
-            Generated {formatDateTime(generatedOn)} · For reconciliation and payout.
+            Generated <LocalTime value={generatedOn} mode="datetime" /> · For reconciliation and payout.
           </p>
         </footer>
       </div>

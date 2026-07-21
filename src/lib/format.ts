@@ -1,5 +1,23 @@
-// Locale-stable date/time formatting. We force en-GB + UTC-agnostic display so
-// server and client renders match (avoids hydration mismatches).
+// Date/time formatting, en-GB style throughout.
+//
+// TWO families live here, and the difference is WHOSE clock:
+//
+//   formatDate / formatTime / formatDateTime / dateBlock
+//       Format in the RUNTIME's timezone with no zone set - the SERVER's clock for
+//       anything server-rendered, which is one time for everyone. Kept for the places
+//       that must be one canonical string: text frozen into a stored notification, a
+//       reminder or an audit line (which cannot be re-localised per reader after the
+//       fact), and machine/SEO strings.
+//
+//   formatInstant / zoneLabel / dateParts  (below)
+//       Format in a GIVEN timezone, defaulting to the runtime's. Passed `undefined` on
+//       the client, that is the viewer's own browser zone - which is the whole point:
+//       a London and a Paris reader each see their local time. These are the engine
+//       behind <LocalTime> (components/local-time.tsx); a server render cannot know the
+//       viewer's zone, so the component calls these on the client, after mount.
+//
+// Both stay en-GB so the format (weekday names, 24h clock, day/month order) is stable
+// and identical between a server render and a client one - only the zone moves.
 
 const dateFmt = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
@@ -69,6 +87,81 @@ export function formatDateTime(d: Date | string) {
 export function dateBlock(d: Date | string) {
   const date = new Date(d);
   const [day, month] = monthDayFmt.format(date).split(" ");
+  return { day, month: month.toUpperCase() };
+}
+
+// ---- Viewer-local formatting -----------------------------------------------
+//
+// The engine behind <LocalTime>. Everything here takes an explicit `timeZone`;
+// `undefined` means "the runtime's zone", which on the client is the browser's own -
+// so the same call that shows a London reader 19:30 shows a Paris reader 20:30.
+
+export type TimeMode = "date" | "time" | "datetime";
+
+const DATE_OPTS: Intl.DateTimeFormatOptions = {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+};
+
+const TIME_OPTS: Intl.DateTimeFormatOptions = {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+};
+
+/** The short zone name for an instant: "BST", "CEST", "GMT+2". Empty if unavailable. */
+export function zoneLabel(d: Date | string, timeZone?: string) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).formatToParts(new Date(d));
+  return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+}
+
+/**
+ * Format an instant in a timezone (default: the runtime's). `withZone` appends the
+ * short zone name so a clock reading is never an unlabelled, ambiguous number -
+ * "19:30 BST", not a bare "19:30" that could mean any of two dozen places.
+ */
+export function formatInstant(
+  d: Date | string,
+  mode: TimeMode,
+  timeZone?: string,
+  withZone = false,
+) {
+  const date = new Date(d);
+  const datePart = new Intl.DateTimeFormat("en-GB", {
+    ...DATE_OPTS,
+    timeZone,
+  }).format(date);
+  const timePart = new Intl.DateTimeFormat("en-GB", {
+    ...TIME_OPTS,
+    timeZone,
+  }).format(date);
+  const zone = withZone ? ` ${zoneLabel(date, timeZone)}` : "";
+
+  if (mode === "date") return datePart;
+  if (mode === "time") return `${timePart}${zone}`;
+  return `${datePart} · ${timePart}${zone}`;
+}
+
+/**
+ * { day: "12", month: "AUG" } for a date block, in a given zone. The zone matters even
+ * for a date with no clock: a show at 23:30 on the 12th in UTC is already the 13th in
+ * Paris, so the block a Paris reader should see is a different day.
+ */
+export function dateParts(d: Date | string, timeZone?: string) {
+  const [day, month] = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    timeZone,
+  })
+    .format(new Date(d))
+    .split(" ");
   return { day, month: month.toUpperCase() };
 }
 

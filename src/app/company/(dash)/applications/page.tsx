@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { setApplicationStatus } from "@/app/actions/company";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { requireCompanyUser } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
@@ -84,7 +84,7 @@ export default async function ApplicationsPage({
                     >
                       {a.career.title}
                     </Link>{" "}
-                    · {formatDateTime(a.createdAt)}
+                    · <LocalTime value={a.createdAt} mode="datetime" />
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">

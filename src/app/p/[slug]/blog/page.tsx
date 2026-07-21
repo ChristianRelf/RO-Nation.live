@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { partnerBySlug } from "@/lib/partners/registry";
 import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getPublishedPosts } from "@/lib/queries";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +53,7 @@ export default async function PartnerBlogIndex({
                 className="group flex flex-col gap-2 py-8 transition-colors hover:bg-surface sm:flex-row sm:items-baseline sm:gap-8 sm:px-2"
               >
                 <span className="tnum w-32 shrink-0 text-sm text-faint">
-                  {post.publishedAt ? formatDate(post.publishedAt) : ""}
+                  {post.publishedAt ? <LocalTime value={post.publishedAt} mode="date" /> : ""}
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2 className="display text-2xl transition-colors group-hover:text-accent">

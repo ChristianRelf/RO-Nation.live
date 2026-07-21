@@ -1,6 +1,6 @@
 import type { RosterScope } from "@/lib/portal-scope";
 import { findRosterAudit } from "@/lib/roster";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { robloxProfileUrl } from "@/lib/utils";
 
 const ACTION_STYLES: Record<string, string> = {
@@ -54,7 +54,7 @@ export async function RosterAudit({ scope }: { scope: RosterScope }) {
                 </a>
                 <span className="text-sm text-muted">by {row.actorName}</span>
                 <span className="ml-auto text-xs text-faint">
-                  {formatDateTime(row.createdAt)}
+                  <LocalTime value={row.createdAt} mode="datetime" />
                 </span>
               </div>
               <p className="mt-2 whitespace-pre-line text-sm text-muted">

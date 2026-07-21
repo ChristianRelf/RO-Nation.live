@@ -8,7 +8,7 @@ import {
   setTestimonialPublished,
 } from "@/app/actions/company";
 import { requireCompanyUser } from "@/lib/company";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -182,7 +182,7 @@ export default async function CompanyTestimonialsPage({
                       {a.response.robloxUsername}
                     </span>{" "}
                     · {a.response.survey.title} · {a.question.prompt} ·{" "}
-                    {formatDate(a.response.createdAt)}
+                    <LocalTime value={a.response.createdAt} mode="date" />
                   </p>
                 </div>
                 <form action={promoteSurveyAnswer}>

@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPostBySlug } from "@/lib/queries";
-import { formatDate } from "@/lib/format";
 import { absoluteUrl } from "@/lib/url";
 import { Kicker } from "@/components/ui";
 import { Prose } from "@/components/prose";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,7 @@ export default async function BlogPostPage({
         <p className="mt-5 text-sm text-faint">
           {post.publishedAt ? (
             <time dateTime={post.publishedAt.toISOString()}>
-              {formatDate(post.publishedAt)}
+              <LocalTime value={post.publishedAt} mode="date" />
             </time>
           ) : null}
           {post.publishedAt ? " · " : ""}

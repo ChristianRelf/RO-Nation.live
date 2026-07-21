@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AdminHeader, Badge, StatCard } from "@/components/admin-ui";
 import { liftTicketRevocation, setTicketStatus } from "@/app/actions/company";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { requireCompanyUser } from "@/lib/company";
 
@@ -131,7 +131,7 @@ export default async function AttendeesPage({
                       ) : null}
                     </td>
                     <td className="px-5 py-4 text-muted">
-                      {formatDateTime(t.createdAt)}
+                      <LocalTime value={t.createdAt} mode="datetime" />
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">

@@ -5,7 +5,7 @@ import { requireCompanyUser } from "@/lib/company";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteSurvey, setSurveyStatus } from "@/app/actions/company";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { SurveyLink } from "@/components/survey-link";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +72,7 @@ export default async function CompanySurveysPage({
                       {s._count.responses} response
                       {s._count.responses === 1 ? "" : "s"}
                     </Link>{" "}
-                    · by {s.authorName} · {formatDateTime(s.createdAt)}
+                    · by {s.authorName} · <LocalTime value={s.createdAt} mode="datetime" />
                   </p>
 
                   <div className="mt-3">

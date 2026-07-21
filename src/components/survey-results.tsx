@@ -1,6 +1,6 @@
 import type { QuestionType } from "@prisma/client";
 import { StatCard } from "@/components/admin-ui";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { formatBytes } from "@/lib/survey-files";
 
 // The results of a survey, rendered. Shared by /company's responses page and a
@@ -108,7 +108,7 @@ export function SurveyResults({
                 >
                   <span className="font-medium">{r.robloxUsername}</span>
                   <span className="text-xs text-faint">
-                    {formatDateTime(r.createdAt)}
+                    <LocalTime value={r.createdAt} mode="datetime" />
                   </span>
                 </li>
               ))}

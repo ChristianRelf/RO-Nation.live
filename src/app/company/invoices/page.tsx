@@ -7,7 +7,7 @@ import { InvoiceStatusBadge } from "@/components/invoice-status-badge";
 import { activePartners, partnerHasFeature } from "@/lib/partners/registry";
 import { listAllInvoices } from "@/lib/invoices";
 import { formatRobux } from "@/lib/tickets/pricing";
-import { formatDate } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Invoices" };
@@ -89,7 +89,7 @@ export default async function CompanyInvoicesPage() {
                       <td className="px-5 py-4">
                         <InvoiceStatusBadge status={inv.status} />
                       </td>
-                      <td className="px-5 py-4 text-muted">{formatDate(inv.issuedAt)}</td>
+                      <td className="px-5 py-4 text-muted"><LocalTime value={inv.issuedAt} mode="date" /></td>
                     </tr>
                   ))}
                 </tbody>

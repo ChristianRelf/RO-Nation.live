@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,13 +12,8 @@ import { TierSummary } from "@/components/ticket/tier-summary";
 import { CrowdFacepile } from "@/components/ticket/crowd-facepile";
 import { FollowButton } from "@/components/account/follow-button";
 import { WaitlistButton } from "@/components/account/waitlist-button";
-import {
-  dateBlock,
-  formatDate,
-  formatTime,
-  isPast,
-  relativeDays,
-} from "@/lib/format";
+import { LocalTime, LocalDay, LocalMonth } from "@/components/local-time";
+import { isPast, relativeDays } from "@/lib/format";
 import { offersForEvent } from "@/lib/tickets/offers";
 import { anyAvailable } from "@/lib/tickets/pricing";
 
@@ -108,7 +104,6 @@ export default async function PartnerEventPage({
     !available && offers.every((o) => o.blockedReason === "locked");
   const allFree = offers.every((o) => o.priceRobux === 0);
 
-  const { day, month } = dateBlock(event.startsAt);
   const error = searchParams.error ? reserveErrors[searchParams.error] : null;
 
   return (
@@ -157,12 +152,23 @@ export default async function PartnerEventPage({
       <div className="shell grid gap-10 py-14 lg:grid-cols-[1.6fr_1fr] lg:gap-14">
         <div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Detail label="Date" value={formatDate(event.startsAt)} />
+            <Detail
+              label="Date"
+              value={<LocalTime value={event.startsAt} mode="date" />}
+            />
             <Detail
               label="Doors / Start"
-              value={`${
-                event.doorsAt ? formatTime(event.doorsAt) + " / " : ""
-              }${formatTime(event.startsAt)}`}
+              value={
+                <>
+                  {event.doorsAt ? (
+                    <>
+                      <LocalTime value={event.doorsAt} mode="time" withZone={false} />{" "}
+                      /{" "}
+                    </>
+                  ) : null}
+                  <LocalTime value={event.startsAt} mode="time" />
+                </>
+              }
             />
             <Detail label="Venue" value={event.venue ?? "TBA"} />
           </div>
@@ -191,17 +197,19 @@ export default async function PartnerEventPage({
           <div className="card overflow-hidden">
             <div className="flex items-center gap-4 border-b border-line p-5">
               <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center border border-line bg-bg leading-none">
-                <span className="display text-2xl">{day}</span>
+                <span className="display text-2xl">
+                  <LocalDay value={event.startsAt} />
+                </span>
                 <span className="mt-1 text-[10px] font-bold tracking-widest text-accent">
-                  {month}
+                  <LocalMonth value={event.startsAt} />
                 </span>
               </div>
               <div>
                 <p className="display text-xl leading-tight">
-                  {formatTime(event.startsAt)}
+                  <LocalTime value={event.startsAt} mode="time" />
                 </p>
                 <p className="text-sm text-muted">
-                  {formatDate(event.startsAt)}
+                  <LocalTime value={event.startsAt} mode="date" />
                 </p>
               </div>
             </div>
@@ -357,7 +365,7 @@ export default async function PartnerEventPage({
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="border border-line bg-elev p-4">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-faint">

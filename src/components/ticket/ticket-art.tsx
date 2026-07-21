@@ -1,5 +1,6 @@
-import { formatDate, formatTime } from "@/lib/format";
+import type { ReactNode } from "react";
 import { priceLabel } from "@/lib/tickets/pricing";
+import { LocalTime } from "@/components/local-time";
 import { TicketQR } from "./ticket-qr";
 import { TicketBarcode } from "./ticket-barcode";
 
@@ -183,13 +184,17 @@ export function TicketArt({
 
             {/* When and where - big enough to read across a dark room. */}
             <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-paper-ink/15 pt-4">
-              <time className="display text-xl text-paper-ink">
-                {formatTime(startsAt)}
-              </time>
+              <LocalTime
+                value={startsAt}
+                mode="time"
+                className="display text-xl text-paper-ink"
+              />
               <span className="text-paper-ink/30">·</span>
-              <time className="text-sm font-semibold text-paper-ink/80">
-                {formatDate(startsAt)}
-              </time>
+              <LocalTime
+                value={startsAt}
+                mode="date"
+                className="text-sm font-semibold text-paper-ink/80"
+              />
               {venue ? (
                 <>
                   <span className="text-paper-ink/30">·</span>
@@ -228,7 +233,7 @@ export function TicketArt({
               <Field label="Holder" value={holder} />
               <Field
                 label="Doors"
-                value={doorsAt ? formatTime(doorsAt) : formatTime(startsAt)}
+                value={<LocalTime value={doorsAt ?? startsAt} mode="time" />}
               />
               <Field label="Paid" value={priceLabel(priceRobux)} />
             </dl>
@@ -318,7 +323,7 @@ export function TicketArt({
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-paper-ink/45">

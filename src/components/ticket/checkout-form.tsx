@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatDate, formatTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { priceLabel, type TierOffer } from "@/lib/tickets/pricing";
 
 // Step one: pick a tier, accept the terms, go to checkout.
@@ -247,7 +247,7 @@ export function CheckoutForm({
           <div className="mt-4 border-b border-line pb-4">
             <p className="display text-lg leading-tight">{eventTitle}</p>
             <p className="mt-1 text-sm text-muted">
-              {formatTime(startsAt)} · {formatDate(startsAt)}
+              <LocalTime value={startsAt} mode="time" /> · <LocalTime value={startsAt} mode="date" />
             </p>
             {venue ? <p className="text-sm text-muted">{venue}</p> : null}
           </div>

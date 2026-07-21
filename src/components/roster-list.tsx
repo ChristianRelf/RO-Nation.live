@@ -1,7 +1,7 @@
 import type { RosterEntry } from "@prisma/client";
 import { ConfirmButton } from "@/components/confirm-button";
 import { removeRosterEntry, updateRosterEntry } from "@/app/actions/portal";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { robloxProfileUrl } from "@/lib/utils";
 
 export function RosterList({
@@ -84,12 +84,16 @@ export function RosterList({
               </p>
 
               <p className="mt-2 text-xs text-faint">
-                Added by {entry.addedByName} · {formatDateTime(entry.createdAt)}
-                {entry.updatedByName
-                  ? ` · edited by ${entry.updatedByName} ${formatDateTime(
-                      entry.updatedAt,
-                    )}`
-                  : ""}
+                Added by {entry.addedByName} ·{" "}
+                <LocalTime value={entry.createdAt} mode="datetime" />
+                {entry.updatedByName ? (
+                  <>
+                    {" · "}edited by {entry.updatedByName}{" "}
+                    <LocalTime value={entry.updatedAt} mode="datetime" />
+                  </>
+                ) : (
+                  ""
+                )}
               </p>
             </div>
 

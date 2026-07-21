@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteStudioEvent } from "@/app/actions/studio-events";
-import { formatDateTime, isPast } from "@/lib/format";
+import { isPast } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { requireCompanyUser } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export default async function CompanyEventsPage() {
                     </td>
                     <td className="px-5 py-4">
                       <span className={isPast(e.startsAt) ? "text-faint" : ""}>
-                        {formatDateTime(e.startsAt)}
+                        <LocalTime value={e.startsAt} mode="datetime" />
                       </span>
                     </td>
                     <td className="px-5 py-4">

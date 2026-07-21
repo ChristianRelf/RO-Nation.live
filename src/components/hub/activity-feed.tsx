@@ -1,4 +1,5 @@
 import type { FeedEntry } from "@/lib/hub-dashboard";
+import { LocalTime } from "@/components/local-time";
 
 // What has happened lately, across every area you hold.
 //
@@ -55,7 +56,9 @@ export function ActivityFeed({ entries }: { entries: FeedEntry[] }) {
                     {entry.scopeName}
                   </span>
                   <span aria-hidden>·</span>
-                  <span>{entry.when}</span>
+                  <span>
+                    <LocalTime value={entry.at} mode="datetime" />
+                  </span>
                   {entry.isNew ? <span className="text-accent">· New</span> : null}
                 </p>
               </div>

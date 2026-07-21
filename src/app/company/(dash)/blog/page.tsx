@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { AdminHeader, Badge } from "@/components/admin-ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deletePost } from "@/app/actions/company";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { requireCompanyUser } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
@@ -44,9 +44,14 @@ export default async function CompanyBlogPage() {
                     <td className="px-5 py-4">
                       <span className="font-medium">{p.title}</span>
                       <span className="block text-xs text-muted">
-                        {p.publishedAt
-                          ? formatDateTime(p.publishedAt)
-                          : `Created ${formatDateTime(p.createdAt)}`}
+                        {p.publishedAt ? (
+                          <LocalTime value={p.publishedAt} mode="datetime" />
+                        ) : (
+                          <>
+                            Created{" "}
+                            <LocalTime value={p.createdAt} mode="datetime" />
+                          </>
+                        )}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-muted">{p.authorName}</td>

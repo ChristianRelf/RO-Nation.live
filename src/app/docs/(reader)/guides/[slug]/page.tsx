@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireDocsReader } from "@/lib/docs-guard";
 import { Prose } from "@/components/prose";
-import { formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +66,7 @@ export default async function DocsGuidePage({
           <p className="mt-4 text-muted">{guide.excerpt}</p>
         ) : null}
         <p className="mt-4 text-xs text-faint">
-          {guide.authorName} · updated {formatDateTime(guide.updatedAt)}
+          {guide.authorName} · updated <LocalTime value={guide.updatedAt} mode="datetime" />
         </p>
       </header>
 
