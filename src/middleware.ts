@@ -239,6 +239,22 @@ function areaFor(path: string) {
   ) {
     return "portal";
   }
+  // The accounting desk and the documents it issues bring their own chrome, so the
+  // marketing header and footer are left off - the same call as the shop and the docs
+  // above, for a sharper reason.
+  //
+  // A document here is a PRINTABLE SHEET. The site header and footer are not marked
+  // no-print, so wrapped in them an invoice does not merely look wrong on screen: the
+  // "Book tickets" nav and the marketing footer come out on the paper, between RNL's
+  // letterhead and a contractor's payment advice. /doc/<token> is the same page served
+  // to somebody outside the company, which makes it the version that matters most.
+  if (
+    path === "/company/accounting" ||
+    path.startsWith("/company/accounting/") ||
+    path.startsWith("/doc/")
+  ) {
+    return "accounting";
+  }
   if (path.startsWith("/survey")) return "survey";
   return "site";
 }

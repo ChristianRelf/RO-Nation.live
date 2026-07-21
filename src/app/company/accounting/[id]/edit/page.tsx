@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { DocumentStatus } from "@prisma/client";
 import { requireCompanyUser } from "@/lib/company";
-import { CompanyShell } from "@/components/company-shell";
+import { AccountingShell } from "@/components/accounting/accounting-shell";
 import { AdminHeader } from "@/components/admin-ui";
 import { DocumentBuilder } from "@/components/accounting/document-builder";
 import { kindConfig, isHandAuthored } from "@/lib/accounting/kinds";
@@ -52,7 +52,7 @@ export default async function EditDocumentPage({
     : [];
 
   return (
-    <CompanyShell user={user}>
+    <AccountingShell user={user}>
       <AdminHeader
         title={`Edit ${cfg.label.toLowerCase()}`}
         subtitle="Still a draft, so everything here is editable. Issuing it freezes every figure."
@@ -95,6 +95,6 @@ export default async function EditDocumentPage({
           dueDate: dateValue(doc.dueDate),
         }}
       />
-    </CompanyShell>
+    </AccountingShell>
   );
 }

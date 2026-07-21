@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DocumentStatus } from "@prisma/client";
 import { requireCompanyUser } from "@/lib/company";
-import { CompanyShell } from "@/components/company-shell";
+import { AccountingShell } from "@/components/accounting/accounting-shell";
 import { AdminHeader, StatCard } from "@/components/admin-ui";
 import { DocumentStatusBadge } from "@/components/accounting/document-status-badge";
 import { LocalTime } from "@/components/local-time";
@@ -72,7 +72,7 @@ export default async function CompanyAccountingPage({
   };
 
   return (
-    <CompanyShell user={user}>
+    <AccountingShell user={user}>
       <AdminHeader
         title="Accounting"
         subtitle="Documents for the money the ticket ledger doesn't cover — billing a sponsor, paying a contractor, receipting and correcting either. Every figure is in Robux."
@@ -266,7 +266,7 @@ export default async function CompanyAccountingPage({
           </div>
         )}
       </section>
-    </CompanyShell>
+    </AccountingShell>
   );
 }
 

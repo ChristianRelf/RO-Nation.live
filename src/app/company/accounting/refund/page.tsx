@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireCompanyUser } from "@/lib/company";
-import { CompanyShell } from "@/components/company-shell";
+import { AccountingShell } from "@/components/accounting/accounting-shell";
 import { AdminHeader } from "@/components/admin-ui";
 import { RefundForm } from "@/components/accounting/refund-form";
 import { DocumentStatusBadge } from "@/components/accounting/document-status-badge";
@@ -46,7 +46,7 @@ export default async function RefundPage({
     : [];
 
   return (
-    <CompanyShell user={user}>
+    <AccountingShell user={user}>
       <AdminHeader
         title="Refund a ticket"
         subtitle="Exceptional cases only. Tickets are ordinarily non-refundable — every refund here is an authorisation that gets a number, a reason and a name against it."
@@ -197,7 +197,7 @@ export default async function RefundPage({
           )}
         </>
       ) : null}
-    </CompanyShell>
+    </AccountingShell>
   );
 }
 

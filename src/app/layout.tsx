@@ -72,7 +72,11 @@ export default function RootLayout({
     area === "survey" ||
     area === "partner" ||
     area === "partner-portal" ||
-    area === "shop";
+    area === "shop" ||
+    // The accounting desk and its documents. See areaFor() in middleware.ts: a document
+    // is a printable sheet, and neither the header nor the footer here is no-print, so
+    // wrapping one means printing the marketing nav onto an invoice.
+    area === "accounting";
 
   // Where a signed-in member browses AS a member: RNL's own site and a partner's public site.
   // The change-notice modal belongs on those, and not on the staff portal, the survey host or

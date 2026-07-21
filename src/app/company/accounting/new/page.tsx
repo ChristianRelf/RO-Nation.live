@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCompanyUser } from "@/lib/company";
-import { CompanyShell } from "@/components/company-shell";
+import { AccountingShell } from "@/components/accounting/accounting-shell";
 import { AdminHeader } from "@/components/admin-ui";
 import { DocumentBuilder } from "@/components/accounting/document-builder";
 import { kindConfig, parseKind } from "@/lib/accounting/kinds";
@@ -43,7 +43,7 @@ export default async function NewDocumentPage({
   const relatable = cfg.relates ? relatableOptions(await listRelatable()) : [];
 
   return (
-    <CompanyShell user={user}>
+    <AccountingShell user={user}>
       <AdminHeader title={`New ${cfg.label.toLowerCase()}`} subtitle={cfg.hint} />
 
       <p className="mb-6 text-sm">
@@ -59,6 +59,6 @@ export default async function NewDocumentPage({
         submitLabel="Save draft"
         cancelHref="/company/accounting"
       />
-    </CompanyShell>
+    </AccountingShell>
   );
 }
