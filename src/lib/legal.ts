@@ -22,7 +22,7 @@ export type LegalDocEntry = {
   href: string;
   title: string;
   /** The heading it sits under on /legal. */
-  group: "Site policies" | "Integrations";
+  group: "Site policies" | "Partner agreements" | "Integrations";
   /** Human-written, and displayed as-is. Bump it when you change the wording. */
   updated: string;
   blurb: string;
@@ -91,6 +91,36 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     updated: "15 July 2026",
     blurb:
       "The shop is a showcase - every purchase happens on Roblox, under Roblox's terms and refund rules.",
+  },
+
+  // The partner agreements - the terms a party accepts when they become a partner. Unlike
+  // the site policies above (which bind anyone using the site), these three describe the
+  // commercial deal between RNL and a partner: selling their merch and their tickets, the
+  // 30% Roblox tax / 10% RNL split, and the licence to use their assets. They render on
+  // every host like the rest of /legal, and a partner reviews them before signing on.
+  {
+    href: "/legal/partners/merchandise",
+    title: "Partner Merchandise Agreement",
+    group: "Partner agreements",
+    updated: "22 July 2026",
+    blurb:
+      "How we sell your merchandise, and how each sale is split - Roblox takes 30%, we keep 10% of what's left, you keep 90%.",
+  },
+  {
+    href: "/legal/partners/assets",
+    title: "Partner Asset Usage Agreement",
+    group: "Partner agreements",
+    updated: "22 July 2026",
+    blurb:
+      "The assets of yours we may use, what for, and the limits - you keep ownership, and you can decline a request or withdraw one.",
+  },
+  {
+    href: "/legal/partners/ticketing",
+    title: "Partner Ticketing & Packages Agreement",
+    group: "Partner agreements",
+    updated: "22 July 2026",
+    blurb:
+      "We sell all your tickets and packages through our official channels, split the same way, and pay you in full each month.",
   },
 
   // The documents below concern how we connect to Roblox and Discord. The first four are the

@@ -111,6 +111,15 @@ export const discordBotNav = [
   { label: "Site policies", href: "/legal/privacy" },
 ];
 
+// The three partner agreements are one set - the deal a partner signs on to - so they
+// cross-link to each other, not to the site-wide policies. A partner reading one of them
+// almost always wants the next.
+export const partnerNav = [
+  { label: "Merchandise", href: "/legal/partners/merchandise" },
+  { label: "Asset use", href: "/legal/partners/assets" },
+  { label: "Ticketing", href: "/legal/partners/ticketing" },
+];
+
 export function LegalDoc({
   title,
   updated,

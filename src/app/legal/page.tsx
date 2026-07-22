@@ -58,6 +58,12 @@ export default function LegalIndexPage() {
                 signed in with either, or linked your account to the bot, they apply to
                 you.
               </p>
+            ) : g.group === "Partner agreements" ? (
+              <p className="mt-3 max-w-2xl text-sm text-muted">
+                The terms a partner accepts when they come on board: how we sell their
+                merchandise and their tickets, how each sale is split, and how we may use
+                their assets. If you run events or a shop with us, these are your deal.
+              </p>
             ) : null}
 
             <div className="mt-6 divide-y divide-line border-y border-line">
