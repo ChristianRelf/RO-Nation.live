@@ -2384,6 +2384,14 @@ model AccountingDocument {
   /// Free address / extra detail block. Optional.
   counterpartyDetail String?
 
+  /// Set when the counterparty above IS a PartnerAccount the staff picked in the builder,
+  /// rather than free text. A PLAIN column, not an FK - same convention as Invoice.partnerId
+  /// and ticketId: the document snapshots the party's name into counterpartyName, and this is
+  /// only ever used one way - the filter behind a partner's /partner accounting tab, which
+  /// lists the documents raised against their entity (see listDocumentsForPartnerAccount).
+  /// Null for every free-text document, which is still the ordinary case.
+  partnerAccountId String?
+
   /// One line saying what this document is FOR - "Stage build, July shows". Prints
   /// under the heading, and is what the list is scanned by.
   title String
@@ -2495,6 +2503,9 @@ model AccountingDocument {
   /// The double-refund guard reads this on every refund: "what has already been paid
   /// back on this ticket". It runs before every refund is written, so it is indexed.
   @@index([ticketId])
+  /// The partner's accounting tab reads this: "every issued document raised against my
+  /// entity". Scoped read, so it is indexed - the mirror of Invoice's [partnerId, ...] index.
+  @@index([partnerAccountId])
   @@map("accounting_documents")
 }
 
@@ -2512,4 +2523,89 @@ model DocumentCounter {
 
   @@id([kind, year])
   @@map("document_counters")
+}
+
+// ---- Partner accounts ------------------------------------------------------
+//
+// A commercial PARTNER - a party whose merch and tickets RNL sells - or a POTENTIAL
+// partner we are in talks with. They sign in at portal.ronation.live/partner to read
+// the agreements they accept on joining and, once a full PARTNER, to see the accounting
+// documents RNL has raised against them (payouts, billables, receipts, credit notes).
+//
+// This is NOT the multi-tenant partner system. Those partners (lib/partners/registry.ts)
+// are code-registry brands with their own subdomain, theming and PartnerMember crew. A
+// PartnerAccount is a plain business relationship: no site, no brand, no portal of their
+// own - just a door onto /partner. The two share the word "partner" and nothing else.
+//
+// The split into an entity (PartnerAccount) and its logins (PartnerAccountMember) is the
+// same shape the tenant system uses (a Partner + its PartnerMember rows), and for the same
+// reason: a partner can be a company with several people who each sign in with their own
+// Roblox account, and the accounting is scoped to the ENTITY, not to whoever happens to be
+// looking at it.
+
+enum PartnerAccountKind {
+  /// An individual. One member, usually - their own Roblox account.
+  PERSON
+  /// A business. May have several members (representatives) who each sign in.
+  COMPANY
+}
+
+enum PartnerAccountStatus {
+  /// A live partner. Reads the agreements AND their accounting.
+  PARTNER
+  /// In talks. Reads the agreements only - no accounting until they become a PARTNER.
+  POTENTIAL
+}
+
+model PartnerAccount {
+  id String @id @default(cuid())
+
+  kind   PartnerAccountKind
+  /// The person's name or the company name. This is what prints on a document raised
+  /// against them (copied into AccountingDocument.counterpartyName at creation).
+  name   String
+  status PartnerAccountStatus @default(POTENTIAL)
+
+  /// Anything the company needs to remember - the contact, the deal, where they came from.
+  note String?
+
+  /// Who created the entity, snapshotted like everywhere else in this schema.
+  createdByRobloxId String
+  createdByName     String
+
+  members PartnerAccountMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@map("partner_accounts")
+}
+
+model PartnerAccountMember {
+  id String @id @default(cuid())
+
+  partnerAccountId String
+  partnerAccount   PartnerAccount @relation(fields: [partnerAccountId], references: [id], onDelete: Cascade)
+
+  robloxId    String // canonical Roblox user id - resolved server-side
+  username    String
+  displayName String
+  avatarUrl   String?
+
+  /// Who added this login, snapshotted.
+  addedByRobloxId String
+  addedByName     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One membership row per person per entity.
+  @@unique([partnerAccountId, robloxId])
+  /// v1: a Roblox account belongs to at most one partner entity, so the /partner guard is a
+  /// single lookup by robloxId. If an agent ever needs to represent several partners, drop
+  /// this and add an entity switcher - but do not widen it silently, because the guard and
+  /// the accounting scope both assume one entity per login.
+  @@unique([robloxId])
+  @@map("partner_account_members")
 }

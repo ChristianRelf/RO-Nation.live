@@ -281,6 +281,11 @@ const RESERVED = new Set([
   "faq",
   "contact",
   "partners",
+  // The commercial-partner area on the portal host (portal.ronation.live/partner) - the
+  // PartnerAccount door, unrelated to these tenant partners. Same exposure as "hub" and
+  // "docs": the middleware tries the partner rewrite BEFORE it checks PORTAL_PATHS, so a
+  // tenant slugged "partner" would swallow that door outright.
+  "partner",
   // The press kit and the booking page. Same reason as every route above them, and
   // "press" is the one somebody would actually try to register: a partner slugged
   // "press" would take press.ronation.live AND shadow /press on the main site, so the

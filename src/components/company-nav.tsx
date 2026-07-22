@@ -46,6 +46,7 @@ const groups: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "Testimonials", href: "/company/testimonials" },
       { label: "Enquiries", href: "/company/enquiries" },
       { label: "Partners", href: "/company/partners" },
+      { label: "Partner accounts", href: "/company/partner-accounts" },
       { label: "SHASHA access", href: "/company/shasha" },
     ],
   },

@@ -23,6 +23,7 @@ import {
   type DocumentFields,
 } from "@/lib/accounting/documents";
 import { formatRobux } from "@/lib/tickets/pricing";
+import { prisma } from "@/lib/db";
 
 // Every act on an accounting document, and all of them the COMPANY's - there is no
 // counterparty-facing write here at all. The share link is read-only by construction:
@@ -59,12 +60,29 @@ function refresh(id?: string) {
  * descriptions, quantities and unit prices, and buildTotals derives the money from
  * those - a form that could post its own total could post any total.
  */
-function readForm(
+async function readForm(
   formData: FormData,
-): { ok: true; value: DocumentFields } | { ok: false; error: string } {
+): Promise<{ ok: true; value: DocumentFields } | { ok: false; error: string }> {
   const title = s(formData, "title");
-  const counterpartyName = s(formData, "counterpartyName");
   if (!title) return { ok: false, error: "Say what the document is for." };
+
+  // If the staff picked a PartnerAccount, that entity IS the counterparty: its name is what
+  // prints (authoritative over anything typed), and its id is the scope that lands the document
+  // in the partner's own /partner accounting tab. A picked id that no longer resolves falls back
+  // to free text rather than blocking the document - the scope is a convenience, not a gate.
+  const pickedId = s(formData, "partnerAccountId");
+  let partnerAccountId: string | null = null;
+  let counterpartyName = s(formData, "counterpartyName");
+  if (pickedId) {
+    const account = await prisma.partnerAccount.findUnique({
+      where: { id: pickedId },
+      select: { name: true },
+    });
+    if (account) {
+      partnerAccountId = pickedId;
+      counterpartyName = account.name;
+    }
+  }
   if (!counterpartyName) return { ok: false, error: "Name the other party." };
 
   // The lines arrive as one JSON field - see the note in DocumentBuilder. Parsed
@@ -98,6 +116,7 @@ function readForm(
       counterpartyName,
       counterpartyRef: s(formData, "counterpartyRef"),
       counterpartyDetail: s(formData, "counterpartyDetail"),
+      partnerAccountId,
       relatedId: s(formData, "relatedId"),
       totals: totals.value,
       adjustmentLabel: s(formData, "adjustmentLabel"),
@@ -149,7 +168,7 @@ export async function createDocument(
     return { error: "That document type is written from its own page, not here." };
   }
 
-  const parsed = readForm(formData);
+  const parsed = await readForm(formData);
   if (!parsed.ok) return { error: parsed.error };
 
   const related = await checkRelated(parsed.value.relatedId ?? "");
@@ -193,7 +212,7 @@ export async function saveDocument(
     };
   }
 
-  const parsed = readForm(formData);
+  const parsed = await readForm(formData);
   if (!parsed.ok) return { error: parsed.error };
 
   const related = await checkRelated(parsed.value.relatedId ?? "", id);
@@ -480,6 +499,9 @@ export async function creditNoteFromAction(formData: FormData) {
       counterpartyName: source.counterpartyName,
       counterpartyRef: source.counterpartyRef,
       counterpartyDetail: source.counterpartyDetail,
+      // Inherit the scope: a credit against a document raised for a partner is itself the
+      // partner's, so it lands in their /partner accounting tab beside the thing it credits.
+      partnerAccountId: source.partnerAccountId,
       relatedId: source.id,
       totals: {
         lines,

@@ -8,6 +8,7 @@ import { DocumentBuilder } from "@/components/accounting/document-builder";
 import { kindConfig, parseKind } from "@/lib/accounting/kinds";
 import { listRelatable } from "@/lib/accounting/documents";
 import { createDocument } from "@/app/actions/accounting";
+import { prisma } from "@/lib/db";
 import { relatableOptions } from "../relatable";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,10 @@ export default async function NewDocumentPage({
   // Only fetched for the kinds that can point at something - the picker isn't rendered
   // otherwise, and this is a query.
   const relatable = cfg.relates ? relatableOptions(await listRelatable()) : [];
+  const partnerAccounts = await prisma.partnerAccount.findMany({
+    select: { id: true, name: true, status: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <AccountingShell user={user}>
@@ -56,6 +61,7 @@ export default async function NewDocumentPage({
         kind={kind}
         action={createDocument}
         relatable={relatable}
+        partnerAccounts={partnerAccounts}
         submitLabel="Save draft"
         cancelHref="/company/accounting"
       />

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 // useFormState, not React 19's useActionState - this app is on React 18, exactly as
 // components/portal/api-keys.tsx notes.
 import { useFormState, useFormStatus } from "react-dom";
-import type { DocumentKind } from "@prisma/client";
+import type { DocumentKind, PartnerAccountStatus } from "@prisma/client";
 import type { DocumentFormState } from "@/app/actions/accounting";
 import { kindConfig } from "@/lib/accounting/kinds";
 import { lineAmount, parseQty, parseRobux, MAX_LINES } from "@/lib/accounting/lines";
@@ -33,12 +33,16 @@ const labelClass =
 
 export type RelatableDoc = { id: string; number: string; label: string };
 
+/** A partner the document can be filed against - fills the name and scopes it to their portal. */
+export type PartnerOption = { id: string; name: string; status: PartnerAccountStatus };
+
 export function DocumentBuilder({
   kind,
   documentId,
   action,
   initial,
   relatable,
+  partnerAccounts,
   submitLabel,
   cancelHref,
 }: {
@@ -67,8 +71,10 @@ export function DocumentBuilder({
     notes: string;
     documentDate: string;
     dueDate: string;
+    partnerAccountId: string;
   };
   relatable: RelatableDoc[];
+  partnerAccounts: PartnerOption[];
   submitLabel: string;
   cancelHref: string;
 }) {
@@ -80,6 +86,15 @@ export function DocumentBuilder({
     initial?.lines?.length ? initial.lines : [{ ...BLANK }],
   );
   const [adjustment, setAdjustment] = useState(initial?.adjustment ?? "");
+  // The picked partner, and the counterparty name it fills. Both are state so choosing a
+  // partner can write the name - and the server treats the partner as authoritative anyway,
+  // re-reading the entity's name at write time (see readForm in actions/accounting.ts).
+  const [partnerAccountId, setPartnerAccountId] = useState(
+    initial?.partnerAccountId ?? "",
+  );
+  const [counterpartyName, setCounterpartyName] = useState(
+    initial?.counterpartyName ?? "",
+  );
 
   const setLine = (i: number, patch: Partial<LineDraft>) =>
     setLines((prev) => prev.map((l, n) => (n === i ? { ...l, ...patch } : l)));
@@ -135,6 +150,37 @@ export function DocumentBuilder({
           Who and what
         </h2>
 
+        {partnerAccounts.length ? (
+          <div>
+            <label className={labelClass} htmlFor="doc-partner">
+              Partner <span className="text-faint">(optional)</span>
+            </label>
+            <select
+              id="doc-partner"
+              name="partnerAccountId"
+              value={partnerAccountId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setPartnerAccountId(id);
+                const picked = partnerAccounts.find((p) => p.id === id);
+                if (picked) setCounterpartyName(picked.name);
+              }}
+              className={inputClass}
+            >
+              <option value="">— None (free text) —</option>
+              {partnerAccounts.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.status === "POTENTIAL" ? " · potential" : ""}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-faint">
+              Pick a partner to file this in their portal too. Leave as free text otherwise.
+            </p>
+          </div>
+        ) : null}
+
         <div>
           <label className={labelClass} htmlFor="doc-party">
             {cfg.partyFieldLabel}
@@ -144,7 +190,8 @@ export function DocumentBuilder({
             name="counterpartyName"
             required
             maxLength={200}
-            defaultValue={initial?.counterpartyName ?? ""}
+            value={counterpartyName}
+            onChange={(e) => setCounterpartyName(e.target.value)}
             placeholder="Name, studio or handle"
             className={inputClass}
           />

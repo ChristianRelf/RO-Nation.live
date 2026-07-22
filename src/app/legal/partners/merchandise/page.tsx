@@ -26,6 +26,7 @@ const sections: LegalSection[] = [
     heading: "Permission to sell",
     body: [
       "You give us permission to list, present, market and sell your merchandise through our official channels.",
+      "In practice, we take your merchandise's artwork and upload it for sale on our own Roblox store, under our own Roblox account. Every sale is made through that account, so all the Robux from a sale comes to us first - and we then pay you your share, as set out below.",
       "This permission is non-exclusive: you are free to sell your merchandise elsewhere as well.",
       "We decide how your merchandise is presented within our channels. You supply the items, the designs, and any assets we need to list them - the [Asset Usage](/legal/partners/assets) agreement covers how we use those.",
     ],
@@ -59,7 +60,7 @@ const sections: LegalSection[] = [
     heading: "Who owns what",
     body: [
       "You stay the owner of your merchandise and its designs. This agreement is permission to sell, not a transfer of ownership.",
-      "So that we can sell it, you give us a limited, revocable licence to reproduce and display your merchandise and its designs within our channels - and nothing more.",
+      "So that we can sell it, you give us a limited, revocable licence to upload, reproduce, display and sell your merchandise and its designs on our own Roblox store and channels - and nothing more.",
     ],
   },
   {

@@ -52,6 +52,12 @@ export type DocumentInput = {
   counterpartyName: string;
   counterpartyRef?: string | null;
   counterpartyDetail?: string | null;
+  /**
+   * Set when the counterparty above is a PartnerAccount the staff picked, rather than free
+   * text - the id of that entity. It does not print (counterpartyName already carries the
+   * name); it is the scope key behind the partner's /partner accounting tab. Null otherwise.
+   */
+  partnerAccountId?: string | null;
   relatedId?: string | null;
   totals: DocumentTotals;
   adjustmentLabel?: string | null;
@@ -84,6 +90,7 @@ function writeData(input: DocumentFields) {
     counterpartyName: input.counterpartyName,
     counterpartyRef: input.counterpartyRef || null,
     counterpartyDetail: input.counterpartyDetail || null,
+    partnerAccountId: input.partnerAccountId || null,
     relatedId: input.relatedId || null,
     // Cast through unknown for the same reason lib/invoices.ts does: a named type has no
     // index signature, and InputJsonValue wants one. The value is already valid JSON.
@@ -337,6 +344,22 @@ export function listDocuments(
     },
     orderBy: { createdAt: "desc" },
     take,
+  });
+}
+
+/**
+ * Every issued document raised against one partner entity, newest first - the list behind their
+ * /partner accounting tab. DRAFT is excluded in the WHERE, not filtered after: a draft the
+ * company has not issued is not the partner's to see, the same gate the partner invoice reads
+ * put on SENT. Scoped to partnerAccountId, which is indexed for exactly this read.
+ */
+export function listDocumentsForPartnerAccount(
+  partnerAccountId: string,
+): Promise<AccountingDocument[]> {
+  if (!partnerAccountId) return Promise.resolve([]);
+  return prisma.accountingDocument.findMany({
+    where: { partnerAccountId, status: { not: DocumentStatus.DRAFT } },
+    orderBy: { createdAt: "desc" },
   });
 }
 

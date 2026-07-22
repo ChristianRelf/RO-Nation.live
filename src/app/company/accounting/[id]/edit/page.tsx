@@ -10,6 +10,7 @@ import { kindConfig, isHandAuthored } from "@/lib/accounting/kinds";
 import { formatQty, readLineItems } from "@/lib/accounting/lines";
 import { getDocument, listRelatable } from "@/lib/accounting/documents";
 import { saveDocument } from "@/app/actions/accounting";
+import { prisma } from "@/lib/db";
 import { relatableOptions } from "../../relatable";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,10 @@ export default async function EditDocumentPage({
   const relatable = cfg.relates
     ? relatableOptions(await listRelatable(doc.id))
     : [];
+  const partnerAccounts = await prisma.partnerAccount.findMany({
+    select: { id: true, name: true, status: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <AccountingShell user={user}>
@@ -72,6 +77,7 @@ export default async function EditDocumentPage({
         documentId={doc.id}
         action={saveDocument}
         relatable={relatable}
+        partnerAccounts={partnerAccounts}
         submitLabel="Save changes"
         cancelHref={`/company/accounting/${doc.id}`}
         initial={{
@@ -79,6 +85,7 @@ export default async function EditDocumentPage({
           counterpartyName: doc.counterpartyName,
           counterpartyRef: doc.counterpartyRef ?? "",
           counterpartyDetail: doc.counterpartyDetail ?? "",
+          partnerAccountId: doc.partnerAccountId ?? "",
           relatedId: doc.relatedId ?? "",
           // Back to the strings the builder edits - it works in what a person typed,
           // and lines.ts is what turns those into money.

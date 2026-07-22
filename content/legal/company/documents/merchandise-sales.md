@@ -116,7 +116,7 @@ earned but not yet paid remains payable and is paid under clause 5.
 8.2. This Agreement is the whole agreement between the parties on the selling of
 the Merchandise, and replaces any earlier understanding on that subject.
 
-8.3. This document is a plain-language commercial agreement. It is not legal or
+8.3. This document is a plain-language commercial agreement. It is not legal orP
 tax advice, and each party is responsible for its own tax affairs.
 
 ## 9. Signatures

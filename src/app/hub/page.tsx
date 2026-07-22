@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { robloxConfigured } from "@/lib/env";
 import { getHubDashboard, type HubAreaLive } from "@/lib/hub-dashboard";
+import { getPartnerAccountAccess } from "@/lib/partner-account";
 import { PortalFooter } from "@/components/portal-footer";
 import { HubHeader } from "@/components/hub/hub-header";
 import { HubButton, HubChip } from "@/components/hub/hub-button";
@@ -65,6 +67,16 @@ export default async function HubPage() {
         <PortalFooter />
       </div>
     );
+  }
+
+  // A pure partner account holds no staff or partner-tenant door, so getHubDashboard returns
+  // no areas - and the hub, with its "Nothing assigned yet" panel, is not their home. Send
+  // them to /partner, which is. A staffer who ALSO holds a partner grant keeps the hub: they
+  // have areas, so this never fires for them. Checked only when areas is empty, so the extra
+  // lookup stays off the hot path for everyone who does hold a door.
+  if (areas.length === 0) {
+    const partner = await getPartnerAccountAccess();
+    if (partner.state === "allowed") redirect("/partner");
   }
 
   // The closest show anywhere. Sorted on NextShow.at, which exists for this -

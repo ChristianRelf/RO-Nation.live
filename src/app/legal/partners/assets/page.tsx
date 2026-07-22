@@ -14,6 +14,7 @@ const sections: LegalSection[] = [
     heading: "What this covers",
     body: [
       "Working together, we sometimes need to use your assets - logos, artwork, 3D models, audio, brand names and other brand materials - to promote, stage and sell your shows, merchandise and packages. Throughout this document, that is the permitted purpose.",
+      "Because we sell your merch and tickets through our own Roblox store and products (see the [Merchandise](/legal/partners/merchandise) and [Ticketing & Packages](/legal/partners/ticketing) agreements), the permitted purpose includes uploading and reproducing your assets on our own Roblox account for that sale.",
       "It is one of the documents you accept when you become a partner, alongside the [Merchandise](/legal/partners/merchandise) and [Ticketing & Packages](/legal/partners/ticketing) agreements.",
     ],
   },

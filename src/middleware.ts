@@ -39,6 +39,13 @@ const PORTAL_PATHS = [
   // on the portal host and nowhere else (the main site redirects it here, below). See
   // app/hub/page.tsx.
   "/hub",
+  // The commercial-partner area - portal.ronation.live/partner. A signed-in partner or
+  // potential partner reads the agreements they accept on joining and, once a full partner,
+  // the accounting RNL has raised against them. Lives on the portal host and nowhere else
+  // (the main site redirects it here, below), and guards on a PartnerAccount grant rather
+  // than a group rank - see lib/partner-account.ts. Without this line the portal branch
+  // below bounces /partner off to the main site, where the route does not exist.
+  "/partner",
   // The internal docs - guides, brand assets, the API reference. They live on the
   // PORTAL host and nowhere else, because everything under here is for staff and
   // partner crew; the pages guard on exactly that (lib/docs-guard.ts). Without
@@ -229,6 +236,12 @@ function areaFor(path: string) {
     path.startsWith("/shasha") ||
     path === "/portal" ||
     path === "/hub" ||
+    // The commercial-partner area. Portal chrome, not marketing chrome - it renders inside
+    // its own PartnerShell, exactly as /hub does, rather than under the public "Book tickets"
+    // header. The route group in app/partner/(app) does not appear in the URL, so the guarded
+    // pages still match this /partner/ prefix.
+    path === "/partner" ||
+    path.startsWith("/partner/") ||
     // The portal's sign-in page. Portal chrome for the same reason /docs is:
     // without this it renders inside the public site's "Book tickets" header, on
     // the portal host, as the first thing every backstage visitor sees.
@@ -675,6 +688,11 @@ export function middleware(req: NextRequest) {
     pathname === "/shasha" ||
     pathname.startsWith("/shasha/") ||
     pathname === "/hub" ||
+    // The commercial-partner area. Belongs to the portal host for the same host-only-cookie
+    // reason as /hub: ronation.live/partner is what a partner will type, so forward it rather
+    // than 404.
+    pathname === "/partner" ||
+    pathname.startsWith("/partner/") ||
     // The backstage sign-in. It belongs to the portal host - the session cookie is
     // host-only, so a sign-in completed HERE would set a cookie on the apex and
     // leave the portal exactly as signed-out as before. Forwarded rather than

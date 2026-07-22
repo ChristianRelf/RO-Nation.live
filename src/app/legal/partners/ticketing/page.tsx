@@ -24,6 +24,7 @@ const sections: LegalSection[] = [
     heading: "Sold through us",
     body: [
       "All tickets and packages for your events are sold exclusively through our official channels.",
+      "They are sold as our own Roblox products, through our own Roblox account, so all the Robux from a sale comes to us first - and we then pay you your share each month, as set out below.",
       "While this agreement is in force, you do not sell, resell or issue tickets or packages for your events anywhere else, and you do not authorise anyone else to.",
       "We handle issuing, delivering and validating tickets and packages through our channels.",
     ],
