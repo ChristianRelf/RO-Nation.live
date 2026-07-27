@@ -41,6 +41,27 @@ export const env = {
   // here. See lib/notify.ts.
   discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL || "",
 
+  // The channel a SHOW is announced in when it goes PUBLISHED - and deliberately
+  // a different variable from the one above, because it is a different audience.
+  //
+  // DISCORD_WEBHOOK_URL is an ops inbox: job applications, booking enquiries,
+  // data-deletion requests, ticket reservations. It is somewhere private, and the
+  // things that land in it are addressed to staff. A show announcement is the
+  // opposite - it is written for the public ("doors at 19:00, tickets are free"),
+  // and it belongs in whatever channel the members actually read.
+  //
+  // So there is NO fallback to discordWebhookUrl. Unset means show announcements
+  // are off, exactly as an unset ops webhook means the inbox pings are off.
+  // Wanting both in one channel is a supported thing to want: paste the same URL
+  // into both variables, and it is then obvious from .env that you did.
+  //
+  // Per-partner overrides follow the same convention notify() already uses for
+  // the inbox - DISCORD_ANNOUNCE_WEBHOOK_URL_<SLUG>, resolved from process.env in
+  // lib/notify.ts. A partner's show is announced in the PARTNER's channel or not
+  // at all; it never falls back to RNL's, because RNL's members did not follow a
+  // partner's line-up. See webhookFor() there.
+  discordAnnounceWebhookUrl: process.env.DISCORD_ANNOUNCE_WEBHOOK_URL || "",
+
   // ---- Paid ticketing (Robux) --------------------------------------
   //
   // THE MASTER SWITCH. May this site sell a ticket for Robux at all? Off by default.

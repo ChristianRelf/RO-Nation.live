@@ -83,6 +83,24 @@ services:
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       DISCORD_MANAGER_IDS: ${DISCORD_MANAGER_IDS:-}
       DISCORD_STAFF_IDS: ${DISCORD_STAFF_IDS:-}
+      # The two Discord webhooks: the staff inbox (applications, enquiries, data
+      # requests, ticket reservations) and the members' channel a show is posted to
+      # when it goes live. See .env.example for why they are separate.
+      #
+      # DISCORD_WEBHOOK_URL was MISSING from this block until the announcement
+      # webhook was added beside it, which meant lib/notify.ts had been a silent
+      # no-op in Docker since it was written: the URL sat in .env, the container
+      # never saw it, notify() found nothing configured and returned - exactly the
+      # behaviour it has when you deliberately leave it blank, and therefore
+      # indistinguishable from it. Precisely the silent-ignore trap the ROBUX_
+      # note above describes.
+      #
+      # NOTE the per-partner overrides cannot be listed here: the key is built from
+      # a partner slug at runtime (DISCORD_WEBHOOK_URL_<SLUG>), so compose has no
+      # name to interpolate. Adding a partner's own channel means adding a literal
+      # line to this block as well as to .env.
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      DISCORD_ANNOUNCE_WEBHOOK_URL: ${DISCORD_ANNOUNCE_WEBHOOK_URL:-}
       # DEPRECATED - no longer read by anything. These fed prisma/seed.ts, which
       # created the first PartnerMember row on every boot. That seed is gone; seat a
       # partner's first owner with `npm run partner:member` instead (see .env.example

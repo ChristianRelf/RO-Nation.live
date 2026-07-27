@@ -28,6 +28,10 @@ const STATIC_ROUTES = [
   "/partners",
   "/press",
   "/services",
+  // deck, the DJ rig. The page is static and lives on THIS host; the product it
+  // describes runs on deck.ronation.live, which is a separate service with a
+  // sitemap of its own and no business being advertised from here.
+  "/deck",
   // The /legal index, then every published policy - read from the one registry that
   // /legal itself renders from (lib/legal.ts), so a new document is advertised here the
   // moment it is added there rather than needing a second copy of the list kept in step.

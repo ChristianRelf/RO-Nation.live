@@ -22,36 +22,79 @@ import { absoluteUrl } from "@/lib/url";
 
 type NotifyField = { name: string; value: string; inline?: boolean };
 
+/**
+ * WHICH channel, and it is not a styling choice - it decides who reads this.
+ *
+ *   "inbox"     staff ops. Applications, enquiries, data requests, reservations.
+ *               DISCORD_WEBHOOK_URL, with a per-partner override and a fallback
+ *               to RNL's - a partner without a channel of their own still gets
+ *               their applications seen by somebody.
+ *   "announce"  the public. A show going live, written for members.
+ *               DISCORD_ANNOUNCE_WEBHOOK_URL, with a per-partner override and NO
+ *               fallback in either direction. See env.ts for why.
+ */
+export type NotifyChannel = "inbox" | "announce";
+
 export type NotifyInput = {
   /**
    * Whose channel. A partner slug routes to DISCORD_WEBHOOK_URL_<SLUG> when that is
    * set, and falls back to RNL's DISCORD_WEBHOOK_URL. null → RNL's directly.
    */
   partnerId?: string | null;
+  /** Defaults to "inbox" - every call site that predates announcements is one. */
+  channel?: NotifyChannel;
   title: string;
   description?: string;
   fields?: NotifyField[];
   /** A site-relative path or an absolute URL; linked from the embed title. */
   url?: string;
+  /**
+   * A site-relative path or absolute URL for the embed's big image - a show's
+   * thumbnail. Discord fetches this itself, so it has to be reachable from the
+   * public internet; absoluteUrl() makes a stored /uploads/… path so, and a
+   * localhost origin in dev simply renders without the picture.
+   */
+  image?: string;
   color?: number;
 };
 
 // RNL electric blue (globals.css --accent), as a Discord integer colour.
 const BRAND_COLOR = 0x2b6bff;
 
+/** partner slug → env key suffix. sleeptoken-ro → SLEEPTOKEN_RO */
+const envSuffix = (partnerId: string) =>
+  partnerId.toUpperCase().replace(/-/g, "_");
+
 /**
- * The webhook for a slug. The per-partner key is a CONVENTION resolved from the
- * environment, not a registry entry, because a webhook URL is a secret:
- * DISCORD_WEBHOOK_URL_<SLUG>, uppercased with hyphens as underscores
- * (sleeptoken-ro → DISCORD_WEBHOOK_URL_SLEEPTOKEN_RO). No per-partner URL, or no
- * partner at all, falls back to RNL's one channel.
+ * The webhook for a slug on a channel. The per-partner key is a CONVENTION
+ * resolved from the environment, not a registry entry, because a webhook URL is a
+ * secret: DISCORD_WEBHOOK_URL_<SLUG>, uppercased with hyphens as underscores
+ * (sleeptoken-ro → DISCORD_WEBHOOK_URL_SLEEPTOKEN_RO).
+ *
+ * The two channels resolve DIFFERENTLY at the last step, and the difference is
+ * the whole reason this takes a channel:
+ *
+ *   inbox     falls back to RNL's. A partner with no channel of their own still
+ *             has their job applications land somewhere a human reads.
+ *   announce  does NOT. RNL's announcement channel is RNL's members, who did not
+ *             sign up for a partner's line-up - so a partner without their own
+ *             announcement webhook is announced nowhere, which is the correct
+ *             quiet failure. RNL's own shows (partnerId null) are unaffected:
+ *             they read the top-level variable directly, as they always would.
  */
-function webhookFor(partnerId?: string | null): string | null {
+function webhookFor(
+  partnerId: string | null | undefined,
+  channel: NotifyChannel,
+): string | null {
+  if (channel === "announce") {
+    if (partnerId) {
+      return process.env[`DISCORD_ANNOUNCE_WEBHOOK_URL_${envSuffix(partnerId)}`] || null;
+    }
+    return env.discordAnnounceWebhookUrl || null;
+  }
+
   if (partnerId) {
-    const key = `DISCORD_WEBHOOK_URL_${partnerId
-      .toUpperCase()
-      .replace(/-/g, "_")}`;
-    const perPartner = process.env[key];
+    const perPartner = process.env[`DISCORD_WEBHOOK_URL_${envSuffix(partnerId)}`];
     if (perPartner) return perPartner;
   }
   return env.discordWebhookUrl || null;
@@ -59,7 +102,7 @@ function webhookFor(partnerId?: string | null): string | null {
 
 export async function notify(input: NotifyInput): Promise<void> {
   try {
-    const webhook = webhookFor(input.partnerId);
+    const webhook = webhookFor(input.partnerId, input.channel ?? "inbox");
     if (!webhook) return; // no channel configured → no-op
 
     // Discord's own limits, clamped here so a long message can never make the POST
@@ -69,6 +112,7 @@ export async function notify(input: NotifyInput): Promise<void> {
       title: input.title.slice(0, 256),
       description: input.description?.slice(0, 2000) || undefined,
       url: input.url ? absoluteUrl(input.url) : undefined,
+      image: input.image ? { url: absoluteUrl(input.image) } : undefined,
       color: input.color ?? BRAND_COLOR,
       fields: input.fields?.slice(0, 25).map((f) => ({
         name: f.name.slice(0, 256),

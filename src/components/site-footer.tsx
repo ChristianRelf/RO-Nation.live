@@ -62,6 +62,10 @@ const columns = [
       // browser navigation rather than a client RSC fetch that redirects off-origin.
       { label: "Merch", href: "/merch", hardNav: true },
       { label: "Blog", href: "/blog" },
+      // deck, the DJ rig. A relative path to a page on THIS host - the page is
+      // the thing that hands the visitor over to deck.ronation.live, so no
+      // hardNav is needed and no second copy of that hostname lives here.
+      { label: "deck - our DJ rig", href: "/deck" },
       { label: "How ticketing works", href: "/about#ticketing" },
       { label: "FAQ", href: "/faq" },
     ],

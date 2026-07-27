@@ -15,6 +15,7 @@ import {
   diffEventChange,
   notifyEventAudience,
 } from "@/lib/member-notify";
+import { announceShow } from "@/lib/announce";
 import {
   AuditAction,
   AuditActorKind,
@@ -193,6 +194,15 @@ export async function createStudioEvent(formData: FormData) {
     meta: { status: event.status, startsAt: event.startsAt.toISOString() },
   });
 
+  // Straight to PUBLISHED - the show is live the moment this row landed, so it is
+  // posted to Discord. Created as a DRAFT it is announced later, by the publish
+  // branch in updateStudioEvent; either way the announcement fires exactly once,
+  // on the transition into PUBLISHED.
+  //
+  // Fire-and-forget, before the tier sync that may redirect: announceShow() never
+  // throws and is never awaited, so Discord cannot delay - or fail - a save.
+  if (event.status === "PUBLISHED") void announceShow(event);
+
   // A game pass id already on another tier - see syncEventTiers. The show saved;
   // its tiers did not (the sync rolls back whole), so send them to the editor to
   // fix it rather than to a list wondering where their VIP tier went.
@@ -232,6 +242,19 @@ export async function updateStudioEvent(formData: FormData) {
   });
 
   if (count > 0 && before) {
+    // Publishing is the edit worth naming as itself - it is the moment a show
+    // becomes real to the public. One expression, read twice below: the audit
+    // line calls it PUBLISHED and Discord gets told, and those two must never be
+    // able to disagree about what "posted" meant.
+    //
+    // The `before.status !== "PUBLISHED"` half is the entire anti-spam rule. Save
+    // a live show forty times - a moved door time, a fixed typo - and this is
+    // false every time, so the channel hears about it once. Un-publishing and
+    // re-publishing announces again, which is correct: to anybody reading, that
+    // is a show going up.
+    const justPublished =
+      before.status !== "PUBLISHED" && data.status === "PUBLISHED";
+
     // Fire-and-forget a change-notice to everyone holding or following this show.
     // Started before the tier sync that may redirect, so a saved edit always
     // notifies. Never throws (see member-notify.ts), so it cannot break the write.
@@ -243,16 +266,26 @@ export async function updateStudioEvent(formData: FormData) {
       );
     }
 
+    // Same contract as the notice above: never awaited, never throws. The row is
+    // already written by this point, so the show is live whatever Discord does.
+    if (justPublished) {
+      void announceShow({
+        ...data,
+        // The slug is not on the form - it is minted once, at creation, and never
+        // edited. `before` is where the row's own identity lives.
+        slug: before.slug,
+        startsAt: data.startsAt!,
+        partnerId: door.partnerId,
+      });
+    }
+
     await recordAudit({
       scope: scopeFromPartnerId(door.partnerId),
-      // Publishing is the edit worth naming as itself - it is the moment a show
-      // becomes real to the public, and "updated" buries that in a list of edits.
-      action:
-        before.status !== "PUBLISHED" && data.status === "PUBLISHED"
-          ? AuditAction.PUBLISHED
-          : before.status !== "ARCHIVED" && data.status === "ARCHIVED"
-            ? AuditAction.ARCHIVED
-            : AuditAction.UPDATED,
+      action: justPublished
+        ? AuditAction.PUBLISHED
+        : before.status !== "ARCHIVED" && data.status === "ARCHIVED"
+          ? AuditAction.ARCHIVED
+          : AuditAction.UPDATED,
       target: AuditTarget.EVENT,
       targetId: id,
       targetName: data.title,
