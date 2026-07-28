@@ -18,7 +18,8 @@
     "cull": "tsx scripts/cull.ts",
     "remind": "tsx scripts/remind.ts",
     "partner:member": "tsx --conditions=react-server scripts/grant-partner-owner.ts",
-    "blog:deck": "tsx scripts/deck-post.ts",
+    "blog": "tsx scripts/post.ts",
+    "brand:backdrop": "tsx scripts/deck-backdrop.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

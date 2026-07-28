@@ -1,41 +1,12 @@
-/**
- * Write the "deck" announcement into the blog.
- *
- *   docker compose exec web npm run blog:deck            # creates/updates a DRAFT
- *   docker compose exec web npm run blog:deck -- --publish
- *
- * ---- Why a script and not just typing it into the Studio -------------------
- *
- * /company/blog is the day-to-day tool and stays the day-to-day tool. This post
- * is a one-off exception for one reason: it is the launch note for a product on
- * ANOTHER host, and the body is full of URLs, feature names and limits that have
- * to agree with what deck.ronation.live actually says. Keeping it in the repo
- * next to src/app/deck/page.tsx means the two are reviewed together and drift
- * shows up in a diff rather than in a reader's face.
- *
- * ---- It writes a DRAFT ------------------------------------------------------
- *
- * Deliberately, and this is the whole reason it takes a flag. prisma/seed.ts was
- * deleted because it republished content nobody had chosen to publish, every
- * time a container booted (see scripts/grant-partner-owner.ts for the rest of
- * that story). Running this puts the post in the Studio, in draft, where a human
- * reads it and presses the button. `--publish` exists for when that human is the
- * one at the terminal.
- *
- * Idempotent, and careful about it: re-running never resets an ARCHIVED post to
- * DRAFT, and never re-stamps publishedAt on a post that is already live. The
- * body and the title are refreshed on every run, which is the point of keeping
- * the copy here.
- */
+import type { RepoPost } from "../post";
 
-import { PrismaClient, PostStatus } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
-const SLUG = "deck-the-dj-rig";
-const TITLE = "deck: we built a DJ rig that lives in Discord";
-const COVER = "/brand/brandassets/deckCover.png";
-const AUTHOR = "RO. Nation LIVE";
+// The deck launch note.
+//
+// In the repo rather than the Studio because every claim in it is checkable
+// against RNL_DJ_BOT and against src/app/deck/page.tsx - the feature names, the
+// three known limits, the fact that access goes out in batches. When one of
+// those changes, this is in the blast radius and belongs in the same diff.
+// See scripts/posts/index.ts for the bar, and scripts/post.ts to write it.
 
 const EXCERPT =
   "Two decks, a real mixer, effects and sample pads, on a control surface in your browser and streamed straight into a voice channel. It is called deck, it runs at deck.ronation.live, and access is going out in batches.";
@@ -141,67 +112,10 @@ tickets have nothing to do with it, and it cannot see them.
 
 Come and break it. Tell us what falls over.`;
 
-async function main() {
-  const publish = process.argv.slice(2).includes("--publish");
-
-  // partnerId null = RNL's own blog. A partner's posts live on the partner's
-  // own host, and the unique index is [partnerId, slug] - so this is not
-  // decoration, it is half of the key.
-  const existing = await prisma.post.findFirst({
-    where: { partnerId: null, slug: SLUG },
-  });
-
-  // Status is a floor, never a reset. Somebody who archived this post did that
-  // on purpose, and a re-run to fix a typo in the body must not quietly put it
-  // back on the site.
-  const status = existing
-    ? publish && existing.status === PostStatus.DRAFT
-      ? PostStatus.PUBLISHED
-      : existing.status
-    : publish
-      ? PostStatus.PUBLISHED
-      : PostStatus.DRAFT;
-
-  // Stamped the first time it goes live and never again - the same rule the
-  // Studio follows. Re-running this on a live post must not move it back to the
-  // top of the blog.
-  const publishedAt =
-    status === PostStatus.PUBLISHED
-      ? (existing?.publishedAt ?? new Date())
-      : existing?.publishedAt;
-
-  const data = {
-    title: TITLE,
-    excerpt: EXCERPT,
-    coverUrl: COVER,
-    body: BODY,
-    status,
-    publishedAt,
-    authorName: AUTHOR,
-  };
-
-  if (existing) {
-    await prisma.post.update({ where: { id: existing.id }, data });
-  } else {
-    await prisma.post.create({
-      data: { partnerId: null, slug: SLUG, ...data },
-    });
-  }
-
-  console.log(`\n✓ "${TITLE}"`);
-  console.log(`  ${existing ? "updated" : "created"} · status ${status}`);
-
-  if (status === PostStatus.PUBLISHED) {
-    console.log(`  Live at /blog/${SLUG}\n`);
-  } else {
-    console.log(`  Draft. Read it and publish it at /company/blog\n`);
-    console.log(`  (or re-run with --publish if you have already read it)\n`);
-  }
-}
-
-main()
-  .catch((err) => {
-    console.error(err);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+export const deckPost: RepoPost = {
+  slug: "deck-the-dj-rig",
+  title: "deck: we built a DJ rig that lives in Discord",
+  cover: "/brand/brandassets/deckCover.png",
+  excerpt: EXCERPT,
+  body: BODY,
+};

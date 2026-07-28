@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { robloxConfigured } from "@/lib/env";
 import { getHubDashboard, type HubAreaLive } from "@/lib/hub-dashboard";
+import type { HubLink } from "@/lib/hub";
 import { getPartnerAccountAccess } from "@/lib/partner-account";
 import { PortalFooter } from "@/components/portal-footer";
 import { HubHeader } from "@/components/hub/hub-header";
@@ -10,7 +11,7 @@ import { NowBoard } from "@/components/hub/now-board";
 import { AttentionBoard } from "@/components/hub/attention-board";
 import { AreaRow } from "@/components/hub/area-row";
 import { ActivityFeed } from "@/components/hub/activity-feed";
-import { MarkSeen } from "@/components/hub/mark-seen";
+import { SeenMarker } from "@/components/seen-marker";
 
 // portal.ronation.live/hub - the backstage dashboard.
 //
@@ -69,15 +70,26 @@ export default async function HubPage() {
     );
   }
 
-  // A pure partner account holds no staff or partner-tenant door, so getHubDashboard returns
-  // no areas - and the hub, with its "Nothing assigned yet" panel, is not their home. Send
-  // them to /partner, which is. A staffer who ALSO holds a partner grant keeps the hub: they
-  // have areas, so this never fires for them. Checked only when areas is empty, so the extra
-  // lookup stays off the hot path for everyone who does hold a door.
-  if (areas.length === 0) {
-    const partner = await getPartnerAccountAccess();
-    if (partner.state === "allowed") redirect("/partner");
-  }
+  // The commercial-partner area is NOT one of getHubData()'s areas, and deliberately so: it
+  // is not a rank in RNL's group but a grant row, and the dashboard's aggregates are all keyed
+  // on partner SLUGS (see lib/hub-dashboard.ts) which a PartnerAccount id is not. So it is
+  // resolved here, on the one page that wants it, and appears as a pinned destination rather
+  // than a decorated area row.
+  //
+  // Two things hang off this lookup:
+  //
+  //   - A pure partner account holds no staff or partner-tenant door, so there are no areas
+  //     at all, and the hub's "Nothing assigned yet" panel is not their home. /partner is.
+  //   - A staffer who ALSO holds a grant keeps the hub - and used to have no link to /partner
+  //     anywhere in the portal, because the redirect below only fires when areas is empty.
+  //     The chip is that missing door.
+  const partnerAccount = await getPartnerAccountAccess();
+  if (areas.length === 0 && partnerAccount.state === "allowed") redirect("/partner");
+
+  const partnerLink: HubLink[] =
+    partnerAccount.state === "allowed"
+      ? [{ label: `Partner · ${partnerAccount.user.account.name}`, href: "/partner" }]
+      : [];
 
   // The closest show anywhere. Sorted on NextShow.at, which exists for this -
   // `relative` and `when` are display strings and would sort "Fri" against
@@ -96,7 +108,9 @@ export default async function HubPage() {
         <Masthead
           name={session.displayName.split(" ")[0]}
           areas={areas}
-          quickLinks={quickLinks}
+          // The partner door leads: it is a place this person is somebody, where the rest
+          // of the row is documentation and the main site.
+          quickLinks={[...partnerLink, ...quickLinks]}
         />
 
         {areas.length ? (
@@ -135,7 +149,7 @@ export default async function HubPage() {
 
             {/* Advances the "last here" cookie once the page has rendered. A
                 render cannot set a cookie in Next 14, hence the round trip. */}
-            <MarkSeen />
+            <SeenMarker endpoint="/api/portal/seen" />
           </div>
         ) : (
           <NoAreas />
@@ -167,7 +181,7 @@ function Masthead({
 }: {
   name: string;
   areas: HubAreaLive[];
-  quickLinks: { label: string; href: string; external?: boolean }[];
+  quickLinks: HubLink[];
 }) {
   const shows = areas.filter((a) => a.nextShow).length;
   const flags = areas.reduce((n, a) => n + a.attention.length, 0);

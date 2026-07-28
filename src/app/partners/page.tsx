@@ -123,6 +123,24 @@ export default function PartnersPage() {
               </Link>
               .
             </p>
+
+            {/* The door for the people who are already through it. Partners were told about
+                portal.ronation.live/partner once, by whoever set their access up, and had
+                nowhere to look it up afterwards - the site footer's "Staff & partner portal"
+                lands on /login, which is the right front door but not the named one.
+
+                It gives nothing away: the target is guarded, and an anonymous visitor is met
+                by the portal sign-in gate, then by /partner/access if their account holds no
+                grant. A plain <a>, not <Link>, because the middleware 307s this to the portal
+                host and a client-side RSC fetch would be blocked off-origin - the same call
+                the footer makes for /login and /merch. */}
+            <p className="mt-3 text-sm text-black/60">
+              Already a partner?{" "}
+              <a href="/partner" className="font-semibold underline">
+                Open the partner portal
+              </a>{" "}
+              for your agreements and accounting.
+            </p>
           </div>
         </div>
       </section>

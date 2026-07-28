@@ -381,6 +381,68 @@ export function listRelatable(self?: string): Promise<AccountingDocument[]> {
   });
 }
 
+export type PartnerLedger = {
+  /** Issued and unsettled, RNL → them. Money they are waiting on. */
+  dueToPartner: number;
+  /** Issued and unsettled, them → RNL, net of credit notes. Money they owe. */
+  dueFromPartner: number;
+  /** Settled RNL → them this calendar year. What they have actually been paid. */
+  paidToPartnerYtd: number;
+  /** How many documents are still ISSUED - the count behind the two figures above. */
+  outstandingCount: number;
+};
+
+/**
+ * The same ledger as accountingSummary(), turned around to face the PARTNER.
+ *
+ * Pure, over rows the caller already holds, rather than a groupBy: the overview page
+ * lists a partner's recent documents anyway, and a second round trip to re-sum the
+ * dozen rows it just fetched would buy nothing. accountingSummary() aggregates in the
+ * database for the opposite reason - it sums the whole desk, which grows without bound.
+ *
+ * The kinds are spelled out rather than read off KindConfig.direction, and that is not
+ * an oversight. A CREDIT_NOTE is "outbound" from RNL's side - money it will not now be
+ * receiving - but no Robux moves toward the partner: it CANCELS what they owe. Folding
+ * it into dueToPartner on the strength of its direction would tell a partner they were
+ * owed a payout that is never coming.
+ *
+ * Feed it the list from listDocumentsForPartnerAccount(): DRAFT is already excluded
+ * there, and VOID falls out below by matching neither status.
+ */
+export function partnerLedger(docs: AccountingDocument[]): PartnerLedger {
+  const yearStart = new Date(new Date().getFullYear(), 0, 1);
+  const toPartner: DocumentKind[] = [
+    DocumentKind.CONTRACTOR_PAYMENT,
+    DocumentKind.TICKET_REFUND,
+  ];
+
+  const ledger: PartnerLedger = {
+    dueToPartner: 0,
+    dueFromPartner: 0,
+    paidToPartnerYtd: 0,
+    outstandingCount: 0,
+  };
+
+  for (const doc of docs) {
+    if (doc.status === DocumentStatus.ISSUED) {
+      ledger.outstandingCount += 1;
+      if (toPartner.includes(doc.kind)) ledger.dueToPartner += doc.total;
+      else if (doc.kind === DocumentKind.INVOICE) ledger.dueFromPartner += doc.total;
+      else if (doc.kind === DocumentKind.CREDIT_NOTE)
+        ledger.dueFromPartner -= doc.total;
+    } else if (
+      doc.status === DocumentStatus.PAID &&
+      toPartner.includes(doc.kind) &&
+      doc.paidAt &&
+      doc.paidAt >= yearStart
+    ) {
+      ledger.paidToPartnerYtd += doc.total;
+    }
+  }
+
+  return ledger;
+}
+
 export type AccountingSummary = {
   /** Issued and unsettled, by direction. */
   owedToUs: number;

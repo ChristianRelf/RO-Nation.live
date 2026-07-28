@@ -72,7 +72,7 @@ const faqs = [
 export default async function ContactPage({
   searchParams,
 }: {
-  searchParams: { kind?: string; sent?: string; error?: string };
+  searchParams: { kind?: string; subject?: string; sent?: string; error?: string };
 }) {
   const session = await getUserSession();
 
@@ -83,6 +83,13 @@ export default async function ContactPage({
   const defaultKind = (
     KINDS.includes(requested as (typeof KINDS)[number]) ? requested : "GENERAL"
   ) as EnquiryKind;
+
+  // ?subject= fills the subject line in, which is what lets the partner area link "query
+  // this" from a document with the account and the number already in it. Trimmed to the
+  // same 140 the action validates against (actions/enquiries.ts), so a link with a
+  // runaway query string presents a subject that can actually be submitted rather than one
+  // that fails on send. It is text on a form field and nothing else reads it.
+  const defaultSubject = (searchParams.subject ?? "").trim().slice(0, 140) || undefined;
 
   return (
     <div className="relative">
@@ -132,6 +139,7 @@ export default async function ContactPage({
             <EnquiryForm
               session={session}
               defaultKind={defaultKind}
+              defaultSubject={defaultSubject}
               sent={searchParams.sent === "1"}
               error={searchParams.error}
             />

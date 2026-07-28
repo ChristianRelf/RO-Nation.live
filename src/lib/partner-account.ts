@@ -65,6 +65,27 @@ export async function requirePartnerAccount(): Promise<PartnerAccountUser> {
 }
 
 /**
+ * Every login that can sign in on one entity's behalf.
+ *
+ * Shown to the partner themselves, on their own overview. RNL writes this list from
+ * /company/partner-accounts and the partner cannot change it - which is exactly why they
+ * should be able to READ it: an account they no longer recognise is theirs to query, and
+ * they can only query what they can see.
+ *
+ * Callers must scope this to the account the caller actually holds (requirePartnerAccount
+ * returns it) - the id is the whole authorization, and this function checks nothing.
+ */
+export function listPartnerAccountMembers(
+  partnerAccountId: string,
+): Promise<PartnerAccountMember[]> {
+  if (!partnerAccountId) return Promise.resolve([]);
+  return prisma.partnerAccountMember.findMany({
+    where: { partnerAccountId },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/**
  * A live PARTNER reads their accounting; a POTENTIAL partner reads only the agreements. The
  * /partner/accounting page and the Accounting nav item both gate on this.
  */

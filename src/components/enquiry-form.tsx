@@ -59,12 +59,22 @@ export function EnquiryForm({
    * one against a fixed set of keys.
    */
   returnTo = "/contact",
+  /**
+   * Prefills the subject line. What it is FOR: a partner querying a document in their
+   * accounting arrives with the account and the document already named, instead of
+   * retyping "about invoice RNL-INV-2026-0004" from a tab they just closed.
+   *
+   * Text only, and it goes nowhere near the action's logic - `kind` is still the only
+   * field this page can preset that changes what happens to the message.
+   */
+  defaultSubject,
   sent,
   error,
 }: {
   session: { username: string } | null;
   defaultKind?: EnquiryKind;
   returnTo?: "/contact" | "/services";
+  defaultSubject?: string;
   sent?: boolean;
   error?: string;
 }) {
@@ -214,6 +224,10 @@ export function EnquiryForm({
           name="subject"
           label="Subject"
           required
+          // A DEFAULT, not a fixed value: the deep link fills it in and the sender can
+          // still rewrite it. Uncontrolled on purpose - typing over it must not fight the
+          // prop, and this component re-renders on every click of the kind selector.
+          defaultValue={defaultSubject}
           placeholder={
             kind === "BOOKING"
               ? "Launch party for our group"

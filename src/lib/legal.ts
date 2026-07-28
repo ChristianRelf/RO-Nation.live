@@ -175,6 +175,17 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
   },
 ];
 
+/**
+ * The three commercial agreements, in declaration order.
+ *
+ * Derived from the registry rather than retyped, so /partner and /partner/documents cannot
+ * disagree about how many there are - both read this, and adding a fourth agreement is one
+ * entry above and nothing else.
+ */
+export const PARTNER_AGREEMENTS: LegalDocEntry[] = LEGAL_DOCS.filter(
+  (d) => d.group === "Partner agreements",
+);
+
 /** The date on one document. Throws at BUILD TIME if the page and the registry disagree. */
 export function legalUpdated(href: string): string {
   const doc = LEGAL_DOCS.find((d) => d.href === href);

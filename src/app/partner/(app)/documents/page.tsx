@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePartnerAccount } from "@/lib/partner-account";
-import { LEGAL_DOCS } from "@/lib/legal";
+import { PARTNER_AGREEMENTS } from "@/lib/legal";
 import { Kicker } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Documents" };
 
-// The three partner agreements, read from the one legal registry that /legal itself renders
+// The three partner agreements come from the one legal registry that /legal itself renders
 // from (lib/legal.ts) - so a change there shows up here for free. They open in a new tab: the
 // canonical page lives under /legal, and we would rather keep the partner in their own area
 // than hand them off to it.
-const PARTNER_DOCS = LEGAL_DOCS.filter((d) => d.group === "Partner agreements");
 
 export default async function PartnerDocumentsPage() {
   await requirePartnerAccount();
@@ -26,7 +25,7 @@ export default async function PartnerDocumentsPage() {
       </p>
 
       <div className="mt-8 divide-y divide-line border-y border-line">
-        {PARTNER_DOCS.map((d) => (
+        {PARTNER_AGREEMENTS.map((d) => (
           <a
             key={d.href}
             href={d.href}
