@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { PortalFooter } from "@/components/portal-footer";
 import { PartnerNav } from "@/components/partner/partner-nav";
+import { payUrls } from "@/lib/accounting/urls";
 
 // The chrome for portal.ronation.live/partner. Modelled on the hub's HubHeader + PortalFooter:
 // portal chrome, not marketing chrome (the middleware puts /partner in the "portal" bucket, so
@@ -63,7 +64,9 @@ export function PartnerShell({
         </div>
 
         <div className="shell border-t border-line/60 py-1.5">
-          <PartnerNav showAccounting={showAccounting} />
+          {/* payHref is resolved HERE, in a server component, where the runtime env is
+              readable. See the note on the prop in partner-nav.tsx. */}
+          <PartnerNav showAccounting={showAccounting} payHref={payUrls.home()} />
         </div>
       </header>
 

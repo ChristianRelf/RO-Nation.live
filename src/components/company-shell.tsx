@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { CompanyUser } from "@/lib/company";
 import { CompanyNav } from "./company-nav";
+import { accountsOrigin } from "@/lib/accounting/urls";
 
 // The Company chrome: the sidebar and the content column beside it. Lifted out of
 // (dash)/layout.tsx so the invoice pages - which live OUTSIDE that route group, because
@@ -23,6 +24,10 @@ export function CompanyShell({
             roleName: user.roleName,
             rank: user.rank,
           }}
+          // Resolved HERE, in a server component, where NEXT_PUBLIC_SITE_URL is read at
+          // runtime. See the note on groupsFor() in company-nav.tsx for what happens if
+          // this moves into the client module.
+          accountsHref={accountsOrigin()}
         />
         <div className="min-w-0">{children}</div>
       </div>

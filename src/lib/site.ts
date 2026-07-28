@@ -47,7 +47,9 @@ type Socials = { discord: string; roblox: string } & Partial<
 >;
 
 const socials: Socials = {
-  discord: "https://discord.gg/pxE7KRWgTY",
+  // The vanity invite, not the generated one. It survives being regenerated, reads as RNL's
+  // in a pasted link, and is the same string somebody can type from memory.
+  discord: "https://discord.gg/ronation",
   roblox: "https://www.roblox.com/communities/33033115/RoNation-Live#!/about",
   x: "https://x.com/ronation_live",
   // youtube: "https://youtube.com/@…", ← add when the account exists

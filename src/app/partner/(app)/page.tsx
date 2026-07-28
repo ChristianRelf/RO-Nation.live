@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import {
   DocumentStatus,
   PartnerAccountKind,
@@ -14,12 +13,6 @@ import {
 } from "@/lib/partner-account";
 import { listDocumentsForPartnerAccount, partnerLedger } from "@/lib/accounting/documents";
 import { kindConfig } from "@/lib/accounting/kinds";
-import {
-  PARTNER_SEEN_COOKIE,
-  countNewForPartner,
-  parsePartnerSeen,
-  partnerVisibleAt,
-} from "@/lib/partner-seen";
 import { PARTNER_AGREEMENTS } from "@/lib/legal";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { formatDate } from "@/lib/format";
@@ -71,10 +64,14 @@ export default async function PartnerOverviewPage({
   // with the one thing that did not happen.
   const recent = docs.filter((d) => d.status !== DocumentStatus.VOID).slice(0, 4);
 
-  // READ, never advanced - the accounting page is what marks the list read. Landing here
-  // and being told "2 new" must not be what consumes the 2. See lib/partner-seen.ts.
-  const lastSeen = parsePartnerSeen(cookies().get(PARTNER_SEEN_COOKIE)?.value);
-  const newCount = countNewForPartner(docs, lastSeen);
+  // ---- No "new since your last visit" here any more, and that is deliberate ----
+  //
+  // The marker is a cookie, and a cookie is HOST-ONLY. The list it marks moved to
+  // pay.ronation.live, so it is now set and read there (app/pay/(app)/statements) - a copy
+  // of the count on this host would be reading a timestamp that never advances again, and
+  // would therefore either say "nothing is new" forever or flag the same documents on
+  // every single visit. Both are worse than not claiming to know. The count lives on the
+  // pay overview, next to the list that consumes it. See lib/partner-seen.ts.
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -105,32 +102,12 @@ export default async function PartnerOverviewPage({
         </div>
       ) : null}
 
-      {newCount > 0 ? (
-        <Link
-          href="/partner/accounting"
-          className="group mt-8 flex items-center gap-3 rounded-brand border border-accent/40 bg-accent-soft px-4 py-3 transition-colors hover:border-accent"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-kicker text-accent">
-            New
-          </span>
-          <span className="text-sm text-fg">
-            {newCount} document{newCount === 1 ? "" : "s"} raised since your last visit
-          </span>
-          <span
-            aria-hidden
-            className="ml-auto text-accent transition-transform group-hover:translate-x-1"
-          >
-            →
-          </span>
-        </Link>
-      ) : null}
-
       {partner ? (
         <>
           {docs.length ? (
             <>
               <PartnerLedgerStrip ledger={ledger} href="/partner/accounting" />
-              <RecentDocuments docs={recent} total={docs.length} lastSeen={lastSeen} />
+              <RecentDocuments docs={recent} total={docs.length} />
             </>
           ) : (
             <div className="card mt-10 p-6">
@@ -222,11 +199,9 @@ function StatusPill({ partner }: { partner: boolean }) {
 function RecentDocuments({
   docs,
   total,
-  lastSeen,
 }: {
   docs: AccountingDocument[];
   total: number;
-  lastSeen: Date | null;
 }) {
   if (!docs.length) return null;
 
@@ -256,11 +231,6 @@ function RecentDocuments({
               <span className="ml-2 font-mono text-[11px] text-faint">
                 {d.number ?? "—"}
               </span>
-              {lastSeen && partnerVisibleAt(d) > lastSeen ? (
-                <span className="ml-2 rounded-brand border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-kicker text-accent">
-                  New
-                </span>
-              ) : null}
               <span className="mt-0.5 block truncate text-xs text-muted">{d.title}</span>
             </span>
             <span className="tnum shrink-0 text-right text-sm">

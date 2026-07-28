@@ -25,10 +25,25 @@ import type { DocumentTotals } from "./lines";
  * when a link is copied off a screen or read down a call: 0/o, 1/l/i.
  */
 const TOKEN_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
-const TOKEN_LENGTH = 24;
 
 /**
- * A share token: ~118 bits over the alphabet above.
+ * 40 characters, because that is the length the document URL is specified at:
+ * accounts.ronation.live/document/<kind>/<40 chars>.
+ *
+ * It was 24, and 24 was already past sufficient - ~118 bits, more than a session id. So
+ * the widening buys no security worth naming; what it buys is a URL shape that is FIXED,
+ * checkable at a glance, and the same on every document RNL has ever sent. That is worth
+ * having on a link that lives in somebody else's inbox for years.
+ *
+ * Tokens minted before this are 24 characters and STILL RESOLVE. Lookup is an exact match
+ * on the column (getDocumentByToken), so a document already sent keeps working - there is
+ * no length check anywhere, deliberately, and the schema note says so too. Rotating a
+ * document's link mints a 40 under the new rules.
+ */
+const TOKEN_LENGTH = 40;
+
+/**
+ * A share token: ~198 bits over the alphabet above.
  *
  * This is a bearer capability - whoever holds the link reads the document - so it has
  * to be unguessable in the same way a session id is, not merely "long". Two bytes per
@@ -179,7 +194,7 @@ export async function issueDocument(
       if (!existing) throw new IssueError("missing");
       if (existing.status !== DocumentStatus.DRAFT) throw new IssueError("already");
 
-      // The year of the DOCUMENT's own date, not today's - a January payment advice
+      // The year of the DOCUMENT's own date, not today's - a January payroll slip
       // dated to December's work belongs in December's sequence.
       const year = existing.documentDate.getFullYear();
       const counter = await tx.documentCounter.upsert({
@@ -441,6 +456,114 @@ export function partnerLedger(docs: AccountingDocument[]): PartnerLedger {
   }
 
   return ledger;
+}
+
+// ---- The books -----------------------------------------------------------
+
+export type BooksRow = {
+  /** 0-11. The calendar month, not a fiscal one - RNL has no fiscal year to speak of. */
+  month: number;
+  /** Billed out: invoices raised. */
+  invoiced: number;
+  /** Actually received: receipts. */
+  received: number;
+  /** Actually paid out: payroll slips and ticket refunds. */
+  paidOut: number;
+  /** Cancelled off what was billed: credit notes. */
+  credited: number;
+  /** How many documents sit behind the four figures above. */
+  count: number;
+};
+
+export type Books = {
+  year: number;
+  /** Twelve rows, always - a month with nothing in it is a zero row, not a gap. */
+  months: BooksRow[];
+  totals: Omit<BooksRow, "month">;
+  /** Every year that actually has documents in it, newest first. The year picker. */
+  years: number[];
+};
+
+/** An empty month. Named, because the reduce below needs twelve of them and a total. */
+function emptyBooksRow(month: number): BooksRow {
+  return { month, invoiced: 0, received: 0, paidOut: 0, credited: 0, count: 0 };
+}
+
+/**
+ * The books for one calendar year, by month.
+ *
+ * ---- What counts, and what does not ---------------------------------------
+ *
+ * DRAFT and VOID are excluded. A draft is not a transaction - it is something somebody
+ * started typing - and a void is a cancelled one. Including either would mean the books
+ * moved when a person opened a form, or when a mistake was corrected, which is the
+ * opposite of what a set of books is for. This is the same rule isOutstanding() states
+ * for the dashboard figures, applied over a period instead of a moment.
+ *
+ * ISSUED and PAID both count, and they count the same. The distinction between "billed"
+ * and "settled" is what the DESK is for (owedToUs, owedByUs on the summary); the books
+ * answer a different question - what was written, in which month - and answering it two
+ * ways on two pages is how two people come to quote different figures at each other.
+ *
+ * Bucketed by documentDate, NOT by issuedAt. A payroll slip written in January for
+ * December's work is dated to December and belongs in December, which is exactly the same
+ * call issueDocument() makes when it takes the number out of December's sequence.
+ *
+ * ---- Why this reads rows rather than grouping in the database -------------
+ *
+ * accountingSummary() groups in Postgres because it sums the WHOLE table, which grows
+ * without bound. This is bounded by construction: one year of one small company's
+ * documents, four integer fields each. Prisma cannot express date_trunc in groupBy, so the
+ * alternative is raw SQL, and raw SQL for a bounded read is a maintenance cost with
+ * nothing bought.
+ */
+export async function books(year: number): Promise<Books> {
+  const from = new Date(year, 0, 1);
+  const to = new Date(year + 1, 0, 1);
+
+  const [rows, all] = await Promise.all([
+    prisma.accountingDocument.findMany({
+      where: {
+        status: { in: [DocumentStatus.ISSUED, DocumentStatus.PAID] },
+        documentDate: { gte: from, lt: to },
+      },
+      select: { kind: true, total: true, documentDate: true },
+    }),
+    // Every year with something in it, for the picker. `distinct` on a date column would
+    // give distinct DATES, so the years are derived here - it is a handful of rows.
+    prisma.accountingDocument.findMany({
+      where: { status: { in: [DocumentStatus.ISSUED, DocumentStatus.PAID] } },
+      select: { documentDate: true },
+    }),
+  ]);
+
+  const months = Array.from({ length: 12 }, (_, i) => emptyBooksRow(i));
+  const totals = emptyBooksRow(-1);
+
+  for (const row of rows) {
+    const bucket = months[row.documentDate.getMonth()];
+    // Both the month and the year total, in one pass. Two loops would be two places for
+    // a new kind to be forgotten.
+    for (const target of [bucket, totals]) {
+      target.count += 1;
+      if (row.kind === DocumentKind.INVOICE) target.invoiced += row.total;
+      else if (row.kind === DocumentKind.RECEIPT) target.received += row.total;
+      else if (row.kind === DocumentKind.CREDIT_NOTE) target.credited += row.total;
+      else target.paidOut += row.total;
+    }
+  }
+
+  const years = [...new Set(all.map((r) => r.documentDate.getFullYear()))].sort(
+    (a, b) => b - a,
+  );
+  // The current year is always offered, even before anything has been written in it -
+  // otherwise the first document of January is filed from a page you cannot open.
+  const thisYear = new Date().getFullYear();
+  if (!years.includes(thisYear)) years.unshift(thisYear);
+  if (!years.includes(year)) years.push(year);
+
+  const { month: _drop, ...totalFields } = totals;
+  return { year, months, totals: totalFields, years: years.sort((a, b) => b - a) };
 }
 
 export type AccountingSummary = {

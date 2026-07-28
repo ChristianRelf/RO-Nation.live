@@ -114,6 +114,21 @@ export function knownOrigins(): string[] {
     // Only `merch`, not `shop`: shop.ronation.live serves nothing, it 301s here, so
     // it can never be an audience for a ticket.
     subOrigin("merch"),
+    // The two halves of the payment system, and both of them MUST be here.
+    //
+    //   accounts   the staff desk. Every page on it is behind the company guard, so a
+    //              host that cannot be handed a ticket is a host nobody can open at all.
+    //   pay        the client side. Same story for a partner signing in to read their
+    //              statement.
+    //
+    // This is the shared-login half of "the same accounts across portal and pay": both
+    // hosts send people to authorise.ronation.live, which already knows who they are from
+    // the portal, and they come back signed in without touching Roblox again. Each host
+    // still sets its OWN host-only cookie - see the note at the top of this file for why
+    // that is not the same thing as a *.ronation.live cookie, and why it must not become
+    // one.
+    subOrigin("accounts"),
+    subOrigin("pay"),
     authoriseOrigin(),
     ...activePartners().map((p) => partnerOrigin(p.slug)),
   ];

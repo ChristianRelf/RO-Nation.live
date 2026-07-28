@@ -32,7 +32,7 @@ import { prisma } from "@/lib/db";
 // Two shapes of action live here, on purpose:
 //
 //   the BUILDER actions (create/save) take useFormState's (prevState, formData) and
-//   RETURN an error rather than redirecting to one. A ten-line payment advice rejected
+//   RETURN an error rather than redirecting to one. A ten-line payroll slip rejected
 //   for "line 4 has no description" must not throw the other nine lines away, and a
 //   redirect does exactly that.
 //
@@ -48,8 +48,8 @@ export type DocumentFormState = { error: string } | null;
 export type RefundFormState = { error: string; code: string } | null;
 
 function refresh(id?: string) {
-  revalidatePath("/company/accounting");
-  if (id) revalidatePath(`/company/accounting/${id}`);
+  revalidatePath("/accounts");
+  if (id) revalidatePath(`/accounts/${id}`);
 }
 
 /**
@@ -184,7 +184,7 @@ export async function createDocument(
   });
 
   refresh(doc.id);
-  redirect(`/company/accounting/${doc.id}`);
+  redirect(`/${doc.id}`);
 }
 
 /** Rewrite a draft. Refuses anything that has already been issued. */
@@ -228,7 +228,7 @@ export async function saveDocument(
   });
 
   refresh(id);
-  redirect(`/company/accounting/${id}`);
+  redirect(`/${id}`);
 }
 
 // ---- Ticket refunds ------------------------------------------------------
@@ -337,7 +337,7 @@ export async function createTicketRefund(
   });
 
   refresh(doc.id);
-  redirect(`/company/accounting/${doc.id}`);
+  redirect(`/${doc.id}`);
 }
 
 // ---- Lifecycle -----------------------------------------------------------
@@ -350,7 +350,7 @@ export async function issueDocumentAction(formData: FormData) {
   const result = await issueDocument(id, user);
   if (!result.ok) {
     redirect(
-      `/company/accounting/${id}?error=${result.reason === "missing" ? "missing" : "already"}`,
+      `/${id}?error=${result.reason === "missing" ? "missing" : "already"}`,
     );
   }
 
@@ -394,7 +394,7 @@ export async function issueDocumentAction(formData: FormData) {
 
   refresh(id);
   redirect(
-    `/company/accounting/${id}?ok=${voidOutcome === "voided" ? "issuedvoided" : "issued"}${
+    `/${id}?ok=${voidOutcome === "voided" ? "issuedvoided" : "issued"}${
       voidOutcome === "voidfailed" ? "&error=voidfailed" : ""
     }`,
   );
@@ -406,7 +406,7 @@ export async function markPaidAction(formData: FormData) {
   const id = s(formData, "id");
 
   const done = await markPaid(id);
-  if (!done) redirect(`/company/accounting/${id}?error=notopen`);
+  if (!done) redirect(`/${id}?error=notopen`);
 
   const doc = await getDocument(id);
   await audit(user, AuditAction.UPDATED, id, doc?.number ?? id, {
@@ -415,7 +415,7 @@ export async function markPaidAction(formData: FormData) {
   });
 
   refresh(id);
-  redirect(`/company/accounting/${id}?ok=paid`);
+  redirect(`/${id}?ok=paid`);
 }
 
 /** Cancel an issued document. The row and its number stay - this is a correction, not a delete. */
@@ -425,7 +425,7 @@ export async function voidDocumentAction(formData: FormData) {
   const reason = s(formData, "reason");
 
   const done = await voidDocument(id, reason);
-  if (!done) redirect(`/company/accounting/${id}?error=notopen`);
+  if (!done) redirect(`/${id}?error=notopen`);
 
   const doc = await getDocument(id);
   await audit(
@@ -440,7 +440,7 @@ export async function voidDocumentAction(formData: FormData) {
   );
 
   refresh(id);
-  redirect(`/company/accounting/${id}?ok=voided`);
+  redirect(`/${id}?ok=voided`);
 }
 
 /** Bin a draft. Only ever a draft - deleteDraft scopes it, and this is why. */
@@ -450,12 +450,12 @@ export async function discardDraftAction(formData: FormData) {
 
   const doc = await getDocument(id);
   const done = await deleteDraft(id);
-  if (!done) redirect(`/company/accounting/${id}?error=notdraft`);
+  if (!done) redirect(`/${id}?error=notdraft`);
 
   await audit(user, AuditAction.DELETED, id, doc?.title ?? id, { wasDraft: true });
 
   refresh();
-  redirect("/company/accounting?ok=discarded");
+  redirect("/?ok=discarded");
 }
 
 /** Kill the old share link and mint a new one. The way to un-send a mis-sent document. */
@@ -464,12 +464,12 @@ export async function rotateShareLinkAction(formData: FormData) {
   const id = s(formData, "id");
 
   const token = await rotateShareToken(id);
-  if (!token) redirect(`/company/accounting/${id}?error=notissued`);
+  if (!token) redirect(`/${id}?error=notissued`);
 
   await audit(user, AuditAction.REVOKED, id, "share link", { rotated: true });
 
   refresh(id);
-  redirect(`/company/accounting/${id}?ok=rotated`);
+  redirect(`/${id}?ok=rotated`);
 }
 
 /**
@@ -485,7 +485,7 @@ export async function creditNoteFromAction(formData: FormData) {
 
   const source = await getDocument(sourceId);
   if (!source || source.status !== DocumentStatus.ISSUED) {
-    redirect(`/company/accounting/${sourceId}?error=notopen`);
+    redirect(`/${sourceId}?error=notopen`);
   }
 
   // Through readLineItems, not a bare cast: lineItems is a Json column, so a document
@@ -528,7 +528,7 @@ export async function creditNoteFromAction(formData: FormData) {
   });
 
   refresh(draft.id);
-  redirect(`/company/accounting/${draft.id}/edit`);
+  redirect(`/${draft.id}/edit`);
 }
 
 /** One audit line, in the company scope. Shape borrowed from the rest of the app. */

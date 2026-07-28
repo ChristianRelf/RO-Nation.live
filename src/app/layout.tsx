@@ -76,7 +76,11 @@ export default function RootLayout({
     // The accounting desk and its documents. See areaFor() in middleware.ts: a document
     // is a printable sheet, and neither the header nor the footer here is no-print, so
     // wrapping one means printing the marketing nav onto an invoice.
-    area === "accounting";
+    area === "accounting" ||
+    // pay.ronation.live - the client side of the payment system. Its own shell, for the
+    // same reason the desk has one: a page where somebody reads what they are owed does
+    // not want "Book tickets" above it and a newsletter sign-up below it.
+    area === "pay";
 
   // Where a signed-in member browses AS a member: RNL's own site and a partner's public site.
   // The change-notice modal belongs on those, and not on the staff portal, the survey host or

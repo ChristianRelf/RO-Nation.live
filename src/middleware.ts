@@ -14,6 +14,9 @@ import { USER_COOKIE } from "@/lib/session-cookie";
 //   authorise.ronation.live/…             → sign-in, for all of the above
 //   merch.ronation.live/…                 → the shop                → /merch/…
 //   shop.ronation.live/…                  → 301 to merch.ronation.live
+//   accounts.ronation.live/…              → the STAFF payment system → /accounts/…
+//   accounts.ronation.live/document/…     → a document on its share link (served as-is)
+//   pay.ronation.live/…                   → the CLIENT payment system → /pay/…
 //   <slug>.ronation.live/…                → a partner's site        → /p/<slug>/…
 //
 // Everything is derived from the request host rather than an env var, because
@@ -32,7 +35,7 @@ import { USER_COOKIE } from "@/lib/session-cookie";
  */
 const PORTAL_PATHS = [
   // The one front door. Every anonymous request to this host lands here - see
-  // portalSignInGate() below.
+  // signInGate() below.
   "/login",
   "/shasha",
   // The backstage launcher - every door a signed-in person holds, in one place. It lives
@@ -171,6 +174,67 @@ const MERCH_PATHS = [
   "/api/merch",
 ];
 
+/**
+ * Paths the ACCOUNTS host serves as-is, without the /accounts rewrite.
+ *
+ * /document is the important one, and it is here for a reason that is easy to undo by
+ * accident: a document's share link is read by a CONTRACTOR, who has no account and never
+ * will. Rewriting it under /accounts would bury the one page on this host that is
+ * deliberately anonymous inside the prefix where everything else is staff-only - and the
+ * sign-in gate below would then be the thing standing between a plumber and their payslip.
+ *
+ * /login is here because staff authenticate ON this host: the session cookie is host-only
+ * (lib/session.ts), so the OAuth round trip has to start and end here, exactly as it does
+ * on the portal and the survey hosts.
+ */
+const ACCOUNTS_PATHS = [
+  "/login",
+  "/document",
+  // The share link's OLD shape, /doc/<token>, with no kind segment. It cannot be rewritten
+  // to the new one by pattern - only the database knows what kind a token points at - so
+  // the route itself looks it up and redirects (app/doc/[token]/page.tsx). Every document
+  // RNL has already sent carries one of these, in somebody else's inbox, forever.
+  //
+  // Note "/doc" does not swallow "/document": matches() takes the exact path or a subpath,
+  // and "/document" is neither "/doc" nor under "/doc/".
+  "/doc",
+  "/legal",
+  "/api/auth/roblox",
+  "/api/auth/sso",
+  // The dev mock login, so accounts.localhost can be signed into without real Roblox
+  // credentials. Inert in production - see lib/env.ts.
+  "/api/auth/dev",
+  "/api/auth/logout",
+  "/api/health",
+];
+
+/**
+ * Paths the PAY host serves as-is, without the /pay rewrite.
+ *
+ * Shorter than the accounts list by exactly one entry: there is no /document here. A
+ * document has ONE address and it is on the accounts host (lib/accounting/urls.ts), so
+ * this host redirects those rather than serving a second copy at a second URL - see the
+ * pay branch below.
+ */
+const PAY_PATHS = [
+  "/login",
+  "/legal",
+  "/api/auth/roblox",
+  "/api/auth/sso",
+  "/api/auth/dev",
+  "/api/auth/logout",
+  "/api/health",
+  // Small pay-only endpoints the pages here call. Today that is the statement's "you have
+  // read this" marker (a render cannot set a cookie in Next 14, so it takes a round trip).
+  // Without this line the branch below rewrites it to /pay/api/pay/seen, which matches no
+  // route and 404s - and a marker whose fetch silently 404s is a marker that stops
+  // advancing with nothing to show for it.
+  //
+  // It is under /api, so PAY_PUBLIC_PATHS already lets it past the sign-in gate - which
+  // means the route MUST guard itself. app/api/pay/seen/route.ts does.
+  "/api/pay",
+];
+
 const isLocalHost = (host: string) =>
   host === "localhost" ||
   host === "127.0.0.1" ||
@@ -183,6 +247,8 @@ const isSurveyHost = (host: string) => host.startsWith("survey.");
 const isAuthoriseHost = (host: string) => host.startsWith("authorise.");
 const isMerchHost = (host: string) => host.startsWith("merch.");
 const isShopHost = (host: string) => host.startsWith("shop.");
+const isAccountsHost = (host: string) => host.startsWith("accounts.");
+const isPayHost = (host: string) => host.startsWith("pay.");
 
 /** portal.ronation.live → ronation.live */
 const mainSiteHost = (host: string) =>
@@ -191,7 +257,9 @@ const mainSiteHost = (host: string) =>
     .replace(/^survey\./, "")
     .replace(/^authorise\./, "")
     .replace(/^merch\./, "")
-    .replace(/^shop\./, "");
+    .replace(/^shop\./, "")
+    .replace(/^accounts\./, "")
+    .replace(/^pay\./, "");
 
 const subdomainFor = (prefix: string, host: string) =>
   `${prefix}.${host.replace(/^www\./, "")}`;
@@ -259,15 +327,25 @@ function areaFor(path: string) {
   // A document here is a PRINTABLE SHEET. The site header and footer are not marked
   // no-print, so wrapped in them an invoice does not merely look wrong on screen: the
   // "Book tickets" nav and the marketing footer come out on the paper, between RNL's
-  // letterhead and a contractor's payment advice. /doc/<token> is the same page served
-  // to somebody outside the company, which makes it the version that matters most.
+  // letterhead and a contractor's payroll slip. /document/<kind>/<token> is the same page
+  // served to somebody outside the company, which makes it the version that matters most.
   if (
+    path === "/accounts" ||
+    path.startsWith("/accounts/") ||
+    path.startsWith("/document/") ||
+    // The old internal paths. Both are redirects now (see the branches below), but a
+    // redirect still renders nothing while it decides, and this costs one comparison.
     path === "/company/accounting" ||
     path.startsWith("/company/accounting/") ||
     path.startsWith("/doc/")
   ) {
     return "accounting";
   }
+  // The client side of the payment system. Its own area rather than reusing "accounting":
+  // both drop the marketing chrome, but they are two different products with two different
+  // shells, and one area name for both would mean the root layout could not tell a partner
+  // reading their statement from a member of staff writing one.
+  if (path === "/pay" || path.startsWith("/pay/")) return "pay";
   if (path.startsWith("/survey")) return "survey";
   return "site";
 }
@@ -331,8 +409,32 @@ function proceed(req: NextRequest, url?: URL) {
 const PORTAL_PUBLIC_PATHS = ["/login", "/api", "/legal"];
 
 /**
- * THE PORTAL'S FRONT DOOR. Anonymous request to portal.ronation.live/anything →
- * /login, carrying where they were going.
+ * The same three, plus the one thing on the accounts host that is anonymous BY DESIGN.
+ *
+ * A document's share link is a bearer capability handed to somebody with no account - a
+ * contractor, a sponsor, a ticket holder owed a refund. Putting /document behind the gate
+ * would redirect all of them to a Roblox sign-in they cannot complete, on a link RNL
+ * itself sent them. The page guards nothing else: there is no session on it, no action on
+ * it, and a wrong token is a flat 404 (app/document/[kind]/[token]/page.tsx).
+ */
+const ACCOUNTS_PUBLIC_PATHS = ["/login", "/api", "/legal", "/document", "/doc"];
+
+/**
+ * The pay host's public list - the portal's three, unchanged.
+ *
+ * No /document here: this host does not serve documents at all, it forwards them to the
+ * accounts host, and that forward happens before the gate runs.
+ */
+const PAY_PUBLIC_PATHS = ["/login", "/api", "/legal"];
+
+/**
+ * THE FRONT DOOR for a host that holds a session. Anonymous request to
+ * <host>/anything → /login on that same host, carrying where they were going.
+ *
+ * Takes its public list as an argument because three hosts now use it - portal, accounts
+ * and pay - and they differ by exactly one entry (see ACCOUNTS_PUBLIC_PATHS). Everything
+ * else about the gate is identical, and a second copy of it is how one host quietly stops
+ * gating.
  *
  * ---- What this is, and what it very deliberately is NOT ------------------
  *
@@ -354,8 +456,13 @@ const PORTAL_PUBLIC_PATHS = ["/login", "/api", "/legal"];
  * runs on the edge, before the request reaches anything that knows who this person
  * is beyond a cookie's existence.
  */
-function portalSignInGate(req: NextRequest, pathname: string, search: string) {
-  if (matches(pathname, PORTAL_PUBLIC_PATHS)) return null;
+function signInGate(
+  req: NextRequest,
+  pathname: string,
+  search: string,
+  publicPaths: string[],
+) {
+  if (matches(pathname, publicPaths)) return null;
   if (req.cookies.has(USER_COOKIE)) return null;
 
   const url = new URL("/login", req.nextUrl.origin);
@@ -403,6 +510,78 @@ function merchRewrite(req: NextRequest, pathname: string) {
   const url = req.nextUrl.clone();
   url.pathname = `/merch${pathname === "/" ? "" : pathname}`;
   return proceed(req, url);
+}
+
+/**
+ * The whole accounts host → /accounts/…, and the whole pay host → /pay/…
+ *
+ *   accounts.ronation.live/          → /accounts        the desk
+ *   accounts.ronation.live/books     → /accounts/books
+ *   accounts.ronation.live/<id>      → /accounts/<id>   one document, staff view
+ *   pay.ronation.live/               → /pay             the statement
+ *   pay.ronation.live/make-payment   → /pay/make-payment
+ *
+ * The merch pattern, and chosen for the same reason it was there: an unrecognised path
+ * rewrites to /accounts/<junk> and 404s inside the ACCOUNTING chrome, rather than bouncing
+ * somebody mid-task onto RNL's marketing site because they mistyped a document id.
+ *
+ * Shared with the local-dev branch, which serves both hosts from the one origin.
+ */
+function prefixRewrite(req: NextRequest, pathname: string, prefix: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = `${prefix}${pathname === "/" ? "" : pathname}`;
+  return proceed(req, url);
+}
+
+/**
+ * A document link that arrived on the wrong host → the accounts host, path intact.
+ *
+ * A document has exactly ONE address (lib/accounting/urls.ts), and this is what keeps
+ * that true when a link is retyped, pasted from memory, or reached by a partner who was
+ * already on pay.ronation.live and only changed the path. Serving a second copy here
+ * instead would give every document two URLs, and then "which one did I send them?"
+ * becomes a question somebody has to answer.
+ *
+ * Built by cloning nextUrl and swapping only the hostname, so the scheme AND THE PORT come
+ * along - which is what makes this work unchanged on accounts.localhost:3000. The
+ * shop → merch redirect in the dev branch already does it this way.
+ */
+function documentHostRedirect(req: NextRequest, host: string, pathname: string) {
+  if (pathname !== "/document" && !pathname.startsWith("/document/")) return null;
+
+  const url = req.nextUrl.clone();
+  url.hostname = subdomainFor("accounts", mainSiteHost(host));
+  return NextResponse.redirect(url);
+}
+
+/**
+ * The accounting desk's OLD addresses → its new host.
+ *
+ *   /company/accounting          → https://accounts.<host>/
+ *   /company/accounting/new?…    → https://accounts.<host>/new?…
+ *   /company/accounting/<id>     → https://accounts.<host>/<id>
+ *
+ * The whole staff payment system used to be a section inside /company, reachable on the
+ * main site and linked from the company sidebar. It is now a portal of its own. These are
+ * URLs people have bookmarked, pasted at each other and linked from Discord, and a 404
+ * on one reads as "the accounting tool has been taken away" rather than "it moved" - the
+ * same call, and the same reasoning, as legacyDoorRedirect() below.
+ *
+ * Returns null when the path is not one of these, so the caller carries on. Shared by the
+ * main-site branch, the portal branch and the local-dev one - without it in all three, the
+ * redirect is a line of production-only code that can never be tested locally.
+ */
+function accountingDoorRedirect(req: NextRequest, host: string, pathname: string) {
+  const legacy = /^\/company\/accounting(\/.*)?$/.exec(pathname);
+  if (!legacy) return null;
+
+  // Cloned rather than composed from `https://` + host, so the scheme and port survive
+  // and this same function works on accounts.localhost:3000 - see documentHostRedirect
+  // above, which had to learn the same lesson. The query comes along inside the clone.
+  const url = req.nextUrl.clone();
+  url.hostname = subdomainFor("accounts", mainSiteHost(host));
+  url.pathname = legacy[1] ?? "/";
+  return NextResponse.redirect(url);
 }
 
 // `/` on the portal host used to rewrite to a static "backstage portal" landing
@@ -484,7 +663,7 @@ export function middleware(req: NextRequest) {
       // The same gate, in the same position, for the same reason - a dev whose
       // portal lets them straight in is a dev who cannot see what everybody else
       // sees. Runs before the partner rewrite here too.
-      const gated = portalSignInGate(req, pathname, search);
+      const gated = signInGate(req, pathname, search, PORTAL_PUBLIC_PATHS);
       if (gated) return gated;
 
       if (pathname === "/") {
@@ -493,6 +672,30 @@ export function middleware(req: NextRequest) {
 
       const rewritten = partnerPortalRewrite(req, pathname);
       if (rewritten) return rewritten;
+    }
+
+    // accounts.localhost and pay.localhost, gated and rewritten exactly as production
+    // does it. Both are here rather than left to fall through to the main site because a
+    // payment system that can only be opened in production is a payment system nobody
+    // will test - and the gate in particular has to be exercised locally, or "it let me
+    // straight in" is indistinguishable from "it is broken".
+    if (isAccountsHost(host)) {
+      const gated = signInGate(req, pathname, search, ACCOUNTS_PUBLIC_PATHS);
+      if (gated) return gated;
+      if (!matches(pathname, ACCOUNTS_PATHS)) {
+        return prefixRewrite(req, pathname, "/accounts");
+      }
+    }
+
+    if (isPayHost(host)) {
+      const doc = documentHostRedirect(req, host, pathname);
+      if (doc) return doc;
+
+      const gated = signInGate(req, pathname, search, PAY_PUBLIC_PATHS);
+      if (gated) return gated;
+      if (!matches(pathname, PAY_PATHS)) {
+        return prefixRewrite(req, pathname, "/pay");
+      }
     }
 
     // authorise.localhost gets its page too, so the sign-in host in dev is the
@@ -531,6 +734,9 @@ export function middleware(req: NextRequest) {
       url.pathname = `/survey/${code}`;
       return proceed(req, url);
     }
+
+    const moved = accountingDoorRedirect(req, host, pathname);
+    if (moved) return moved;
 
     const legacy = legacyDoorRedirect(req, pathname, search);
     if (legacy) return legacy;
@@ -590,8 +796,15 @@ export function middleware(req: NextRequest) {
     // placed after it would send signed-out visitors into a partner's portal to
     // be bounced by the partner's own guard - the scattered-login behaviour this
     // replaces. One door, and every anonymous request arrives at it.
-    const gated = portalSignInGate(req, pathname, search);
+    const gated = signInGate(req, pathname, search, PORTAL_PUBLIC_PATHS);
     if (gated) return gated;
+
+    // The accounting desk moved off this host too - it was reachable here as
+    // /company/accounting before it became a portal of its own. Sent straight to the
+    // accounts host rather than left to bounce off the main site first, which would be
+    // two redirects to arrive in the same place.
+    const moved = accountingDoorRedirect(req, host, pathname);
+    if (moved) return moved;
 
     // Signed in, at the root. /hub is the landing that is actually worth showing:
     // it asks the real guards and lists every door this person holds. The old
@@ -663,6 +876,70 @@ export function middleware(req: NextRequest) {
     return merchRewrite(req, pathname);
   }
 
+  // ---- accounts.ronation.live - the STAFF payment system -----------
+  //
+  // Payroll, invoicing, receipts, credit notes, the books, and the queue of requests
+  // coming off the client side. It is a self-contained portal: reachable from
+  // portal.ronation.live/hub, and equally reachable by typing the name.
+  //
+  // Everything here except the document share links is behind the company guard, which
+  // each page calls for itself. The gate below is only the cheap half - see the note on
+  // signInGate().
+  if (isAccountsHost(host)) {
+    // The internal prefix is not a public URL. If one leaks - a copied link, a stale
+    // revalidatePath - strip it rather than serving /accounts/accounts, which would 404
+    // on a URL that looks like it ought to work. The merch host does the same.
+    if (pathname === "/accounts" || pathname.startsWith("/accounts/")) {
+      return NextResponse.redirect(
+        new URL(
+          `${pathname.slice("/accounts".length) || "/"}${search}`,
+          req.nextUrl.origin,
+        ),
+      );
+    }
+
+    // The desk's old address, in case somebody types it at the new host.
+    const moved = accountingDoorRedirect(req, host, pathname);
+    if (moved) return moved;
+
+    // The gate. AFTER the two redirects above, so a signed-out person following an old
+    // link is corrected to the right URL and then asked to sign in - rather than signing
+    // in and being dumped on a path that is about to move under them.
+    const gated = signInGate(req, pathname, search, ACCOUNTS_PUBLIC_PATHS);
+    if (gated) return gated;
+
+    if (matches(pathname, ACCOUNTS_PATHS)) return proceed(req);
+
+    // Everything else is the desk's. No bounce to the main site, deliberately - the same
+    // call the merch host makes. Somebody deep in a document who mistypes an id belongs in
+    // the accounting area's own 404, not on RNL's marketing homepage.
+    return prefixRewrite(req, pathname, "/accounts");
+  }
+
+  // ---- pay.ronation.live - the CLIENT payment system ---------------
+  //
+  // Statements, and the two request forms. Same identity as the portal - one Roblox
+  // account, minted by authorise.ronation.live - and the same host-only cookie rule, so
+  // signing in on the portal makes signing in here two invisible redirects. See lib/sso.ts.
+  if (isPayHost(host)) {
+    // A document link that landed here goes to the host that owns documents.
+    const doc = documentHostRedirect(req, host, pathname);
+    if (doc) return doc;
+
+    if (pathname === "/pay" || pathname.startsWith("/pay/")) {
+      return NextResponse.redirect(
+        new URL(`${pathname.slice("/pay".length) || "/"}${search}`, req.nextUrl.origin),
+      );
+    }
+
+    const gated = signInGate(req, pathname, search, PAY_PUBLIC_PATHS);
+    if (gated) return gated;
+
+    if (matches(pathname, PAY_PATHS)) return proceed(req);
+
+    return prefixRewrite(req, pathname, "/pay");
+  }
+
   // ---- main site ---------------------------------------------------
   // /portal is the landing page's internal path, and the portal host serves it
   // at `/` - so hand the whole thing over to that host's root, not to /portal on
@@ -705,6 +982,41 @@ export function middleware(req: NextRequest) {
   ) {
     return NextResponse.redirect(
       new URL(`${pathname}${search}`, `https://${subdomainFor("portal", host)}`),
+    );
+  }
+
+  // The payment system lives on two hosts of its own, and every path that used to reach
+  // it - or that somebody would reasonably guess - is sent there rather than 404'd.
+  //
+  //   /company/accounting/…   where the staff desk used to be. Handled by
+  //                           accountingDoorRedirect, which strips the prefix.
+  //   /accounts/… , /pay/…    the internal prefixes. Not public URLs, but they are the
+  //                           obvious thing to type on the apex, and a leaked one (a
+  //                           copied link, a stale revalidatePath) should resolve.
+  //   /document/… , /doc/…    document share links. The old /doc/<token> shape has no
+  //                           kind segment, so it cannot be rewritten here - it is
+  //                           forwarded intact and app/doc/[token] looks the document up
+  //                           and redirects to its canonical URL. See that route.
+  const moved = accountingDoorRedirect(req, host, pathname);
+  if (moved) return moved;
+
+  const accounting = /^\/(?:accounts|document|doc)(\/.*)?$/.exec(pathname);
+  if (accounting) {
+    return NextResponse.redirect(
+      new URL(
+        `${pathname}${search}`,
+        `https://${subdomainFor("accounts", host)}`,
+      ),
+    );
+  }
+
+  const paying = /^\/pay(\/.*)?$/.exec(pathname);
+  if (paying) {
+    return NextResponse.redirect(
+      new URL(
+        `${paying[1] ?? "/"}${search}`,
+        `https://${subdomainFor("pay", host)}`,
+      ),
     );
   }
 

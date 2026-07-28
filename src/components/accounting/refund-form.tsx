@@ -138,7 +138,7 @@ export function RefundForm({
           holderName={holderName}
           disabled={!valid}
         />
-        <a href="/company/accounting" className="text-sm text-muted hover:text-fg">
+        <a href="/" className="text-sm text-muted hover:text-fg">
           Cancel
         </a>
       </div>

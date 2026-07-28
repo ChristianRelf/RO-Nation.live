@@ -1365,10 +1365,15 @@ enum AuditTarget {
   MERCH
   TEAM
   TESTIMONIAL
-  /// A hand-authored accounting document - an invoice, payment advice, receipt or
+  /// A hand-authored accounting document - an invoice, payroll slip, receipt or
   /// credit note. Every state change on one is money changing hands on the record,
   /// which is precisely the kind of write this trail exists for.
   ACCOUNTING_DOCUMENT
+  /// A payment request raised on pay.ronation.live and answered on accounts. Audited
+  /// for the ACCEPT and DECLINE, not the submission: a client asking for money is not a
+  /// company act, but agreeing to it is - and it is the one place a document gets raised
+  /// on the strength of something somebody outside the company typed.
+  PAYMENT_REQUEST
 }
 
 /// Which door the write came through. Presentation and filtering only - it
@@ -2462,13 +2467,20 @@ model AccountingDocument {
 
   // ---- The share link ----------------------------------------------------
 
-  /// The unguessable path segment at /doc/<token>. Minted at ISSUE, alongside the
-  /// number - a draft has no token because a draft has nothing to share.
+  /// The unguessable path segment at accounts.ronation.live/document/<kind>/<token>.
+  /// Minted at ISSUE, alongside the number - a draft has no token because a draft has
+  /// nothing to share.
   ///
   /// This is a BEARER capability: anyone holding it reads the document, which is the
   /// point (a contractor has no account here). It is therefore high-entropy, it is
   /// never listed anywhere public, and the page it serves is noindex. Revoking is
   /// rotating: see rotateShareToken().
+  ///
+  /// Length is NOT constrained here, deliberately. Tokens minted from now on are 40
+  /// characters (lib/accounting/documents.ts); the 24-character ones minted before that
+  /// are still live links on documents somebody has already been sent, and lookup is an
+  /// exact match on this column, so both simply work. A CHECK constraint on the length
+  /// would break every link already in the wild to buy nothing.
   shareToken String? @unique
 
   /// When the link was first opened, and how many times. Courtesy telemetry for the
@@ -2608,4 +2620,109 @@ model PartnerAccountMember {
   /// the accounting scope both assume one entity per login.
   @@unique([robloxId])
   @@map("partner_account_members")
+}
+
+// ---- Payment requests ------------------------------------------------------
+//
+// The two forms on pay.ronation.live, and the queue they land in on
+// accounts.ronation.live. This is the ONLY thing a counterparty can write anywhere in
+// the accounting system, and it is deliberately not much: an ASK.
+//
+// ---- Why a request is not a document ---------------------------------------
+//
+// An AccountingDocument is RNL's own record - numbered from a shared counter, frozen at
+// issue, and never editable again. If a partner could create one, a partner could mint a
+// number out of RNL's sequence and put a figure of their choosing on RNL's letterhead.
+//
+// So a request carries no number, no letterhead and no share token. It is a message with
+// a shape: who, how much, what for, which way the money goes. Staff read it, and if they
+// agree, they RAISE a document from it - which is a separate, audited act by a person
+// with company rank (see convertRequestAction). The link back is documentId, written at
+// that moment, so the queue can show "this became RNL-RCT-2026-0031" and the two records
+// stay joined without the request ever having been one.
+//
+// Amounts are integer Robux throughout, exactly as on AccountingDocument - see the note
+// there for why there is no currency column.
+
+enum PaymentRequestKind {
+  /// "I want to pay you." A partner telling RNL money is coming, or has been sent -
+  /// settling an invoice, paying for a booking. RNL's side of it ends in a RECEIPT.
+  PAYMENT
+  /// "Please pay me." A partner asking RNL for money - a payout they are expecting, an
+  /// expense, work delivered. RNL's side of it ends in a CONTRACTOR_PAYMENT.
+  REQUEST
+}
+
+enum PaymentRequestStatus {
+  /// Submitted, nobody has looked yet. The only state the requester can create.
+  OPEN
+  /// Staff have accepted it and raised a document from it. See documentId.
+  ACCEPTED
+  /// Staff have refused it. reviewNote says why, and the requester reads that.
+  DECLINED
+  /// Withdrawn by the requester before anybody acted. Their own doing, so no note.
+  WITHDRAWN
+}
+
+model PaymentRequest {
+  id String @id @default(cuid())
+
+  kind   PaymentRequestKind
+  status PaymentRequestStatus @default(OPEN)
+
+  /// The entity this was raised by - the scope key, and the whole authorization story for
+  /// reading one back. A PLAIN column rather than an FK for the same reason
+  /// AccountingDocument.partnerAccountId is one: the request is a record of something that
+  /// was asked, and it must outlive any tidying up of the entity that asked it.
+  partnerAccountId String
+  /// The entity's name at the time of asking, snapshotted - a rename must not rewrite what
+  /// staff were looking at when they decided.
+  partnerAccountName String
+
+  /// The individual who submitted it. Snapshotted from their session, so it survives them
+  /// losing their membership.
+  submittedByRobloxId String
+  submittedByName     String
+
+  /// What they are asking for, in integer Robux. Positive, always - direction is `kind`,
+  /// never a sign, so a negative amount cannot silently flip a payment into a payout.
+  amountRobux Int
+
+  /// One line saying what it is for. Required - a bare figure is not a request.
+  reference String
+  /// Anything else they want to say. Optional.
+  detail String?
+
+  /// Their own reference for it - a Roblox transaction id, a group payout note, an
+  /// invoice number of theirs. Optional, free text, and the thing staff actually match
+  /// against when checking whether the money really arrived.
+  externalRef String?
+
+  /// The date the money moved or is expected to. Optional - a PAYMENT usually has one
+  /// (they know when they sent it), a REQUEST usually does not.
+  expectedAt DateTime?
+
+  // ---- The company's answer ----------------------------------------------
+
+  /// Who reviewed it, snapshotted. Null while OPEN.
+  reviewedByRobloxId String?
+  reviewedByName     String?
+  reviewedAt         DateTime?
+  /// Why it was declined, or a note on acceptance. Shown to the requester, so it is
+  /// written for them to read - not an internal aside.
+  reviewNote String?
+
+  /// The AccountingDocument raised from this, once accepted. A PLAIN column, like every
+  /// other cross-reference in this schema: nothing is joined through it, and the request
+  /// must survive a draft being discarded.
+  documentId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The staff queue: open first, newest first. The default read on accounts.ronation.live.
+  @@index([status, createdAt])
+  /// The requester's own list on pay.ronation.live - scoped to their entity, always.
+  @@index([partnerAccountId, createdAt])
+  @@map("payment_requests")
 }

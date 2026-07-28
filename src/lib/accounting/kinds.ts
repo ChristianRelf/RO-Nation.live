@@ -27,6 +27,21 @@ export type KindConfig = {
   plural: string;
   /** The big word at the top of the printed page. */
   heading: string;
+  /**
+   * The word in the document's own URL:
+   * accounts.ronation.live/document/<slug>/<token>.
+   *
+   * It is NOT derived from `kind` (CONTRACTOR_PAYMENT would read badly), from `heading`
+   * (which is prose and gets reworded - "Payment advice" became "Payroll slip" without
+   * a single link needing to change) or from `numberSegment` (three letters nobody can
+   * read). It is its own field precisely so those three can move and these cannot: a
+   * document URL is sent to somebody outside the company and then lives in their inbox
+   * forever.
+   *
+   * Lowercase, hyphenated, and unique across CONFIG - documentKindBySlug() below relies
+   * on that, and there is a test asserting it.
+   */
+  slug: string;
   /** The three letters in the document number: RNL-INV-2026-0007. */
   numberSegment: string;
   direction: MoneyDirection;
@@ -57,6 +72,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     label: "Invoice",
     plural: "Invoices",
     heading: "Invoice",
+    slug: "invoice",
     numberSegment: "INV",
     direction: "inbound",
     partyLabel: "Bill to",
@@ -74,10 +90,18 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     kind: DocumentKind.CONTRACTOR_PAYMENT,
     label: "Contractor payment",
     plural: "Contractor payments",
-    // Not "invoice": this is the document RNL raises for money it is PAYING, which in
-    // real books is a payment advice / remittance, never an invoice. Calling it one
-    // would put the wrong word on a page a contractor keeps for their own records.
-    heading: "Payment advice",
+    // Not "invoice": this is the document RNL raises for money it is PAYING, and calling
+    // it an invoice would put the wrong word on a page a contractor keeps for their own
+    // records. "Payroll slip" is RNL's own name for it - the nearest standard-books term
+    // is a payment advice or remittance, which is what it behaves like.
+    //
+    // Sentence case, like "Credit note" and unlike the title-cased name it is sometimes
+    // written as in conversation: the string appears mid-sentence in the partner's
+    // document list, and DocumentPaper uppercases it in CSS for the printed heading.
+    heading: "Payroll slip",
+    // "payslip", not "payroll-slip" or "contractor-payment": it is the word a contractor
+    // would say, and the one they will recognise in the link they were sent.
+    slug: "payslip",
     numberSegment: "PAY",
     direction: "outbound",
     partyLabel: "Payable to",
@@ -85,7 +109,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     totalLabel: "Amount payable",
     hint: "Pay a builder, artist, dev or other contractor. Rate x hours or a fixed fee, with what the work was.",
     smallPrint:
-      "Payable by RO. Nation LIVE in Robux (R$). This advice confirms the amount and what it covers; it is not a receipt.",
+      "Payable by RO. Nation LIVE in Robux (R$). This slip confirms the amount and what it covers; it is not a receipt.",
     hasDueDate: true,
     relates: false,
     defaultTerms: "Paid on issue, via Roblox group payout.",
@@ -96,6 +120,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     label: "Receipt",
     plural: "Receipts",
     heading: "Receipt",
+    slug: "receipt",
     numberSegment: "RCT",
     direction: "inbound",
     partyLabel: "Received from",
@@ -117,6 +142,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     label: "Credit note",
     plural: "Credit notes",
     heading: "Credit note",
+    slug: "credit-note",
     numberSegment: "CRN",
     direction: "outbound",
     partyLabel: "Credit to",
@@ -138,6 +164,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     label: "Ticket refund",
     plural: "Ticket refunds",
     heading: "Refund",
+    slug: "refund",
     numberSegment: "REF",
     direction: "outbound",
     partyLabel: "Refund to",
@@ -159,9 +186,9 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
  * The kinds that are WRITTEN BY HAND in the generic builder, in the order offered.
  *
  * TICKET_REFUND is deliberately absent: its lines are derived from a ticket and capped
- * at what that ticket was paid, so it has its own guarded route (/company/accounting/
- * refund) and must never be reachable through the free-form builder. Listing it here
- * would offer a way to type any amount against any name.
+ * at what that ticket was paid, so it has its own guarded route
+ * (accounts.ronation.live/refund) and must never be reachable through the free-form
+ * builder. Listing it here would offer a way to type any amount against any name.
  */
 export const DOCUMENT_KINDS: KindConfig[] = [
   CONFIG[DocumentKind.INVOICE],
@@ -188,6 +215,30 @@ export function isHandAuthored(kind: DocumentKind): boolean {
 
 export function kindConfig(kind: DocumentKind): KindConfig {
   return CONFIG[kind];
+}
+
+/** Every config, in enum order. For the slug lookup and for tests that sweep all kinds. */
+export const EVERY_KIND_CONFIG: KindConfig[] = Object.values(CONFIG);
+
+/**
+ * Resolve the `<slug>` in accounts.ronation.live/document/<slug>/<token>.
+ *
+ * Returns null for anything unrecognised, like parseKind above and for the same reason:
+ * the caller decides what a bad value means. The document route 404s on it, which is the
+ * only sane answer - a slug that does not name a kind cannot name a document either.
+ *
+ * IMPORTANT: matching the slug is not enough on its own. The route must ALSO check that
+ * the document the token resolved to is actually of this kind - see the note in
+ * app/document/[kind]/[token]/page.tsx. The token is the authorization; the slug is a
+ * claim about what it points at, and a URL that lies about which document you are reading
+ * is worse than one that 404s.
+ */
+export function documentKindBySlug(
+  slug: string | null | undefined,
+): DocumentKind | null {
+  if (!slug) return null;
+  const lower = slug.toLowerCase();
+  return EVERY_KIND_CONFIG.find((c) => c.slug === lower)?.kind ?? null;
 }
 
 /**

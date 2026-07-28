@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { robloxConfigured } from "@/lib/env";
 import { getHubDashboard, type HubAreaLive } from "@/lib/hub-dashboard";
 import type { HubLink } from "@/lib/hub";
-import { getPartnerAccountAccess } from "@/lib/partner-account";
+import { getPartnerAccountAccess, isFullPartner } from "@/lib/partner-account";
+import { payUrls } from "@/lib/accounting/urls";
 import { PortalFooter } from "@/components/portal-footer";
 import { HubHeader } from "@/components/hub/hub-header";
 import { HubButton, HubChip } from "@/components/hub/hub-button";
@@ -86,9 +87,19 @@ export default async function HubPage() {
   const partnerAccount = await getPartnerAccountAccess();
   if (areas.length === 0 && partnerAccount.state === "allowed") redirect("/partner");
 
+  // Two chips off one lookup: the partner area on this host, and their PAYMENTS on
+  // pay.ronation.live. The second is offered on the same test the pay host's own guard
+  // uses (a grant, plus full-partner status - see lib/pay.ts), so it cannot appear for
+  // somebody who would then be turned away at the door. `external` because it is another
+  // origin, which the chip renders as a plain <a>.
   const partnerLink: HubLink[] =
     partnerAccount.state === "allowed"
-      ? [{ label: `Partner · ${partnerAccount.user.account.name}`, href: "/partner" }]
+      ? [
+          { label: `Partner · ${partnerAccount.user.account.name}`, href: "/partner" },
+          ...(isFullPartner(partnerAccount.user.account)
+            ? [{ label: "Payments", href: payUrls.home(), external: true }]
+            : []),
+        ]
       : [];
 
   // The closest show anywhere. Sorted on NextShow.at, which exists for this -

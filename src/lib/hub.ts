@@ -7,6 +7,7 @@ import { getPartnerAccess } from "./partners/guard";
 import { getDocsReader } from "./docs-guard";
 import { activePartners } from "./partners/registry";
 import { partnerOrigin, partnerPortalPath } from "./partners/urls";
+import { accountsOrigin } from "./accounting/urls";
 
 // What the backstage HUB shows you: every door you personally hold, and nothing else.
 //
@@ -219,6 +220,22 @@ export async function getHubData(): Promise<HubData> {
     quickLinks.push({ label: "Guides & brand assets", href: "/docs" });
     if (docs.canMintKeys) quickLinks.push({ label: "API reference", href: "/docs/api" });
   }
+
+  // The staff payment system, on its own host. Offered on exactly the access that guards
+  // it - getCompanyAccess is the same function app/accounts/layout.tsx calls - which is
+  // the rule at the top of this file: a view of authorization, never a second copy.
+  //
+  // `external` because it is another origin. The chip renders it as a plain <a>, which is
+  // what a cross-host link has to be; see the note on OutLink in
+  // components/accounting/accounting-shell.tsx.
+  if (company.state === "allowed") {
+    quickLinks.push({
+      label: "Accounts",
+      href: accountsOrigin(),
+      external: true,
+    });
+  }
+
   quickLinks.push({ label: "Main site", href: env.siteUrl, external: true });
 
   return {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { robloxConfigured } from "@/lib/env";
 import { getUserSession } from "@/lib/session";
@@ -110,9 +111,29 @@ const ERRORS: Record<string, string> = {
  * every area. Any same-origin path is legitimate here; whether they may actually
  * open it is the guard's question, asked when they land.
  */
-function safeReturn(v: string | undefined) {
+function safeReturn(v: string | undefined, fallback: string) {
   if (v && v.startsWith("/") && !v.startsWith("//") && v !== "/login") return v;
-  return "/hub";
+  return fallback;
+}
+
+/**
+ * Where signing in lands when nothing said otherwise - and it DEPENDS ON THE HOST.
+ *
+ * This page is served on every host that holds a session: the portal, accounts and pay.
+ * /hub only exists on the portal, so a hardcoded "/hub" - which is what this was - sends
+ * somebody signing in at accounts.ronation.live to a path that host rewrites to
+ * /accounts/hub and 404s. They would have signed in successfully and landed on a
+ * not-found, with nothing to suggest the sign-in had worked.
+ *
+ * On the two payment hosts the answer is simply "/": each one's root IS its landing page.
+ * Read from the Host header rather than passed in, because the sign-in link this page
+ * builds has to carry the destination and there is nobody above it to know.
+ */
+function defaultReturn(): string {
+  const host = (headers().get("x-forwarded-host") || headers().get("host") || "")
+    .split(":")[0]
+    .toLowerCase();
+  return host.startsWith("accounts.") || host.startsWith("pay.") ? "/" : "/hub";
 }
 
 export default async function PortalLoginPage({
@@ -120,7 +141,8 @@ export default async function PortalLoginPage({
 }: {
   searchParams: { error?: string; returnTo?: string };
 }) {
-  const returnTo = safeReturn(searchParams.returnTo);
+  const home = defaultReturn();
+  const returnTo = safeReturn(searchParams.returnTo, home);
 
   // Already signed in - a bookmarked login page must not dead-end, and the gate
   // never sends anybody here with a cookie. Straight through to where they were
@@ -138,7 +160,7 @@ export default async function PortalLoginPage({
 
   // Something other than the hub is waiting - say so, so a signed-out click on a
   // deep link reads as "sign in and carry on" rather than "you have been moved".
-  const resuming = returnTo !== "/hub";
+  const resuming = returnTo !== home;
 
   return (
     <div className="flex min-h-dvh flex-col">

@@ -1,56 +1,55 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { DocumentPaper } from "@/components/accounting/document-paper";
-import {
-  getDocument,
-  getDocumentByToken,
-  recordShareView,
-} from "@/lib/accounting/documents";
+import { notFound, redirect } from "next/navigation";
+import { getDocumentByToken } from "@/lib/accounting/documents";
+import { documentPath } from "@/lib/accounting/urls";
 
 export const dynamic = "force-dynamic";
 
-/**
- * NOINDEX, and it matters more here than almost anywhere else on the site.
- *
- * These pages are unauthenticated by design - a contractor has no account - so the only
- * thing standing between a document and the world is that nobody knows the URL. A
- * crawler that indexed one would turn "unguessable" into "searchable" in an afternoon.
- * The token never appears in a link on any public page for the same reason.
- */
 export const metadata: Metadata = {
   title: "Document · RO. Nation LIVE",
   robots: { index: false, follow: false, nocache: true },
 };
 
 /**
- * A document on its share link.
+ * The share link's OLD address: /doc/<token>, with no kind in it.
  *
- * The whole authorisation story is the token: hold it and you read this document, and
- * only this one. There is no session, no account, and NOTHING to act on - every write
- * lives behind the company gate, so a recipient can read and print and nothing else.
+ * This page no longer renders anything. It looks the token up and forwards to the
+ * document's canonical URL, /document/<kind>/<token> - and it EXISTS, rather than the
+ * middleware doing the rewrite, because the middleware cannot: only the database knows
+ * which kind a token points at, and the middleware runs on the edge with no database.
  *
- * Deliberately the same DocumentPaper the company sees, minus the toolbar: what you
- * checked before sending is exactly what they receive. Drafts are excluded in the
- * query (see getDocumentByToken), so an unissued document is a 404 here even if someone
- * were handed a token for one.
+ * ---- Why keep it at all ---------------------------------------------------
+ *
+ * Every document RNL has already issued carries one of these links, in somebody else's
+ * inbox, and a financial record whose address stops resolving is worse than an
+ * inconvenience - it is a contractor who cannot produce the payslip they were sent. The
+ * tokens themselves did not change (they are matched exactly, and the old 24-character
+ * ones still resolve - see the note on TOKEN_LENGTH), so this is purely a change of
+ * shape, and a shape change is exactly what a redirect is for.
+ *
+ * ---- The 404 is the same 404 ---------------------------------------------
+ *
+ * A wrong, rotated or draft token gets notFound() here, the same answer the new route
+ * gives, so this cannot be used as an oracle for which tokens exist while the new one
+ * refuses to be.
+ *
+ * The redirect is RELATIVE. The middleware only serves this path on the accounts host
+ * (it is in ACCOUNTS_PATHS) and forwards it there from everywhere else, so by the time
+ * this renders, "here" is already the right host.
  */
-export default async function SharedDocumentPage({
+export default async function LegacySharedDocumentPage({
   params,
 }: {
   params: { token: string };
 }) {
   const doc = await getDocumentByToken(params.token);
-  // A wrong, rotated or draft token is a plain 404 - the same answer for all three, so
-  // the page cannot be used to probe which documents exist.
   if (!doc) notFound();
 
-  // Fire-and-forget: counting a view must never be in the path of showing the document.
-  // recordShareView swallows its own errors for the same reason.
-  void recordShareView(doc.id);
+  const path = documentPath(doc);
+  // Belt and braces: getDocumentByToken excludes drafts, and only a draft has no token,
+  // so this cannot be null in practice. If it ever is, a 404 is the honest answer - there
+  // is no URL to send them to.
+  if (!path) notFound();
 
-  const related = doc.relatedId ? await getDocument(doc.relatedId) : null;
-
-  return (
-    <DocumentPaper document={doc} relatedNumber={related?.number ?? null} />
-  );
+  redirect(path);
 }

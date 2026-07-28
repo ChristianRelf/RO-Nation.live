@@ -1,4 +1,8 @@
 import type { RepoPost } from "../post";
+// The invite comes from the site record, not from a string typed into this post. An invite
+// that lives in two places is an invite that gets regenerated in one of them - and a dead
+// link in a published post is not something anybody goes back and checks.
+import { site } from "@/lib/site";
 
 // Where the shows are going next: arenas and festivals.
 //
@@ -128,7 +132,7 @@ We would rather build this against real shows than in the abstract, and that
 includes other people's. If you are planning something at this scale — your own
 group, your own audience — [tell us what you are planning](/services), or come and
 argue about it with us in the
-[Discord](https://discord.gg/pxE7KRWgTY).
+[Discord](${site.socials.discord}).
 
 The stage is the easy part. Come and use the rest of it.`;
 
