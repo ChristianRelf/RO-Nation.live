@@ -33,7 +33,7 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/privacy",
     title: "Privacy Policy",
     group: "Site policies",
-    updated: "15 July 2026",
+    updated: "15 August 2026",
     blurb:
       "What we hold about you, why we hold it, how long for, and how to get it deleted.",
   },
@@ -41,7 +41,7 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/terms",
     title: "Terms of Service",
     group: "Site policies",
-    updated: "13 July 2026",
+    updated: "15 August 2026",
     blurb:
       "The deal: tickets are free, tied to your account, and not for resale. What we owe you and what we don't.",
   },
@@ -49,7 +49,7 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/code-of-conduct",
     title: "Code of Conduct",
     group: "Site policies",
-    updated: "6 July 2026",
+    updated: "15 August 2026",
     blurb: "How to behave at a show, and what happens if you don't.",
   },
   {
@@ -80,9 +80,9 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/data-requests",
     title: "Data & Privacy Requests",
     group: "Site policies",
-    updated: "15 July 2026",
+    updated: "15 August 2026",
     blurb:
-      "How to get a copy of your data, correct it, or have it deleted - what to send, and the two honest limits.",
+      "How to get a copy of your data, correct it, or have it deleted - what to send, and the three honest limits.",
   },
   {
     href: "/legal/refunds",
@@ -91,6 +91,18 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     updated: "15 July 2026",
     blurb:
       "The shop is a showcase - every purchase happens on Roblox, under Roblox's terms and refund rules.",
+  },
+  // The policy behind the terms printed on every accounting sheet. The payment system
+  // shipped on two hosts of its own with nothing published about how it worked; the paper
+  // it prints now refers to "the designated payment system", and this is that system,
+  // written down. See the note at the top of app/legal/payments/page.tsx.
+  {
+    href: "/legal/payments",
+    title: "Payments & Payouts",
+    group: "Site policies",
+    updated: "15 August 2026",
+    blurb:
+      "How documents are raised and money actually moves: issuing one holds the amount, and you request it at pay.ronation.live.",
   },
 
   // The partner agreements - the terms a party accepts when they become a partner. Unlike
@@ -102,7 +114,7 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/partners/merchandise",
     title: "Partner Merchandise Agreement",
     group: "Partner agreements",
-    updated: "22 July 2026",
+    updated: "15 August 2026",
     blurb:
       "How we sell your merchandise, and how each sale is split - Roblox takes 30%, we keep 10% of what's left, you keep 90%.",
   },
@@ -118,9 +130,9 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/partners/ticketing",
     title: "Partner Ticketing & Packages Agreement",
     group: "Partner agreements",
-    updated: "22 July 2026",
+    updated: "15 August 2026",
     blurb:
-      "We sell all your tickets and packages through our official channels, split the same way, and pay you in full each month.",
+      "We sell all your tickets and packages through our official channels, split the same way, and pay your share in full when you ask for it.",
   },
 
   // The documents below concern how we connect to Roblox and Discord. The first four are the
@@ -131,7 +143,7 @@ export const LEGAL_DOCS: LegalDocEntry[] = [
     href: "/legal/roblox/privacy",
     title: "Roblox sign-in - Privacy",
     group: "Integrations",
-    updated: "12 July 2026",
+    updated: "15 August 2026",
     blurb: "What the Roblox OAuth app asks for, and what we do with it.",
   },
   {

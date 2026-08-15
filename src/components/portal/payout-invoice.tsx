@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Settlement } from "@/lib/settlement";
 import { formatRobux } from "@/lib/tickets/pricing";
+import { payoutStatementTerms } from "@/lib/accounting/terms";
+import { TermsBlock } from "@/components/accounting/terms-block";
 import { LocalTime } from "@/components/local-time";
 import { PrintButton } from "./print-button";
 
@@ -182,8 +184,15 @@ export function PayoutInvoice({
           </dl>
         </section>
 
+        {/* The terms. The partner variant owes somebody money and carries the full
+            held-pending-request block; the self variant has no payee and says so instead.
+            Same component and same wording source as the accounting sheets - a partner
+            should not find one set of terms on their payout and a different set on the
+            payslip that follows it. */}
+        <TermsBlock terms={payoutStatementTerms(variant)} />
+
         {/* Small print */}
-        <footer className="mt-12 border-t border-neutral-300 pt-4 text-[11px] leading-relaxed text-neutral-500">
+        <footer className="mt-8 border-t border-neutral-300 pt-4 text-[11px] leading-relaxed text-neutral-500">
           <p>
             All ticket revenue is collected by RO. Nation LIVE. Roblox deducts 30% at
             the point of sale

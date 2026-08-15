@@ -3,60 +3,79 @@ import Link from "next/link";
 import { Kicker } from "@/components/ui";
 import { cn, slugify } from "@/lib/utils";
 
-// Inline links inside otherwise-plain policy text.
+// Inline markup inside otherwise-plain policy text.
 //
 // The sections are authored as plain strings - deliberately, because a policy is prose and
-// prose is easier to read and diff as prose than as a tree of elements. But a request the
-// reader is meant to ACT on ("make a request here") is worse as an un-clickable URL, so this
-// one affordance is allowed: a markdown-style [label](href) token in any body, list item or
-// intro string is turned into a real link, and everything else is left exactly as written.
+// prose is easier to read and diff as prose than as a tree of elements. Two affordances are
+// allowed on top of that, and only two:
 //
-// The token is specific enough that ordinary copy does not trip it: it needs a []-bracketed
-// label immediately followed by a ()-wrapped href, which prose that merely uses brackets or
-// parentheses never produces. Internal hrefs (starting "/") route through next/link;
-// anything else (mailto:, https:) is a plain anchor, and an external http(s) link opens in a
-// new tab.
-const INLINE_LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
+//   [label](href)   A request the reader is meant to ACT on ("make a request here") is
+//                   worse as an un-clickable URL. Internal hrefs (starting "/") route
+//                   through next/link; anything else (mailto:, https:) is a plain anchor,
+//                   and an external http(s) link opens in a new tab.
+//
+//   **emphasis**    A policy is skimmed before it is read, and some of these documents turn
+//                   on a single clause - "issuing a document does not send the Robux",
+//                   "we will never ask you to send Robux to receive a payment". Those have
+//                   to survive the skim. It is the same token, and the same restraint, as
+//                   the terms printed on an accounting sheet (components/accounting/
+//                   terms-block.tsx) - so a clause reads the same way on paper and here.
+//
+// Both tokens are specific enough that ordinary copy does not trip them: a link needs a
+// []-bracketed label immediately followed by a ()-wrapped href, and emphasis needs a
+// DOUBLED asterisk on both sides. Prose that merely uses brackets, parentheses or a lone
+// asterisk never produces either. Anything unmatched is left exactly as written.
+const INLINE = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
 
 function renderInline(text: string): ReactNode {
   const parts: ReactNode[] = [];
   let last = 0;
   let key = 0;
 
-  for (const m of text.matchAll(INLINE_LINK)) {
+  for (const m of text.matchAll(INLINE)) {
     const at = m.index ?? 0;
     if (at > last) parts.push(text.slice(last, at));
 
-    const label = m[1];
-    const href = m[2];
-    const style = "link-underline text-accent transition-colors hover:text-fg";
-
-    if (href.startsWith("/")) {
+    // Group 3 is the emphasis alternative; groups 1 and 2 are the link's label and href.
+    // Exactly one branch matched, so which groups are defined is what tells them apart.
+    if (m[3] !== undefined) {
       parts.push(
-        <Link key={key} href={href} className={style}>
-          {label}
-        </Link>,
+        <strong key={key} className="font-semibold text-fg">
+          {m[3]}
+        </strong>,
       );
     } else {
-      const external = href.startsWith("http");
-      parts.push(
-        <a
-          key={key}
-          href={href}
-          className={style}
-          {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-        >
-          {label}
-        </a>,
-      );
+      const label = m[1];
+      const href = m[2];
+      const style = "link-underline text-accent transition-colors hover:text-fg";
+
+      if (href.startsWith("/")) {
+        parts.push(
+          <Link key={key} href={href} className={style}>
+            {label}
+          </Link>,
+        );
+      } else {
+        const external = href.startsWith("http");
+        parts.push(
+          <a
+            key={key}
+            href={href}
+            className={style}
+            {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+          >
+            {label}
+          </a>,
+        );
+      }
     }
 
     last = at + m[0].length;
     key++;
   }
 
-  // No links found: hand back the original string, so the overwhelmingly common case
-  // allocates nothing and renders identically to before.
+  // Nothing to substitute: hand back the original string, so the overwhelmingly common
+  // case allocates nothing and renders identically to before.
   if (key === 0) return text;
   if (last < text.length) parts.push(text.slice(last));
   return parts;

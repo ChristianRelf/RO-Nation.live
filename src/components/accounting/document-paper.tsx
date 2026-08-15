@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import type { AccountingDocument } from "@prisma/client";
 import { DocumentStatus } from "@prisma/client";
 import { kindConfig } from "@/lib/accounting/kinds";
+import { documentTerms } from "@/lib/accounting/terms";
+import { TermsBlock } from "@/components/accounting/terms-block";
 import { formatQty, readLineItems } from "@/lib/accounting/lines";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { LocalTime } from "@/components/local-time";
@@ -249,9 +251,19 @@ export function DocumentPaper({
           </section>
         ) : null}
 
+        {/* The terms. Kind-specific, because the five kinds do not make the same promise -
+            see lib/accounting/terms.ts. It prints on drafts too: a draft is a proof of the
+            sheet somebody will receive, and one that omits the terms is not a proof of it. */}
+        <TermsBlock terms={documentTerms(doc.kind)} />
+
         {/* Small print */}
-        <footer className="mt-12 border-t border-neutral-300 pt-4 text-[11px] leading-relaxed text-neutral-500">
-          <p>{cfg.smallPrint}</p>
+        <footer className="mt-8 border-t border-neutral-300 pt-4 text-[11px] leading-relaxed text-neutral-500">
+          <div className="space-y-1.5">
+            {cfg.smallPrint.map((p, i) => (
+              // Index as key: a frozen constant list, never reordered at runtime.
+              <p key={i}>{p}</p>
+            ))}
+          </div>
           <p className="mt-2">
             {doc.issuedAt ? (
               <>

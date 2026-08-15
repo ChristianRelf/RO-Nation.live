@@ -7,6 +7,12 @@ import {
 } from "@/lib/accounting/kinds";
 import { documentPath, documentUrl } from "@/lib/accounting/urls";
 import {
+  PAY_DOMAIN,
+  documentTerms,
+  payoutStatementTerms,
+} from "@/lib/accounting/terms";
+import { site } from "@/lib/site";
+import {
   ALL_REQUEST_KINDS,
   REQUEST_KINDS,
   isFreeFormRequest,
@@ -126,7 +132,9 @@ describe("held funds", () => {
   it("say on the payslip itself that issuing does not send the Robux", () => {
     // The contractor reads this on paper, possibly weeks before anybody looks at a screen.
     // The old wording implied the payout was already on its way.
-    const print = kindConfig(DocumentKind.CONTRACTOR_PAYMENT).smallPrint.toLowerCase();
+    const print = kindConfig(DocumentKind.CONTRACTOR_PAYMENT)
+      .smallPrint.join(" ")
+      .toLowerCase();
     expect(print).toContain("does not send the robux");
     expect(print).toContain("held until you request it");
   });
@@ -135,6 +143,102 @@ describe("held funds", () => {
     const terms = kindConfig(DocumentKind.CONTRACTOR_PAYMENT).defaultTerms.toLowerCase();
     expect(terms).not.toContain("paid on issue");
     expect(terms).toContain("held until requested");
+  });
+});
+
+describe("printed terms", () => {
+  const everyBlock = [
+    ...EVERY_KIND_CONFIG.map((c) => ({
+      what: `${c.kind} terms`,
+      terms: documentTerms(c.kind),
+    })),
+    { what: "partner payout statement", terms: payoutStatementTerms("partner") },
+    { what: "own revenue statement", terms: payoutStatementTerms("self") },
+  ];
+
+  it("exist, in full, on every sheet this system prints", () => {
+    // Including TICKET_REFUND, which is not in DOCUMENT_KINDS, and both payout variants.
+    // A sheet that prints without terms is the one somebody will be holding in the
+    // argument these paragraphs exist to prevent.
+    for (const { what, terms } of everyBlock) {
+      expect(terms.heading.length, what).toBeGreaterThan(0);
+      expect(terms.clauses.length, what).toBeGreaterThanOrEqual(4);
+      expect(terms.facts.length, what).toBeGreaterThanOrEqual(2);
+      for (const c of terms.clauses) expect(c.trim().length, what).toBeGreaterThan(40);
+    }
+  });
+
+  it("close every bold marker they open", () => {
+    // The renderer only substitutes a MATCHED **pair** and leaves anything else exactly as
+    // written - which is the right failure mode on screen and an awful one on paper, where
+    // a stray "**" prints as two asterisks in the middle of a legal clause.
+    for (const { what, terms } of everyBlock) {
+      for (const c of terms.clauses) {
+        expect((c.match(/\*\*/g) ?? []).length % 2, `${what}: ${c.slice(0, 40)}`).toBe(0);
+      }
+    }
+  });
+
+  it("never claim RNL owes money on a sheet where the money runs the other way", () => {
+    // The inversion that a single shared block of terms would have shipped: an invoice is
+    // RNL asking to be paid, and "the amount payable by RO. Nation LIVE" on one is a
+    // written admission of a debt that does not exist.
+    // Read as the recipient reads it - emphasis stripped - because "payable **to RNL**"
+    // and "payable to RNL" are the same sentence on paper and only one of them survives
+    // a naive substring match.
+    const asRead = (kind: DocumentKind) =>
+      documentTerms(kind).clauses.join(" ").replace(/\*\*/g, "").toLowerCase();
+
+    for (const kind of [DocumentKind.INVOICE, DocumentKind.RECEIPT]) {
+      expect(asRead(kind), kind).not.toContain("payable by ro. nation live");
+    }
+    expect(asRead(DocumentKind.INVOICE)).toContain("payable to ro. nation live");
+  });
+
+  it("point at the payment portal on exactly the sheets that hold money", () => {
+    // "Sign in at pay.ronation.live" is only true where there is something to claim and an
+    // account to claim it with. On a TICKET_REFUND it is both - the payee is a member of
+    // the public with no portal account, and sending them to a login screen they can never
+    // pass is the one instruction on this paper that cannot be recovered from.
+    for (const cfg of EVERY_KIND_CONFIG) {
+      const text = documentTerms(cfg.kind).clauses.join(" ");
+      const tellsThemToSignIn = text.includes(`sign in at **${PAY_DOMAIN}**`);
+      expect(tellsThemToSignIn, cfg.kind).toBe(cfg.releasable);
+    }
+
+    const refund = documentTerms(DocumentKind.TICKET_REFUND).clauses.join(" ");
+    expect(refund).not.toContain(PAY_DOMAIN);
+    expect(refund.toLowerCase()).toContain("no account or sign-in is needed");
+  });
+
+  it("say on every held sheet that issuing it is not payment", () => {
+    // The sentence the whole held-funds model rests on. See the note on `releasable`.
+    const held = [
+      ...EVERY_KIND_CONFIG.filter((c) => c.releasable).map((c) =>
+        documentTerms(c.kind),
+      ),
+      payoutStatementTerms("partner"),
+    ];
+    for (const terms of held) {
+      const text = terms.clauses.join(" ").toLowerCase();
+      expect(text).toContain("does not constitute payment");
+      expect(text).toContain("held pending a valid payment request");
+    }
+  });
+
+  it("keep the claim wording off RNL's own revenue statement", () => {
+    // There is no external payee on it, so a block telling "the recipient" how to request
+    // payment would be RNL writing instructions to itself.
+    const self = payoutStatementTerms("self").clauses.join(" ");
+    expect(self).not.toContain(PAY_DOMAIN);
+    expect(self.toLowerCase()).toContain("not a payment instruction");
+  });
+
+  it("name the portal as a subdomain of the site's own domain", () => {
+    // PAY_DOMAIN is printed on paper that outlives any deploy, and it is derived rather
+    // than typed so a move is one edit. This asserts the derivation still holds.
+    expect(PAY_DOMAIN).toBe(`pay.${site.domain}`);
+    expect(PAY_DOMAIN).not.toContain("localhost");
   });
 });
 

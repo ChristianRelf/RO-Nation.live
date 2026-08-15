@@ -53,8 +53,17 @@ export type KindConfig = {
   totalLabel: string;
   /** One sentence under the picker, saying when to reach for this one. */
   hint: string;
-  /** The small print at the foot of the printed document. */
-  smallPrint: string;
+  /**
+   * The small print at the foot of the printed document, ONE STRING PER PARAGRAPH.
+   *
+   * It was a single string, and a single string is what kept this line honest by accident:
+   * there was only room for one thing, so it said the one thing, and everything else a
+   * payee needed to know was not said anywhere. The full terms now live in terms.ts and
+   * print above this; what is left here is the kind-specific line - the sentence that is
+   * true of a payslip and false of a receipt - and it is a list because two short
+   * paragraphs are read and one long one is not.
+   */
+  smallPrint: string[];
   /** Does a due date make sense? A receipt records the past and has none. */
   hasDueDate: boolean;
   /**
@@ -103,8 +112,10 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     partyFieldLabel: "Who is being billed",
     totalLabel: "Amount due",
     hint: "Bill someone for something the ticket ledger doesn't know about - a sponsorship, a booking fee, a service.",
-    smallPrint:
+    smallPrint: [
       "Payable to RO. Nation LIVE in Robux (R$). Please quote the document number when paying.",
+      "Robux is sent through Roblox, not through this document or any RO. Nation LIVE website. Once it is on its way, tell us at pay.ronation.live so it can be matched and receipted.",
+    ],
     hasDueDate: true,
     releasable: false,
     relates: false,
@@ -137,8 +148,10 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     // amount and what it covers; it is not a receipt", which is true and incomplete: it
     // left the reader to assume the Robux was on its way. It is not. It is HELD until they
     // ask for it, and the sentence that matters is the one telling them they have to.
-    smallPrint:
-      "",
+    smallPrint: [
+      "This slip confirms the amount above and what it covers. It is not a receipt, and issuing it does not send the Robux — the amount is held until you request it.",
+      "Sign in at pay.ronation.live and request the funds on this document. It is released by Roblox group payout once somebody has actioned it, and this slip is marked paid at that point.",
+    ],
     hasDueDate: true,
     releasable: true,
     relates: false,
@@ -159,8 +172,10 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     partyFieldLabel: "Who paid",
     totalLabel: "Amount received",
     hint: "Record that money actually moved. Point it at an invoice or a payment to settle that document too.",
-    smallPrint:
+    smallPrint: [
       "This receipt confirms the amount above was received in Robux (R$). Retain for your records.",
+      "Nothing further is owed on it. If it settles another document, that document is marked paid to the extent of the amount shown here.",
+    ],
     hasDueDate: false,
     releasable: false,
     relates: {
@@ -182,8 +197,10 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     partyFieldLabel: "Who is being credited",
     totalLabel: "Total credited",
     hint: "Correct or refund a document already issued. An issued document is never edited - this is how it is put right.",
-    smallPrint:
-      "This credit note reduces the amount owed on the document referenced above by the total shown, in Robux (R$). If you have already settled that document, the credit can be paid back out instead — request the funds on this note at pay.ronation.live.",
+    smallPrint: [
+      "This credit note reduces the amount owed on the document referenced above by the total shown, in Robux (R$).",
+      "If you have already settled that document, the credit can be paid back out instead — request the funds on this note at pay.ronation.live. Issuing it does not send the Robux; the amount is held until you ask.",
+    ],
     hasDueDate: false,
     // A credit ordinarily just cancels what is owed, and needs no payout at all. But when
     // the document it corrects was ALREADY PAID, the credit is money that has to come back
@@ -212,8 +229,10 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     // Says plainly what the document can and cannot do. A Robux purchase is a Roblox
     // transaction and CANNOT be reversed from here - see lib/accounting/refunds.ts. The
     // document authorises and records a payout; a human still has to send the Robux.
-    smallPrint:
-      "Refund authorised by RO. Nation LIVE in Robux (R$). The original purchase was made through Roblox and cannot be reversed there; this amount is paid separately. Tickets are ordinarily non-refundable — this is an exceptional authorisation.",
+    smallPrint: [
+      "Refund authorised by RO. Nation LIVE in Robux (R$). The original purchase was made through Roblox and cannot be reversed there; this amount is paid separately, by group payout.",
+      "Tickets are ordinarily non-refundable — this is an exceptional authorisation, and it covers only the ticket named above. You do not need to sign in anywhere to receive it.",
+    ],
     hasDueDate: false,
     // Outbound, and still not releasable - see the note on the field. Its payee is a ticket
     // holder with no partner account and no statement to press a button on, and the refund

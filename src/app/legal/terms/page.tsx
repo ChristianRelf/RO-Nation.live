@@ -110,6 +110,15 @@ const sections: LegalSection[] = [
     ],
   },
   {
+    heading: "Money, and being paid",
+    body: [
+      "We take no payment on this website and hold no card or bank details. Everything financial here is **Robux (R$)**, and Robux moves through Roblox - never through a page on one of our sites.",
+      "If we owe you money - as a partner, a contractor, or anyone else we raise a document with - the document is raised in our payment system and the amount is **held until you ask for it**. Issuing a document does not send the Robux. How that works, how to ask, and what happens if something is wrong is set out in [Payments & Payouts](/legal/payments).",
+      "Amounts stated in Robux are not a cash value and carry no promise of conversion into real-world currency. We do not hold funds for you as money and we operate no wallet, balance or account of that kind.",
+      "We will never ask you to send Robux in order to receive a payment from us, and we will never ask for your Roblox password. If something claiming to be us does either, it is not us.",
+    ],
+  },
+  {
     heading: "Staff and portal access",
     body: [
       "Access to our staff portal, and to a partner's, comes from your rank in our Roblox group or from an explicit grant we make. It is a privilege we extend for as long as it is useful to us, and it can be withdrawn at any time, without notice - being demoted in the group removes it on its own.",
@@ -159,6 +168,30 @@ const sections: LegalSection[] = [
     heading: "Changes to these terms",
     body: [
       "We may update these terms. When we do, we revise the date at the top of this page and announce anything significant through our channels. Using the site after a change means you accept the updated terms.",
+      "Where you hold something we already issued - a ticket, or a payment document - the terms that applied when it was issued are the ones that govern it. We do not change the deal on something already in your hands.",
+    ],
+  },
+  {
+    heading: "Which law applies",
+    body: [
+      "These terms, and anything arising out of them or out of your use of our sites and events, are governed by the law of **England and Wales**.",
+      "The courts of England and Wales have exclusive jurisdiction over any dispute about them.",
+      "If you live somewhere else, you keep the protection of any consumer law in your own country that cannot be contracted out of. Nothing here takes that away from you.",
+      "Before anybody goes anywhere near a court: tell us. Almost everything that gets this far is a misunderstanding, and we would far rather sort it out by talking to you.",
+    ],
+  },
+  {
+    heading: "The rest of the small print",
+    body: [
+      "The dull-but-necessary clauses, in plain words:",
+    ],
+    list: [
+      "These terms, together with our Privacy Policy, Code of Conduct, and any policy they point to, are the whole agreement between us about the site and our events. A separate written agreement - a partner agreement, or terms for paid work - sits on top of them and wins where the two conflict.",
+      "If a court decides some part of these terms cannot be enforced, the rest still stands. Only the offending part drops out.",
+      "If we do not enforce something straight away, we have not given it up. We can still enforce it later.",
+      "You cannot transfer your rights under these terms to somebody else. We may transfer ours if our operations move, but not in a way that reduces what you are owed.",
+      "We give you notice through the site, your account, or the contact details you gave us. You give us notice through the contact page or by email. Either counts as being in writing.",
+      "Nobody who is not a party to these terms can enforce them.",
     ],
   },
   {

@@ -48,10 +48,11 @@ const sections: LegalSection[] = [
   {
     heading: "How you are paid",
     body: [
-      "We hold your share and keep a record of it as it builds up.",
-      "You are paid your share in full, each month, for the previous month's sales.",
-      "We pay in Robux (R$) to the account you nominate, or another way we agree in writing.",
-      "You get a monthly statement showing the sales, the post-tax profit, and your share. If a sale is refunded or reversed, we adjust the shares in that statement.",
+      "We hold your share and keep a record of it as it builds up. Holding it is not us keeping it - it is yours from the moment it is earned, and nothing about it expires.",
+      "Each month we issue you a statement showing the sales, the post-tax profit and your share, and it is payable in full. **Issuing a statement does not send the Robux**: the amount is held until you ask for it.",
+      "To ask, sign in at pay.ronation.live and request the funds against the statement. We pay in Robux (R$), by Roblox group payout to the account you nominate, or another way we agree in writing. If you would rather be paid automatically each month without asking, we will agree that with you in writing and it happens that way instead.",
+      "If a sale is refunded or reversed, we adjust the shares in the next statement, or by a credit note against one already issued.",
+      "The mechanics of all of this - the documents, the request, how an error is corrected - are set out in [Payments & Payouts](/legal/payments).",
     ],
   },
   {

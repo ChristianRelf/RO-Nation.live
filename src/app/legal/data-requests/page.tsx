@@ -63,13 +63,14 @@ const sections: LegalSection[] = [
     ],
   },
   {
-    heading: "Two honest limits",
+    heading: "Three honest limits",
     body: [
-      "There are exactly two things we may not simply erase on request, and we would rather say so here than surprise you later.",
+      "There are exactly three things we may not simply erase on request, and we would rather say so here than surprise you later.",
     ],
     list: [
       "A blacklist entry, where removing it would put other people at risk. The blacklist exists to keep someone who has harmed others out of the next show; if you are on one, ask us to review it rather than to erase it - tell us your Roblox username, and we will look at the reason recorded and either remove it or explain it.",
       "An aggregate figure that no longer identifies you - such as the attendance count of a show that has already happened. Once a number is just a number, there is nothing personal left in it to remove.",
+      "A financial record - a document we raised with you, a payment request, or the record of a purchase. These record something that actually happened between us, we are obliged to keep accurate books, and a ledger with a hole in it is not a record of anything. You can still ask us to correct one that is wrong, and [Payments & Payouts](/legal/payments) explains how a document is put right.",
     ],
   },
   {
