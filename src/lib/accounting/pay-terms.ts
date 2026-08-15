@@ -126,6 +126,50 @@ export function payTermsSnapshot(): string[] {
   ];
 }
 
+/** Where somebody lands when there is nothing worth resuming. The client's overview. */
+export const PAY_HOME = "/";
+
+/**
+ * Reduce a proposed returnTo to something safe to hand `redirect()`, or PAY_HOME.
+ *
+ * ---- Why this is not just a null check -------------------------------------
+ *
+ * The value travels from a request header, through a URL, through a hidden form field, and
+ * back to the server - which is to say a person can put anything in it. A redirect target
+ * taken at face value is an OPEN REDIRECT: `pay.ronation.live/terms?returnTo=https://…`
+ * would send somebody who followed a link from us, signed in, and accepted our terms
+ * straight to somebody else's page - carrying every bit of trust the journey just built.
+ * On the one host in this system whose whole subject is money, that is the exact shape of
+ * the scam the terms themselves warn about.
+ *
+ * So: a single leading slash, and nothing else gets through.
+ *
+ *   "//evil.test"     PROTOCOL-RELATIVE. Starts with "/" and is a different ORIGIN - the
+ *                     case a naive `startsWith("/")` check waves past, and the reason this
+ *                     function exists rather than that one line.
+ *   "/\\evil.test"    the same trick with a backslash, which some parsers fold to "/".
+ *   "https://…"       absolute, and obvious.
+ *   "/terms"          refused as a matter of sense rather than safety: resuming the gate
+ *                     after passing it is a loop back to a page that redirects out again.
+ */
+export function safeReturnTo(raw: string | null | undefined): string {
+  if (!raw) return PAY_HOME;
+
+  const value = raw.trim();
+  if (!value.startsWith("/")) return PAY_HOME;
+  // Protocol-relative in both spellings. "/" + ("/" | "\") is a host, not a path.
+  if (value.startsWith("//") || value.startsWith("/\\")) return PAY_HOME;
+  // A control character in a Location header is a header-splitting attempt, and there is
+  // no legitimate path that contains one.
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(value)) return PAY_HOME;
+  // The gate itself, and the refusal page. Neither is a destination.
+  if (value === "/terms" || value.startsWith("/terms?")) return PAY_HOME;
+  if (value === "/access" || value.startsWith("/access?")) return PAY_HOME;
+
+  return value;
+}
+
 /**
  * Does this login still have to pass the gate?
  *

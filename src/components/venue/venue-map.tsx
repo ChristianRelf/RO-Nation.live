@@ -348,9 +348,9 @@ export function VenueMap({
                       <title>
                         {`Row ${seat.row}, Seat ${seat.number}`}
                         {state === "taken"
-                          ? " — sold"
+                          ? " - sold"
                           : state === "held"
-                            ? " — someone is buying this"
+                            ? " - someone is buying this"
                             : ""}
                       </title>
                     </circle>

@@ -14,12 +14,14 @@ import {
 import { site } from "@/lib/site";
 import { LEGAL_DOCS } from "@/lib/legal";
 import {
+  PAY_HOME,
   PAY_TERMS_CLAUSES,
   PAY_TERMS_CONFIRMATIONS,
   PAY_TERMS_DOCUMENTS,
   PAY_TERMS_VERSION,
   needsPayTermsAcceptance,
   payTermsSnapshot,
+  safeReturnTo,
 } from "@/lib/accounting/pay-terms";
 import {
   ALL_REQUEST_KINDS,
@@ -327,6 +329,49 @@ describe("the payment terms gate", () => {
     for (const c of PAY_TERMS_CLAUSES) {
       expect((c.match(/\*\*/g) ?? []).length % 2, c.slice(0, 40)).toBe(0);
     }
+  });
+
+  it("sends somebody back where they were going", () => {
+    // The whole point of carrying returnTo: a partner who followed a link to their
+    // statement and was interrupted by the gate should land on their statement, not be
+    // dropped on the overview to find their way back.
+    expect(safeReturnTo("/statements")).toBe("/statements");
+    expect(safeReturnTo("/requests?ok=submitted")).toBe("/requests?ok=submitted");
+  });
+
+  it("refuses to be turned into an open redirect", () => {
+    // The one that a startsWith("/") check waves straight through. "//evil.test" is a
+    // PROTOCOL-RELATIVE url - a different origin wearing a path's clothes - and on the
+    // host whose whole subject is money, sending somebody there right after they signed
+    // in and accepted our terms hands over every bit of trust the journey just built.
+    for (const hostile of [
+      "//evil.test",
+      "//evil.test/statements",
+      "/\\evil.test",
+      "https://evil.test",
+      "http://evil.test",
+      "javascript:alert(1)",
+      "evil.test",
+      "",
+      "   ",
+    ]) {
+      expect(safeReturnTo(hostile), hostile).toBe(PAY_HOME);
+    }
+    expect(safeReturnTo(null)).toBe(PAY_HOME);
+    expect(safeReturnTo(undefined)).toBe(PAY_HOME);
+  });
+
+  it("refuses a control character, which is a header-splitting attempt", () => {
+    expect(safeReturnTo("/statements\r\nLocation: https://evil.test")).toBe(PAY_HOME);
+    expect(safeReturnTo("/statements ")).toBe(PAY_HOME);
+  });
+
+  it("refuses to send anybody back to the gate itself", () => {
+    // Not a safety rule, a sense one: resuming /terms after passing it lands on a page
+    // whose first act is to redirect out again.
+    expect(safeReturnTo("/terms")).toBe(PAY_HOME);
+    expect(safeReturnTo("/terms?returnTo=/terms")).toBe(PAY_HOME);
+    expect(safeReturnTo("/access")).toBe(PAY_HOME);
   });
 
   it("warns about the scam this system is shaped like", () => {

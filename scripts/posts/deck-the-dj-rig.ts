@@ -17,7 +17,7 @@ const EXCERPT =
 const BODY = `Every show we run ends the same way: somebody wants to play music in the
 Discord afterwards, and what they get is a bot that takes a link, plays the file,
 and stops. Which is fine, in the way a vending machine is fine. It is not
-DJing — there is one source, no mixer, and nothing between the track and the
+DJing - there is one source, no mixer, and nothing between the track and the
 room except a volume slider.
 
 So we built the other thing. It is called **deck**, it lives at
@@ -28,12 +28,12 @@ drive from your browser while the room hears it in a voice channel.
 
 Two decks, each with a waveform you can click into, a cue point, loop in and out
 with halve and double, and a turntable-style pitch fader that runs from half
-speed to double — with the pitch following the speed, the way a record does.
+speed to double - with the pitch following the speed, the way a record does.
 
 Between them sits an actual mixer. Per channel: trim, a three-band isolator EQ,
 a single-knob filter that sweeps low-pass through high-pass, pan, mute, and a
 fader with peak metering. The isolator **cuts**. Take a band to the bottom and it
-is gone, not quieter — which is the entire reason to have one instead of a
+is gone, not quieter - which is the entire reason to have one instead of a
 regular EQ, and the thing most software gets politely wrong.
 
 Then a crossfader with a blend-to-cut curve, a master fader, and a brickwall
@@ -42,8 +42,8 @@ the room loud rather than broken.
 
 ## The bits that make it fun
 
-**Effects.** One send effect at a time — tape echo, a Schroeder reverb, or a
-flanger — on a bus both decks feed post-fader. You can set the time in beats off
+**Effects.** One send effect at a time - tape echo, a Schroeder reverb, or a
+flanger - on a bus both decks feed post-fader. You can set the time in beats off
 whichever deck is playing, and it follows that deck's pitch fader. Sends being
 post-fader means pulling a channel down takes its tail with it; the wet return
 is deliberately *not* crossfaded, because an echo thrown at the end of a track
@@ -54,7 +54,7 @@ with their own bus level and an auto-duck that pulls the decks down under a pad
 hit so the drop lands on top of the music instead of underneath it.
 
 **Your own hardware.** If you own a MIDI controller, map it onto anything on the
-console over Web MIDI — with pickup, jump and endless-encoder modes, because a
+console over Web MIDI - with pickup, jump and endless-encoder modes, because a
 physical fader that teleports the virtual one is worse than no fader at all.
 
 **A console you arrange.** The whole thing is a grid. Tools drag in from a tray,
@@ -68,14 +68,14 @@ anybody else's furniture.
 The part we are actually pleased with is the boring part: any number of DJs can
 be signed in at once, and exactly one of them is holding the decks.
 
-Everyone else watches the live console — faders moving, waveforms running, meters
-bouncing — and queues up. Control hands over when the holder releases it, passes
+Everyone else watches the live console - faders moving, waveforms running, meters
+bouncing - and queues up. Control hands over when the holder releases it, passes
 it to somebody directly, disconnects (after a grace period, so a page refresh
 does not cost you your set), or goes idle while somebody is waiting. Admins can
 force-take when someone has clearly walked away.
 
-And it is not a convention the interface politely follows. Every command — from
-the web console and from the \`/dj\` slash commands alike — goes through one
+And it is not a convention the interface politely follows. Every command - from
+the web console and from the \`/dj\` slash commands alike - goes through one
 server-side path where it is schema-validated and permission-checked. You cannot
 step around the lock by talking to the socket directly, which we know because
 that was the first thing we tried.
@@ -97,7 +97,7 @@ first set:
 ## Getting on it
 
 Access is not self-served. It is one rig, and a rig with fifty people queueing
-for the decks is not a rig anybody gets to use — so names go down and get opened
+for the decks is not a rig anybody gets to use - so names go down and get opened
 up a handful at a time.
 
 Put yours down at
@@ -107,7 +107,7 @@ manual first, and [a page on this site](/deck) with the shorter version of
 everything above.
 
 One thing worth saying plainly: deck signs in with **Discord**, not Roblox. It is
-a separate service on its own host — your RO. Nation LIVE account and your
+a separate service on its own host - your RO. Nation LIVE account and your
 tickets have nothing to do with it, and it cannot see them.
 
 Come and break it. Tell us what falls over.`;

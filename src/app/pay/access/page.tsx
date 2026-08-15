@@ -75,7 +75,7 @@ export default async function PayAccessPage({
               <h1 className="display mt-4 text-4xl leading-none">Not yet</h1>
               <p className="mt-5 leading-relaxed text-muted">
                 Your account is with us as a prospective partner, so there is no accounting
-                on it yet — nothing has been invoiced, nothing is owed either way, and
+                on it yet - nothing has been invoiced, nothing is owed either way, and
                 there would be nothing on this page to read.
               </p>
               <p className="mt-4 leading-relaxed text-muted">
@@ -97,7 +97,7 @@ export default async function PayAccessPage({
                 You are signed in
                 {access.state === "denied" ? ` as ${access.session.displayName}` : ""}, but
                 this Roblox account isn&apos;t attached to a RO. Nation LIVE partner
-                account — which is what payments are scoped to. Nothing is wrong; it simply
+                account - which is what payments are scoped to. Nothing is wrong; it simply
                 has not been granted.
               </p>
               <p className="mt-4 leading-relaxed text-muted">

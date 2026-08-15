@@ -66,7 +66,7 @@ export default async function PartnerEventVenuePage({
           <h1 className="display mt-3 text-5xl">{event.title}</h1>
           <p className="mt-2 max-w-xl text-sm text-muted">
             Give this show a venue. It gets its own copy, so editing it never touches the
-            template — or any other show.
+            template - or any other show.
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export default async function PartnerEventVenuePage({
         <h1 className="display mt-3 text-5xl">{event.title}</h1>
         <p className="mt-2 max-w-xl text-sm text-muted">
           This show&apos;s own copy of &ldquo;{map.name}&rdquo;. Assign each section to a
-          tier — a section with no tier sells nothing.
+          tier - a section with no tier sells nothing.
         </p>
       </div>
 

@@ -129,8 +129,8 @@ export async function createReleaseRequest(
           // payee is actually owed.
           amountRobux: doc.total,
           reference: doc.number
-            ? `Release funds on ${doc.number} — ${doc.title}`
-            : `Release funds — ${doc.title}`,
+            ? `Release funds on ${doc.number} - ${doc.title}`
+            : `Release funds - ${doc.title}`,
         },
       });
     });

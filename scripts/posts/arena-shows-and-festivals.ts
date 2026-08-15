@@ -28,7 +28,7 @@ const BODY = `There is a size of show where the hard part stops being the show.
 Up to a point, running a night inside Roblox is a production problem: build the
 venue, light it, get the set right, get people in the room. We are good at that
 part. But somewhere past a full room, the production stops being the thing that
-breaks. What breaks is the door — who is allowed in, where they stand, what
+breaks. What breaks is the door - who is allowed in, where they stand, what
 happens when four times the capacity arrives at once, and whether the answer to
 any of that survives contact with a few thousand people pressing the same button
 in the same second.
@@ -43,7 +43,7 @@ Three things, and they are not the things people expect.
 **Capacity stops being a number and becomes geography.** For a normal show,
 capacity is one integer and the door either lets you in or does not. For an arena
 it is a map: a pit that holds one amount, a balcony that holds another, gates
-that fill at different rates. "Sold out" is no longer one fact — it is true of
+that fill at different rates. "Sold out" is no longer one fact - it is true of
 section C and false of section H, and a ticket has to know which one it is for.
 
 **One door becomes many.** A single check-in queue is fine for a few hundred
@@ -51,7 +51,7 @@ people. It is not fine when the crowd arrives in one burst, which is exactly wha
 happens with a scheduled start time and a countdown everybody is watching.
 
 **A line-up becomes a schedule.** One set at one time is a show. Six sets across
-two stages is a festival, and that is a different object — one with a shape our
+two stages is a festival, and that is a different object - one with a shape our
 event model does not have yet. More on that below, because it is the honest gap.
 
 ## What is already standing
@@ -64,9 +64,9 @@ polygons or ellipses, dragged and resized, each one assigned to a ticket tier.
 The map is saved as a layout and attached to a show.
 
 **Two ways to sell a big room.** A show can be general admission, exactly as
-every show has been. Or it can be *sectioned* — you buy an area, the area has its
+every show has been. Or it can be *sectioned* - you buy an area, the area has its
 own cap, and that is the whole transaction. Standing pits, gates, a tier of the
-balcony. That is the festival shape. Or it can be *seated* — row K, seat 12,
+balcony. That is the festival shape. Or it can be *seated* - row K, seat 12,
 picked off a map. That is the arena shape.
 
 **The seat you picked is actually held.** Choosing a seat takes a real hold for
@@ -74,20 +74,20 @@ ten minutes while you check out, and the hold is enforced under a row lock rathe
 than by hoping. We have run a dozen people at the same chair simultaneously:
 exactly one wins, nobody gets sold a seat twice, and the losers are routed to
 another seat instead of being bounced with an error. That test exists because the
-alternative — finding out on the night — is not a test, it is an incident.
+alternative - finding out on the night - is not a test, it is an incident.
 
 **The door knows where you are meant to be.** A ticket carries its section and
 seat, draws its own map, and the in-experience check-in says the same thing the
 ticket does. Nobody is standing at a barrier comparing two screenshots.
 
 **Your own game server can run the booth.** The whole hold-allocate-settle path
-is on the API, so an experience can operate its own ticket window — hold a place,
-take the action, settle the receipt — without us writing a line of Luau for it.
+is on the API, so an experience can operate its own ticket window - hold a place,
+take the action, settle the receipt - without us writing a line of Luau for it.
 That is what makes a big show possible without every attendee having to leave the
 game to sort themselves out.
 
 **Announce before you sell.** A show can be published and completely
-public — page, line-up, artwork, countdown — with tickets deliberately not yet on
+public - page, line-up, artwork, countdown - with tickets deliberately not yet on
 sale. Presale exists as its own state precisely because "the announcement" and
 "the on-sale" are two different moments, and cramming them into one is how you
 end up announcing at three in the morning because that is when the tickets were
@@ -102,16 +102,16 @@ organisation and revocable by the people who hold them.
 **A festival is not yet one object.** Right now a show has a start time, a door
 time and an end time. That describes a set; it does not describe two stages and a
 running order across a weekend. You can absolutely run a festival today by
-creating each set as its own show — and that works, and it is what we would do
-this month — but the schedule lives in a graphic rather than in the system, which
+creating each set as its own show - and that works, and it is what we would do
+this month - but the schedule lives in a graphic rather than in the system, which
 means nothing can be clever about it. Making the line-up a real object is the
 next substantial piece of work.
 
 **Roblox still decides how many people fit in one place.** Server capacity is a
 platform constraint and no amount of ticketing solves it. A genuinely large
 audience gets split across instances, and splitting an audience is a design
-decision about the show — a main room and overflow rooms, or a synchronised
-broadcast, or something better — not something the box office can quietly fix
+decision about the show - a main room and overflow rooms, or a synchronised
+broadcast, or something better - not something the box office can quietly fix
 underneath you. We would rather say that plainly than sell a room we cannot fill.
 
 ## Two things that are not changing
@@ -122,15 +122,15 @@ no ticket on this platform you pay for, and the paid rails that exist in the cod
 are switched off at three separate keys.
 
 **We are not building a queue simulator.** The point of all of this is that
-turning up should be boring — you have a ticket, the ticket says where you go, the
+turning up should be boring - you have a ticket, the ticket says where you go, the
 door agrees, and you get to watch the show. If any of this becomes visible to the
 person attending, it has failed.
 
 ## If you are running something big
 
 We would rather build this against real shows than in the abstract, and that
-includes other people's. If you are planning something at this scale — your own
-group, your own audience — [tell us what you are planning](/services), or come and
+includes other people's. If you are planning something at this scale - your own
+group, your own audience - [tell us what you are planning](/services), or come and
 argue about it with us in the
 [Discord](${site.socials.discord}).
 

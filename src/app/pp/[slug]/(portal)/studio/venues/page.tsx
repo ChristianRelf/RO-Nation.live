@@ -108,7 +108,7 @@ export default async function PartnerVenuesPage({
                       </p>
                     </td>
                     <td className="px-5 py-3 font-mono text-xs text-muted">
-                      {v.seats === null ? "—" : v.seats || "standing"}
+                      {v.seats === null ? "-" : v.seats || "standing"}
                     </td>
                     <td className="px-5 py-3 text-xs text-muted">
                       <LocalTime value={v.updatedAt} mode="datetime" />

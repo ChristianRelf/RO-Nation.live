@@ -218,7 +218,7 @@ export function EventForm({
                 untouched. */}
             <p className="mt-1 text-xs text-faint">
               Anything but general admission needs a venue drawn on this show&apos;s Venue
-              page — and nobody is offered a seat until this is set.
+              page - and nobody is offered a seat until this is set.
             </p>
           </div>
         </div>

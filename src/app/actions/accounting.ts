@@ -280,7 +280,7 @@ export async function createTicketRefund(
   const voidsTicket = target.canVoid && s(formData, "voidsTicket") === "on";
 
   const line = {
-    description: `Ticket ${target.code} — ${target.eventTitle}${
+    description: `Ticket ${target.code} - ${target.eventTitle}${
       target.tierName ? ` (${target.tierName})` : ""
     }`,
     qtyCenti: 100,
@@ -291,7 +291,7 @@ export async function createTicketRefund(
   const doc = await createDraft(
     {
       kind: DocumentKind.TICKET_REFUND,
-      title: `Refund — ${target.eventTitle}`,
+      title: `Refund - ${target.eventTitle}`,
       counterpartyName: target.holderName,
       counterpartyRef: `Roblox ID ${target.holderRobloxId}`,
       // Snapshotted onto the document, because ticketId is a plain column with nothing
@@ -379,7 +379,7 @@ export async function issueDocumentAction(formData: FormData) {
       // out - revoking would stamp them as barred from the show on their way to a
       // goodwill payment.
       ban: false,
-      reason: `Refunded — ${doc.number}`,
+      reason: `Refunded - ${doc.number}`,
       actorName: user.displayName,
     });
     voidOutcome = result.ok ? "voided" : "voidfailed";

@@ -38,7 +38,7 @@ export default async function MakePaymentPage() {
       <div className="card mt-8 border-accent/25 bg-accent-soft/40 p-5">
         <p className="text-sm font-semibold text-fg">How to actually send it</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Through Roblox, to the RO. Nation LIVE group — a group payout or a direct
+          Through Roblox, to the RO. Nation LIVE group - a group payout or a direct
           transfer, whichever you normally use. Quote the document number you are settling
           if there is one; it is the fastest way for us to match it. Then fill this in so
           we know to look for it.

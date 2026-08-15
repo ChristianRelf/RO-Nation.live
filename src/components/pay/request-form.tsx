@@ -79,7 +79,7 @@ export function PaymentRequestForm({
           />
         </div>
         <span className="mt-1 block text-xs text-faint">
-          Whole Robux. No decimals — Robux does not have any.
+          Whole Robux. No decimals - Robux does not have any.
         </span>
       </label>
 
@@ -105,7 +105,7 @@ export function PaymentRequestForm({
             className={inputClass}
           />
           <span className="mt-1 block text-xs text-faint">
-            A Roblox transaction id, a payout note, your own invoice number — whatever
+            A Roblox transaction id, a payout note, your own invoice number - whatever
             you would quote if we asked you to identify this.
           </span>
         </label>

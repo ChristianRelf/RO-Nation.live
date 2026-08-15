@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requirePayUserPreTerms } from "@/lib/pay";
-import { needsPayTermsAcceptance } from "@/lib/accounting/pay-terms";
+import { needsPayTermsAcceptance, safeReturnTo } from "@/lib/accounting/pay-terms";
 import { PayTermsGate } from "@/components/pay/terms-gate";
 
 export const dynamic = "force-dynamic";
@@ -35,16 +35,21 @@ export const metadata: Metadata = {
 export default async function PayTermsPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; returnTo?: string };
 }) {
   const user = await requirePayUserPreTerms();
 
-  if (!needsPayTermsAcceptance(user.membership)) redirect("/");
+  // Already accepted? Then honour the returnTo too - somebody who opened a deep link in a
+  // second tab, accepted in the first, and came back to this one should land where they
+  // were going, not be told to start again from the overview.
+  const returnTo = safeReturnTo(searchParams.returnTo);
+  if (!needsPayTermsAcceptance(user.membership)) redirect(returnTo);
 
   return (
     <PayTermsGate
       accountName={user.account.name}
       displayName={user.displayName}
+      returnTo={returnTo}
       error={searchParams.error === "unconfirmed"}
       // They have accepted BEFORE, just not this version - so the card opens with "our
       // terms have changed" rather than asking a returning partner to accept as though

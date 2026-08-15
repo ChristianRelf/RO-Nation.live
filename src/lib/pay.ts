@@ -1,11 +1,16 @@
 import "server-only";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   getPartnerAccountAccess,
   isFullPartner,
   type PartnerAccountUser,
 } from "./partner-account";
-import { needsPayTermsAcceptance } from "./accounting/pay-terms";
+import {
+  PAY_HOME,
+  needsPayTermsAcceptance,
+  safeReturnTo,
+} from "./accounting/pay-terms";
 
 // Who may open pay.ronation.live.
 //
@@ -78,6 +83,19 @@ export async function requirePayUserPreTerms(): Promise<PayUser> {
  */
 export async function requirePayUser(): Promise<PayUser> {
   const user = await requirePayUserPreTerms();
-  if (needsPayTermsAcceptance(user.membership)) redirect("/terms");
+
+  if (needsPayTermsAcceptance(user.membership)) {
+    // Carry where they were going, so accepting RESUMES the journey rather than dumping
+    // everybody on the overview. It is the same courtesy signInGate already pays one gate
+    // earlier - and its note says why in a sentence: "`/` has nothing to resume - the gate
+    // is the landing for it."
+    //
+    // x-ron-path is the EXTERNAL path the browser asked for, set by the middleware on
+    // every rendered request (see proceed()). It is untrusted on the way back in, which is
+    // safeReturnTo's whole job - this side only decides whether it is worth carrying.
+    const from = safeReturnTo(headers().get("x-ron-path"));
+    redirect(from === PAY_HOME ? "/terms" : `/terms?returnTo=${encodeURIComponent(from)}`);
+  }
+
   return user;
 }

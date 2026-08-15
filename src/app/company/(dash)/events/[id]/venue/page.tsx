@@ -52,7 +52,7 @@ export default async function CompanyEventVenuePage({
       <div>
         <AdminHeader
           title={event.title}
-          subtitle="Give this show a venue. It gets its own copy, so editing it never touches the template — or any other show."
+          subtitle="Give this show a venue. It gets its own copy, so editing it never touches the template - or any other show."
         />
 
         {templates.length === 0 ? (
@@ -107,7 +107,7 @@ export default async function CompanyEventVenuePage({
     <div>
       <AdminHeader
         title={event.title}
-        subtitle={`This show's own copy of "${map.name}". Assign each section to a tier — a section with no tier sells nothing.`}
+        subtitle={`This show's own copy of "${map.name}". Assign each section to a tier - a section with no tier sells nothing.`}
       />
 
       {event.seatMode === "NONE" ? (

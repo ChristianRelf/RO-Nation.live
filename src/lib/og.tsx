@@ -152,7 +152,7 @@ export function renderOgCard() {
                 maxWidth: 820,
               }}
             >
-              Live shows, showcases and tournaments — built and run inside
+              Live shows, showcases and tournaments - built and run inside
               Roblox. Tickets are free and tied to your account.
             </div>
           </div>

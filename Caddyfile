@@ -95,12 +95,14 @@
 {$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live}, {$AUTHORISE_HOST:authorise.ronation.live}, {$MERCH_HOST:merch.ronation.live}, {$SHOP_HOST:shop.ronation.live}, {$ACCOUNTS_HOST:accounts.ronation.live}, {$PAY_HOST:pay.ronation.live}, {$STRO_HOST:sleeptokenro.ronation.live} {
 	encode zstd gzip
 
-	# These are set by the app's middleware, from the Host header, and read by the
-	# root layout to decide which brand a page renders in. A client must never be
-	# able to supply its own - strip them on the way in. The middleware also
-	# overwrites both unconditionally; this is the second lock on the same door.
+	# These are set by the app's middleware, from the Host header and the request
+	# path, and read by the root layout to decide which brand a page renders in and
+	# by the pay guard to resume an interrupted journey. A client must never be able
+	# to supply its own - strip them on the way in. The middleware also overwrites
+	# all three unconditionally; this is the second lock on the same door.
 	request_header -X-Ron-Brand
 	request_header -X-Ron-Area
+	request_header -X-Ron-Path
 
 	# Security headers, on every response from every host on the line above. All of
 	# those hostnames are RNL's, so includeSubDomains on HSTS is safe.

@@ -1133,7 +1133,7 @@ export function VenueDesigner({
 
             <p className="text-xs text-faint">
               Upload a stage diagram or seating plan and draw the room over it. It&apos;s a
-              tracing guide only — buyers never see it.
+              tracing guide only - buyers never see it.
             </p>
 
             {layout.backdrop ? (

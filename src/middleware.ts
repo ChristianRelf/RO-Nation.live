@@ -373,13 +373,20 @@ function brandFor(path: string) {
  * renders in. The root layout reads both: the area to drop the marketing
  * header/footer, the brand to set data-brand on <html>.
  *
- * SECURITY: the header bag starts as a copy of the client's, so both headers
+ * SECURITY: the header bag starts as a copy of the client's, so all three headers
  * MUST be set on every path through here - including to "". Otherwise
  * `curl -H 'x-ron-brand: sleeptokenro' https://ronation.live/` would reach the
  * layout with a brand it has no claim to. x-ron-brand is presentation only:
  * nothing derives authorization from it (that comes from the partner guard,
- * which re-reads membership from the database). Caddy strips both on the way in
- * as well - belt and braces.
+ * which re-reads membership from the database). Caddy strips all three on the way
+ * in as well - belt and braces.
+ *
+ * x-ron-path is the EXTERNAL path, as the browser asked for it, while the other
+ * two are derived from the internal one after any rewrite. That difference is the
+ * point of it: a guard that wants to send somebody back where they were going
+ * needs the address they typed, not the one this file rewrote it to. It is read by
+ * requirePayUser() (lib/pay.ts) to build the terms gate's returnTo, and whatever
+ * reads it must treat it as untrusted and validate - see safeReturnTo().
  */
 function proceed(req: NextRequest, url?: URL) {
   const headers = new Headers(req.headers);
@@ -387,6 +394,7 @@ function proceed(req: NextRequest, url?: URL) {
 
   headers.set("x-ron-area", areaFor(path));
   headers.set("x-ron-brand", brandFor(path));
+  headers.set("x-ron-path", req.nextUrl.pathname);
 
   return url
     ? NextResponse.rewrite(url, { request: { headers } })

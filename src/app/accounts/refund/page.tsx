@@ -50,7 +50,7 @@ export default async function RefundPage({
     <AccountingShell user={user}>
       <AdminHeader
         title="Refund a ticket"
-        subtitle="Exceptional cases only. Tickets are ordinarily non-refundable — every refund here is an authorisation that gets a number, a reason and a name against it."
+        subtitle="Exceptional cases only. Tickets are ordinarily non-refundable - every refund here is an authorisation that gets a number, a reason and a name against it."
       />
 
       <p className="mb-6 text-sm">
@@ -67,7 +67,7 @@ export default async function RefundPage({
           This authorises a refund. It does not send the Robux.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          The original purchase went through Roblox, and no code here can reverse it —
+          The original purchase went through Roblox, and no code here can reverse it -
           Roblox took its 30% at the point of sale and that share does not come back
           either. What this produces is a numbered document saying who is owed what and
           why. Somebody then has to pay it out by hand.
@@ -97,7 +97,7 @@ export default async function RefundPage({
       {code && !target ? (
         <p className="card p-6 text-sm text-muted">
           No ticket matches <span className="font-mono text-fg">{code}</span>. Check the
-          code — it looks like <span className="font-mono">RN-7F3A9C</span>.
+          code - it looks like <span className="font-mono">RN-7F3A9C</span>.
         </p>
       ) : null}
 
@@ -192,7 +192,7 @@ export default async function RefundPage({
               voidHint={
                 target.alreadyCancelled
                   ? "This ticket is already cancelled, so there's nothing left to cancel. The refund can still be written."
-                  : "They've already checked in, so the ticket can't be cancelled — they were in the room. The refund can still be written."
+                  : "They've already checked in, so the ticket can't be cancelled - they were in the room. The refund can still be written."
               }
             />
           )}

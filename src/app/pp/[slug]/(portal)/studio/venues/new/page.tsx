@@ -52,7 +52,7 @@ export default async function NewPartnerVenuePage({
           </label>
           <input
             name="name"
-            placeholder="The Vault — Main Stage"
+            placeholder="The Vault - Main Stage"
             className="w-full rounded-brand border border-line bg-bg px-3 py-2 text-sm outline-none transition-colors focus:border-accent"
           />
           <p className="mt-1 text-xs text-faint">

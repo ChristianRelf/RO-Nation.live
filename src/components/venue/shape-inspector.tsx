@@ -108,7 +108,7 @@ export function ShapeInspector({
             onChange={(e) => onChange({ tierId: e.target.value || null } as Partial<Shape>)}
             className={inputClass}
           >
-            <option value="">— no tier —</option>
+            <option value="">- no tier -</option>
             {tiers.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}

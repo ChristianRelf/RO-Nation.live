@@ -71,7 +71,7 @@ export default async function BooksPage({
     <AccountingShell user={user} openRequests={openRequests}>
       <AdminHeader
         title="Books"
-        subtitle={`Every document RNL issued in ${year}, by the month it is dated to. Drafts and voided documents are not here — a draft is not a transaction, and a void is a cancelled one.`}
+        subtitle={`Every document RNL issued in ${year}, by the month it is dated to. Drafts and voided documents are not here - a draft is not a transaction, and a void is a cancelled one.`}
       />
 
       {/* The year picker. Plain links, so a year is a URL you can keep and send. */}
@@ -127,7 +127,7 @@ export default async function BooksPage({
         {ledger.totals.count === 0 ? (
           <div className="card p-6 text-sm text-muted">
             Nothing was issued in {year}. Documents appear here the moment they are issued
-            — a draft is not on the books.
+            - a draft is not on the books.
           </div>
         ) : (
           <div className="card overflow-hidden">
@@ -175,7 +175,7 @@ export default async function BooksPage({
                       <Money value={m.received} />
                       <Money value={m.paidOut} tone="out" />
                       <td className="px-5 py-3 text-right tabular-nums text-muted">
-                        {m.count || "—"}
+                        {m.count || "-"}
                       </td>
                     </tr>
                   ))}
@@ -200,7 +200,7 @@ export default async function BooksPage({
         )}
 
         <p className="mt-4 text-xs leading-relaxed text-faint">
-          Figures are bucketed by the date on the document, not the date it was issued — a
+          Figures are bucketed by the date on the document, not the date it was issued - a
           slip written in January for December&apos;s work sits in December, which is the
           same month its number came out of. Every figure is in Robux.
         </p>
@@ -217,7 +217,7 @@ function Money({ value, tone }: { value: number; tone?: "muted" | "out" }) {
         !value ? "text-faint" : tone === "out" ? "text-amber-300" : ""
       }`}
     >
-      {value ? formatRobux(value) : "—"}
+      {value ? formatRobux(value) : "-"}
     </td>
   );
 }

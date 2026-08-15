@@ -62,7 +62,7 @@ export default async function PayOverviewPage() {
       </h1>
       <p className="mt-4 max-w-xl text-muted">
         Everything RO. Nation LIVE has raised with you, what it adds up to, and the two
-        ways to start something — telling us about a payment you are sending, or asking
+        ways to start something - telling us about a payment you are sending, or asking
         us for one. Every figure is in Robux.
       </p>
 
@@ -98,7 +98,7 @@ export default async function PayOverviewPage() {
         <Door
           href="/request-payment"
           title="Request a payment"
-          blurb="Ask us for money — a payout you are expecting, work delivered, an expense."
+          blurb="Ask us for money - a payout you are expecting, work delivered, an expense."
         />
       </section>
 
@@ -150,7 +150,7 @@ export default async function PayOverviewPage() {
                     </span>
                     <span className="block truncate text-xs text-muted">{d.title}</span>
                     <span className="block font-mono text-[11px] text-faint">
-                      {d.number ?? "—"} · {formatDate(d.documentDate)}
+                      {d.number ?? "-"} · {formatDate(d.documentDate)}
                     </span>
                   </span>
 

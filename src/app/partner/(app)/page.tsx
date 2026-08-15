@@ -229,7 +229,7 @@ function RecentDocuments({
                 {kindConfig(d.kind).heading}
               </span>
               <span className="ml-2 font-mono text-[11px] text-faint">
-                {d.number ?? "—"}
+                {d.number ?? "-"}
               </span>
               <span className="mt-0.5 block truncate text-xs text-muted">{d.title}</span>
             </span>

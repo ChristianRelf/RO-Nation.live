@@ -111,7 +111,7 @@ function ShowRowCells({ show: s }: { show: ShowRow }) {
         {s.attendanceRate !== null ? (
           <span className="font-semibold text-fg">{Math.round(s.attendanceRate * 100)}%</span>
         ) : (
-          <span className="text-faint">—</span>
+          <span className="text-faint">-</span>
         )}
       </td>
       <td className="px-5 py-4 text-right tabular-nums">{groupCount(s.watching)}</td>

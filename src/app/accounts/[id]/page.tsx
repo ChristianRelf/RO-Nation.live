@@ -34,22 +34,22 @@ const ERRORS: Record<string, string> = {
   notdraft: "That isn't a draft.",
   notissued: "That document hasn't been issued, so it has no share link.",
   noteditable:
-    "A ticket refund can't be edited — its amount is capped by the ticket it was written from. Discard it and write a new one.",
+    "A ticket refund can't be edited - its amount is capped by the ticket it was written from. Discard it and write a new one.",
   // The refund issued; only the ticket cancellation failed. Said loudly, because the
   // holder now has money coming AND a ticket that still scans at the door.
   voidfailed:
-    "The refund was issued, but the ticket could NOT be cancelled — cancel it by hand from Tickets.",
+    "The refund was issued, but the ticket could NOT be cancelled - cancel it by hand from Tickets.",
 };
 
 const OK: Record<string, string> = {
   issued: "Issued. It's numbered, frozen, and the share link below is live.",
   issuedvoided:
-    "Issued, and the ticket is cancelled — its seat is back in the room. Now pay the Robux out.",
+    "Issued, and the ticket is cancelled - its seat is back in the room. Now pay the Robux out.",
   paid: "Marked as paid.",
   voided: "Voided. It stays on the record, marked cancelled.",
   rotated: "New share link minted. The old one is dead.",
   released:
-    "Released. The payee's request is answered and this document is marked paid — make sure the Robux has actually gone out.",
+    "Released. The payee's request is answered and this document is marked paid - make sure the Robux has actually gone out.",
 };
 
 // The company's view of one document: the printable sheet, plus everything only the
@@ -124,8 +124,8 @@ export default async function DocumentPage({
                   // issuing it cancels somebody's ticket. That belongs in the sentence
                   // you read before clicking, not only in the document you read after.
                   doc.kind === DocumentKind.TICKET_REFUND && doc.voidsTicket
-                    ? "Issue this refund? It will be numbered, every figure frozen, AND the ticket will be cancelled — its holder loses their place. You still have to pay the Robux out by hand."
-                    : `Issue this ${cfg.label.toLowerCase()}? It will be numbered and every figure frozen — after this it can only be voided or credited.`
+                    ? "Issue this refund? It will be numbered, every figure frozen, AND the ticket will be cancelled - its holder loses their place. You still have to pay the Robux out by hand."
+                    : `Issue this ${cfg.label.toLowerCase()}? It will be numbered and every figure frozen - after this it can only be voided or credited.`
                 }
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-80"
               >
@@ -180,7 +180,7 @@ export default async function DocumentPage({
               </p>
               <p className="mt-1 text-xs leading-relaxed text-amber-800">
                 Asked <LocalTime value={claim.createdAt} mode="datetime" />. Marking this
-                paid answers their request — so only do it once the Robux has actually gone
+                paid answers their request - so only do it once the Robux has actually gone
                 out by group payout. You can also answer it from the requests queue.
               </p>
               <a
@@ -212,7 +212,7 @@ export default async function DocumentPage({
               </div>
               <ShareLink url={shareUrl} />
               <p className="mt-2 text-xs text-neutral-500">
-                Anyone with this link can read the document — send it to{" "}
+                Anyone with this link can read the document - send it to{" "}
                 {doc.counterpartyName}, and nobody else. Rotating replaces it and kills
                 the old one.
               </p>

@@ -13,9 +13,11 @@ import { requireCompanyUser, type CompanyUser } from "@/lib/company";
 import { requirePayUser, requirePayUserPreTerms } from "@/lib/pay";
 import { prisma } from "@/lib/db";
 import {
+  PAY_HOME,
   PAY_TERMS_CONFIRMATIONS,
   PAY_TERMS_VERSION,
   payTermsSnapshot,
+  safeReturnTo,
 } from "@/lib/accounting/pay-terms";
 import {
   AuditAction,
@@ -107,7 +109,7 @@ export async function submitPaymentRequest(
   // heading, and it would pass every other check on this page.
   const amountRobux = parseRobux(s(formData, "amount"));
   if (amountRobux === null || amountRobux <= 0) {
-    return { error: "Give an amount in Robux — a whole number, more than zero." };
+    return { error: "Give an amount in Robux - a whole number, more than zero." };
   }
 
   const reference = s(formData, "reference");
@@ -225,10 +227,20 @@ export async function acceptPayTerms(formData: FormData) {
   // Both boxes, or nothing. The form disables its own button until they are ticked, so
   // reaching here unticked means the disable was bypassed - and an acceptance recorded
   // without the assertions is precisely the record that would not stand up.
+  // Reduced to something safe BEFORE it is used for anything, including the refusal
+  // redirect below - a hidden field is a field somebody can edit, and this one ends up in
+  // a Location header. safeReturnTo carries the argument; the short version is that an
+  // unchecked returnTo on the money host is an open redirect, which is precisely the shape
+  // of the scam these terms warn about.
+  const returnTo = safeReturnTo(s(formData, "returnTo"));
+
   const confirmed = PAY_TERMS_CONFIRMATIONS.every(
     (c) => s(formData, c.name) === "on",
   );
-  if (!confirmed) redirect("/terms?error=unconfirmed");
+  if (!confirmed) {
+    const back = returnTo === PAY_HOME ? "" : `&returnTo=${encodeURIComponent(returnTo)}`;
+    redirect(`/terms?error=unconfirmed${back}`);
+  }
 
   await prisma.partnerAccountMember.update({
     where: { id: user.membership.id },
@@ -239,7 +251,8 @@ export async function acceptPayTerms(formData: FormData) {
     },
   });
 
-  redirect("/");
+  // Where they were going before the gate interrupted them, or the overview.
+  redirect(returnTo);
 }
 
 /** Take back a request nobody has answered yet. Scoped to the caller's own entity. */

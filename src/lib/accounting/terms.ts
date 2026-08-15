@@ -136,7 +136,7 @@ const INVOICE_TERMS: PaymentTerms = {
   clauses: [
     `This document states an amount payable **to ${site.name}**, in Robux (R$), and identifies the goods, services, or other supply to which the amount relates. It is a request for payment and a record of the obligation.`,
     `Payment is due by the date shown on this document, or on receipt where no date is stated. The amount remains outstanding until the Robux is received by ${site.name}.`,
-    `Payment is made in **Robux (R$)** through Roblox — a group payout or a direct transfer. **No payment is taken on this document**, and no ${site.name} website can take Robux from you. Please quote the document number shown above so the payment can be matched.`,
+    `Payment is made in **Robux (R$)** through Roblox - a group payout or a direct transfer. **No payment is taken on this document**, and no ${site.name} website can take Robux from you. Please quote the document number shown above so the payment can be matched.`,
     `Once the Robux has been sent, tell us at **${PAY_DOMAIN}**. That does not move any Robux either; it records that a payment is coming, so it can be matched against this document and receipted back to you.`,
     `**Only Robux actually received constitutes payment.** Notifying us of a payment, on this or any other channel, does not settle this document. It is settled when the Robux arrives and a numbered receipt is issued against it.`,
     ...commonClauses("document"),

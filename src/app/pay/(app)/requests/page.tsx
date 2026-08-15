@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your requests" };
 
 const OK: Record<string, string> = {
-  submitted: "Sent. It's with us now — you'll see the answer here.",
+  submitted: "Sent. It's with us now - you'll see the answer here.",
   withdrawn: "Withdrawn. We won't action it.",
 };
 
@@ -51,7 +51,7 @@ export default async function PayRequestsPage({
       <h1 className="display mt-4 text-4xl leading-none sm:text-5xl">Your requests</h1>
       <p className="mt-4 max-w-xl text-muted">
         Payments you have told us about, and payments you have asked us for. Nothing here
-        is a record of money moving — that is what your{" "}
+        is a record of money moving - that is what your{" "}
         <Link href="/statements" className="link-underline text-accent">
           statement
         </Link>{" "}

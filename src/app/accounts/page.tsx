@@ -78,7 +78,7 @@ export default async function CompanyAccountingPage({
     <AccountingShell user={user} openRequests={openRequests}>
       <AdminHeader
         title="Accounting"
-        subtitle="Documents for the money the ticket ledger doesn't cover — billing a sponsor, paying a contractor, receipting and correcting either. Every figure is in Robux."
+        subtitle="Documents for the money the ticket ledger doesn't cover - billing a sponsor, paying a contractor, receipting and correcting either. Every figure is in Robux."
       />
 
       {/* Requests come off pay.ronation.live, where a client asked for something. Called
@@ -290,7 +290,7 @@ export default async function CompanyAccountingPage({
           <div className="card p-6 text-sm text-muted">
             {kind || status
               ? "Nothing matches that filter."
-              : "No documents yet. Start one above — it stays a private draft until you issue it."}
+              : "No documents yet. Start one above - it stays a private draft until you issue it."}
           </div>
         )}
       </section>

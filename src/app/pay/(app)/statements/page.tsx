@@ -47,11 +47,11 @@ export const metadata: Metadata = { title: "Statements" };
 const ERRORS: Record<string, string> = {
   nodoc: "That document isn't on your statement.",
   notreleasable:
-    "There are no funds to release on that one — it isn't money owed to you.",
+    "There are no funds to release on that one - it isn't money owed to you.",
   alreadypaid: "That has already been paid out.",
   notopen: "That document isn't open, so there's nothing to release.",
   alreadyrequested:
-    "You've already asked for the funds on that one. It's with us — see Your requests.",
+    "You've already asked for the funds on that one. It's with us - see Your requests.",
 };
 
 const OK: Record<string, string> = {
@@ -93,7 +93,7 @@ export default async function StatementsPage({
       <Kicker>Statements</Kicker>
       <h1 className="display mt-4 text-4xl leading-none sm:text-5xl">Your documents</h1>
       <p className="mt-4 max-w-xl text-muted">
-        Every document RO. Nation LIVE has raised with {user.account.name} — payouts,
+        Every document RO. Nation LIVE has raised with {user.account.name} - payouts,
         billables, receipts and credit notes. Open one to read or print it.
       </p>
 
@@ -120,7 +120,7 @@ export default async function StatementsPage({
           </p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Across {claimable.length} document{claimable.length === 1 ? "" : "s"}. Issuing
-            one doesn&apos;t send the Robux — the amount is held until you ask for it. Use
+            one doesn&apos;t send the Robux - the amount is held until you ask for it. Use
             the <span className="font-semibold text-fg">Request funds</span> button on the
             row, and we&apos;ll pay it out and mark the document paid.
           </p>
@@ -236,7 +236,7 @@ function Row({
           ) : null}
         </span>
         <span className="block font-mono text-[11px] text-faint">
-          {doc.number ?? "—"}
+          {doc.number ?? "-"}
         </span>
 
         {/* The folded columns, carried inline on a phone rather than dropped. A status
@@ -286,7 +286,7 @@ function Row({
                   See requestFundsAction. */}
               <input type="hidden" name="id" value={doc.id} />
               <ConfirmButton
-                message={`Request the ${formatRobux(doc.total)} held on this document? It goes to RO. Nation LIVE to action — the Robux is sent by group payout, and the document is marked paid once it has been.`}
+                message={`Request the ${formatRobux(doc.total)} held on this document? It goes to RO. Nation LIVE to action - the Robux is sent by group payout, and the document is marked paid once it has been.`}
                 className="whitespace-nowrap rounded-lg border border-accent/40 bg-accent-soft px-2.5 py-1 text-[11px] font-semibold text-accent transition-colors hover:border-accent"
               >
                 Request funds

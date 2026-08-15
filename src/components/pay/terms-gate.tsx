@@ -60,6 +60,7 @@ function renderBold(text: string): ReactNode {
 export function PayTermsGate({
   accountName,
   displayName,
+  returnTo,
   /** Set when the server refused an unticked submission - see acceptPayTerms. */
   error,
   /** True when they HAVE accepted before, on an older version. A different sentence. */
@@ -67,6 +68,12 @@ export function PayTermsGate({
 }: {
   accountName: string;
   displayName: string;
+  /**
+   * Where to land after accepting - already reduced to something safe by the page.
+   * Posted back as a hidden field and validated AGAIN on the server, because a hidden
+   * field is a field somebody can edit.
+   */
+  returnTo: string;
   error?: boolean;
   reaccepting?: boolean;
 }) {
@@ -162,6 +169,8 @@ export function PayTermsGate({
             onSubmit={() => setSending(true)}
             className="mt-6 border-t border-line pt-6"
           >
+            <input type="hidden" name="returnTo" value={returnTo} />
+
             <div className="space-y-3">
               {PAY_TERMS_CONFIRMATIONS.map((c) => (
                 <label
@@ -194,7 +203,7 @@ export function PayTermsGate({
                   here - and a person who does not accept must be able to leave without
                   the only route being the back button. */}
               <a href="/api/auth/logout?returnTo=/" className="btn">
-                Not now — sign out
+                Not now - sign out
               </a>
             </div>
 

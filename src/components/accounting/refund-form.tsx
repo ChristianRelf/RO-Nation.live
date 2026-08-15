@@ -79,7 +79,7 @@ export function RefundForm({
             }`}
           />
           <p className="mt-1 text-xs text-muted">
-            At most {refundable.toLocaleString("en-GB")} R$ — what they paid, less
+            At most {refundable.toLocaleString("en-GB")} R$ - what they paid, less
             anything already refunded.
           </p>
           {amount && !valid ? (
@@ -160,7 +160,7 @@ function Submit({
     <ConfirmButton
       // The amount and the person, said back before anything is written. A confirm
       // reading "are you sure?" is a confirm people click through.
-      message={`Write a refund of ${amount.toLocaleString("en-GB")} R$ to ${holderName}? This creates a draft — it isn't issued until you issue it.`}
+      message={`Write a refund of ${amount.toLocaleString("en-GB")} R$ to ${holderName}? This creates a draft - it isn't issued until you issue it.`}
       disabled={disabled || pending}
       className="btn btn-accent disabled:opacity-50"
     >

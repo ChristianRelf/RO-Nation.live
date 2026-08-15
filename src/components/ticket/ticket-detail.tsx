@@ -451,7 +451,7 @@ export function TicketDetail({
                       <span className="font-semibold text-fg">
                         Your {ordinalLabel(milestone)} show
                       </span>
-                      <span className="text-muted"> — and counting.</span>
+                      <span className="text-muted"> - and counting.</span>
                     </>
                   )}
                 </p>

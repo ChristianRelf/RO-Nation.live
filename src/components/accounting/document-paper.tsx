@@ -93,12 +93,12 @@ export function DocumentPaper({
             single most dangerous thing this component could do. */}
         {isVoid ? (
           <p className="mb-6 border-2 border-red-700 px-4 py-3 text-center text-sm font-extrabold uppercase tracking-widest text-red-700">
-            Void — cancelled{doc.voidReason ? `: ${doc.voidReason}` : ""}
+            Void - cancelled{doc.voidReason ? `: ${doc.voidReason}` : ""}
           </p>
         ) : null}
         {isDraft ? (
           <p className="mb-6 border-2 border-dashed border-neutral-400 px-4 py-3 text-center text-sm font-extrabold uppercase tracking-widest text-neutral-500">
-            Draft — not issued
+            Draft - not issued
           </p>
         ) : null}
 

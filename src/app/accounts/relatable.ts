@@ -17,8 +17,8 @@ export function relatableOptions(rows: AccountingDocument[]): RelatableDoc[] {
   return rows.map((r) => ({
     id: r.id,
     number: r.number ?? "",
-    label: `${r.number ?? "Draft"} — ${kindConfig(r.kind).label} — ${
+    label: `${r.number ?? "Draft"} - ${kindConfig(r.kind).label} - ${
       r.counterpartyName
-    } — ${r.title}`,
+    } - ${r.title}`,
   }));
 }

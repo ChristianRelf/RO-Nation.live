@@ -34,7 +34,7 @@ In this Agreement:
 - **"Roblox Tax"** means the platform fee Roblox deducts on a sale, being **30%**
   of the Sale Price at the date of this Agreement.
 - **"Post-Tax Profit"** means the amount RNL receives for a sale after deduction
-  of Roblox Tax — that is, **70%** of the Sale Price at the current rate of Roblox
+  of Roblox Tax - that is, **70%** of the Sale Price at the current rate of Roblox
   Tax.
 - **"RNL Share"** means **10% of the Post-Tax Profit**.
 - **"Partner Share"** means the remaining **90% of the Post-Tax Profit**.
@@ -56,9 +56,9 @@ it (subject to the separate Asset Usage Agreement).
 4.1. On each sale, Roblox deducts the Roblox Tax. What remains is the Post-Tax
 Profit.
 
-4.2. RNL retains the RNL Share — **10% of the Post-Tax Profit**.
+4.2. RNL retains the RNL Share - **10% of the Post-Tax Profit**.
 
-4.3. The Partner receives the Partner Share — **90% of the Post-Tax Profit**.
+4.3. The Partner receives the Partner Share - **90% of the Post-Tax Profit**.
 
 4.4. **Worked example.** On a sale of R$100:
 
@@ -81,7 +81,7 @@ is unchanged.
 5.2. The Partner is paid the Partner Share **in full**, at the Partner's choice of
 either:
 
-- **on request** — at any time; or
+- **on request** - at any time; or
 - **automatically each month**.
 
 5.3. Payment is made in Robux (R$) to the account the Partner nominates, or by

@@ -149,7 +149,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     // left the reader to assume the Robux was on its way. It is not. It is HELD until they
     // ask for it, and the sentence that matters is the one telling them they have to.
     smallPrint: [
-      "This slip confirms the amount above and what it covers. It is not a receipt, and issuing it does not send the Robux — the amount is held until you request it.",
+      "This slip confirms the amount above and what it covers. It is not a receipt, and issuing it does not send the Robux - the amount is held until you request it.",
       "Sign in at pay.ronation.live and request the funds on this document. It is released by Roblox group payout once somebody has actioned it, and this slip is marked paid at that point.",
     ],
     hasDueDate: true,
@@ -199,7 +199,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     hint: "Correct or refund a document already issued. An issued document is never edited - this is how it is put right.",
     smallPrint: [
       "This credit note reduces the amount owed on the document referenced above by the total shown, in Robux (R$).",
-      "If you have already settled that document, the credit can be paid back out instead — request the funds on this note at pay.ronation.live. Issuing it does not send the Robux; the amount is held until you ask.",
+      "If you have already settled that document, the credit can be paid back out instead - request the funds on this note at pay.ronation.live. Issuing it does not send the Robux; the amount is held until you ask.",
     ],
     hasDueDate: false,
     // A credit ordinarily just cancels what is owed, and needs no payout at all. But when
@@ -231,7 +231,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     // document authorises and records a payout; a human still has to send the Robux.
     smallPrint: [
       "Refund authorised by RO. Nation LIVE in Robux (R$). The original purchase was made through Roblox and cannot be reversed there; this amount is paid separately, by group payout.",
-      "Tickets are ordinarily non-refundable — this is an exceptional authorisation, and it covers only the ticket named above. You do not need to sign in anywhere to receive it.",
+      "Tickets are ordinarily non-refundable - this is an exceptional authorisation, and it covers only the ticket named above. You do not need to sign in anywhere to receive it.",
     ],
     hasDueDate: false,
     // Outbound, and still not releasable - see the note on the field. Its payee is a ticket

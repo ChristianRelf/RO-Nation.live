@@ -68,7 +68,7 @@ export default async function CompanyPartnerInvoicesPage({
   return (
     <CompanyShell user={user}>
       <AdminHeader
-        title={`${partner.name} — invoices`}
+        title={`${partner.name} - invoices`}
         subtitle="Generate a payout statement from this partner's ledger, then send it. Figures are frozen the moment you generate; sending makes it readable in their portal."
       />
 

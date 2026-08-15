@@ -167,7 +167,7 @@ export function DocumentBuilder({
               }}
               className={inputClass}
             >
-              <option value="">— None (free text) —</option>
+              <option value="">- None (free text) -</option>
               {partnerAccounts.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -283,7 +283,7 @@ export function DocumentBuilder({
               defaultValue={initial?.relatedId ?? ""}
               className={inputClass}
             >
-              <option value="">Nothing — this stands alone</option>
+              <option value="">Nothing - this stands alone</option>
               {relatable.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.label}
@@ -337,7 +337,7 @@ export function DocumentBuilder({
                 className={`${inputClass} text-right tabular-nums`}
               />
               <p className="self-center text-right text-sm tabular-nums text-muted">
-                {totals.amounts[i] === null ? "—" : formatRobux(totals.amounts[i]!)}
+                {totals.amounts[i] === null ? "-" : formatRobux(totals.amounts[i]!)}
               </p>
               <button
                 type="button"

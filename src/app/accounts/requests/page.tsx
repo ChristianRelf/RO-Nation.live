@@ -27,11 +27,11 @@ const ERRORS: Record<string, string> = {
   already: "Somebody answered that one first. The queue below is up to date.",
   missing: "That request no longer exists.",
   noreason:
-    "Declining needs a reason — the requester reads it, so it can't be left blank.",
+    "Declining needs a reason - the requester reads it, so it can't be left blank.",
   // The accept went through; the document did not move. Said loudly, because the request
   // now reads as accepted while the money it settles is still showing as owed.
   notsettled:
-    "The request was accepted, but the document did NOT move to paid — it had already been paid or voided. Check it and settle it by hand.",
+    "The request was accepted, but the document did NOT move to paid - it had already been paid or voided. Check it and settle it by hand.",
 };
 
 const OK: Record<string, string> = {
@@ -80,7 +80,7 @@ export default async function RequestsPage({
     <AccountingShell user={user} openRequests={openRequests}>
       <AdminHeader
         title="Payment requests"
-        subtitle="What clients have asked for on pay.ronation.live — money coming in, money they want paid out, and claims on funds already held on an issued document."
+        subtitle="What clients have asked for on pay.ronation.live - money coming in, money they want paid out, and claims on funds already held on an issued document."
       />
 
       {searchParams.error ? (
@@ -115,7 +115,7 @@ export default async function RequestsPage({
         <div className="card p-6 text-sm text-muted">
           {status
             ? "Nothing matches that filter."
-            : "No requests yet. They arrive here when a client submits one on pay.ronation.live — which needs a partner account granted from Partner accounts."}
+            : "No requests yet. They arrive here when a client submits one on pay.ronation.live - which needs a partner account granted from Partner accounts."}
           {status ? null : (
             <>
               {" "}
@@ -182,7 +182,7 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
 
       {isRelease ? (
         <p className="mt-4 border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-muted">
-          This is a claim on funds already held —{" "}
+          This is a claim on funds already held -{" "}
           <span className="text-fg">the figure is RNL&apos;s own, frozen at issue</span>,
           not something they typed. Accepting it marks that document{" "}
           <span className="text-fg">paid</span> and raises nothing new. Only accept once
@@ -261,9 +261,9 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
             <ConfirmButton
               message={
                 isRelease
-                  ? "Release these funds? This marks the document PAID — it does not send anything. Only do this once the Robux has actually gone out by group payout."
+                  ? "Release these funds? This marks the document PAID - it does not send anything. Only do this once the Robux has actually gone out by group payout."
                   : inbound
-                    ? "Accept this? A RECEIPT draft will be raised from it and opened for you to check. Nothing is numbered until you issue it — and only accept once the Robux has actually arrived."
+                    ? "Accept this? A RECEIPT draft will be raised from it and opened for you to check. Nothing is numbered until you issue it - and only accept once the Robux has actually arrived."
                     : "Accept this? A PAYROLL SLIP draft will be raised from it and opened for you to check. Nothing is numbered until you issue it, and the Robux still has to be paid out by hand."
               }
               className="btn btn-accent"

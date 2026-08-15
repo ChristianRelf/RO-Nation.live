@@ -53,7 +53,7 @@ const REQUEST_CONFIG: Record<PaymentRequestKind, RequestKindConfig> = {
     // money is a form people submit and then sit waiting on, and the misunderstanding
     // only surfaces a fortnight later when nobody has been paid.
     formBlurb:
-      "This does not move any Robux. Robux is sent through Roblox — a group payout or a direct transfer — and no form here can do that for you. What this does is tell RO. Nation LIVE the money is coming, so it can be matched against what you owe and receipted back to you.",
+      "This does not move any Robux. Robux is sent through Roblox - a group payout or a direct transfer - and no form here can do that for you. What this does is tell RO. Nation LIVE the money is coming, so it can be matched against what you owe and receipted back to you.",
     amountLabel: "How much are you sending?",
     referenceLabel: "What is it for?",
     externalRefLabel: "Your reference",
@@ -67,7 +67,7 @@ const REQUEST_CONFIG: Record<PaymentRequestKind, RequestKindConfig> = {
     direction: "outbound",
     formTitle: "Request a payment",
     formBlurb:
-      "Ask RO. Nation LIVE for money — a payout you are expecting, work delivered, an expense. Somebody reads every one of these. If it is agreed you get a numbered payroll slip on your statement, and the Robux follows by group payout.",
+      "Ask RO. Nation LIVE for money - a payout you are expecting, work delivered, an expense. Somebody reads every one of these. If it is agreed you get a numbered payroll slip on your statement, and the Robux follows by group payout.",
     amountLabel: "How much are you asking for?",
     referenceLabel: "What is it for?",
     externalRefLabel: "Your reference",
@@ -156,7 +156,7 @@ export const REQUEST_STATUS_META: Record<
   [PaymentRequestStatus.OPEN]: {
     label: "Open",
     tone: "warning",
-    hint: "Submitted. Nobody has answered it yet — you can still withdraw it.",
+    hint: "Submitted. Nobody has answered it yet - you can still withdraw it.",
   },
   [PaymentRequestStatus.ACCEPTED]: {
     label: "Accepted",

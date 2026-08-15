@@ -35,7 +35,7 @@ export default async function EditPartnerVenuePage({
         </p>
         <h1 className="display mt-3 text-5xl">{map.name}</h1>
         <p className="mt-2 text-sm text-muted">
-          Draw the room. A template has no tiers — you&apos;ll assign those on each
+          Draw the room. A template has no tiers - you&apos;ll assign those on each
           event&apos;s own copy.
         </p>
       </div>

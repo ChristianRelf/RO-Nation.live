@@ -20,7 +20,7 @@ export function VenuePresetPicker() {
       </legend>
       <p className="mb-3 text-xs text-faint">
         Pick a room to start with, then draw the stage in where it goes. The seating is a
-        starting point — drag, rename and re-tier anything once you&apos;re in.
+        starting point - drag, rename and re-tier anything once you&apos;re in.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
