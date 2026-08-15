@@ -9,6 +9,7 @@ import { ShareLink } from "@/components/accounting/share-link";
 import { ConfirmButton } from "@/components/confirm-button";
 import { LocalTime } from "@/components/local-time";
 import { getDocument } from "@/lib/accounting/documents";
+import { openReleaseFor } from "@/lib/accounting/requests";
 import { kindConfig, isHandAuthored } from "@/lib/accounting/kinds";
 import {
   creditNoteFromAction,
@@ -47,6 +48,8 @@ const OK: Record<string, string> = {
   paid: "Marked as paid.",
   voided: "Voided. It stays on the record, marked cancelled.",
   rotated: "New share link minted. The old one is dead.",
+  released:
+    "Released. The payee's request is answered and this document is marked paid — make sure the Robux has actually gone out.",
 };
 
 // The company's view of one document: the printable sheet, plus everything only the
@@ -86,6 +89,13 @@ export default async function DocumentPage({
   // whatever host happened to render it. documentUrl() is where that decision lives, and
   // the partner's own statement on pay.ronation.live builds the identical string from it.
   const shareUrl = documentUrl(doc);
+
+  // Has the payee asked for these funds? Read here so "Mark paid" is never pressed blind:
+  // issuing an outbound document HOLDS the money (see KindConfig.releasable), and the
+  // person who wrote it needs to see that somebody is waiting on it. Marking it paid also
+  // answers the claim - closeReleasesFor, in markPaidAction - so this is the notice that
+  // makes that side effect legible before it happens rather than after.
+  const claim = cfg.releasable ? await openReleaseFor(doc.id) : null;
 
   return (
     <DocumentPaper
@@ -160,6 +170,26 @@ export default async function DocumentPage({
             <p className="border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
               {OK[searchParams.ok] ?? "Done."}
             </p>
+          ) : null}
+
+          {/* ---- Somebody is waiting on this ----------------------------- */}
+          {claim ? (
+            <div className="rounded-lg border border-amber-400 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-900">
+                {claim.submittedByName} has requested these funds
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                Asked <LocalTime value={claim.createdAt} mode="datetime" />. Marking this
+                paid answers their request — so only do it once the Robux has actually gone
+                out by group payout. You can also answer it from the requests queue.
+              </p>
+              <a
+                href="/requests"
+                className="mt-2 inline-block text-xs font-semibold text-amber-900 underline"
+              >
+                Open the requests queue
+              </a>
+            </div>
           ) : null}
 
           {/* ---- The share link ------------------------------------------ */}

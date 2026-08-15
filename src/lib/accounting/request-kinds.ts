@@ -74,16 +74,62 @@ const REQUEST_CONFIG: Record<PaymentRequestKind, RequestKindConfig> = {
     dateLabel: "When do you need it by?",
     submitLabel: "Send this request",
   },
+  [PaymentRequestKind.RELEASE]: {
+    kind: PaymentRequestKind.RELEASE,
+    label: "Funds requested",
+    staffLabel: "Release of held funds",
+    direction: "outbound",
+    // The form fields below are never rendered - RELEASE is not in REQUEST_KINDS and has no
+    // form. They are filled in rather than left blank because RequestKindConfig is a total
+    // Record: a partial one would mean every read site needs a null check for a case that
+    // cannot happen, and an empty string rendered by accident is a worse bug than a
+    // sensible string rendered by accident.
+    formTitle: "Request the funds on this document",
+    formBlurb:
+      "This asks RO. Nation LIVE to release the amount already agreed on this document. The figure comes from the document itself and cannot be changed here.",
+    amountLabel: "Amount",
+    referenceLabel: "Document",
+    externalRefLabel: "Your reference",
+    dateLabel: "When do you need it by?",
+    submitLabel: "Request these funds",
+  },
 };
 
 export function requestKindConfig(kind: PaymentRequestKind): RequestKindConfig {
   return REQUEST_CONFIG[kind];
 }
 
+/**
+ * The kinds a person FILLS IN A FORM for, in the order the pay area offers them.
+ *
+ * RELEASE is deliberately absent. Its amount comes from the document it is raised against,
+ * not from a text box, so it has its own guarded route (requestFundsAction) - listing it
+ * here would offer a way to claim any figure against any document, which is precisely the
+ * ceiling the document was frozen to provide.
+ *
+ * This mirrors DOCUMENT_KINDS in kinds.ts, which excludes TICKET_REFUND for the identical
+ * reason. If you are adding a kind, the question to ask is "does a human type the amount?"
+ */
 export const REQUEST_KINDS: RequestKindConfig[] = [
   REQUEST_CONFIG[PaymentRequestKind.PAYMENT],
   REQUEST_CONFIG[PaymentRequestKind.REQUEST],
 ];
+
+/** Every kind, including the ones with their own routes - for filters and labels. */
+export const ALL_REQUEST_KINDS: RequestKindConfig[] = [
+  ...REQUEST_KINDS,
+  REQUEST_CONFIG[PaymentRequestKind.RELEASE],
+];
+
+/**
+ * Is this kind written through one of the two free-form forms?
+ *
+ * The guard behind submitPaymentRequest. A RELEASE reaching that path would be a release
+ * with a typed amount and no document behind it - which is to say, no ceiling at all.
+ */
+export function isFreeFormRequest(kind: PaymentRequestKind): boolean {
+  return kind !== PaymentRequestKind.RELEASE;
+}
 
 /** Resolve a kind from an untrusted string. Null rather than a default - see parseKind. */
 export function parseRequestKind(

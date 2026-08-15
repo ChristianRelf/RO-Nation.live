@@ -95,7 +95,11 @@ export default async function PayRequestsPage({
 function RequestCard({ request: r }: { request: PaymentRequest }) {
   const cfg = requestKindConfig(r.kind);
   const isOpen = r.status === PaymentRequestStatus.OPEN;
-  const outbound = r.kind === PaymentRequestKind.REQUEST;
+  // Off the config, not off a kind comparison. There are now two kinds that mean "money
+  // coming to you" - a free-form REQUEST and a RELEASE against a document - and a
+  // hard-coded `=== REQUEST` silently rendered the second one in the wrong colour, as
+  // money going the other way.
+  const outbound = cfg.direction === "outbound";
 
   return (
     <li className="card p-5">
@@ -152,11 +156,23 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
         <p className="mt-4 text-sm text-muted">
           Agreed.{" "}
           {r.reviewNote ? <span className="text-fg">“{r.reviewNote}” </span> : null}
-          The document for it appears on your{" "}
-          <Link href="/statements" className="link-underline text-accent">
-            statement
-          </Link>{" "}
-          once it has been issued.
+          {r.kind === PaymentRequestKind.RELEASE ? (
+            <>
+              The funds have been released and the document is marked paid on your{" "}
+              <Link href="/statements" className="link-underline text-accent">
+                statement
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              The document for it appears on your{" "}
+              <Link href="/statements" className="link-underline text-accent">
+                statement
+              </Link>{" "}
+              once it has been issued.
+            </>
+          )}
         </p>
       ) : null}
 

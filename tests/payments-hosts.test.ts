@@ -7,7 +7,9 @@ import {
 } from "@/lib/accounting/kinds";
 import { documentPath, documentUrl } from "@/lib/accounting/urls";
 import {
+  ALL_REQUEST_KINDS,
   REQUEST_KINDS,
+  isFreeFormRequest,
   parseRequestKind,
   requestKindConfig,
 } from "@/lib/accounting/request-kinds";
@@ -99,6 +101,43 @@ describe("document URLs", () => {
   });
 });
 
+describe("held funds", () => {
+  it("mark the two kinds that hold money as releasable, and only those", () => {
+    // Issuing one of these does NOT send the Robux - it is held until the payee asks. The
+    // flag is what puts a "Request funds" button on their statement, so getting the set
+    // wrong either strands money (missing) or offers a self-service claim on a document
+    // that owes nobody anything (extra).
+    const releasable = EVERY_KIND_CONFIG.filter((c) => c.releasable).map((c) => c.kind);
+    expect(new Set(releasable)).toEqual(
+      new Set([DocumentKind.CONTRACTOR_PAYMENT, DocumentKind.CREDIT_NOTE]),
+    );
+  });
+
+  it("do NOT make a ticket refund releasable, though it is outbound", () => {
+    // The one case a `direction === "outbound"` shortcut would get wrong. A refund's payee
+    // is a ticket holder: no partner account, no statement, nowhere to press a button - and
+    // the refund desk is meant to stay a deliberate act by a person. See the note on the
+    // field in kinds.ts.
+    const refund = kindConfig(DocumentKind.TICKET_REFUND);
+    expect(refund.direction).toBe("outbound");
+    expect(refund.releasable).toBe(false);
+  });
+
+  it("say on the payslip itself that issuing does not send the Robux", () => {
+    // The contractor reads this on paper, possibly weeks before anybody looks at a screen.
+    // The old wording implied the payout was already on its way.
+    const print = kindConfig(DocumentKind.CONTRACTOR_PAYMENT).smallPrint.toLowerCase();
+    expect(print).toContain("does not send the robux");
+    expect(print).toContain("held until you request it");
+  });
+
+  it("do not leave the payslip's terms claiming it was paid on issue", () => {
+    const terms = kindConfig(DocumentKind.CONTRACTOR_PAYMENT).defaultTerms.toLowerCase();
+    expect(terms).not.toContain("paid on issue");
+    expect(terms).toContain("held until requested");
+  });
+});
+
 describe("payment request kinds", () => {
   it("read differently from each side of the desk", () => {
     // The same row is "Payment to RO. Nation LIVE" to the client and "Incoming payment"
@@ -130,5 +169,23 @@ describe("payment request kinds", () => {
     }
     expect(parseRequestKind("payment")).toBe(PaymentRequestKind.PAYMENT);
     expect(parseRequestKind("REQUEST")).toBe(PaymentRequestKind.REQUEST);
+  });
+
+  it("keep RELEASE out of the two free-form forms", () => {
+    // A RELEASE's amount comes from the document it claims. Offering it in a form would
+    // hand somebody a text box where the frozen figure used to be - the same trap
+    // DOCUMENT_KINDS avoids by excluding TICKET_REFUND.
+    expect(REQUEST_KINDS.map((c) => c.kind)).not.toContain(PaymentRequestKind.RELEASE);
+    expect(ALL_REQUEST_KINDS.map((c) => c.kind)).toContain(PaymentRequestKind.RELEASE);
+    expect(isFreeFormRequest(PaymentRequestKind.RELEASE)).toBe(false);
+    expect(isFreeFormRequest(PaymentRequestKind.PAYMENT)).toBe(true);
+    expect(isFreeFormRequest(PaymentRequestKind.REQUEST)).toBe(true);
+  });
+
+  it("still resolve RELEASE by name, so an existing row can be read back", () => {
+    // parseRequestKind guards the FORM; it must not become the thing that decides a kind
+    // exists at all, or a stored RELEASE row would stop rendering.
+    expect(parseRequestKind("release")).toBe(PaymentRequestKind.RELEASE);
+    expect(requestKindConfig(PaymentRequestKind.RELEASE).direction).toBe("outbound");
   });
 });

@@ -28,6 +28,10 @@ const ERRORS: Record<string, string> = {
   missing: "That request no longer exists.",
   noreason:
     "Declining needs a reason — the requester reads it, so it can't be left blank.",
+  // The accept went through; the document did not move. Said loudly, because the request
+  // now reads as accepted while the money it settles is still showing as owed.
+  notsettled:
+    "The request was accepted, but the document did NOT move to paid — it had already been paid or voided. Check it and settle it by hand.",
 };
 
 const OK: Record<string, string> = {
@@ -76,7 +80,7 @@ export default async function RequestsPage({
     <AccountingShell user={user} openRequests={openRequests}>
       <AdminHeader
         title="Payment requests"
-        subtitle="What clients have asked for on pay.ronation.live — money coming in, and money they want paid out. Nothing here is a record until you accept it and issue the document it becomes."
+        subtitle="What clients have asked for on pay.ronation.live — money coming in, money they want paid out, and claims on funds already held on an issued document."
       />
 
       {searchParams.error ? (
@@ -139,6 +143,11 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
   const cfg = requestKindConfig(r.kind);
   const isOpen = r.status === PaymentRequestStatus.OPEN;
   const inbound = r.kind === PaymentRequestKind.PAYMENT;
+  // A claim on funds already held by a document RNL issued. It behaves differently at
+  // every step - the figure was frozen by RNL rather than typed by them, and accepting it
+  // SETTLES that document instead of raising a new one - so it says so, here, where the
+  // decision is made. See acceptPaymentRequest.
+  const isRelease = r.kind === PaymentRequestKind.RELEASE;
 
   return (
     // The id is the anchor the "reason required" error scrolls back to - see
@@ -170,6 +179,16 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
           {formatRobux(r.amountRobux)}
         </p>
       </div>
+
+      {isRelease ? (
+        <p className="mt-4 border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-muted">
+          This is a claim on funds already held —{" "}
+          <span className="text-fg">the figure is RNL&apos;s own, frozen at issue</span>,
+          not something they typed. Accepting it marks that document{" "}
+          <span className="text-fg">paid</span> and raises nothing new. Only accept once
+          the Robux has actually been sent.
+        </p>
+      ) : null}
 
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
         <Fact label="What for" value={r.reference} />
@@ -213,7 +232,20 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
       {/* The document it became. Rendered from documentId alone rather than a join - the
           draft may since have been discarded, and a dead link is a better answer than a
           page that 500s because a row it assumed would be there is not. */}
-      {r.documentId ? (
+      {/* The document. On a RELEASE this is the one being claimed and is worth opening
+          BEFORE deciding, so it is shown while the request is still open too. On the other
+          kinds documentId only exists after acceptance, which is why the two are separate
+          checks rather than one. */}
+      {isRelease && r.againstDocumentId ? (
+        <p className="mt-3 text-sm">
+          <Link
+            href={`/${r.againstDocumentId}`}
+            className="text-accent hover:underline"
+          >
+            Open the document being claimed →
+          </Link>
+        </p>
+      ) : r.documentId ? (
         <p className="mt-3 text-sm">
           <Link href={`/${r.documentId}`} className="text-accent hover:underline">
             Open the document this became →
@@ -228,13 +260,15 @@ function RequestCard({ request: r }: { request: PaymentRequest }) {
             <input type="hidden" name="id" value={r.id} />
             <ConfirmButton
               message={
-                inbound
-                  ? "Accept this? A RECEIPT draft will be raised from it and opened for you to check. Nothing is numbered until you issue it — and only accept once the Robux has actually arrived."
-                  : "Accept this? A PAYROLL SLIP draft will be raised from it and opened for you to check. Nothing is numbered until you issue it, and the Robux still has to be paid out by hand."
+                isRelease
+                  ? "Release these funds? This marks the document PAID — it does not send anything. Only do this once the Robux has actually gone out by group payout."
+                  : inbound
+                    ? "Accept this? A RECEIPT draft will be raised from it and opened for you to check. Nothing is numbered until you issue it — and only accept once the Robux has actually arrived."
+                    : "Accept this? A PAYROLL SLIP draft will be raised from it and opened for you to check. Nothing is numbered until you issue it, and the Robux still has to be paid out by hand."
               }
               className="btn btn-accent"
             >
-              Accept
+              {isRelease ? "Mark released" : "Accept"}
             </ConfirmButton>
           </form>
 

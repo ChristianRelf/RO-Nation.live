@@ -2651,6 +2651,23 @@ enum PaymentRequestKind {
   /// "Please pay me." A partner asking RNL for money - a payout they are expecting, an
   /// expense, work delivered. RNL's side of it ends in a CONTRACTOR_PAYMENT.
   REQUEST
+  /// "Release the funds on THIS document." Raised against an already-issued payroll slip
+  /// or credit note - see againstDocumentId.
+  ///
+  /// ---- Why this is its own kind and not a REQUEST with a column set ------
+  ///
+  /// Because accepting it does something completely different. Accepting a REQUEST raises
+  /// a NEW draft for staff to check; accepting a RELEASE settles a document that already
+  /// exists, is already numbered, and whose figures were frozen at issue. Keying that
+  /// branch off "is this nullable column set" is the kind of implicit rule somebody
+  /// reasonably refactors away - and the failure mode is a second payroll slip for money
+  /// that was already owed once.
+  ///
+  /// It is deliberately absent from the two free-form pickers on pay.ronation.live for the
+  /// same reason TICKET_REFUND is absent from the document builder: it has its own guarded
+  /// route, where the amount comes from the document rather than from a text box. See
+  /// isFreeFormRequest().
+  RELEASE
 }
 
 enum PaymentRequestStatus {
@@ -2715,7 +2732,23 @@ model PaymentRequest {
   /// The AccountingDocument raised from this, once accepted. A PLAIN column, like every
   /// other cross-reference in this schema: nothing is joined through it, and the request
   /// must survive a draft being discarded.
+  ///
+  /// Set on PAYMENT and REQUEST. On a RELEASE it is set to againstDocumentId at acceptance
+  /// - the document it settled IS the document it produced - so "what did this become?"
+  /// has one answer to read, whichever kind you are looking at.
   documentId String?
+
+  /// The already-issued document whose funds are being claimed. Set on RELEASE, and only
+  /// on RELEASE.
+  ///
+  /// Issuing a payroll slip or a credit note does NOT send any Robux - the amount is held
+  /// until the payee asks for it, which is what this row is. Accepting one marks that
+  /// document PAID; nothing new is raised.
+  ///
+  /// A PLAIN column, not an FK, for the reason every other cross-reference here gives: the
+  /// record of somebody having asked must outlive whatever happens to the thing they asked
+  /// about.
+  againstDocumentId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2724,5 +2757,14 @@ model PaymentRequest {
   @@index([status, createdAt])
   /// The requester's own list on pay.ronation.live - scoped to their entity, always.
   @@index([partnerAccountId, createdAt])
+  /// "Has anybody already asked for the funds on this document?" - read on every row of a
+  /// client's statement, and again as the double-claim guard before a RELEASE is written.
+  ///
+  /// NOT a unique index, deliberately. A document may legitimately accumulate several
+  /// release requests over its life: one withdrawn, one declined, one finally accepted. The
+  /// rule that actually matters is "at most one OPEN at a time", which is a partial unique
+  /// constraint Prisma cannot express - so it is enforced in the write path instead, in
+  /// createReleaseRequest(). See the note there.
+  @@index([againstDocumentId])
   @@map("payment_requests")
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import type { AccountingDocument } from "@prisma/client";
+import type { AccountingDocument, PaymentRequest } from "@prisma/client";
+import { DocumentStatus } from "@prisma/client";
 import { requirePayUser } from "@/lib/pay";
 import {
   PARTNER_SEEN_COOKIE,
@@ -8,11 +9,14 @@ import {
   partnerVisibleAt,
 } from "@/lib/partner-seen";
 import { SeenMarker } from "@/components/seen-marker";
+import { ConfirmButton } from "@/components/confirm-button";
 import {
   listDocumentsForPartnerAccount,
   partnerLedger,
 } from "@/lib/accounting/documents";
 import { kindConfig } from "@/lib/accounting/kinds";
+import { openReleasesByDocument } from "@/lib/accounting/requests";
+import { requestFundsAction } from "@/app/actions/payments";
 import { documentUrl, outboundUrls } from "@/lib/accounting/urls";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { formatDate } from "@/lib/format";
@@ -40,12 +44,49 @@ export const metadata: Metadata = { title: "Statements" };
  * host along with the list, because the cookie is host-only and one set on the portal is
  * simply absent here.
  */
-export default async function StatementsPage() {
+const ERRORS: Record<string, string> = {
+  nodoc: "That document isn't on your statement.",
+  notreleasable:
+    "There are no funds to release on that one — it isn't money owed to you.",
+  alreadypaid: "That has already been paid out.",
+  notopen: "That document isn't open, so there's nothing to release.",
+  alreadyrequested:
+    "You've already asked for the funds on that one. It's with us — see Your requests.",
+};
+
+const OK: Record<string, string> = {
+  requested:
+    "Requested. Somebody will action it, and the document is marked paid once the Robux is sent.",
+};
+
+export default async function StatementsPage({
+  searchParams,
+}: {
+  searchParams: { ok?: string; error?: string };
+}) {
   const user = await requirePayUser();
 
   const docs = await listDocumentsForPartnerAccount(user.account.id);
   const ledger = partnerLedger(docs);
   const lastSeen = parsePartnerSeen(cookies().get(PARTNER_SEEN_COOKIE)?.value);
+
+  // One query for the whole table rather than one per row. Keyed by document id, so a row
+  // can tell "you can ask for this" from "you already have" without a second thought.
+  const openReleases = await openReleasesByDocument(
+    user.account.id,
+    docs.map((d) => d.id),
+  );
+
+  // What is sitting there, issued and unclaimed. Called out above the table because it is
+  // the one thing on this page somebody can act on, and a button buried on row nine of a
+  // table nobody scrolls is a button that does not exist.
+  const claimable = docs.filter(
+    (d) =>
+      kindConfig(d.kind).releasable &&
+      d.status === DocumentStatus.ISSUED &&
+      !openReleases.has(d.id),
+  );
+  const heldTotal = claimable.reduce((n, d) => n + d.total, 0);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -56,7 +97,35 @@ export default async function StatementsPage() {
         billables, receipts and credit notes. Open one to read or print it.
       </p>
 
+      {searchParams.error ? (
+        <p className="mt-8 border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {ERRORS[searchParams.error] ?? "That didn't work."}
+        </p>
+      ) : null}
+      {searchParams.ok ? (
+        <p className="mt-8 border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
+          {OK[searchParams.ok] ?? "Done."}
+        </p>
+      ) : null}
+
       {docs.length ? <PartnerLedgerStrip ledger={ledger} /> : null}
+
+      {/* Issuing a payroll slip or credit note does not send the Robux - it holds it until
+          you ask. That is a genuine change in what these documents mean, so it is stated
+          once, plainly, above the table, rather than left to be inferred from a button. */}
+      {claimable.length ? (
+        <div className="card mt-8 border-accent/25 bg-accent-soft/40 p-5">
+          <p className="text-sm font-semibold text-fg">
+            {formatRobux(heldTotal)} held and ready to request
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Across {claimable.length} document{claimable.length === 1 ? "" : "s"}. Issuing
+            one doesn&apos;t send the Robux — the amount is held until you ask for it. Use
+            the <span className="font-semibold text-fg">Request funds</span> button on the
+            row, and we&apos;ll pay it out and mark the document paid.
+          </p>
+        </div>
+      ) : null}
 
       {docs.length === 0 ? (
         <div className="card mt-10 p-8 text-center">
@@ -101,7 +170,12 @@ export default async function StatementsPage() {
               </thead>
               <tbody>
                 {docs.map((d) => (
-                  <Row key={d.id} doc={d} lastSeen={lastSeen} />
+                  <Row
+                    key={d.id}
+                    doc={d}
+                    lastSeen={lastSeen}
+                    openRelease={openReleases.get(d.id) ?? null}
+                  />
                 ))}
               </tbody>
             </table>
@@ -133,12 +207,22 @@ export default async function StatementsPage() {
 function Row({
   doc,
   lastSeen,
+  openRelease,
 }: {
   doc: AccountingDocument;
   lastSeen: Date | null;
+  /** An unanswered claim on this document's funds, if there is one. */
+  openRelease: PaymentRequest | null;
 }) {
   const href = documentUrl(doc);
   const isNew = lastSeen ? partnerVisibleAt(doc) > lastSeen : false;
+
+  // The three states a releasable document can be in, from the payee's side. Everything
+  // else - an invoice, a receipt, a paid slip - gets no control at all, because there is
+  // nothing to ask for.
+  const releasable = kindConfig(doc.kind).releasable;
+  const canRequest =
+    releasable && doc.status === DocumentStatus.ISSUED && !openRelease;
 
   return (
     <tr className="border-b border-line/60 align-top">
@@ -175,24 +259,54 @@ function Row({
         <DocumentStatusBadge status={doc.status} />
       </td>
       <td className="py-3.5 text-right">
-        {/* A plain <a>, and absolute: documents live on accounts.ronation.live, which is
-            not this host. documentUrl() is the one place that address is decided. */}
-        {href ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            className="link-underline whitespace-nowrap text-accent transition-colors hover:text-fg"
-          >
-            View
-            <span aria-hidden className="ml-1 text-faint">
-              ↗
+        <span className="flex flex-col items-end gap-1.5">
+          {/* A plain <a>, and absolute: documents live on accounts.ronation.live, which is
+              not this host. documentUrl() is the one place that address is decided. */}
+          {href ? (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className="link-underline whitespace-nowrap text-accent transition-colors hover:text-fg"
+            >
+              View
+              <span aria-hidden className="ml-1 text-faint">
+                ↗
+              </span>
+              <span className="sr-only">
+                {kindConfig(doc.kind).heading} {doc.number ?? ""} (opens in a new tab)
+              </span>
+            </a>
+          ) : null}
+
+          {canRequest ? (
+            <form action={requestFundsAction}>
+              {/* The ONLY field. Everything else about this claim - whose it is, how much,
+                  whether it can be claimed - is re-derived from the document server-side.
+                  See requestFundsAction. */}
+              <input type="hidden" name="id" value={doc.id} />
+              <ConfirmButton
+                message={`Request the ${formatRobux(doc.total)} held on this document? It goes to RO. Nation LIVE to action — the Robux is sent by group payout, and the document is marked paid once it has been.`}
+                className="whitespace-nowrap rounded-lg border border-accent/40 bg-accent-soft px-2.5 py-1 text-[11px] font-semibold text-accent transition-colors hover:border-accent"
+              >
+                Request funds
+              </ConfirmButton>
+            </form>
+          ) : null}
+
+          {openRelease ? (
+            <span className="whitespace-nowrap text-[11px] text-amber-300">
+              Requested {formatDate(openRelease.createdAt)}
             </span>
-            <span className="sr-only">
-              {kindConfig(doc.kind).heading} {doc.number ?? ""} (opens in a new tab)
-            </span>
-          </a>
-        ) : null}
+          ) : null}
+
+          {/* Said only on the documents where it is TRUE. A paid invoice has not been
+              "paid out to you", and putting this line on every settled row would be a
+              small lie repeated down the whole table. */}
+          {releasable && doc.status === DocumentStatus.PAID ? (
+            <span className="whitespace-nowrap text-[11px] text-faint">Paid out</span>
+          ) : null}
+        </span>
       </td>
     </tr>
   );

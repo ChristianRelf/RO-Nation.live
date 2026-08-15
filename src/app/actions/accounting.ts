@@ -22,6 +22,7 @@ import {
   voidDocument,
   type DocumentFields,
 } from "@/lib/accounting/documents";
+import { closeReleasesFor } from "@/lib/accounting/requests";
 import { formatRobux } from "@/lib/tickets/pricing";
 import { prisma } from "@/lib/db";
 
@@ -408,10 +409,18 @@ export async function markPaidAction(formData: FormData) {
   const done = await markPaid(id);
   if (!done) redirect(`/${id}?error=notopen`);
 
+  // The payee may have ASKED for these funds, from their statement. Settling the document
+  // is the answer to that question, so answer it here too - otherwise their request sits at
+  // "nobody has looked yet" forever while the money is in fact already sent, which is the
+  // one direction this can be wrong that makes somebody chase RNL for money they have.
+  // See closeReleasesFor(); it is a no-op when there was no claim, which is the usual case.
+  const closed = await closeReleasesFor(id, "accepted", user, "Paid out.");
+
   const doc = await getDocument(id);
   await audit(user, AuditAction.UPDATED, id, doc?.number ?? id, {
     marked: "paid",
     total: doc?.total,
+    releasesClosed: closed,
   });
 
   refresh(id);
@@ -426,6 +435,17 @@ export async function voidDocumentAction(formData: FormData) {
 
   const done = await voidDocument(id, reason);
   if (!done) redirect(`/${id}?error=notopen`);
+
+  // Same reasoning as markPaidAction, opposite answer. A voided document owes nothing, so
+  // an outstanding claim on its funds is refused rather than left open - and the reason the
+  // payee reads is the reason that was typed into the void box, which is the truest thing
+  // available to say.
+  await closeReleasesFor(
+    id,
+    "declined",
+    user,
+    reason ? `This document was cancelled: ${reason}` : "This document was cancelled.",
+  );
 
   const doc = await getDocument(id);
   await audit(

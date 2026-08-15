@@ -58,6 +58,30 @@ export type KindConfig = {
   /** Does a due date make sense? A receipt records the past and has none. */
   hasDueDate: boolean;
   /**
+   * Does issuing this HOLD money that the other side then has to ask for?
+   *
+   * ---- The rule this encodes -----------------------------------------------
+   *
+   * Issuing an outbound document does not move any Robux. It never did - a human always
+   * had to make the group payout by hand - but the paper used to imply otherwise ("Paid on
+   * issue"), and there was no way for a payee to say "I would like this now". So the
+   * amount on an issued payroll slip sat in a state nobody had a name for: owed, not sent,
+   * with the payee's only recourse being to chase somebody on Discord.
+   *
+   * Now it has a name. ISSUED means HELD; the payee raises a RELEASE request from their
+   * statement; accepting it marks the document PAID. No new document is created, because
+   * the money was already described exactly once, at issue.
+   *
+   * ---- Why this is a flag and not `direction === "outbound"` ---------------
+   *
+   * TICKET_REFUND is outbound and is NOT releasable. A refund is exceptional by design -
+   * the desk that writes one is deliberately friction-heavy - and its payee is a ticket
+   * holder, who has no partner account, no statement, and nowhere to press a button. A
+   * derived rule would sweep it in and quietly put a self-service claim on the one
+   * document in the system that is meant to be hard.
+   */
+  releasable: boolean;
+  /**
    * May this kind point at another document? A receipt settles an invoice and a credit
    * note corrects one; an invoice and a payment stand alone.
    */
@@ -82,6 +106,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     smallPrint:
       "Payable to RO. Nation LIVE in Robux (R$). Please quote the document number when paying.",
     hasDueDate: true,
+    releasable: false,
     relates: false,
     defaultTerms: "Due on receipt.",
   },
@@ -108,11 +133,18 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     partyFieldLabel: "Who is being paid",
     totalLabel: "Amount payable",
     hint: "Pay a builder, artist, dev or other contractor. Rate x hours or a fixed fee, with what the work was.",
+    // Says the thing the old wording got wrong. It used to read "this slip confirms the
+    // amount and what it covers; it is not a receipt", which is true and incomplete: it
+    // left the reader to assume the Robux was on its way. It is not. It is HELD until they
+    // ask for it, and the sentence that matters is the one telling them they have to.
     smallPrint:
-      "Payable by RO. Nation LIVE in Robux (R$). This slip confirms the amount and what it covers; it is not a receipt.",
+      "",
     hasDueDate: true,
+    releasable: true,
     relates: false,
-    defaultTerms: "Paid on issue, via Roblox group payout.",
+    // Was "Paid on issue, via Roblox group payout." - which was simply not true, and was
+    // the line a contractor would quote back at you a fortnight later.
+    defaultTerms: "Held until requested. Released by Roblox group payout once you ask for it.",
   },
 
   [DocumentKind.RECEIPT]: {
@@ -130,6 +162,7 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     smallPrint:
       "This receipt confirms the amount above was received in Robux (R$). Retain for your records.",
     hasDueDate: false,
+    releasable: false,
     relates: {
       label: "Receipt for",
       hint: "Issuing this will also mark the chosen document as paid.",
@@ -150,8 +183,13 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     totalLabel: "Total credited",
     hint: "Correct or refund a document already issued. An issued document is never edited - this is how it is put right.",
     smallPrint:
-      "This credit note reduces the amount owed on the document referenced above by the total shown, in Robux (R$).",
+      "This credit note reduces the amount owed on the document referenced above by the total shown, in Robux (R$). If you have already settled that document, the credit can be paid back out instead — request the funds on this note at pay.ronation.live.",
     hasDueDate: false,
+    // A credit ordinarily just cancels what is owed, and needs no payout at all. But when
+    // the document it corrects was ALREADY PAID, the credit is money that has to come back
+    // - and that case is invisible to everyone except the person who paid it. So they get
+    // the same button, and staff decline it when the credit is simply being offset.
+    releasable: true,
     relates: {
       label: "Credit against",
       hint: "The issued document this corrects. It stays on the record; this note is the correction.",
@@ -177,6 +215,10 @@ const CONFIG: Record<DocumentKind, KindConfig> = {
     smallPrint:
       "Refund authorised by RO. Nation LIVE in Robux (R$). The original purchase was made through Roblox and cannot be reversed there; this amount is paid separately. Tickets are ordinarily non-refundable — this is an exceptional authorisation.",
     hasDueDate: false,
+    // Outbound, and still not releasable - see the note on the field. Its payee is a ticket
+    // holder with no partner account and no statement to press a button on, and the refund
+    // desk is meant to stay a deliberate act by a person rather than a queue.
+    releasable: false,
     relates: false,
     defaultTerms: "Paid separately via Roblox group payout.",
   },

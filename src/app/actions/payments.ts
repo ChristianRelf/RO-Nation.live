@@ -3,9 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
-import { DocumentKind, PaymentRequestKind, PaymentRequestStatus } from "@prisma/client";
+import {
+  DocumentKind,
+  DocumentStatus,
+  PaymentRequestKind,
+  PaymentRequestStatus,
+} from "@prisma/client";
 import { requireCompanyUser, type CompanyUser } from "@/lib/company";
 import { requirePartnerAccount } from "@/lib/partner-account";
+import { requirePayUser } from "@/lib/pay";
 import {
   AuditAction,
   AuditActorKind,
@@ -17,16 +23,19 @@ import { s, parseDate } from "@/lib/content";
 import { parseRobux } from "@/lib/accounting/lines";
 import { formatRobux } from "@/lib/tickets/pricing";
 import {
+  createReleaseRequest,
   createRequest,
   getRequest,
   reviewRequest,
   withdrawRequest,
 } from "@/lib/accounting/requests";
 import {
+  isFreeFormRequest,
   parseRequestKind,
   requestKindConfig,
 } from "@/lib/accounting/request-kinds";
-import { createDraft } from "@/lib/accounting/documents";
+import { kindConfig } from "@/lib/accounting/kinds";
+import { createDraft, getDocument, markPaid } from "@/lib/accounting/documents";
 
 // Every act on a payment request. TWO audiences write here, which is why the guard on
 // each action is worth reading before changing one.
@@ -72,6 +81,12 @@ export async function submitPaymentRequest(
 
   const kind = parseRequestKind(s(formData, "kind"));
   if (!kind) return { error: "Unknown request type." };
+  // The two free-form forms write PAYMENT and REQUEST only. A RELEASE reaching this path
+  // would be a claim on held funds with a TYPED amount and no document behind it - which
+  // is to say, no ceiling. It has its own route for exactly that reason.
+  if (!isFreeFormRequest(kind)) {
+    return { error: "That request is raised from a document, not from this form." };
+  }
 
   // parseRobux with allowNegative left at its default false. Direction is `kind` and
   // only `kind`: a negative amount on a PAYMENT would be a payout wearing the wrong
@@ -112,6 +127,60 @@ export async function submitPaymentRequest(
   revalidatePath("/pay/requests");
   revalidatePath("/pay");
   redirect("/requests?ok=submitted");
+}
+
+/**
+ * Ask for the funds held on an issued payroll slip or credit note.
+ *
+ * ---- What is checked, and why each check is here --------------------------
+ *
+ * Everything below is re-derived from the DOCUMENT, server-side. The form posts one field
+ * - an id - and nothing else, because every other fact about this claim (who it belongs
+ * to, how much, whether it can be claimed at all) is already recorded and must not be
+ * re-stated by the claimant.
+ *
+ *   SCOPE      the document's partnerAccountId must equal the caller's. This is the whole
+ *              authorization, and it is checked against the row rather than a posted
+ *              field. Without it, an id from somebody else's statement claims their money.
+ *   KIND       must be releasable (kinds.ts). An invoice is money owed TO RNL; a receipt
+ *              records the past. Neither holds funds, and a claim on one is nonsense.
+ *   STATUS     must be ISSUED. A draft was never sent, a PAID one has already been
+ *              released, and a VOID one is cancelled.
+ *   UNIQUENESS at most one OPEN claim per document - enforced inside
+ *              createReleaseRequest's transaction, not here, because here it would race.
+ *
+ * A failure at any of them redirects with a code rather than throwing: every one of these
+ * is reachable from a stale tab, which is the ordinary case, not the attack.
+ */
+export async function requestFundsAction(formData: FormData) {
+  const user = await requirePayUser();
+  const id = s(formData, "id");
+
+  const doc = await getDocument(id);
+  // The same answer for "no such document" and "not yours" - so this cannot be used to
+  // discover which document ids exist.
+  if (!doc || doc.partnerAccountId !== user.account.id) {
+    redirect("/statements?error=nodoc");
+  }
+  if (!kindConfig(doc.kind).releasable) {
+    redirect("/statements?error=notreleasable");
+  }
+  if (doc.status !== DocumentStatus.ISSUED) {
+    redirect(`/statements?error=${doc.status === DocumentStatus.PAID ? "alreadypaid" : "notopen"}`);
+  }
+
+  const result = await createReleaseRequest(doc, {
+    partnerAccountId: user.account.id,
+    partnerAccountName: user.account.name,
+    robloxId: user.robloxId,
+    displayName: user.displayName,
+  });
+  if (!result.ok) redirect("/statements?error=alreadyrequested");
+
+  revalidatePath("/pay/statements");
+  revalidatePath("/pay/requests");
+  revalidatePath("/pay");
+  redirect("/statements?ok=requested");
 }
 
 /** Take back a request nobody has answered yet. Scoped to the caller's own entity. */
@@ -171,6 +240,49 @@ export async function acceptPaymentRequest(formData: FormData) {
     note: s(formData, "note"),
   });
   if (!claimed) redirect("/requests?error=already");
+
+  // ---- A RELEASE settles a document; it does not create one --------------
+  //
+  // The money on a payroll slip was described exactly once, at issue, and frozen there.
+  // Accepting the payee's claim on it means "yes, we have sent the Robux" - so the right
+  // write is markPaid on the document that already exists. Raising a second document here
+  // would put the same amount on the books twice, under two numbers, and the ledger would
+  // then read as if the contractor were owed it again.
+  //
+  // markPaid is scoped to ISSUED, so this is a no-op on a document that was paid or voided
+  // between the claim and the answer - and that no-op is REPORTED rather than swallowed.
+  // "The request is accepted but the document did not move" is precisely the state somebody
+  // needs to be told about, because the only thing left to do about it is by hand.
+  if (request.kind === PaymentRequestKind.RELEASE && request.againstDocumentId) {
+    const settled = await markPaid(request.againstDocumentId);
+
+    // documentId points at the SAME row as againstDocumentId - the document it settled is
+    // the document it produced. Written so the queue's "what did this become?" link works
+    // for every kind without a branch.
+    await recordRequestDocument(id, request.againstDocumentId);
+
+    await audit(
+      user,
+      AuditAction.ISSUED,
+      id,
+      `${cfg.staffLabel} from ${request.partnerAccountName}`,
+      {
+        requestKind: request.kind,
+        amount: request.amountRobux,
+        documentId: request.againstDocumentId,
+        settled,
+      },
+    );
+
+    revalidatePath("/accounts/requests");
+    revalidatePath("/accounts");
+    revalidatePath(`/accounts/${request.againstDocumentId}`);
+    redirect(
+      settled
+        ? `/${request.againstDocumentId}?ok=released`
+        : "/requests?error=notsettled",
+    );
+  }
 
   const draft = await createDraft(
     {

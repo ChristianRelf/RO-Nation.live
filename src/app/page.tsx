@@ -162,7 +162,7 @@ export default async function HomePage() {
           <div className="shell flex items-center justify-between gap-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
             <span>Roblox Event Management</span>
             <span className="hidden md:block">
-              Shows · Showcases · Tournaments
+              
             </span>
             <span className="flex items-center gap-2 text-fg">
               <span className="h-1.5 w-1.5 bg-accent" />
@@ -207,7 +207,7 @@ export default async function HomePage() {
             <Reveal delay={230}>
               <ul className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
                 {[
-                  "Always free",
+                  "Secure Purchase",
                   "Roblox sign-in",
                   "Verified at the door",
                   "No resale",

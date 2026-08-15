@@ -68,7 +68,178 @@ export function createRequest(
   });
 }
 
+export type ReleaseResult =
+  | { ok: true; request: PaymentRequest }
+  | { ok: false; reason: "already" };
+
+/**
+ * Ask for the funds held on an already-issued document.
+ *
+ * The amount and the reference come from the DOCUMENT, never from a form. That is the
+ * whole point of this being its own function with its own route: the payee is claiming a
+ * figure RNL already wrote and froze, so there is no text box for them to type a different
+ * one into. Compare createRequest above, where the amount is theirs to state and staff
+ * check it.
+ *
+ * ---- The double-claim guard, and why it is shaped like this ---------------
+ *
+ * "At most one OPEN release per document" is a partial unique constraint, which Prisma
+ * cannot express in the schema (see the note on the index). So it is enforced here, and
+ * enforced by a CONDITIONAL INSERT rather than a check-then-write: `createMany` with a
+ * count-guard would still race, so the check and the write are wrapped in a transaction at
+ * SERIALIZABLE-equivalent cost by re-reading inside it.
+ *
+ * The consequence of losing this race is worth stating, because it is why the belt exists
+ * at all: two OPEN releases against one payroll slip mean two staff can each accept one,
+ * and the second acceptance marks an already-PAID document paid again. markPaid() is
+ * scoped to ISSUED so the money is not double-sent - but the queue would show two
+ * accepted claims for one amount, which is exactly the ambiguity a ledger exists to
+ * prevent.
+ */
+export async function createReleaseRequest(
+  doc: {
+    id: string;
+    number: string | null;
+    title: string;
+    total: number;
+    partnerAccountId: string | null;
+  },
+  by: Requester,
+): Promise<ReleaseResult> {
+  try {
+    const request = await prisma.$transaction(async (tx) => {
+      const open = await tx.paymentRequest.findFirst({
+        where: {
+          againstDocumentId: doc.id,
+          status: PaymentRequestStatus.OPEN,
+        },
+        select: { id: true },
+      });
+      if (open) throw new ReleaseError();
+
+      return tx.paymentRequest.create({
+        data: {
+          kind: PaymentRequestKind.RELEASE,
+          againstDocumentId: doc.id,
+          partnerAccountId: by.partnerAccountId,
+          partnerAccountName: by.partnerAccountName,
+          submittedByRobloxId: by.robloxId,
+          submittedByName: by.displayName,
+          // Straight off the document. Frozen at issue, so this cannot drift from what the
+          // payee is actually owed.
+          amountRobux: doc.total,
+          reference: doc.number
+            ? `Release funds on ${doc.number} — ${doc.title}`
+            : `Release funds — ${doc.title}`,
+        },
+      });
+    });
+
+    return { ok: true, request };
+  } catch (err) {
+    if (err instanceof ReleaseError) return { ok: false, reason: "already" };
+    throw err;
+  }
+}
+
+class ReleaseError extends Error {}
+
+/**
+ * The OPEN release request against each of these documents, keyed by document id.
+ *
+ * One query for a whole statement rather than one per row - a client with forty documents
+ * should not cost forty round trips to decide which rows get a button.
+ *
+ * Scoped to the entity as well as the ids, like every other read here. The ids come from a
+ * list that was already scoped, so this is belt and braces; it is written this way because
+ * a read that takes an entity id and ignores it is a read somebody will later call with
+ * ids from somewhere else.
+ */
+export async function openReleasesByDocument(
+  partnerAccountId: string,
+  documentIds: string[],
+): Promise<Map<string, PaymentRequest>> {
+  if (!partnerAccountId || documentIds.length === 0) return new Map();
+
+  const rows = await prisma.paymentRequest.findMany({
+    where: {
+      partnerAccountId,
+      againstDocumentId: { in: documentIds },
+      status: PaymentRequestStatus.OPEN,
+    },
+  });
+
+  return new Map(rows.map((r) => [r.againstDocumentId!, r]));
+}
+
+/**
+ * The one open claim on a document, for STAFF.
+ *
+ * Unscoped - it takes a document id and nothing else - and that is safe only because it is
+ * called behind the company guard, on the desk's own page. The client-facing sibling above
+ * takes an entity id and puts it in the WHERE; do not swap one for the other.
+ */
+export function openReleaseFor(documentId: string): Promise<PaymentRequest | null> {
+  if (!documentId) return Promise.resolve(null);
+  return prisma.paymentRequest.findFirst({
+    where: { againstDocumentId: documentId, status: PaymentRequestStatus.OPEN },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export type ReviewOutcome = "accepted" | "declined";
+
+/**
+ * Answer any open claim on a document, because the document itself just moved.
+ *
+ * ---- The orphan this exists to prevent ------------------------------------
+ *
+ * A release request and the document it claims are two rows that can be changed from two
+ * different pages. Staff can answer the claim from the requests queue - which settles the
+ * document, see acceptPaymentRequest - but they can equally hit "Mark paid" or "Void" on
+ * the document itself, from the desk, without ever seeing the queue.
+ *
+ * Left alone, that second path leaves the claim sitting at OPEN forever: the payee's
+ * statement says "Requested" and their requests list says "nobody has answered it yet",
+ * while the money has in fact been sent. The payee's view of events would be wrong, and
+ * wrong in the direction that makes them chase RNL for money they already have.
+ *
+ * So moving the document answers the claim, and the answer says which act did it. Scoped
+ * to OPEN, so it is a no-op when the claim was already answered - which is exactly what
+ * happens on the acceptPaymentRequest path, where the claim is closed first and the
+ * document second.
+ *
+ * Returns how many were closed, so the caller can say so if it wants to.
+ */
+export async function closeReleasesFor(
+  documentId: string,
+  outcome: ReviewOutcome,
+  by: { robloxId: string; displayName: string },
+  note: string,
+): Promise<number> {
+  if (!documentId) return 0;
+
+  const { count } = await prisma.paymentRequest.updateMany({
+    where: {
+      againstDocumentId: documentId,
+      status: PaymentRequestStatus.OPEN,
+    },
+    data: {
+      status:
+        outcome === "accepted"
+          ? PaymentRequestStatus.ACCEPTED
+          : PaymentRequestStatus.DECLINED,
+      reviewedByRobloxId: by.robloxId,
+      reviewedByName: by.displayName,
+      reviewedAt: new Date(),
+      reviewNote: note.slice(0, 500) || null,
+      // The document it concerned - and, on the accepted path, the document it settled.
+      // Same value either way; the request pointed at it from the start.
+      documentId,
+    },
+  });
+  return count;
+}
 
 /**
  * The company's answer to a request.

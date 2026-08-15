@@ -18,7 +18,7 @@ const groups = [
     faqs: [
       {
         q: "Are tickets really free?",
-        a: "Yes. Every RO. Nation LIVE ticket is free - you just need a Roblox account to reserve one so we can verify you at the door.",
+        a: "Tickets can be purchased for free and for Robux via our secure purchase system using Roblox gamepasses/tshirts! ",
       },
       {
         q: "How do I get a ticket?",
