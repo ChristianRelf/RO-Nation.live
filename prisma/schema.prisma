@@ -2609,6 +2609,39 @@ model PartnerAccountMember {
   addedByRobloxId String
   addedByName     String
 
+  // ---- The payment terms this login accepted -----------------------------
+  //
+  // pay.ronation.live will not open until these are set to the current version. The
+  // guard is requirePayUser() and the gate is app/pay/terms - see lib/accounting/
+  // pay-terms.ts for what is being accepted and why there is a gate at all.
+  //
+  // Three columns rather than one, for the reason Ticket.termsSnapshot exists: a
+  // timestamp on its own records agreement to a text nobody can reconstruct
+  // afterwards, and that is precisely the half that matters when it is disputed. So
+  // WHEN, WHICH VERSION, and A FROZEN COPY of what they were shown.
+  //
+  // On the MEMBER, not the PartnerAccount, and deliberately. Accepting is a personal
+  // act by the human who is signed in - "I am authorised to accept these on behalf of
+  // this account" is one of the two things they tick - so a second login added to the
+  // same entity next year accepts for themselves. Hanging it off the entity would let
+  // one person's click bind a colleague who never saw the words.
+
+  /// When this person passed the gate. NULL means they never have.
+  payTermsAcceptedAt DateTime?
+
+  /// PAY_TERMS_VERSION as it stood when they accepted. An older value is treated as
+  /// no acceptance at all - that is the entire reason it is stored next to the date.
+  payTermsVersion String?
+
+  /// WHAT THEY ACTUALLY AGREED TO, one line per element, re-derived on the server at
+  /// the moment of acceptance and never posted from the form.
+  ///
+  /// EMPTY on every membership written before this column existed, which the gate
+  /// reads as "not accepted" and prompts for. No backfill: inventing an acceptance
+  /// for somebody who was never asked would be worse than the gap, and would put a
+  /// fabricated record in the one place that exists to be evidence.
+  payTermsSnapshot String[] @default([])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

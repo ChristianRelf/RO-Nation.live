@@ -12,6 +12,15 @@ import {
   payoutStatementTerms,
 } from "@/lib/accounting/terms";
 import { site } from "@/lib/site";
+import { LEGAL_DOCS } from "@/lib/legal";
+import {
+  PAY_TERMS_CLAUSES,
+  PAY_TERMS_CONFIRMATIONS,
+  PAY_TERMS_DOCUMENTS,
+  PAY_TERMS_VERSION,
+  needsPayTermsAcceptance,
+  payTermsSnapshot,
+} from "@/lib/accounting/pay-terms";
 import {
   ALL_REQUEST_KINDS,
   REQUEST_KINDS,
@@ -239,6 +248,93 @@ describe("printed terms", () => {
     // than typed so a move is one edit. This asserts the derivation still holds.
     expect(PAY_DOMAIN).toBe(`pay.${site.domain}`);
     expect(PAY_DOMAIN).not.toContain("localhost");
+  });
+});
+
+describe("the payment terms gate", () => {
+  const accepted = {
+    payTermsAcceptedAt: new Date("2026-08-15T10:00:00Z"),
+    payTermsVersion: PAY_TERMS_VERSION,
+  };
+
+  it("lets through only a login that accepted THIS version", () => {
+    expect(needsPayTermsAcceptance(accepted)).toBe(false);
+  });
+
+  it("stops a login that has never accepted", () => {
+    expect(
+      needsPayTermsAcceptance({ payTermsAcceptedAt: null, payTermsVersion: null }),
+    ).toBe(true);
+    // Every membership row written before the columns existed looks like this. There is
+    // deliberately no backfill - see the note on the column.
+    expect(
+      needsPayTermsAcceptance({
+        payTermsAcceptedAt: null,
+        payTermsVersion: PAY_TERMS_VERSION,
+      }),
+    ).toBe(true);
+  });
+
+  it("stops a login holding an older acceptance", () => {
+    // The entire reason the version is stored beside the date. Without this check, a
+    // partner who agreed to the first version of these terms would never be shown a
+    // changed one, and the record would say they had accepted something they never read.
+    expect(
+      needsPayTermsAcceptance({ ...accepted, payTermsVersion: "2026-01-01" }),
+    ).toBe(true);
+    expect(needsPayTermsAcceptance({ ...accepted, payTermsVersion: null })).toBe(true);
+  });
+
+  it("has something to accept, and two distinct things to confirm", () => {
+    expect(PAY_TERMS_DOCUMENTS.length).toBeGreaterThanOrEqual(2);
+    expect(PAY_TERMS_CLAUSES.length).toBeGreaterThanOrEqual(3);
+    // Two, and not one. The second is what makes the acceptance bind the ENTITY rather
+    // than the individual signed in, and collapsing them loses exactly that.
+    expect(PAY_TERMS_CONFIRMATIONS.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(PAY_TERMS_CONFIRMATIONS.map((c) => c.name)).size).toBe(
+      PAY_TERMS_CONFIRMATIONS.length,
+    );
+  });
+
+  it("points every document at a policy that exists", () => {
+    // A gate whose "read this first" link 404s is a gate that asks somebody to accept a
+    // document they were not shown. legalUpdated() throws at build time on an unregistered
+    // href, so checking against the registry here is checking the same list the site does.
+    for (const d of PAY_TERMS_DOCUMENTS) {
+      expect(LEGAL_DOCS.map((l) => l.href), d.title).toContain(d.href);
+    }
+    expect(PAY_TERMS_DOCUMENTS.map((d) => d.href)).toContain("/legal/payments");
+  });
+
+  it("freezes what was shown, not what was posted", () => {
+    // The half that matters when it is disputed. The snapshot has to contain the version,
+    // every clause and every confirmation - if it only recorded the date, it would record
+    // agreement to a text nobody can reconstruct. Same argument as Ticket.termsSnapshot.
+    const snap = payTermsSnapshot();
+    expect(snap.some((l) => l.includes(PAY_TERMS_VERSION))).toBe(true);
+    for (const c of PAY_TERMS_CLAUSES) expect(snap).toContain(c);
+    for (const c of PAY_TERMS_CONFIRMATIONS) {
+      expect(snap.some((l) => l.includes(c.label)), c.name).toBe(true);
+    }
+    for (const d of PAY_TERMS_DOCUMENTS) {
+      expect(snap.some((l) => l.includes(d.href)), d.title).toBe(true);
+    }
+  });
+
+  it("closes every bold marker it opens", () => {
+    // Same failure as the printed terms: an unmatched "**" renders as two asterisks in the
+    // middle of the one sentence somebody is being asked to agree to.
+    for (const c of PAY_TERMS_CLAUSES) {
+      expect((c.match(/\*\*/g) ?? []).length % 2, c.slice(0, 40)).toBe(0);
+    }
+  });
+
+  it("warns about the scam this system is shaped like", () => {
+    // The single most valuable line on the card, and the reason a gate beats a policy
+    // nobody opens: a partner who has read this once does not fall for it later.
+    const text = PAY_TERMS_CLAUSES.join(" ").replace(/\*\*/g, "").toLowerCase();
+    expect(text).toContain("never ask you to send robux to receive a payment");
+    expect(text).toContain("issuing a document is not payment");
   });
 });
 

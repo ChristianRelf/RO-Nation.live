@@ -10,8 +10,13 @@ import {
   PaymentRequestStatus,
 } from "@prisma/client";
 import { requireCompanyUser, type CompanyUser } from "@/lib/company";
-import { requirePartnerAccount } from "@/lib/partner-account";
-import { requirePayUser } from "@/lib/pay";
+import { requirePayUser, requirePayUserPreTerms } from "@/lib/pay";
+import { prisma } from "@/lib/db";
+import {
+  PAY_TERMS_CONFIRMATIONS,
+  PAY_TERMS_VERSION,
+  payTermsSnapshot,
+} from "@/lib/accounting/pay-terms";
 import {
   AuditAction,
   AuditActorKind,
@@ -40,8 +45,13 @@ import { createDraft, getDocument, markPaid } from "@/lib/accounting/documents";
 // Every act on a payment request. TWO audiences write here, which is why the guard on
 // each action is worth reading before changing one.
 //
-//   requirePartnerAccount()   the client, on pay.ronation.live. May CREATE a request and
-//                             WITHDRAW their own. Nothing else - see below.
+//   requirePayUser()          the client, on pay.ronation.live. May CREATE a request and
+//                             WITHDRAW their own. Nothing else - see below. It is this
+//                             guard rather than requirePartnerAccount() because it also
+//                             carries the payment-terms gate (lib/pay.ts), and an action
+//                             is reachable by a post that never rendered the page whose
+//                             guard would have stopped it.
+//   requirePayUserPreTerms()  the one exception: recording an acceptance OF that gate.
 //   requireCompanyUser()      staff, on accounts.ronation.live. May accept or decline.
 //
 // ---- What a client is deliberately unable to do ---------------------------
@@ -77,7 +87,11 @@ export async function submitPaymentRequest(
   _prev: RequestFormState,
   formData: FormData,
 ): Promise<RequestFormState> {
-  const user = await requirePartnerAccount();
+  // requirePayUser, not requirePartnerAccount: this is a pay.ronation.live action, and
+  // that guard is the one that carries the terms gate. A form post is not stopped by the
+  // page guard that would have redirected the person who sent it - so an action guarded
+  // one level down is an action somebody can reach without ever having seen the terms.
+  const user = await requirePayUser();
 
   const kind = parseRequestKind(s(formData, "kind"));
   if (!kind) return { error: "Unknown request type." };
@@ -183,9 +197,56 @@ export async function requestFundsAction(formData: FormData) {
   redirect("/statements?ok=requested");
 }
 
+/**
+ * Record that this login accepted the payment terms, and let them through.
+ *
+ * ---- Why the guard is the PRE-TERMS one -----------------------------------
+ *
+ * Everybody who reaches this action has, by definition, not accepted yet. requirePayUser()
+ * would redirect them to the gate they are submitting from, so the acceptance could never
+ * be recorded - the one call site where the full guard is the wrong one.
+ *
+ * It still checks everything else, and it re-checks it HERE rather than trusting the page
+ * that rendered the form: access can be revoked between opening the gate and ticking the
+ * boxes, and an accepted-terms row for somebody who is no longer a partner is a record of
+ * nothing.
+ *
+ * ---- Why nothing is read off the form -------------------------------------
+ *
+ * The two checkboxes are confirmed below, and then thrown away. What gets STORED is
+ * re-derived from lib/accounting/pay-terms.ts on the server: the version, and a frozen copy
+ * of the clauses as this deploy words them. A snapshot posted by the form would be a
+ * snapshot the submitter chose, which is worth nothing at all as evidence - the same reason
+ * a document's total is computed server-side and never accepted from the builder.
+ */
+export async function acceptPayTerms(formData: FormData) {
+  const user = await requirePayUserPreTerms();
+
+  // Both boxes, or nothing. The form disables its own button until they are ticked, so
+  // reaching here unticked means the disable was bypassed - and an acceptance recorded
+  // without the assertions is precisely the record that would not stand up.
+  const confirmed = PAY_TERMS_CONFIRMATIONS.every(
+    (c) => s(formData, c.name) === "on",
+  );
+  if (!confirmed) redirect("/terms?error=unconfirmed");
+
+  await prisma.partnerAccountMember.update({
+    where: { id: user.membership.id },
+    data: {
+      payTermsAcceptedAt: new Date(),
+      payTermsVersion: PAY_TERMS_VERSION,
+      payTermsSnapshot: payTermsSnapshot(),
+    },
+  });
+
+  redirect("/");
+}
+
 /** Take back a request nobody has answered yet. Scoped to the caller's own entity. */
 export async function withdrawPaymentRequest(formData: FormData) {
-  const user = await requirePartnerAccount();
+  // Same guard as the other two client actions, for the same reason - see the note on
+  // submitPaymentRequest.
+  const user = await requirePayUser();
   const id = s(formData, "id");
 
   const done = await withdrawRequest(id, user.account.id);

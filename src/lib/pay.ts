@@ -5,6 +5,7 @@ import {
   isFullPartner,
   type PartnerAccountUser,
 } from "./partner-account";
+import { needsPayTermsAcceptance } from "./accounting/pay-terms";
 
 // Who may open pay.ronation.live.
 //
@@ -30,6 +31,25 @@ import {
 export type PayUser = PartnerAccountUser;
 
 /**
+ * Everything the door checks EXCEPT the payment terms.
+ *
+ * Its own function because two callers legitimately need to get this far and no further:
+ * the terms gate itself (app/pay/terms), and the action that records an acceptance. Both
+ * are reached BY somebody who has not accepted, so calling the full guard from either
+ * would redirect them to the page they are already on, forever.
+ *
+ * Nothing else should call this. If you are writing a page under (app), you want
+ * requirePayUser() below - this one opens the door to a person who has not agreed to
+ * anything yet.
+ */
+export async function requirePayUserPreTerms(): Promise<PayUser> {
+  const access = await getPartnerAccountAccess();
+  if (access.state !== "allowed") redirect("/access");
+  if (!isFullPartner(access.user.account)) redirect("/access?reason=potential");
+  return access.user;
+}
+
+/**
  * The guard for every page under /pay, and for the two request actions.
  *
  * MUST be called by each page itself, not relied upon from the layout. A page segment is
@@ -40,10 +60,24 @@ export type PayUser = PartnerAccountUser;
  * accounting and nothing to pay or be paid, which is the same line /partner/accounting
  * already draws (isFullPartner). They get /access, which says so in words rather than
  * showing them an empty statement and letting them wonder.
+ *
+ * ---- Why the terms check is HERE and not a modal in the layout ------------
+ *
+ * Because a modal in the layout is chrome, and chrome is not a gate. The layout note above
+ * is the reason in full: a page segment is serialised into the RSC payload in parallel with
+ * its layout, so an overlay rendered by the layout arrives alongside the statement it is
+ * covering - the figures are in the payload, the dismiss is a DOM node, and anybody who
+ * wants the page without agreeing to anything has it. The same applies to the server
+ * actions, which a modal does not sit in front of at all.
+ *
+ * So the gate is a redirect out of the guard that every page and both client actions
+ * already call. Nothing under (app) renders, and no request is submitted, until the row
+ * says they accepted the current version. It still LOOKS like a modal - see the page it
+ * lands on - because that is the right shape to read; it is simply one that cannot be
+ * closed by pressing Escape.
  */
 export async function requirePayUser(): Promise<PayUser> {
-  const access = await getPartnerAccountAccess();
-  if (access.state !== "allowed") redirect("/access");
-  if (!isFullPartner(access.user.account)) redirect("/access?reason=potential");
-  return access.user;
+  const user = await requirePayUserPreTerms();
+  if (needsPayTermsAcceptance(user.membership)) redirect("/terms");
+  return user;
 }
