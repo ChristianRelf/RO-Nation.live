@@ -174,3 +174,46 @@
 		output stdout
 	}
 }
+
+# The DJ deck. A separate compose project (rnl-dj-bot) that joins the shared
+# `edge` network, same arrangement as the support dashboard - so this container
+# resolves it by service name, and nothing about it is published to the host.
+#
+# Its own site block rather than another name on the line above, because the
+# upstream is not `web`: the X-Ron-* stripping and the site's security headers
+# are deliberately not repeated here - they exist for the RNL app's brand
+# resolution, which the deck has no part in.
+#
+# Uploads are DJ sets, so the two timeouts and the body cap are load-bearing:
+# Caddy's defaults would cut a large upload off mid-transfer. flush_interval -1
+# disables response buffering, which the portal's streaming endpoints need.
+deck.ronation.live {
+	encode zstd gzip
+
+	request_body {
+		max_size 200MB
+	}
+
+	reverse_proxy rnl-dj-bot:7403 {
+		flush_interval -1
+		transport http {
+			read_timeout 10m
+			write_timeout 10m
+		}
+	}
+}
+
+# Optional. The portal is reachable at deck.ronation.live/portal either way -
+# this only gives it a name of its own, and that name needs its own DNS record
+# and its own certificate.
+portal.deck.ronation.live {
+	encode zstd gzip
+
+	reverse_proxy rnl-dj-bot:7403 {
+		flush_interval -1
+		transport http {
+			read_timeout 10m
+			write_timeout 10m
+		}
+	}
+}
