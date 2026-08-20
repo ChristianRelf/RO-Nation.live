@@ -78,6 +78,11 @@ const groupsFor = (accountsHref: string): { title: string; links: NavLink[] }[] 
       { label: "Testimonials", href: "/company/testimonials" },
       { label: "Enquiries", href: "/company/enquiries" },
       { label: "Partners", href: "/company/partners" },
+      // The funnel BEFORE an account exists - who has asked, who has been invited,
+      // and the briefs their sites get built from. Sits above "Partner accounts"
+      // because that is the order it happens in: a request becomes an invitation,
+      // an invitation becomes an account, and the account is managed next door.
+      { label: "Partnerships", href: "/company/partnerships" },
       { label: "Partner accounts", href: "/company/partner-accounts" },
       { label: "SHASHA access", href: "/company/shasha" },
     ],

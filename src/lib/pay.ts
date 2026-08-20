@@ -23,15 +23,14 @@ import {
 //
 // ---- Why this is not just requirePartnerAccount() -------------------------
 //
-// That guard redirects a stranger to /partner/access, which is a path on the PORTAL host.
-// Called from here it would resolve against pay.ronation.live, get rewritten to
-// /pay/partner/access, and 404 - so a partner who has not been granted access would be
-// told the page does not exist rather than how to get in. Cross-host redirect targets are
-// the recurring trap in this whole area; see the note in app/accounts/layout.tsx for the
-// same bug in the other direction.
+// That guard redirects a stranger to /access, which it means as a path on the PARTNER
+// PROGRAMME host. Called from here it would resolve against pay.ronation.live, get
+// rewritten to /pay/access - a different page on a different host, answering a different
+// question. Cross-host redirect targets are the recurring trap in this whole area; see the
+// note in app/accounts/layout.tsx for the same bug in the other direction.
 //
 // Everything else about it is identical, on purpose: one grant, checked the same way, so a
-// person's access to /partner and to pay cannot drift apart.
+// person's access to the partner hub and to pay cannot drift apart.
 
 export type PayUser = PartnerAccountUser;
 
@@ -62,7 +61,7 @@ export async function requirePayUserPreTerms(): Promise<PayUser> {
  * still ships the page's body to somebody it just redirected. See lib/session.ts.
  *
  * Full PARTNER only. A POTENTIAL partner - somebody RNL is in talks with - has no
- * accounting and nothing to pay or be paid, which is the same line /partner/accounting
+ * accounting and nothing to pay or be paid, which is the same line /hub/accounting
  * already draws (isFullPartner). They get /access, which says so in words rather than
  * showing them an empty statement and letting them wonder.
  *

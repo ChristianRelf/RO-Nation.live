@@ -124,20 +124,27 @@ export default function PartnersPage() {
               .
             </p>
 
-            {/* The door for the people who are already through it. Partners were told about
-                portal.ronation.live/partner once, by whoever set their access up, and had
-                nowhere to look it up afterwards - the site footer's "Staff & partner portal"
-                lands on /login, which is the right front door but not the named one.
+            {/* Two doors, and they are for two different people.
 
-                It gives nothing away: the target is guarded, and an anonymous visitor is met
-                by the portal sign-in gate, then by /partner/access if their account holds no
-                grant. A plain <a>, not <Link>, because the middleware 307s this to the portal
-                host and a client-side RSC fetch would be blocked off-origin - the same call
-                the footer makes for /login and /merch. */}
+                The programme is for somebody who is NOT a partner and is wondering what it
+                would involve - it is the front of partner.ronation.live, public and
+                indexable. The hub is for somebody who already is one: partners were told
+                the address once, by whoever set their access up, and had nowhere to look it
+                up afterwards.
+
+                Neither gives anything away. The hub is guarded, and an anonymous visitor is
+                met by that host's sign-in gate and then by /access if their account holds no
+                grant. Plain <a> rather than <Link> for both, because the middleware 307s
+                these to another host and a client-side RSC fetch would be blocked
+                off-origin - the same call the footer makes for /login and /merch. */}
             <p className="mt-3 text-sm text-black/60">
-              Already a partner?{" "}
+              Wondering what partnering involves?{" "}
               <a href="/partner" className="font-semibold underline">
-                Open the partner portal
+                Read the partner programme
+              </a>
+              . Already a partner?{" "}
+              <a href="/partner/hub" className="font-semibold underline">
+                Open your partner area
               </a>{" "}
               for your agreements and accounting.
             </p>

@@ -8,14 +8,15 @@ import {
 import { prisma } from "./db";
 import { getUserSession, type UserSession } from "./session";
 
-// Who can open portal.ronation.live/partner: a signed-in Roblox account that holds a
+// Who can open partner.ronation.live/hub: a signed-in Roblox account that holds a
 // PartnerAccountMember row. That row resolves to ONE PartnerAccount entity - a person or a
 // company (see the schema) - which is the thing the whole area is about.
 //
 // This deliberately mirrors lib/company.ts and lib/shasha.ts: the same three-state shape, and
 // the same "guard the page, never the layout alone" rule (see lib/session.ts). What differs is
 // where access comes from - not a Roblox GROUP rank, but a grant row RNL writes from
-// /company/partner-accounts. A PartnerAccount is not in RNL's group and never will be, which is
+// /company/partner-accounts, or one minted when somebody claims an invitation (see
+// lib/partner-invites.ts). A PartnerAccount is not in RNL's group and never will be, which is
 // the whole reason this is a table rather than a rank.
 
 export type PartnerAccountUser = UserSession & {
@@ -54,13 +55,18 @@ export async function getPartnerAccountUser(): Promise<PartnerAccountUser | null
 }
 
 /**
- * Guard for the /partner area and its actions. Every guarded page must call this itself before
- * reading data - see the note on the page guards in lib/session.ts for why a layout guard alone
- * still ships the page's RSC payload.
+ * Guard for everything behind the gate on partner.ronation.live - /hub and /onboard - and for
+ * their actions. Every guarded page must call this itself before reading data; see the note on
+ * the page guards in lib/session.ts for why a layout guard alone still ships the page's RSC
+ * payload.
+ *
+ * The redirect target is RELATIVE, and it has to be: /access is a path on whichever host this
+ * runs on. That is the programme host, always - nothing else mounts these pages. lib/pay.ts
+ * deliberately does NOT reuse this guard for exactly that reason; see the note there.
  */
 export async function requirePartnerAccount(): Promise<PartnerAccountUser> {
   const user = await getPartnerAccountUser();
-  if (!user) redirect("/partner/access");
+  if (!user) redirect("/access");
   return user;
 }
 
@@ -87,7 +93,7 @@ export function listPartnerAccountMembers(
 
 /**
  * A live PARTNER reads their accounting; a POTENTIAL partner reads only the agreements. The
- * /partner/accounting page and the Accounting nav item both gate on this.
+ * /hub/accounting page and the Payments nav item both gate on this.
  */
 export function isFullPartner(account: PartnerAccount): boolean {
   return account.status === PartnerAccountStatus.PARTNER;

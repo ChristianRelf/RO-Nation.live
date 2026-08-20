@@ -6,6 +6,8 @@ There are two things in this repo, and they run from **one app, one container**:
 
 - the **public site** - `ronation.live` (events, careers, tickets)
 - the **SHASHA staff portal** - `portal.ronation.live/shasha` (VIP list, blacklist)
+- the **partner programme** - `partner.ronation.live` (what partnering offers, how to
+  ask, invitation links, and each partner's own area at `/hub`)
 
 | Part                | Where                        | Who gets in                             |
 | ------------------- | ---------------------------- | --------------------------------------- |

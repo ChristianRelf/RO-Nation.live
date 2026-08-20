@@ -75,8 +75,17 @@ export const outboundUrls = {
   partnerAccounts: () => `${env.siteUrl}/company/partner-accounts`,
   /** portal.ronation.live/hub - every door the signed-in person holds. */
   hub: () => `${subOrigin("portal")}/hub`,
-  /** portal.ronation.live/partner - the commercial-partner area. */
-  partnerArea: () => `${subOrigin("portal")}/partner`,
+  /**
+   * partner.ronation.live/hub - the commercial-partner area.
+   *
+   * It moved off the portal host onto one of its own, and this is the address that
+   * serves it. The old portal.ronation.live/partner still resolves - the middleware
+   * forwards it and will keep forwarding it - but pointing a link there costs a
+   * redirect on every click. lib/partner-urls.ts is the module that owns this host;
+   * this entry stays here so the payment system keeps ONE list of everything it links
+   * out to, which is the property outboundUrls exists for.
+   */
+  partnerArea: () => `${subOrigin("partner")}/hub`,
   /** ronation.live/contact - where a client queries something on their statement. */
   contact: () => `${env.siteUrl}/contact`,
 };

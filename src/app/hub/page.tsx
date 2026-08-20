@@ -4,7 +4,7 @@ import { robloxConfigured } from "@/lib/env";
 import { getHubDashboard, type HubAreaLive } from "@/lib/hub-dashboard";
 import type { HubLink } from "@/lib/hub";
 import { getPartnerAccountAccess, isFullPartner } from "@/lib/partner-account";
-import { payUrls } from "@/lib/accounting/urls";
+import { outboundUrls, payUrls } from "@/lib/accounting/urls";
 import { PortalFooter } from "@/components/portal-footer";
 import { HubHeader } from "@/components/hub/hub-header";
 import { HubButton, HubChip } from "@/components/hub/hub-button";
@@ -80,22 +80,34 @@ export default async function HubPage() {
   // Two things hang off this lookup:
   //
   //   - A pure partner account holds no staff or partner-tenant door, so there are no areas
-  //     at all, and the hub's "Nothing assigned yet" panel is not their home. /partner is.
-  //   - A staffer who ALSO holds a grant keeps the hub - and used to have no link to /partner
-  //     anywhere in the portal, because the redirect below only fires when areas is empty.
-  //     The chip is that missing door.
+  //     at all, and the hub's "Nothing assigned yet" panel is not their home.
+  //     partner.ronation.live/hub is.
+  //   - A staffer who ALSO holds a grant keeps this hub - and would otherwise have no link
+  //     to the partner one anywhere in the portal, because the redirect below only fires
+  //     when areas is empty. The chip is that missing door.
   const partnerAccount = await getPartnerAccountAccess();
-  if (areas.length === 0 && partnerAccount.state === "allowed") redirect("/partner");
+  // Off this host entirely now: the partner area is partner.ronation.live/hub. An absolute
+  // redirect rather than a path, because a relative one would land on THIS host's /hub -
+  // the page they are already on, and a redirect loop.
+  if (areas.length === 0 && partnerAccount.state === "allowed") {
+    redirect(outboundUrls.partnerArea());
+  }
 
-  // Two chips off one lookup: the partner area on this host, and their PAYMENTS on
-  // pay.ronation.live. The second is offered on the same test the pay host's own guard
-  // uses (a grant, plus full-partner status - see lib/pay.ts), so it cannot appear for
-  // somebody who would then be turned away at the door. `external` because it is another
-  // origin, which the chip renders as a plain <a>.
+  // Two chips off one lookup, and BOTH now leave this host: the partner area on
+  // partner.ronation.live, and their PAYMENTS on pay.ronation.live. The second is offered
+  // on the same test the pay host's own guard uses (a grant, plus full-partner status -
+  // see lib/pay.ts), so it cannot appear for somebody who would then be turned away at
+  // the door. `external` on both, which the chip renders as a plain <a> - a <Link> would
+  // fire a client RSC fetch that the middleware answers with a cross-origin redirect the
+  // browser cannot follow.
   const partnerLink: HubLink[] =
     partnerAccount.state === "allowed"
       ? [
-          { label: `Partner · ${partnerAccount.user.account.name}`, href: "/partner" },
+          {
+            label: `Partner · ${partnerAccount.user.account.name}`,
+            href: outboundUrls.partnerArea(),
+            external: true,
+          },
           ...(isFullPartner(partnerAccount.user.account)
             ? [{ label: "Payments", href: payUrls.home(), external: true }]
             : []),

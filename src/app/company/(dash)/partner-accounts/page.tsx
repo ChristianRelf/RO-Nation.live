@@ -38,7 +38,7 @@ export default async function PartnerAccountsPage({
           <h1 className="font-display text-3xl uppercase">Partner accounts</h1>
           <p className="mt-2 max-w-xl text-sm text-muted">
             Commercial partners and prospects who sign in at{" "}
-            <span className="font-mono text-xs">portal.ronation.live/partner</span> to read
+            <span className="font-mono text-xs">partner.ronation.live/hub</span> to read
             their agreements and, once a full partner, their accounting. Not the tenant
             partner sites - those live under Partners.
           </p>

@@ -30,7 +30,7 @@ export const metadata: Metadata = { title: "Statements" };
 /**
  * The client's full statement - every document RNL has issued against their entity.
  *
- * This is the page that used to be portal.ronation.live/partner/accounting, moved to the
+ * This is the page that used to be the partner area's own accounting tab, moved to the
  * host where the rest of the client-facing payment system now lives. The /partner tab now
  * links here rather than holding a second copy: one list, one address, and no chance of a
  * partner being shown two subtly different tables of their own money.

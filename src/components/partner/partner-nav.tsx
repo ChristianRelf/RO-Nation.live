@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 // is courtesy; the page guard (isFullPartner) is the lock.
 //
 // That tab now leaves the host: the partner's ledger lives on pay.ronation.live, and
-// /partner/accounting is a redirect to it. Pointing the tab straight at the destination
+// /hub/accounting is a redirect to it. Pointing the tab straight at the destination
 // saves a hop AND means it can never light up as "active" against a path that no longer
 // renders anything - which is why `out` links skip the active check entirely.
 export function PartnerNav({
@@ -31,8 +31,8 @@ export function PartnerNav({
   const pathname = usePathname();
 
   const links: { label: string; href: string; out?: boolean }[] = [
-    { label: "Overview", href: "/partner" },
-    { label: "Documents", href: "/partner/documents" },
+    { label: "Overview", href: "/hub" },
+    { label: "Documents", href: "/hub/documents" },
     ...(showAccounting ? [{ label: "Payments", href: payHref, out: true }] : []),
   ];
 
@@ -56,17 +56,17 @@ export function PartnerNav({
             key={l.href}
             href={l.href}
             aria-current={
-              // Overview matches exactly; the rest by prefix, or "/partner" would light
+              // Overview matches exactly; the rest by prefix, or "/hub" would light
               // up everywhere.
-              (l.href === "/partner"
-                ? pathname === "/partner"
+              (l.href === "/hub"
+                ? pathname === "/hub"
                 : pathname.startsWith(l.href))
                 ? "page"
                 : undefined
             }
             className={className(
-              l.href === "/partner"
-                ? pathname === "/partner"
+              l.href === "/hub"
+                ? pathname === "/hub"
                 : pathname.startsWith(l.href),
             )}
           >

@@ -4,10 +4,15 @@ import { PortalFooter } from "@/components/portal-footer";
 import { PartnerNav } from "@/components/partner/partner-nav";
 import { payUrls } from "@/lib/accounting/urls";
 
-// The chrome for portal.ronation.live/partner. Modelled on the hub's HubHeader + PortalFooter:
-// portal chrome, not marketing chrome (the middleware puts /partner in the "portal" bucket, so
-// the root layout renders neither the "Book tickets" header nor the marketing footer). The
-// identity block and sign-out mirror the hub so a partner and a staffer see the same shape.
+// The chrome for partner.ronation.live/hub. Modelled on the backstage hub's HubHeader +
+// PortalFooter: its own chrome, not marketing chrome (the middleware puts the whole /partner
+// prefix in the "partner-program" bucket, so the root layout renders neither the "Book
+// tickets" header nor the marketing footer). The identity block and sign-out mirror the
+// backstage hub so a partner and a staffer see the same shape.
+//
+// Note what this is NOT: the public front of this host. partner.ronation.live/ is the
+// programme - a marketing page for people who are not partners yet - and it wears
+// ProgrammeShell instead. Two shells on one host, because they address two audiences.
 export function PartnerShell({
   user,
   showAccounting,
@@ -23,7 +28,7 @@ export function PartnerShell({
         <div aria-hidden className="h-px w-full bg-accent/40" />
 
         <div className="shell flex h-14 items-center justify-between gap-6">
-          <Link href="/partner" className="group flex items-center gap-3">
+          <Link href="/hub" className="group flex items-center gap-3">
             <span className="display text-xl leading-none tracking-tight">
               RO. Nation LIVE
             </span>
@@ -55,7 +60,7 @@ export function PartnerShell({
             </div>
 
             <a
-              href="/api/auth/logout?returnTo=/partner"
+              href="/api/auth/logout?returnTo=/hub"
               className="rounded-brand border border-transparent px-2.5 py-2 text-[10px] font-bold uppercase tracking-kicker text-faint transition-colors hover:border-red-500/30 hover:text-red-400"
             >
               Sign out

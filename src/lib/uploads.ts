@@ -327,6 +327,24 @@ export const RNL_SCOPE = "rnl";
 export const SURVEY_SCOPE = "survey-responses";
 
 /**
+ * Files attached to a partner SITE BRIEF, on the private root.
+ *
+ * Its own scope for the same reason SURVEY_SCOPE is: these are uploaded by somebody who is
+ * not staff and not yet a partner - very often a designer holding a forwarded link - and
+ * keeping them in one directory means a sweep of abandoned briefs never walks a folder
+ * holding RNL's brand assets.
+ *
+ * PRIVATE, and that is the important half. A brief carries unreleased artwork: a logo
+ * nobody has announced, a poster for a show with no date. /uploads is served straight off
+ * Caddy's own volume before Next sees the request, so anything stored there is
+ * world-readable with no session in front of it and no way to put one there. The only
+ * reader of these is the .zip route on /company/partnerships, which checks company rank.
+ *
+ * The hyphen puts it out of reach of the partner registry, whose slugs are single words.
+ */
+export const BRIEF_SCOPE = "partner-briefs";
+
+/**
  * Resolve a stored path against its root, refusing anything that escapes.
  *
  * `storagePath` is ours - a UUID this module generated - and never the client's.

@@ -10,7 +10,8 @@ import { USER_COOKIE } from "@/lib/session-cookie";
 //   portal.ronation.live/                 → the backstage landing page → /portal
 //   portal.ronation.live/shasha           → the SHASHA staff portal
 //   portal.ronation.live/<slug>           → a partner's portal      → /pp/<slug>
-//   survey.ronation.live/ABCDE-FGHJKMN-PQR → a survey
+//   partner.ronation.live/                → the partner PROGRAMME     → /partner
+//   partner.ronation.live/hub             → a partner's own area      → /partner/hub//   survey.ronation.live/ABCDE-FGHJKMN-PQR → a survey
 //   authorise.ronation.live/…             → sign-in, for all of the above
 //   merch.ronation.live/…                 → the shop                → /merch/…
 //   shop.ronation.live/…                  → 301 to merch.ronation.live
@@ -42,14 +43,11 @@ const PORTAL_PATHS = [
   // on the portal host and nowhere else (the main site redirects it here, below). See
   // app/hub/page.tsx.
   "/hub",
-  // The commercial-partner area - portal.ronation.live/partner. A signed-in partner or
-  // potential partner reads the agreements they accept on joining and, once a full partner,
-  // the accounting RNL has raised against them. Lives on the portal host and nowhere else
-  // (the main site redirects it here, below), and guards on a PartnerAccount grant rather
-  // than a group rank - see lib/partner-account.ts. Without this line the portal branch
-  // below bounces /partner off to the main site, where the route does not exist.
-  "/partner",
-  // The internal docs - guides, brand assets, the API reference. They live on the
+  // The commercial-partner area USED to be portal.ronation.live/partner. It is now the
+  // whole of partner.ronation.live, and this host only forwards to it - see
+  // programmeDoorRedirect() below. Deliberately absent from this list: an entry here
+  // would serve a second copy of the partner hub on the portal host, at a second URL,
+  // behind a gate that has no idea the first one exists.  // The internal docs - guides, brand assets, the API reference. They live on the
   // PORTAL host and nowhere else, because everything under here is for staff and
   // partner crew; the pages guard on exactly that (lib/docs-guard.ts). Without
   // this line the portal branch below bounces /docs off to the main site, where
@@ -144,6 +142,86 @@ const PARTNER_PATHS = [
   "/api/v1",
 ];
 
+/**
+ * Paths the PARTNER PROGRAMME host serves as-is, without the /partner rewrite.
+ *
+ * partner.ronation.live is the one RNL host that is public at the front and private at the
+ * back. The programme page, the application form and an invite link are read by strangers;
+ * /hub and /onboard are a partner's own area. So this list is the usual "served as-is"
+ * set, and the interesting decision is PROGRAMME_PUBLIC_PATHS below, which is the one that
+ * decides who gets stopped.
+ *
+ * Roblox sign-in is here because partners authenticate ON this host: the session cookie is
+ * host-only (lib/session.ts), so the OAuth round trip has to start and end here, exactly
+ * as it does on the portal, accounts and pay hosts.
+ */
+const PROGRAMME_PATHS = [
+  "/login",
+  "/legal",
+  "/api/auth/roblox",
+  "/api/auth/sso",
+  // The dev mock login, so partner.localhost can be signed into without real Roblox
+  // credentials. Inert in production - see lib/env.ts.
+  "/api/auth/dev",
+  "/api/auth/logout",
+  "/api/health",
+  // The site brief's file uploads. It has to be servable on THIS host: the fallback below
+  // is a rewrite to /partner/api/partner/brief, which matches no route - and a multipart
+  // POST that 404s is a partner watching a progress bar reach the end and nothing happen.
+  //
+  // It is under /api, so PROGRAMME_PUBLIC_PATHS lets it past the sign-in gate - which
+  // means the route MUST guard itself. app/api/partner/brief/route.ts does, on the brief's
+  // bearer token. Same rule, same reason, as /api/portal and /api/pay.
+  "/api/partner",
+  // robots.txt, and it is not housekeeping on THIS host. The front of it is a commercial
+  // pitch RNL wants found, and the back of it is bearer links that must never be indexed -
+  // so the file has to be reachable, and app/robots.ts answers differently here (it reads
+  // the area header the middleware sets). Without this line the request is rewritten to
+  // /partner/robots.txt, which matches no route.
+  "/robots.txt",
+];
+
+/**
+ * Paths on the programme host an anonymous visitor may still reach - and this list is
+ * longer than every other host's, because on this host being a stranger is the point.
+ *
+ *   /            the programme itself. It is marketing: it must be readable, indexable
+ *                and linkable by somebody who has never heard of RNL. Note this matches
+ *                the root and NOTHING else - matches() takes the exact path or a subpath,
+ *                and no real path begins "//".
+ *   /join        asking to become a partner. The form behind it requires a session of its
+ *                own (see the action), but the PAGE has to render for somebody signed out,
+ *                or the first thing a prospective partner meets is a Roblox login with no
+ *                explanation of why.
+ *   /invite      an invitation. Handed to somebody who by definition has no account here
+ *                yet. Gating it would bounce every invitee to a sign-in before they have
+ *                been told what they are signing in to.
+ *   /onboard/site
+ *                a site brief. A BEARER LINK, deliberately anonymous, for the same reason
+ *                a document share link is: the person who knows the brand - their
+ *                designer, their manager - very often is not one of the Roblox logins on
+ *                the account. Note it opens /onboard/site and NOT /onboard: the guided
+ *                setup above it is a partner's own and stays behind the gate.
+ *   /login       the destination itself, or the bounce is a loop.
+ *   /api         the auth round trip lands here, /api/health is the liveness probe, and
+ *                the brief uploader posts here on a token.
+ *   /legal       the agreements and the privacy policy. Roblox links these from its own
+ *                consent screen, so they must be readable before signing in.
+ */
+const PROGRAMME_PUBLIC_PATHS = [
+  "/",
+  "/join",
+  "/invite",
+  "/onboard/site",
+  "/login",
+  "/api",
+  "/legal",
+  // A crawler asks for this BEFORE anything else. Behind the gate it would 307 to the
+  // sign-in page, and a robots.txt that answers with HTML reads as "no robots.txt at
+  // all" - which is the permissive default, on the one host with links that must not be
+  // indexed. See app/robots.ts.
+  "/robots.txt",
+];
 /**
  * Paths the MERCH host serves as-is, without the /merch rewrite.
  *
@@ -243,7 +321,7 @@ const isLocalHost = (host: string) =>
   !host.includes(".");
 
 const isPortalHost = (host: string) => host.startsWith("portal.");
-const isSurveyHost = (host: string) => host.startsWith("survey.");
+const isPartnerProgramHost = (host: string) => host.startsWith("partner.");const isSurveyHost = (host: string) => host.startsWith("survey.");
 const isAuthoriseHost = (host: string) => host.startsWith("authorise.");
 const isMerchHost = (host: string) => host.startsWith("merch.");
 const isShopHost = (host: string) => host.startsWith("shop.");
@@ -254,7 +332,7 @@ const isPayHost = (host: string) => host.startsWith("pay.");
 const mainSiteHost = (host: string) =>
   host
     .replace(/^portal\./, "")
-    .replace(/^survey\./, "")
+    .replace(/^partner\./, "")    .replace(/^survey\./, "")
     .replace(/^authorise\./, "")
     .replace(/^merch\./, "")
     .replace(/^shop\./, "")
@@ -304,12 +382,6 @@ function areaFor(path: string) {
     path.startsWith("/shasha") ||
     path === "/portal" ||
     path === "/hub" ||
-    // The commercial-partner area. Portal chrome, not marketing chrome - it renders inside
-    // its own PartnerShell, exactly as /hub does, rather than under the public "Book tickets"
-    // header. The route group in app/partner/(app) does not appear in the URL, so the guarded
-    // pages still match this /partner/ prefix.
-    path === "/partner" ||
-    path.startsWith("/partner/") ||
     // The portal's sign-in page. Portal chrome for the same reason /docs is:
     // without this it renders inside the public site's "Book tickets" header, on
     // the portal host, as the first thing every backstage visitor sees.
@@ -345,6 +417,17 @@ function areaFor(path: string) {
   // both drop the marketing chrome, but they are two different products with two different
   // shells, and one area name for both would mean the root layout could not tell a partner
   // reading their statement from a member of staff writing one.
+  // The partner PROGRAMME host, all of it. Its own area rather than reusing "portal":
+  // both drop the marketing chrome, but half of this host is PUBLIC - a programme page,
+  // an application form, an invitation - and the root layout has to be able to tell a
+  // stranger reading a pitch from a signed-in partner reading their agreements.
+  //
+  // "Book tickets" above a page explaining a commercial partnership reads as the wrong
+  // company answering, which is why this is not simply left as "site".
+  //
+  // The route groups in app/partner do not appear in the URL, so every page on the host
+  // matches this one prefix.
+  if (path === "/partner" || path.startsWith("/partner/")) return "partner-program";
   if (path === "/pay" || path.startsWith("/pay/")) return "pay";
   if (path.startsWith("/survey")) return "survey";
   return "site";
@@ -592,6 +675,51 @@ function accountingDoorRedirect(req: NextRequest, host: string, pathname: string
   return NextResponse.redirect(url);
 }
 
+/**
+ * The partner area's OLD addresses → the programme host.
+ *
+ *   /partner                → https://partner.<host>/hub
+ *   /partner/documents      → https://partner.<host>/hub/documents
+ *   /partner/accounting     → https://partner.<host>/hub/accounting
+ *   /partner/access         → https://partner.<host>/access
+ *
+ * The commercial-partner area used to be portal.ronation.live/partner, and before that
+ * ronation.live/partner forwarded there. Partners bookmark it, staff paste it at each
+ * other, and it is in the footer of documents RNL has already sent. So both of those
+ * hosts keep answering, and both answer by sending people to the one address that now
+ * serves it.
+ *
+ * ---- Why /hub and not / ----------------------------------------------------
+ *
+ * Because `/` on the new host is the PROGRAMME - a marketing page about joining. Somebody
+ * following an old bookmark to their own accounting is not a prospect, and landing them on
+ * a pitch to become the thing they already are would read as having been logged out.
+ *
+ * ---- /access is the exception, and it is not a nested path -----------------
+ *
+ * The no-access landing sits outside the guarded group (it has to - it is what the guard
+ * redirects TO), so it is /access on the new host rather than /hub/access. Mapping it by
+ * prefix would send it to /hub/access, which does not exist, and the person who most needs
+ * an explanation would get a 404 instead of one.
+ *
+ * Returns null when the path is not one of these, so the caller carries on. Shared by the
+ * portal branch, the main-site branch and the local-dev one - without it in all three, the
+ * redirect is a line of production-only code that can never be tested locally.
+ */
+function programmeDoorRedirect(req: NextRequest, host: string, pathname: string) {
+  const legacy = /^\/partner(\/.*)?$/.exec(pathname);
+  if (!legacy) return null;
+
+  const rest = legacy[1] ?? "";
+  // Cloned rather than composed from `https://` + host, so the scheme and the port survive
+  // and this same function works on partner.localhost:3000. The query comes along inside
+  // the clone. accountingDoorRedirect above had to learn the same lesson.
+  const url = req.nextUrl.clone();
+  url.hostname = subdomainFor("partner", mainSiteHost(host));
+  url.pathname = rest === "/access" ? "/access" : `/hub${rest}`;
+  return NextResponse.redirect(url);
+}
+
 // `/` on the portal host used to rewrite to a static "backstage portal" landing
 // page. The rewrite went first; the page itself (app/portal/page.tsx) has now been
 // deleted too, having sat unreachable behind the redirects below.
@@ -642,7 +770,12 @@ export function middleware(req: NextRequest) {
   // Checked before the local-host branch, so <slug>.localhost exercises the real
   // partner routing in dev. Returns null for every host that isn't a registered,
   // active partner, so this whole branch is dead until one is.
-  const partner = partnerByHost(host);
+  // `partner.` is the PROGRAMME host, not a tenant, and this branch runs first - so it is
+  // the one that would swallow it. The registry reserves the slug "partner" and throws at
+  // import if anybody adds it, which means partnerByHost() cannot return one; the explicit
+  // test is here anyway, because that guarantee lives in another file and this is the line
+  // that would silently serve a tenant's homepage on the programme's address.
+  const partner = isPartnerProgramHost(host) ? null : partnerByHost(host);
   if (partner) {
     if (matches(pathname, PARTNER_PATHS)) return proceed(req);
 
@@ -706,6 +839,28 @@ export function middleware(req: NextRequest) {
       }
     }
 
+    // partner.localhost - the programme host, gated and rewritten exactly as production
+    // does it. Here rather than left to fall through to the main site because this host's
+    // gate is the unusual one in the whole codebase: it lets strangers through the front
+    // and stops them at the back, and a gate that can only be exercised in production is
+    // a gate whose "it let me straight in" is indistinguishable from "it is broken".
+    if (isPartnerProgramHost(host)) {
+      if (pathname === "/partner" || pathname.startsWith("/partner/")) {
+        return NextResponse.redirect(
+          new URL(
+            `${pathname.slice("/partner".length) || "/"}${search}`,
+            req.nextUrl.origin,
+          ),
+        );
+      }
+
+      const gated = signInGate(req, pathname, search, PROGRAMME_PUBLIC_PATHS);
+      if (gated) return gated;
+
+      if (!matches(pathname, PROGRAMME_PATHS)) {
+        return prefixRewrite(req, pathname, "/partner");
+      }
+    }
     // authorise.localhost gets its page too, so the sign-in host in dev is the
     // same shape as the one in production rather than the main site's homepage
     // wearing its name.
@@ -797,7 +952,23 @@ export function middleware(req: NextRequest) {
 
   // ---- portal.ronation.live ---------------------------------------
   if (isPortalHost(host)) {
-    // ---- The gate, and it runs FIRST ------------------------------------
+    // ---- The commercial-partner area left this host, and this runs BEFORE the gate ----
+    //
+    // It was portal.ronation.live/partner until it became partner.ronation.live. People
+    // have that address bookmarked, so this host keeps answering - by forwarding.
+    //
+    // ABOVE the gate, and that ordering is the whole point. The session cookie is
+    // host-only (lib/session.ts), so a signed-out partner sent to /login HERE would
+    // authenticate against the portal, come back to /partner, be forwarded to the
+    // programme host - and arrive signed out, to sign in a second time. Forwarding first
+    // means they meet exactly one sign-in, on the host that will hold the cookie.
+    //
+    // The accounts host makes the same call for the same reason: correct the URL, then ask
+    // who they are. See the note above its own gate.
+    const toProgramme = programmeDoorRedirect(req, host, pathname);
+    if (toProgramme) return toProgramme;
+
+    // ---- The gate ---------------------------------------------------------
     //
     // Before the partner rewrite, deliberately. That rewrite turns
     // /<slug>/vip into /pp/<slug>/vip for any slug in the registry, so a gate
@@ -839,6 +1010,50 @@ export function middleware(req: NextRequest) {
       );
     }
     return proceed(req);
+  }
+
+  // ---- partner.ronation.live - the partner PROGRAMME ----------------------
+  //
+  // One host, two audiences, and that is the whole shape of it:
+  //
+  //   /                    what the programme is and what it offers. Public.
+  //   /join/new            ask to become a partner. Public page, session to submit.
+  //   /invite/<uuid>       an invitation RNL handed out. Public - the holder has no
+  //                        account yet, which is the point.
+  //   /onboard             the guided setup. A partner's own, behind the gate.
+  //   /onboard/site/<uuid> the brief RNL builds their site from. A bearer link, public.
+  //   /hub                 the partner's own area - agreements, account, money. Gated.
+  //
+  // It is a self-contained portal like accounts and pay: reachable from the hub, from the
+  // main site's own /partners page, and equally reachable by typing the name.
+  if (isPartnerProgramHost(host)) {
+    // The internal prefix is not a public URL. If one leaks - a copied link, a stale
+    // revalidatePath - strip it rather than serving /partner/partner, which would 404 on a
+    // URL that looks like it ought to work. The merch, accounts and pay hosts all do this.
+    //
+    // It also catches the one thing somebody WILL type: partner.ronation.live/partner.
+    if (pathname === "/partner" || pathname.startsWith("/partner/")) {
+      return NextResponse.redirect(
+        new URL(
+          `${pathname.slice("/partner".length) || "/"}${search}`,
+          req.nextUrl.origin,
+        ),
+      );
+    }
+
+    // The gate. AFTER the redirect above, so somebody on a leaked internal URL is
+    // corrected to the right address and then asked to sign in - rather than signing in
+    // and being dumped on a path that is about to move under them. The accounts host makes
+    // the same call for the same reason.
+    const gated = signInGate(req, pathname, search, PROGRAMME_PUBLIC_PATHS);
+    if (gated) return gated;
+
+    if (matches(pathname, PROGRAMME_PATHS)) return proceed(req);
+
+    // Everything else is the programme's. No bounce to the main site, deliberately - the
+    // same call the merch and accounts hosts make. Somebody who mistypes an invite code
+    // belongs in this host's own 404, not on RNL's marketing homepage.
+    return prefixRewrite(req, pathname, "/partner");
   }
 
   // ---- shop.ronation.live → merch.ronation.live --------------------
@@ -965,6 +1180,13 @@ export function middleware(req: NextRequest) {
     );
   }
 
+  // The partner programme is a host of its own now, and ronation.live/partner is what a
+  // partner will type. Note this is a genuine MOVE rather than a namespace hand-off like
+  // the block above: /partner used to be forwarded to the portal host, and anybody's
+  // bookmark from that era gets one redirect from here and none from there.
+  const toProgramme = programmeDoorRedirect(req, host, pathname);
+  if (toProgramme) return toProgramme;
+
   // The subdomains own these paths, so hand them over. /files is here with the
   // rest because a download link pasted into a Discord as ronation.live/files/<id>
   // would otherwise 404 for somebody perfectly entitled to the file: the session
@@ -972,13 +1194,7 @@ export function middleware(req: NextRequest) {
   if (
     pathname === "/shasha" ||
     pathname.startsWith("/shasha/") ||
-    pathname === "/hub" ||
-    // The commercial-partner area. Belongs to the portal host for the same host-only-cookie
-    // reason as /hub: ronation.live/partner is what a partner will type, so forward it rather
-    // than 404.
-    pathname === "/partner" ||
-    pathname.startsWith("/partner/") ||
-    // The backstage sign-in. It belongs to the portal host - the session cookie is
+    pathname === "/hub" ||    // The backstage sign-in. It belongs to the portal host - the session cookie is
     // host-only, so a sign-in completed HERE would set a cookie on the apex and
     // leave the portal exactly as signed-out as before. Forwarded rather than
     // 404'd because ronation.live/login is what somebody will type.

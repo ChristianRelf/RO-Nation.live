@@ -85,6 +85,27 @@
 # Both also need an entry in knownOrigins() in lib/sso.ts, or nobody can sign in to
 # either one - the front door refuses to mint a ticket for an origin it does not know.
 #
+# THE PARTNER PROGRAMME IS partner.ronation.live, AND IT IS NOT A PARTNER SITE.
+#
+# Singular "partner", and it belongs to RNL. It serves four things:
+#
+#   /                    the programme - what partnering with RNL offers. PUBLIC, and
+#                        the only page on the host meant to be indexed.
+#   /join/new            somebody asking to become a partner. Public page.
+#   /invite/<uuid>       an invitation RNL handed out. Public, because the holder has
+#                        no account here yet - that is the entire point of it.
+#   /hub, /onboard       a partner's own area and their guided setup. Signed in.
+#
+# It holds sessions, so it needs an entry in knownOrigins() in lib/sso.ts as well as a
+# name here - without that the front door refuses to mint a ticket for it and no partner
+# can open their own area, while the public half carries on working perfectly. That is a
+# nasty failure to diagnose, because the host looks fine.
+#
+# The slug "partner" is RESERVED in lib/partners/registry.ts, which throws at import if
+# anybody adds a tenant with that name. Do not remove that reservation: the middleware
+# tries the tenant-site branch first, so a partner slugged "partner" would swallow this
+# entire host - programme, invitations, hubs and all.
+#
 # Partner hosts live at the end of the line, one per partner:
 #   sleeptokenro.ronation.live   → Sleep Token   (registry slug "sleeptokenro")
 #
@@ -92,7 +113,7 @@
 # app resolves the brand from the Host header alone, so a name that is live in
 # DNS but absent from the registry serves RNL's site on the partner's domain,
 # and a slug in the registry with no host here is simply unreachable.
-{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$SURVEY_HOST:survey.ronation.live}, {$AUTHORISE_HOST:authorise.ronation.live}, {$MERCH_HOST:merch.ronation.live}, {$SHOP_HOST:shop.ronation.live}, {$ACCOUNTS_HOST:accounts.ronation.live}, {$PAY_HOST:pay.ronation.live}, {$STRO_HOST:sleeptokenro.ronation.live} {
+{$SITE_HOST:ronation.live}, {$PORTAL_HOST:portal.ronation.live}, {$PARTNER_HOST:partner.ronation.live}, {$SURVEY_HOST:survey.ronation.live}, {$AUTHORISE_HOST:authorise.ronation.live}, {$MERCH_HOST:merch.ronation.live}, {$SHOP_HOST:shop.ronation.live}, {$ACCOUNTS_HOST:accounts.ronation.live}, {$PAY_HOST:pay.ronation.live}, {$STRO_HOST:sleeptokenro.ronation.live} {
 	encode zstd gzip
 
 	# These are set by the app's middleware, from the Host header and the request

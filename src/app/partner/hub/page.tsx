@@ -106,7 +106,7 @@ export default async function PartnerOverviewPage({
         <>
           {docs.length ? (
             <>
-              <PartnerLedgerStrip ledger={ledger} href="/partner/accounting" />
+              <PartnerLedgerStrip ledger={ledger} href="/hub/accounting" />
               <RecentDocuments docs={recent} total={docs.length} />
             </>
           ) : (
@@ -126,14 +126,14 @@ export default async function PartnerOverviewPage({
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2">
         <SectionCard
-          href="/partner/documents"
+          href="/hub/documents"
           title="Documents"
           meta={`${PARTNER_AGREEMENTS.length} agreements`}
           body="How we sell your merch and tickets, the split, and how we use your assets."
         />
         {partner ? (
           <SectionCard
-            href="/partner/accounting"
+            href="/hub/accounting"
             title="Accounting"
             meta={
               docs.length
@@ -211,7 +211,7 @@ function RecentDocuments({
         <h2 className="display text-lg leading-none">Latest</h2>
         <span aria-hidden className="h-px flex-1 bg-line" />
         <Link
-          href="/partner/accounting"
+          href="/hub/accounting"
           className="shrink-0 text-[10px] font-bold uppercase tracking-kicker text-faint transition-colors hover:text-accent"
         >
           All {total}

@@ -25,6 +25,7 @@ and packaged to run on any VPS with **Docker Compose**.
 - **Uploads** - images (5 MB, magic-byte checked) go to a Docker volume and are served straight off disk by Caddy. Scoped per-org, so one partner cannot overwrite another's files.
 - **Blog** - public posts at `/blog`, and on each partner's own site. Drafts stay hidden.
 - **Surveys** - `survey.ronation.live/<code>`: built in `/company`, answered with a Roblox sign-in (one response per account), results summarised and exportable as CSV.
+- **Partner programme** - `partner.ronation.live`: a public page explaining what partnering with RNL offers, a form to ask (`/join/new`), invitation links staff hand out (`/invite/<uuid>`), a guided setup (`/onboard`), and a site brief anyone can fill in on a link (`/onboard/site/<uuid>`) which staff download as a `.zip`. Each partner's own area - agreements, account, paperwork - is at `/hub`.
 - **SHASHA staff portal** - `portal.ronation.live/shasha`: Roblox-ranked VIP list & blacklist, searchable, with roles/reasons and a full change history.
 - **Marketing pages** - Home, About (with a ticketing explainer), Contact + FAQ.
 - **Design** - dark, Live-Nation-inspired: big condensed type, event ticker, ticket-stub cards. No AI-template smell.
@@ -107,11 +108,14 @@ work on `/company` locally. See *Who gets in* below.
    ```env
    SITE_HOST="ronation.live"
    PORTAL_HOST="portal.ronation.live"
+   PARTNER_HOST="partner.ronation.live"
    ACME_EMAIL="you@example.com"
    ```
 
-   Both names must already resolve to the server, and ports **80** and **443**
-   must be open and not already taken by a system nginx/Apache.
+   Every name must already resolve to the server, and ports **80** and **443**
+   must be open and not already taken by a system nginx/Apache. The full list is
+   on the Caddyfile's site address line - see the notes above it before adding
+   another, because a failed Let's Encrypt issuance counts against a weekly limit.
 
 4. Build and run:
 

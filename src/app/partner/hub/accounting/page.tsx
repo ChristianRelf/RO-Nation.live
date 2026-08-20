@@ -5,7 +5,7 @@ import { payUrls } from "@/lib/accounting/urls";
 export const dynamic = "force-dynamic";
 
 /**
- * portal.ronation.live/partner/accounting - now a redirect, and nothing else.
+ * partner.ronation.live/hub/accounting - now a redirect, and nothing else.
  *
  * The partner's ledger moved to pay.ronation.live/statements, where the rest of the
  * client-facing payment system lives. This page used to render the whole table; keeping a
@@ -28,7 +28,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function PartnerAccountingRedirect() {
   const user = await requirePartnerAccount();
-  if (!isFullPartner(user.account)) redirect("/partner?notice=accounting");
+  if (!isFullPartner(user.account)) redirect("/hub?notice=accounting");
 
   redirect(payUrls.statements());
 }

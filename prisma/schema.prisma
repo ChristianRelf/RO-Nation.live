@@ -197,8 +197,8 @@ model Event {
   /// the one nobody was tempted to add.
   ticketTerms String[] @default([])
 
-  status    EventStatus @default(DRAFT)
-  featured  Boolean     @default(false)
+  status   EventStatus @default(DRAFT)
+  featured Boolean     @default(false)
 
   /// Presale: PUBLISHED and fully VISIBLE, but tickets are not on sale yet.
   ///
@@ -1056,7 +1056,7 @@ model Survey {
   /// they like - for a recurring check-in, a bug report form, a suggestion box.
   ///
   /// Enforced by SurveyResponse.dedupeKey, not by reading this at insert time.
-  multipleResponses Boolean  @default(false)
+  multipleResponses Boolean @default(false)
 
   /// Whose survey this is - a slug from lib/partners/registry.ts, or NULL for RO.
   /// Nation LIVE's own (authored in /company). The last content model to grow this
@@ -2383,9 +2383,9 @@ model AccountingDocument {
   // be. What is typed is what prints.
 
   /// Who the document is to. The payee on a payment, the bill-to on an invoice.
-  counterpartyName String
+  counterpartyName   String
   /// How to reach or identify them - @handle, roblox id, email. Optional, prints under the name.
-  counterpartyRef String?
+  counterpartyRef    String?
   /// Free address / extra detail block. Optional.
   counterpartyDetail String?
 
@@ -2461,9 +2461,9 @@ model AccountingDocument {
 
   /// The date the document is dated - defaults to issue, but a payment for last month's
   /// work should be able to say so. Separate from issuedAt, which is when the row froze.
-  documentDate DateTime @default(now())
+  documentDate DateTime  @default(now())
   /// When payment is expected. Optional and kind-dependent.
-  dueDate DateTime?
+  dueDate      DateTime?
 
   // ---- The share link ----------------------------------------------------
 
@@ -2498,11 +2498,11 @@ model AccountingDocument {
   issuedByName      String?
 
   /// When it froze. Null while DRAFT.
-  issuedAt DateTime?
+  issuedAt   DateTime?
   /// When it was marked settled. Null unless PAID.
-  paidAt DateTime?
+  paidAt     DateTime?
   /// When it was cancelled, and why. Null unless VOID.
-  voidedAt DateTime?
+  voidedAt   DateTime?
   voidReason String?
 
   createdAt DateTime @default(now())
@@ -2586,6 +2586,15 @@ model PartnerAccount {
   createdByName     String
 
   members PartnerAccountMember[]
+
+  // ---- The partner programme ------------------------------------------------
+  //
+  // An entity may have been INVITED (partner.ronation.live/invite/<code>), is ONBOARDED
+  // once, and may have any number of SITE BRIEFS raised against it - one per site RNL
+  // builds for them. All three live at the bottom of this file.
+  invites    PartnerInvite[]
+  onboarding PartnerOnboarding?
+  siteBriefs PartnerSiteBrief[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2724,7 +2733,7 @@ model PaymentRequest {
   /// reading one back. A PLAIN column rather than an FK for the same reason
   /// AccountingDocument.partnerAccountId is one: the request is a record of something that
   /// was asked, and it must outlive any tidying up of the entity that asked it.
-  partnerAccountId String
+  partnerAccountId   String
   /// The entity's name at the time of asking, snapshotted - a rename must not rewrite what
   /// staff were looking at when they decided.
   partnerAccountName String
@@ -2741,7 +2750,7 @@ model PaymentRequest {
   /// One line saying what it is for. Required - a bare figure is not a request.
   reference String
   /// Anything else they want to say. Optional.
-  detail String?
+  detail    String?
 
   /// Their own reference for it - a Roblox transaction id, a group payout note, an
   /// invoice number of theirs. Optional, free text, and the thing staff actually match
@@ -2760,7 +2769,7 @@ model PaymentRequest {
   reviewedAt         DateTime?
   /// Why it was declined, or a note on acceptance. Shown to the requester, so it is
   /// written for them to read - not an internal aside.
-  reviewNote String?
+  reviewNote         String?
 
   /// The AccountingDocument raised from this, once accepted. A PLAIN column, like every
   /// other cross-reference in this schema: nothing is joined through it, and the request
@@ -2800,4 +2809,372 @@ model PaymentRequest {
   /// createReleaseRequest(). See the note there.
   @@index([againstDocumentId])
   @@map("payment_requests")
+}
+
+// ---- The partner programme -------------------------------------------------
+//
+// Everything on partner.ronation.live that happens BEFORE a PartnerAccount exists, plus
+// the one thing that happens after it: the brief RNL builds a partner's site from.
+//
+// The whole host is one funnel, and each model below is one step of it:
+//
+//   /              the programme. Marketing, no rows.
+//   /join/new      PartnerApplication - "we would like to work with you". They write it.
+//   /invite/<uuid> PartnerInvite      - "we would like to work with YOU". RNL writes it,
+//                                       and claiming one is what mints the PartnerAccount.
+//   /onboard       PartnerOnboarding  - the explained-and-gathered middle. One per account.
+//   /onboard/site/<uuid>
+//                  PartnerSiteBrief   - everything needed to build their site, which staff
+//                                       download as a .zip from /company/partnerships.
+//
+// ---- Applications and invites are NOT the same row with a flag --------------
+//
+// They point in opposite directions and they trust opposite things. An application is
+// unsolicited input from a stranger: it authorises nothing, it is read by a human, and the
+// worst case is spam. An invite is a BEARER CAPABILITY that RNL issued - holding the uuid
+// is what lets somebody become a partner account, and the worst case is a stranger who
+// did. One table with a "direction" column would put those two security stories one
+// forgotten if-statement apart, so they are two tables and the join between them is
+// optional.
+
+enum PartnerApplicationStatus {
+  /// Nobody has looked at it yet. The inbox's default filter.
+  NEW
+  /// Somebody at RNL has picked it up. Purely so two people do not both reply.
+  REVIEWING
+  /// Turned into an invite. inviteId points at the one it became.
+  ACCEPTED
+  /// Answered no. Kept rather than deleted - "did we already say no to these people?" is a
+  /// question that gets asked.
+  DECLINED
+}
+
+/// Somebody asking to become a partner, from partner.ronation.live/join/new.
+///
+/// Behind a Roblox sign-in, for exactly the reason the contact form is (see the long note
+/// in app/actions/partner-applications.ts): it is a public write to the production
+/// database, and a session is the cheapest wall that costs a real applicant nothing.
+model PartnerApplication {
+  id String @id @default(cuid())
+
+  /// Who submitted it, snapshotted from the session like everywhere else in this schema.
+  robloxId    String
+  username    String
+  displayName String
+
+  /// The entity that wants to partner - the group, the label, the person.
+  name String
+  kind PartnerAccountKind
+
+  /// How to reach them off Roblox. Both optional here and at-least-one required by the
+  /// action - a form that demands an email address from somebody who runs a fan group
+  /// entirely on Discord is a form they close.
+  email   String?
+  discord String?
+
+  /// Their public Roblox group, if they run one. Diligence only; it grants nothing,
+  /// exactly as the registry's own robloxGroupUrl does not.
+  robloxGroupUrl String?
+
+  /// Their words, and the two questions worth asking: what they do, and what they want.
+  about String @db.Text
+  want  String @db.Text
+
+  /// Roughly how big they are. A free string on purpose - "members" means something
+  /// different to a record label and to a fan group, and a number column would invite a
+  /// comparison neither of them survives.
+  audience String?
+
+  /// Which parts of the programme they are asking for. PROGRAMME_OFFERS ids from
+  /// lib/partner-program.ts, intersected against that list on write so a hand-posted form
+  /// cannot put arbitrary strings in here.
+  interests String[] @default([])
+
+  status PartnerApplicationStatus @default(NEW)
+
+  /// Staff's own notes. Never rendered anywhere the applicant can reach.
+  note String?
+
+  /// The invite this became, when staff accepted it. Nullable and SetNull: revoking an
+  /// invite must not delete the application that earned it.
+  inviteId String?        @unique
+  invite   PartnerInvite? @relation(fields: [inviteId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  /// One OPEN application per Roblox account is enforced in the action, not here - a
+  /// person who was declined a year ago may reasonably ask again.
+  @@index([robloxId])
+  @@map("partner_applications")
+}
+
+enum PartnerInviteStatus {
+  /// Issued, unclaimed, not yet expired. The only state the invite page will act on.
+  PENDING
+  /// Somebody signed in and claimed it. partnerAccountId is what it created.
+  CLAIMED
+  /// Called back before it was used. Distinct from expiry because a revoked invite is a
+  /// decision and an expired one is a clock, and staff want to see which happened.
+  REVOKED
+}
+
+/// An invitation to become a partner, handed out by RNL staff.
+///
+/// ---- code is a bearer capability, and that is the whole design ------------
+///
+/// partner.ronation.live/invite/<code> is sent to somebody who has no account here and may
+/// never have visited. So the uuid IS the authorisation: whoever holds it can claim it,
+/// once, and claiming it mints a PartnerAccount with their Roblox login attached. That is
+/// the same trust model as a document share link (see AccountingDocument.shareToken), and
+/// it carries the same obligations - it expires, it can be revoked, and it is spent
+/// atomically so two tabs cannot both claim it.
+///
+/// A uuid rather than a cuid because a v4 uuid is 122 bits of randomness, which is what a
+/// link that grants an account has to be.
+model PartnerInvite {
+  id   String @id @default(cuid())
+  code String @unique @default(uuid())
+
+  /// Who this was cut for, in staff's words - "Sleep Token RO", "Mara, booking". Printed
+  /// on the invite page, so it should read as a greeting rather than a reference.
+  label String
+
+  /// What the claim should create. A PERSON invite makes a one-member entity; a COMPANY
+  /// one expects more logins to be added later from /company/partner-accounts.
+  kind PartnerAccountKind @default(COMPANY)
+
+  /// Staff's own context - where they came from, what was agreed on the call.
+  note String?
+
+  status PartnerInviteStatus @default(PENDING)
+
+  /// Invites expire. An unclaimed link that works forever is a permanent grant sitting in
+  /// somebody's Discord history, and the person who issued it will not remember it exists.
+  expiresAt DateTime
+
+  issuedByRobloxId String
+  issuedByName     String
+
+  /// Filled at the moment of claim, snapshotted from the session.
+  claimedAt         DateTime?
+  claimedByRobloxId String?
+  claimedByName     String?
+
+  /// The entity the claim created. Nullable because it does not exist until then, and
+  /// SetNull rather than Cascade: deleting a partner account should not erase the record
+  /// that RNL invited them.
+  partnerAccountId String?
+  partnerAccount   PartnerAccount? @relation(fields: [partnerAccountId], references: [id], onDelete: SetNull)
+
+  /// The application this invite answers, if it answers one.
+  application PartnerApplication?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([partnerAccountId])
+  @@map("partner_invites")
+}
+
+/// A partner's progress through partner.ronation.live/onboard, and what it gathered.
+///
+/// One row per PartnerAccount, created the first time they open the flow. step is the
+/// FURTHEST step they have reached, not the one they are on - so a partner who goes back
+/// to re-read the features step does not lose the details they already typed, and /onboard
+/// can send a returning visitor straight to where they stopped.
+model PartnerOnboarding {
+  id String @id @default(cuid())
+
+  partnerAccountId String         @unique
+  partnerAccount   PartnerAccount @relation(fields: [partnerAccountId], references: [id], onDelete: Cascade)
+
+  /// An index into ONBOARDING_STEPS (lib/partner-onboarding.ts). Clamped to that array's
+  /// bounds on every write, so a shorter list after a deploy cannot strand anybody past
+  /// the end of it.
+  step Int @default(0)
+
+  /// Set when they finish the last step. Null means in progress, and the hub says so.
+  completedAt DateTime?
+
+  // ---- What the flow gathers ----------------------------------------------
+  //
+  // Deliberately small. Everything here is something RNL would otherwise ask for in a
+  // Discord thread and then lose; nothing here is anything RNL could look up for itself.
+
+  contactName    String?
+  contactEmail   String?
+  contactDiscord String?
+  robloxGroupUrl String?
+
+  /// What they run, in their own words. Seeds the site brief's description later.
+  about String? @db.Text
+
+  /// Which parts of the programme they want switched on. PROGRAMME_OFFERS ids, intersected
+  /// on write - the same list the application form offers.
+  interests String[] @default([])
+
+  /// The timezone they schedule shows in, so booking a slot is not three messages of
+  /// "what time is that for you". A free string: an IANA name when the browser offers one.
+  timezone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("partner_onboardings")
+}
+
+enum PartnerSiteBriefStatus {
+  /// Being filled in. Saves on every step, so a half-finished brief survives a closed tab.
+  DRAFT
+  /// Handed in. Still editable by the holder - a brief is a description, not a contract -
+  /// but staff now have something worth downloading.
+  SUBMITTED
+}
+
+/// Everything needed to build a partner their own site, gathered from the partner.
+///
+/// The fields below are not invented: they are, near enough one for one, the Partner type
+/// in lib/partners/registry.ts - the config-in-code that themes and routes a partner site.
+/// That is deliberate. A brief whose shape matches the thing it becomes can be read
+/// straight down when somebody writes the registry entry, and the .zip emits exactly that
+/// entry as a starting point (lib/partner-brief.ts).
+///
+/// Reached at partner.ronation.live/onboard/site/<token>, and token is a bearer capability
+/// for the same reason PartnerInvite.code is: the person who knows the brand - their
+/// designer, their manager - very often is not one of the Roblox logins on the account,
+/// and RNL would rather have the real answers than the reachable ones.
+model PartnerSiteBrief {
+  id    String @id @default(cuid())
+  token String @unique @default(uuid())
+
+  /// The account this is for, when there is one. Nullable because RNL raises briefs for
+  /// people who are still partway through being onboarded.
+  partnerAccountId String?
+  partnerAccount   PartnerAccount? @relation(fields: [partnerAccountId], references: [id], onDelete: SetNull)
+
+  /// What staff called it when they raised it. The one field the partner does not write.
+  label String
+
+  status PartnerSiteBriefStatus @default(DRAFT)
+
+  // ---- The registry entry, as answered by the partner ----------------------
+
+  /// The subdomain they want: <slug>.ronation.live. Validated against the same shape and
+  /// the same reserved list the registry enforces, at write time, so a brief cannot ask
+  /// for "login" and have nobody notice until deploy day.
+  slug String?
+
+  siteName    String?
+  shortName   String?
+  tagline     String?
+  description String? @db.Text
+
+  /// The small print for a partner running tribute or fan events for a real-world act.
+  /// See the note on Partner.disclaimer - a site on an RNL subdomain with an ambiguous one
+  /// is RNL's problem as much as theirs.
+  disclaimer String? @db.Text
+
+  /// Ticket codes read <PREFIX>-XXXXXX.
+  ticketPrefix String?
+
+  robloxGroupUrl String?
+
+  /// Which shared features they want: PartnerFeature values (events, blog, careers,
+  /// surveys), intersected against that list on write.
+  features String[] @default([])
+
+  // ---- Look ---------------------------------------------------------------
+
+  /// The one colour the whole site is built around, as #rrggbb. Validated on write, and
+  /// stored as typed rather than normalised - a partner's brand hex is a string their
+  /// designer recognises on sight.
+  accentColour String?
+
+  /// The colour of type ON the accent - the other half of a readable button. Same shape.
+  accentInkColour String?
+
+  /// Which of the shipped display faces they want. A FONT_CHOICES key, intersected on
+  /// write; "something else" is a sentence in moodNotes, not a font RNL does not have.
+  fontChoice String?
+
+  /// Anything the fields above cannot hold. This is where the useful stuff ends up.
+  moodNotes String? @db.Text
+
+  /// Sites, socials or artwork they want it to feel like. Trimmed and capped on write.
+  referenceUrls String[] @default([])
+
+  // ---- Who to ask ---------------------------------------------------------
+
+  contactName    String?
+  contactEmail   String?
+  contactDiscord String?
+
+  assets PartnerSiteBriefAsset[]
+
+  issuedByRobloxId String
+  issuedByName     String
+
+  /// When they handed it in. Set once, on the first submit - a later edit does not move
+  /// it, because "when did we get this" is a different question from "when did they last
+  /// touch it".
+  submittedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([partnerAccountId])
+  @@map("partner_site_briefs")
+}
+
+enum PartnerBriefAssetSlot {
+  /// The wordmark on a ticket's issuer bar. White or very light, transparent background -
+  /// see Partner.logoUrl for why that bar eats a dark logo.
+  LOGO
+  /// The big dim emblem the homepage hero is built around. Partner.crestUrl.
+  CREST
+  /// Artwork behind the whole site. Partner.backdropUrl.
+  BACKDROP
+  /// The stand-in image for a show with no poster yet. Partner.eventPlaceholderUrl.
+  EVENT_PLACEHOLDER
+  /// Anything else they wanted RNL to have.
+  OTHER
+}
+
+/// A file a partner attached to their brief.
+///
+/// On the PRIVATE upload volume, and that is not a detail. These are unreleased brand
+/// assets uploaded by somebody who is not yet a partner - a logo nobody has announced, a
+/// poster for a show with no date. Caddy serves /uploads straight off its own volume
+/// before Next ever sees the request, so anything stored there is world-readable by
+/// design; there is no session in front of it and there cannot be. See lib/uploads.ts.
+///
+/// The only reader is the .zip route under /company/partnerships, which checks company rank.
+model PartnerSiteBriefAsset {
+  id String @id @default(cuid())
+
+  briefId String
+  brief   PartnerSiteBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+
+  slot PartnerBriefAssetSlot
+
+  /// The path INSIDE PRIVATE_UPLOAD_DIR. Never a URL, because nothing serves these at a
+  /// URL. Resolved with resolveInRoot() before it is ever opened.
+  storagePath String
+  filename    String
+  /// Sniffed from the bytes at upload - never the string the browser claimed.
+  mime        String
+  size        Int
+
+  /// Snapshotted from whoever's session posted it, or "brief link" when it came in on the
+  /// token alone - which is the normal case, since the holder need not have an account.
+  uploadedBy String
+
+  createdAt DateTime @default(now())
+
+  @@index([briefId, slot])
+  @@map("partner_site_brief_assets")
 }

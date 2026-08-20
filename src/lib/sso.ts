@@ -129,6 +129,11 @@ export function knownOrigins(): string[] {
     // one.
     subOrigin("accounts"),
     subOrigin("pay"),
+    // The partner programme. Its public front needs no session at all, but /hub and
+    // /onboard very much do - and the sign-in for them starts and ends on this host,
+    // because the cookie is host-only. Without this line the front door refuses to mint
+    // a ticket for it and no partner can open their own area.
+    subOrigin("partner"),
     authoriseOrigin(),
     ...activePartners().map((p) => partnerOrigin(p.slug)),
   ];

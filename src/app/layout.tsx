@@ -72,6 +72,12 @@ export default function RootLayout({
     area === "survey" ||
     area === "partner" ||
     area === "partner-portal" ||
+    // partner.ronation.live - the partner programme. Bare like the rest, but for a reason
+    // the others do not have: HALF of this host is public. The programme page and the
+    // application form are read by strangers, and they bring their own header and footer
+    // (ProgrammeShell) rather than the site's, because "Book tickets" above a page
+    // explaining a commercial partnership reads as the wrong company answering.
+    area === "partner-program" ||
     area === "shop" ||
     // The accounting desk and its documents. See areaFor() in middleware.ts: a document
     // is a printable sheet, and neither the header nor the footer here is no-print, so

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 /**
  * The refusal page for pay.ronation.live.
  *
- * ---- Why this exists at all, rather than reusing /partner/access ---------
+ * ---- Why this exists at all, rather than reusing the partner host's /access ----
  *
  * Because that page is on the portal host. A cross-host redirect out of a guard would take
  * somebody OFF the thing they were trying to open in order to be told why they cannot open

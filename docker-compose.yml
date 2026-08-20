@@ -193,6 +193,11 @@ services:
     environment:
       SITE_HOST: ${SITE_HOST:-ronation.live}
       PORTAL_HOST: ${PORTAL_HOST:-portal.ronation.live}
+      # The partner PROGRAMME - singular "partner", and RNL's own. Not a partner site;
+      # see the block about it in the Caddyfile. It holds sessions, so it also needs an
+      # entry in knownOrigins() (src/lib/sso.ts) or partners can read the public half and
+      # never sign in to their own area.
+      PARTNER_HOST: ${PARTNER_HOST:-partner.ronation.live}
       SURVEY_HOST: ${SURVEY_HOST:-survey.ronation.live}
       # The sign-in host. Caddy must terminate TLS for it or nobody can sign in to
       # anything - see the note at the top of the Caddyfile.

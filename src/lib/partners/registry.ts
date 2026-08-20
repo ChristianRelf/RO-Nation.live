@@ -281,10 +281,16 @@ const RESERVED = new Set([
   "faq",
   "contact",
   "partners",
-  // The commercial-partner area on the portal host (portal.ronation.live/partner) - the
-  // PartnerAccount door, unrelated to these tenant partners. Same exposure as "hub" and
-  // "docs": the middleware tries the partner rewrite BEFORE it checks PORTAL_PATHS, so a
-  // tenant slugged "partner" would swallow that door outright.
+  // THE WORST ONE ON THIS LIST TO LOSE, now that it names a host.
+  //
+  // partner.ronation.live is the partner PROGRAMME - RNL's own: the public pitch, the
+  // application form, the invitation links staff hand out, and every partner's area at
+  // /hub. It is unrelated to these tenant partners despite the shared word.
+  //
+  // The middleware tries the tenant-site branch FIRST, on the leading DNS label, so a
+  // tenant slugged "partner" would not merely shadow a route - it would serve that
+  // tenant's homepage on the address where invitations are claimed and partner accounts
+  // are minted. Same exposure as "merch" and "login", and the same answer.
   "partner",
   // The press kit and the booking page. Same reason as every route above them, and
   // "press" is the one somebody would actually try to register: a partner slugged
@@ -369,4 +375,82 @@ export function partnerHasFeature(partner: Partner, feature: PartnerFeature) {
 /** Live partner sites, for the public partners page. */
 export function activePartners() {
   return PARTNERS.filter((p) => p.active);
+}
+
+/** The four shared features a partner site can be given, with what to call them. */
+export const PARTNER_FEATURE_CHOICES: readonly {
+  id: PartnerFeature;
+  label: string;
+  blurb: string;
+}[] = [
+  {
+    id: "events",
+    label: "Shows",
+    blurb: "A calendar, event pages, tickets and the door scanner.",
+  },
+  {
+    id: "blog",
+    label: "Blog",
+    blurb: "Posts and announcements, written from your own studio.",
+  },
+  {
+    id: "careers",
+    label: "Careers",
+    blurb: "Open roles and applications, for crew you are recruiting.",
+  },
+  {
+    id: "surveys",
+    label: "Surveys",
+    blurb: "Feedback forms on their own short links, after a show.",
+  },
+];
+
+/** Keep only real feature ids, in the order above. */
+export function cleanFeatures(input: unknown): PartnerFeature[] {
+  const wanted = new Set(
+    (Array.isArray(input) ? input : [input]).filter(
+      (v): v is string => typeof v === "string",
+    ),
+  );
+  return PARTNER_FEATURE_CHOICES.map((f) => f.id).filter((id) => wanted.has(id));
+}
+
+/**
+ * Could `slug` become a partner subdomain?
+ *
+ * The three refusals the loop at the top of this file already applies at BUILD time, moved
+ * into a function so they can also be applied at REQUEST time - specifically to a slug a
+ * would-be partner typed into their site brief (partner.ronation.live/onboard/site/<uuid>).
+ *
+ * Catching it there rather than at deploy is the whole point. A brief that asks for
+ * "login" or "merch" is not a typo somebody spots in review; it is a name a partner has
+ * been told they are getting, has designed a logo around, and has announced. The cheapest
+ * moment to say no is the moment they type it.
+ *
+ * This is NOT authorization and it does not reserve anything. A slug that is free today
+ * can be taken by a deploy tomorrow, so the build-time check stays exactly where it is -
+ * this is the courteous early warning, and that is the wall.
+ */
+export type SlugVerdict = "ok" | "invalid" | "reserved" | "taken";
+
+export function slugVerdict(slug: string): SlugVerdict {
+  const s = slug.trim().toLowerCase();
+  if (!SLUG_RE.test(s)) return "invalid";
+  if (RESERVED.has(s)) return "reserved";
+  if (PARTNERS.some((p) => p.slug === s)) return "taken";
+  return "ok";
+}
+
+/** Why a slug was refused, in a sentence somebody filling in a form can act on. */
+export function explainSlug(verdict: SlugVerdict): string | null {
+  switch (verdict) {
+    case "ok":
+      return null;
+    case "invalid":
+      return "Subdomains are lowercase letters, numbers and hyphens - and cannot start or end with a hyphen.";
+    case "reserved":
+      return "That name is one of ours - it already routes somewhere on ronation.live. Pick another.";
+    case "taken":
+      return "Another partner already has that one.";
+  }
 }
