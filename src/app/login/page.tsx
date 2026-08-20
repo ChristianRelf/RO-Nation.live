@@ -119,13 +119,22 @@ function safeReturn(v: string | undefined, fallback: string) {
 /**
  * Where signing in lands when nothing said otherwise - and it DEPENDS ON THE HOST.
  *
- * This page is served on every host that holds a session: the portal, accounts and pay.
- * /hub only exists on the portal, so a hardcoded "/hub" - which is what this was - sends
- * somebody signing in at accounts.ronation.live to a path that host rewrites to
- * /accounts/hub and 404s. They would have signed in successfully and landed on a
- * not-found, with nothing to suggest the sign-in had worked.
+ * This page is served on every host that holds a session: the portal, the partner
+ * programme, accounts and pay. /hub only exists on two of those, so a hardcoded "/hub" -
+ * which is what this was - sends somebody signing in at accounts.ronation.live to a path
+ * that host rewrites to /accounts/hub and 404s. They would have signed in successfully
+ * and landed on a not-found, with nothing to suggest the sign-in had worked.
  *
  * On the two payment hosts the answer is simply "/": each one's root IS its landing page.
+ *
+ * partner.ronation.live is the awkward one, and it is spelled out below rather than left
+ * to the fallback. It DOES have a /hub - the partner's own area - so the old catch-all
+ * happened to be right, by luck rather than by decision. Its root is not a landing page
+ * for somebody signing in, though: it is a PUBLIC pitch aimed at people who are not
+ * partners, so sending a partner who just authenticated there would be the one host where
+ * "/" is the wrong answer. Naming it means the next person to read this line does not
+ * have to work that out, and a future change to the fallback cannot silently break it.
+ *
  * Read from the Host header rather than passed in, because the sign-in link this page
  * builds has to carry the destination and there is nobody above it to know.
  */
@@ -133,7 +142,10 @@ function defaultReturn(): string {
   const host = (headers().get("x-forwarded-host") || headers().get("host") || "")
     .split(":")[0]
     .toLowerCase();
-  return host.startsWith("accounts.") || host.startsWith("pay.") ? "/" : "/hub";
+  if (host.startsWith("accounts.") || host.startsWith("pay.")) return "/";
+  // The portal's backstage launcher, and the partner host's own area. Same path, two
+  // different pages, and each is the right landing for the host it is on.
+  return "/hub";
 }
 
 export default async function PortalLoginPage({
