@@ -47,11 +47,30 @@ export const metadata: Metadata = {
   description:
     "Your own site, ticketing, a shelf in our shop and a crew who have run the night before. What the RO. Nation LIVE partner programme offers, what it costs, and how to join.",
   alternates: { canonical: "/" },
+  // The full object, url and images included, and NOT because they differ from the
+  // layout's - they are identical. `openGraph` is replaced wholesale by the deepest
+  // segment that declares one rather than deep-merged, so declaring only a title here
+  // silently drops the host's og:url, og:site_name and og:image. This is the one page on
+  // the host that exists to be pasted into a Discord, which makes a blank preview card
+  // the most expensive version of that bug. See the note in layout.tsx.
   openGraph: {
     title: "Partner with RO. Nation LIVE",
     description:
       "Your own site, ticketing, merchandise and production - for Roblox groups, creators and brands putting on live shows.",
     type: "website",
+    siteName: "RO. Nation LIVE Partners",
+    url: "/",
+    images: ["/opengraph-image"],
+  },
+  // Same story: the root layout sets a `twitter` block, so without one here the card
+  // would carry RNL's generic marketing copy directly under the og: tags above and
+  // contradict them.
+  twitter: {
+    card: "summary_large_image",
+    title: "Partner with RO. Nation LIVE",
+    description:
+      "Your own site, ticketing, merchandise and production - for Roblox groups, creators and brands putting on live shows.",
+    images: ["/opengraph-image"],
   },
 };
 

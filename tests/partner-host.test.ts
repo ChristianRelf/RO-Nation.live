@@ -74,6 +74,16 @@ describe("partner programme host", () => {
     expect(r.location).toBe("https://partner.ronation.live/hub");
   });
 
+  it("serves the Open Graph card image to an anonymous bot", () => {
+    // A link-preview bot has no session. Behind the gate this 307s to /login and every
+    // link anybody pastes into a chat comes out as a blank rectangle - invisible in a
+    // browser, because the page itself renders perfectly.
+    const r = go("https://partner.ronation.live/opengraph-image");
+    expect(r.status).toBe(200);
+    expect(r.location).toBeNull();
+    expect(r.rewrite).toBeNull();
+  });
+
   it("serves robots.txt to an anonymous crawler", () => {
     // Behind the gate this would 307 to /login, and a robots.txt that answers with a
     // sign-in page reads as no robots.txt at all - on the one host holding bearer links.
@@ -123,5 +133,14 @@ describe("the other hosts still work", () => {
     expect(go("https://accounts.ronation.live/books", { cookie: true }).rewrite).toBe(
       "https://accounts.ronation.live/accounts/books",
     );
+  });
+});
+
+describe("the join flow's own paths", () => {
+  it("rewrites /join/thanks for an anonymous visitor", () => {
+    const r = go("https://partner.ronation.live/join/thanks");
+    expect(r.status).toBe(200);
+    expect(r.location).toBeNull();
+    expect(r.rewrite).toBe("https://partner.ronation.live/partner/join/thanks");
   });
 });
