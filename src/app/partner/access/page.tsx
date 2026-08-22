@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getPartnerAccountAccess } from "@/lib/partner-account";
+import { getCompanyUser } from "@/lib/company";
 import { outboundUrls } from "@/lib/accounting/urls";
 import { Kicker } from "@/components/ui";
 
@@ -24,7 +25,20 @@ export const metadata: Metadata = {
 // The anonymous branch below is therefore a fallback rather than a path anybody walks: it
 // exists so that a change to that list degrades into an explanation instead of a blank page.
 //
-// ---- The link that must NOT be relative ------------------------------------
+// ---- Staff get a different answer, and they need one ------------------------
+//
+// A PartnerAccount grant is not a rank - it is a row (lib/partner-account.ts) - so a
+// member of RNL staff, up to and including whoever runs the company, holds no partner
+// access by default and lands here. The generic version of this page then told them to
+// "Ask about partnering", which is absurd advice for the person who issues the grants:
+// they are one click from writing the row themselves.
+//
+// So company rank gets its own panel pointing at the tool that fixes it. This is NOT a
+// permission - it grants nothing and reveals nothing a staffer cannot already see - it
+// is the difference between a dead end and a next step for the one population that has
+// one.
+//
+// ---- The links that must NOT be relative ------------------------------------
 //
 // "Backstage hub" means portal.ronation.live/hub, which is a completely different page from
 // the /hub on THIS host - that one is the partner area they were just refused. A relative
@@ -34,7 +48,12 @@ export default async function PartnerAccessPage() {
   const access = await getPartnerAccountAccess();
   if (access.state === "allowed") redirect("/hub");
 
+  // Only asked once we know they are NOT a partner - which is every path that reaches
+  // this line - so it costs a query on a page nobody should be seeing twice.
+  const staff = access.state === "denied" ? await getCompanyUser() : null;
+
   const backstageHub = outboundUrls.hub();
+  const partnerAccounts = outboundUrls.partnerAccounts();
 
   return (
     <div className="relative">
@@ -82,15 +101,34 @@ export default async function PartnerAccessPage() {
               </div>
 
               {/* The one thing they CAN act on, and the reason this page is worth more
-                  than a 403: there is now a front door, and they are standing next to it. */}
-              <div className="card mt-4 border-accent/30 p-6 text-left">
-                <p className="text-sm text-muted">
-                  Not a partner yet, and think you should be?
-                </p>
-                <a href="/join/new" className="btn btn-accent mt-4 w-full">
-                  Ask about partnering
-                </a>
-              </div>
+                  than a 403. Which action that is depends entirely on who they are. */}
+              {staff ? (
+                <div className="card mt-4 border-accent/30 p-6 text-left">
+                  <p className="text-sm text-muted">
+                    You&apos;re signed in as RO. Nation LIVE staff (
+                    {staff.roleName}), and partner access isn&apos;t a rank - it&apos;s a
+                    grant against a partner account. Give this Roblox account one and
+                    this area opens.
+                  </p>
+                  <a href={partnerAccounts} className="btn btn-accent mt-4 w-full">
+                    Partner accounts ↗
+                  </a>
+                  <p className="mt-3 text-xs text-faint">
+                    Create an account, add your Roblox id as a member, then come back.
+                    It is the same grant a real partner gets, so what you see here is
+                    what they see.
+                  </p>
+                </div>
+              ) : (
+                <div className="card mt-4 border-accent/30 p-6 text-left">
+                  <p className="text-sm text-muted">
+                    Not a partner yet, and think you should be?
+                  </p>
+                  <a href="/join/new" className="btn btn-accent mt-4 w-full">
+                    Ask about partnering
+                  </a>
+                </div>
+              )}
 
               <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
                 <a href={backstageHub} className="btn btn-ghost">

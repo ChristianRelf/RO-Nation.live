@@ -2057,6 +2057,60 @@ model TeamMember {
 }
 
 // ------------------------------------------------------------------
+// The Roblox groups credited on partner.ronation.live's "Our Partners"
+// section - sponsors and affiliated communities, identified by nothing
+// but their Roblox group id.
+//
+// This is deliberately a THIRD thing, not a rename of either of the two
+// "partner" concepts already in this schema:
+//   - lib/partners/registry.ts / PartnerMember is a white-label PARTNER
+//     SITE running on RNL's own infrastructure - a deploy, gated by rank.
+//   - PartnerAccount is the commercial partner PROGRAMME - an account
+//     with its own agreements and accounting.
+// A row here is neither. It doesn't run a site and it doesn't have an
+// account; it's a group RNL wants to publicly credit, the same way
+// TeamMember exists so a crew member doesn't have to be a Roblox account
+// with portal access.
+//
+// name and iconUrl are resolved server-side from Roblox, the same rule
+// TeamMember follows: you cannot type a group into this table, only find
+// one by id and let Roblox say what it's called. memberCount is NOT
+// stored - it's read live, on every render of the public page, because a
+// count that can go stale is worse than a blank one. See
+// getLiveMemberCount in lib/partner-groups/roblox.ts.
+// ------------------------------------------------------------------
+model PartnerGroup {
+  id String @id @default(cuid())
+
+  /// The canonical Roblox group id. Unique: one card per group, so adding
+  /// the same group twice updates it instead of producing a duplicate
+  /// nobody notices.
+  robloxGroupId String @unique
+
+  /// Resolved from Roblox when the group is added or re-synced. Both can
+  /// rot - a group renames, Roblox rotates icon URLs - which is what
+  /// re-sync is for; a stale name beats a broken card in the meantime.
+  name    String
+  iconUrl String?
+
+  /// Why THIS group is credited here. Free text and editorial, written by
+  /// RNL - not a restatement of what Roblox's own group description says.
+  description String @db.Text
+
+  order Int @default(0)
+
+  /// Off the site, but still on the books - the row survives a hide, same
+  /// as TeamMember.visible.
+  visible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visible, order])
+  @@map("partner_groups")
+}
+
+// ------------------------------------------------------------------
 // What the crowd actually said.
 //
 // The homepage carried five of these as a hardcoded array, under a heading

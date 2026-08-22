@@ -14,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { requireCompanyUser } from "@/lib/company";
 import { requireScopeManager } from "@/lib/portal-scope";
 import { resolveRobloxUser, searchRobloxUsers } from "@/lib/roblox-users";
+import { resolvePartnerGroup } from "@/lib/partner-groups/roblox";
 import { generateSurveyCode } from "@/lib/utils";
 import { removePrivateFiles } from "@/lib/uploads";
 import {
@@ -77,6 +78,13 @@ function refreshCareers() {
 function refreshTeam() {
   revalidatePath("/company/team");
   revalidatePath("/team");
+}
+
+function refreshPartnerGroups() {
+  revalidatePath("/company/partner-groups");
+  // partner.ronation.live's "Our Partners" section - not /company, which the middleware
+  // routes on a different host entirely.
+  revalidatePath("/partner");
 }
 
 function refreshTestimonials() {
@@ -959,6 +967,94 @@ export async function deleteTeamMember(formData: FormData) {
 
   refreshTeam();
   redirect("/company/team");
+}
+
+// ---- partner groups (Roblox groups shown on partner.ronation.live) ----------
+//
+// Same shape of defence as the crew, for the same reason: a group here is IDENTIFIED BY
+// A ROBLOX GROUP ID, and its name and icon are re-resolved from Roblox server-side rather
+// than trusted from the form. The description is the one field that's genuinely RNL's own
+// - why this group is credited here, not a restatement of anything Roblox says.
+
+function readPartnerGroup(form: FormData) {
+  return {
+    description: s(form, "description"),
+    order: parseInt(s(form, "order") || "0", 10) || 0,
+    visible: form.get("visible") === "on",
+  };
+}
+
+export async function createPartnerGroup(formData: FormData) {
+  await requireCompanyUser();
+
+  const robloxGroupId = s(formData, "robloxGroupId");
+  const data = readPartnerGroup(formData);
+  if (!robloxGroupId || !data.description) {
+    redirect("/company/partner-groups/new?error=required");
+  }
+
+  const resolved = await resolvePartnerGroup(robloxGroupId);
+  if (!resolved) redirect("/company/partner-groups/new?error=roblox");
+
+  await prisma.partnerGroup.upsert({
+    // Unique on robloxGroupId, so adding a group that's already listed updates it rather
+    // than producing a second card nobody notices.
+    where: { robloxGroupId },
+    update: { ...data, name: resolved.name, iconUrl: resolved.iconUrl },
+    create: { ...data, robloxGroupId, name: resolved.name, iconUrl: resolved.iconUrl },
+  });
+
+  refreshPartnerGroups();
+  redirect("/company/partner-groups");
+}
+
+export async function updatePartnerGroup(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  const data = readPartnerGroup(formData);
+  if (!id || !data.description) {
+    redirect(`/company/partner-groups/${id}/edit?error=required`);
+  }
+
+  await prisma.partnerGroup.update({ where: { id }, data });
+
+  refreshPartnerGroups();
+  redirect("/company/partner-groups");
+}
+
+/** Re-read a group's name, icon and member count from Roblox. Same reasoning as refreshTeamMember. */
+export async function refreshPartnerGroup(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (!id) redirect("/company/partner-groups");
+
+  const group = await prisma.partnerGroup.findUnique({ where: { id } });
+  if (!group) redirect("/company/partner-groups");
+
+  const resolved = await resolvePartnerGroup(group.robloxGroupId);
+  // Roblox did not answer, or the group is gone. Leaving the row exactly as it is beats
+  // overwriting a real name with nothing.
+  if (!resolved) redirect("/company/partner-groups?error=roblox");
+
+  await prisma.partnerGroup.update({
+    where: { id },
+    data: { name: resolved.name, iconUrl: resolved.iconUrl },
+  });
+
+  refreshPartnerGroups();
+  redirect("/company/partner-groups?ok=refreshed");
+}
+
+export async function deletePartnerGroup(formData: FormData) {
+  await requireCompanyUser();
+
+  const id = s(formData, "id");
+  if (id) await prisma.partnerGroup.delete({ where: { id } });
+
+  refreshPartnerGroups();
+  redirect("/company/partner-groups");
 }
 
 // ---- testimonials ------------------------------------------------

@@ -1,0 +1,273 @@
+Date : 2026-08-21 22:56:04
+Directory : c:\Users\chris\Desktop\RO-Nation.live
+Total : 143 files,  14159 codes, 4879 comments, 1670 blanks, all 20708 lines
+
+Languages
++----------------+------------+------------+------------+------------+------------+
+| language       | files      | code       | comment    | blank      | total      |
++----------------+------------+------------+------------+------------+------------+
+| TypeScript JSX |         86 |      8,794 |      1,706 |        759 |     11,259 |
+| TypeScript     |         51 |      5,162 |      3,153 |        830 |      9,145 |
+| Markdown       |          4 |        198 |          0 |         81 |        279 |
+| YAML           |          1 |          3 |         20 |          0 |         23 |
+| JSON           |          1 |          2 |          0 |          0 |          2 |
++----------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                              | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                 |        143 |     14,159 |      4,879 |      1,670 |     20,708 |
+| . (Files)                                                                                         |          5 |        115 |         20 |         40 |        175 |
+| content                                                                                           |          1 |         88 |          0 |         41 |        129 |
+| content\legal                                                                                     |          1 |         88 |          0 |         41 |        129 |
+| content\legal\company                                                                             |          1 |         88 |          0 |         41 |        129 |
+| content\legal\company\documents                                                                   |          1 |         88 |          0 |         41 |        129 |
+| scripts                                                                                           |          5 |        377 |        138 |         47 |        562 |
+| scripts (Files)                                                                                   |          2 |        140 |         91 |         35 |        266 |
+| scripts\posts                                                                                     |          3 |        237 |         47 |         12 |        296 |
+| src                                                                                               |        128 |     12,818 |      4,539 |      1,417 |     18,774 |
+| src (Files)                                                                                       |          1 |        198 |        348 |         38 |        584 |
+| src\app                                                                                           |         69 |      7,913 |      1,810 |        821 |     10,544 |
+| src\app (Files)                                                                                   |          4 |         24 |         53 |          3 |         80 |
+| src\app\accounts                                                                                  |          9 |      1,317 |        191 |        112 |      1,620 |
+| src\app\accounts (Files)                                                                          |          3 |        306 |         66 |         24 |        396 |
+| src\app\accounts\[id]                                                                             |          2 |        318 |         36 |         27 |        381 |
+| src\app\accounts\[id] (Files)                                                                     |          1 |        229 |         26 |         18 |        273 |
+| src\app\accounts\[id]\edit                                                                        |          1 |         89 |         10 |          9 |        108 |
+| src\app\accounts\books                                                                            |          1 |        180 |         30 |         14 |        224 |
+| src\app\accounts\new                                                                              |          1 |         54 |          8 |          9 |         71 |
+| src\app\accounts\refund                                                                           |          1 |        190 |         19 |         15 |        224 |
+| src\app\accounts\requests                                                                         |          1 |        269 |         32 |         23 |        324 |
+| src\app\actions                                                                                   |          8 |      1,205 |        546 |        244 |      1,995 |
+| src\app\api                                                                                       |          2 |        112 |         77 |         27 |        216 |
+| src\app\api\partner                                                                               |          1 |         97 |         56 |         22 |        175 |
+| src\app\api\partner\brief                                                                         |          1 |         97 |         56 |         22 |        175 |
+| src\app\api\pay                                                                                   |          1 |         15 |         21 |          5 |         41 |
+| src\app\api\pay\seen                                                                              |          1 |         15 |         21 |          5 |         41 |
+| src\app\company                                                                                   |          6 |      1,297 |        110 |        103 |      1,510 |
+| src\app\company\(dash)                                                                            |          6 |      1,297 |        110 |        103 |      1,510 |
+| src\app\company\(dash)\partner-accounts                                                           |          2 |        330 |          6 |         29 |        365 |
+| src\app\company\(dash)\partner-accounts (Files)                                                   |          1 |        141 |          2 |         14 |        157 |
+| src\app\company\(dash)\partner-accounts\[id]                                                      |          1 |        189 |          4 |         15 |        208 |
+| src\app\company\(dash)\partnerships                                                               |          4 |        967 |        104 |         74 |      1,145 |
+| src\app\company\(dash)\partnerships (Files)                                                       |          1 |        383 |         26 |         22 |        431 |
+| src\app\company\(dash)\partnerships\[id]                                                          |          1 |        226 |         14 |         19 |        259 |
+| src\app\company\(dash)\partnerships\brief                                                         |          2 |        358 |         64 |         33 |        455 |
+| src\app\company\(dash)\partnerships\brief\[id]                                                    |          2 |        358 |         64 |         33 |        455 |
+| src\app\company\(dash)\partnerships\brief\[id] (Files)                                            |          1 |        293 |         23 |         22 |        338 |
+| src\app\company\(dash)\partnerships\brief\[id]\zip                                                |          1 |         65 |         41 |         11 |        117 |
+| src\app\contact                                                                                   |          1 |          2 |          5 |          1 |          8 |
+| src\app\deck                                                                                      |          1 |        349 |         59 |         24 |        432 |
+| src\app\doc                                                                                       |          1 |         20 |         30 |          6 |         56 |
+| src\app\doc\[token]                                                                               |          1 |         20 |         30 |          6 |         56 |
+| src\app\document                                                                                  |          1 |         30 |         44 |          8 |         82 |
+| src\app\document\[kind]                                                                           |          1 |         30 |         44 |          8 |         82 |
+| src\app\document\[kind]\[token]                                                                   |          1 |         30 |         44 |          8 |         82 |
+| src\app\hub                                                                                       |          1 |         21 |         26 |          2 |         49 |
+| src\app\legal                                                                                     |         10 |        544 |         49 |         20 |        613 |
+| src\app\legal (Files)                                                                             |          1 |          6 |          0 |          0 |          6 |
+| src\app\legal\code-of-conduct                                                                     |          1 |         65 |         17 |          1 |         83 |
+| src\app\legal\data-requests                                                                       |          1 |          1 |          0 |          0 |          1 |
+| src\app\legal\partners                                                                            |          3 |        242 |          6 |         14 |        262 |
+| src\app\legal\partners\assets                                                                     |          1 |         80 |          0 |          4 |         84 |
+| src\app\legal\partners\merchandise                                                                |          1 |         84 |          4 |          5 |         93 |
+| src\app\legal\partners\ticketing                                                                  |          1 |         78 |          2 |          5 |         85 |
+| src\app\legal\payments                                                                            |          1 |        166 |         26 |          5 |        197 |
+| src\app\legal\privacy                                                                             |          1 |         17 |          0 |          0 |         17 |
+| src\app\legal\roblox                                                                              |          1 |         14 |          0 |          0 |         14 |
+| src\app\legal\roblox\privacy                                                                      |          1 |         14 |          0 |          0 |         14 |
+| src\app\legal\terms                                                                               |          1 |         33 |          0 |          0 |         33 |
+| src\app\login                                                                                     |          1 |          9 |         24 |          1 |         34 |
+| src\app\partner                                                                                   |         14 |      2,110 |        408 |        190 |      2,708 |
+| src\app\partner (Files)                                                                           |          2 |        318 |         87 |         26 |        431 |
+| src\app\partner\access                                                                            |          1 |        100 |         37 |         11 |        148 |
+| src\app\partner\hub                                                                               |          4 |        415 |         64 |         28 |        507 |
+| src\app\partner\hub (Files)                                                                       |          2 |        365 |         38 |         18 |        421 |
+| src\app\partner\hub\accounting                                                                    |          1 |          9 |         22 |          4 |         35 |
+| src\app\partner\hub\documents                                                                     |          1 |         41 |          4 |          6 |         51 |
+| src\app\partner\invite                                                                            |          1 |        212 |         37 |         20 |        269 |
+| src\app\partner\invite\[code]                                                                     |          1 |        212 |         37 |         20 |        269 |
+| src\app\partner\join                                                                              |          2 |        181 |         32 |         16 |        229 |
+| src\app\partner\join\new                                                                          |          1 |        122 |         22 |         10 |        154 |
+| src\app\partner\join\thanks                                                                       |          1 |         59 |         10 |          6 |         75 |
+| src\app\partner\onboard                                                                           |          4 |        884 |        151 |         89 |      1,124 |
+| src\app\partner\onboard\(flow)                                                                    |          3 |        414 |         96 |         50 |        560 |
+| src\app\partner\onboard\(flow) (Files)                                                            |          2 |         51 |         42 |         10 |        103 |
+| src\app\partner\onboard\(flow)\[step]                                                             |          1 |        363 |         54 |         40 |        457 |
+| src\app\partner\onboard\site                                                                      |          1 |        470 |         55 |         39 |        564 |
+| src\app\partner\onboard\site\[token]                                                              |          1 |        470 |         55 |         39 |        564 |
+| src\app\partners                                                                                  |          1 |         11 |         13 |          1 |         25 |
+| src\app\pay                                                                                       |          9 |        862 |        175 |         79 |      1,116 |
+| src\app\pay (Files)                                                                               |          1 |          9 |         11 |          3 |         23 |
+| src\app\pay\(app)                                                                                 |          6 |        735 |        109 |         62 |        906 |
+| src\app\pay\(app) (Files)                                                                         |          2 |        229 |         28 |         19 |        276 |
+| src\app\pay\(app)\make-payment                                                                    |          1 |         36 |         16 |          6 |         58 |
+| src\app\pay\(app)\request-payment                                                                 |          1 |         47 |         11 |          6 |         64 |
+| src\app\pay\(app)\requests                                                                        |          1 |        157 |         22 |         15 |        194 |
+| src\app\pay\(app)\statements                                                                      |          1 |        266 |         32 |         16 |        314 |
+| src\app\pay\access                                                                                |          1 |         90 |         27 |          9 |        126 |
+| src\app\pay\terms                                                                                 |          1 |         28 |         28 |          5 |         61 |
+| src\components                                                                                    |         31 |      2,297 |        613 |        224 |      3,134 |
+| src\components (Files)                                                                            |          8 |         87 |        123 |         12 |        222 |
+| src\components\accounting                                                                         |          9 |      1,064 |        226 |         95 |      1,385 |
+| src\components\hub                                                                                |          1 |        -10 |        -14 |         -4 |        -28 |
+| src\components\partner                                                                            |          8 |        755 |        175 |         75 |      1,005 |
+| src\components\pay                                                                                |          4 |        398 |         98 |         45 |        541 |
+| src\components\portal                                                                             |          1 |          3 |          5 |          1 |          9 |
+| src\lib                                                                                           |         27 |      2,410 |      1,768 |        334 |      4,512 |
+| src\lib (Files)                                                                                   |         17 |        998 |        721 |        137 |      1,856 |
+| src\lib\accounting                                                                                |          9 |      1,357 |      1,018 |        192 |      2,567 |
+| src\lib\partners                                                                                  |          1 |         55 |         29 |          5 |         89 |
+| tests                                                                                             |          4 |        761 |        182 |        125 |      1,068 |
++---------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| filename                                                                                          | language       | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| c:\Users\chris\Desktop\RO-Nation.live\README.md                                                   | Markdown       |          4 |          0 |          0 |          4 |
+| c:\Users\chris\Desktop\RO-Nation.live\STARTUP.md                                                  | Markdown       |          2 |          0 |          0 |          2 |
+| c:\Users\chris\Desktop\RO-Nation.live\ad.md                                                       | Markdown       |        104 |          0 |         40 |        144 |
+| c:\Users\chris\Desktop\RO-Nation.live\content\legal\company\documents\merchandise-sales.md        | Markdown       |         88 |          0 |         41 |        129 |
+| c:\Users\chris\Desktop\RO-Nation.live\docker-compose.yml                                          | YAML           |          3 |         20 |          0 |         23 |
+| c:\Users\chris\Desktop\RO-Nation.live\package.json                                                | JSON           |          2 |          0 |          0 |          2 |
+| c:\Users\chris\Desktop\RO-Nation.live\scripts\deck-backdrop.ts                                    | TypeScript     |         66 |         45 |         17 |        128 |
+| c:\Users\chris\Desktop\RO-Nation.live\scripts\post.ts                                             | TypeScript     |         74 |         46 |         18 |        138 |
+| c:\Users\chris\Desktop\RO-Nation.live\scripts\posts\arena-shows-and-festivals.ts                  | TypeScript     |        123 |         18 |          5 |        146 |
+| c:\Users\chris\Desktop\RO-Nation.live\scripts\posts\deck-the-dj-rig.ts                            | TypeScript     |        107 |         10 |          5 |        122 |
+| c:\Users\chris\Desktop\RO-Nation.live\scripts\posts\index.ts                                      | TypeScript     |          7 |         19 |          2 |         28 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\[id]\edit\page.tsx                         | TypeScript JSX |         89 |         10 |          9 |        108 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\[id]\page.tsx                              | TypeScript JSX |        229 |         26 |         18 |        273 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\books\page.tsx                             | TypeScript JSX |        180 |         30 |         14 |        224 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\layout.tsx                                 | TypeScript JSX |         18 |         27 |          3 |         48 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\new\page.tsx                               | TypeScript JSX |         54 |          8 |          9 |         71 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\page.tsx                                   | TypeScript JSX |        276 |         28 |         19 |        323 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\refund\page.tsx                            | TypeScript JSX |        190 |         19 |         15 |        224 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\relatable.ts                               | TypeScript     |         12 |         11 |          2 |         25 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\requests\page.tsx                          | TypeScript JSX |        269 |         32 |         23 |        324 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\accounting.ts                               | TypeScript     |        405 |        113 |         68 |        586 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-accounts.ts                         | TypeScript     |        103 |         19 |         28 |        150 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-applications.ts                     | TypeScript     |         82 |         54 |         17 |        153 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-brief.ts                            | TypeScript     |        104 |         52 |         16 |        172 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-onboarding.ts                       | TypeScript     |         79 |         32 |         20 |        131 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partnerships.ts                             | TypeScript     |        140 |         82 |         46 |        268 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\payments.ts                                 | TypeScript     |        281 |        175 |         46 |        502 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\studio-events.ts                            | TypeScript     |         11 |         19 |          3 |         33 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\api\partner\brief\route.ts                          | TypeScript     |         97 |         56 |         22 |        175 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\api\pay\seen\route.ts                               | TypeScript     |         15 |         21 |          5 |         41 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partner-accounts\[id]\page.tsx       | TypeScript JSX |        189 |          4 |         15 |        208 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partner-accounts\page.tsx            | TypeScript JSX |        141 |          2 |         14 |        157 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\[id]\page.tsx           | TypeScript JSX |        226 |         14 |         19 |        259 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\brief\[id]\page.tsx     | TypeScript JSX |        293 |         23 |         22 |        338 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\brief\[id]\zip\route.ts | TypeScript     |         65 |         41 |         11 |        117 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\page.tsx                | TypeScript JSX |        383 |         26 |         22 |        431 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\contact\page.tsx                                    | TypeScript JSX |          2 |          5 |          1 |          8 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\deck\page.tsx                                       | TypeScript JSX |        349 |         59 |         24 |        432 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\doc\[token]\page.tsx                                | TypeScript JSX |         20 |         30 |          6 |         56 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\document\[kind]\[token]\page.tsx                    | TypeScript JSX |         30 |         44 |          8 |         82 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\hub\page.tsx                                        | TypeScript JSX |         21 |         26 |          2 |         49 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\layout.tsx                                          | TypeScript JSX |          3 |         11 |          0 |         14 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\code-of-conduct\page.tsx                      | TypeScript JSX |         65 |         17 |          1 |         83 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\data-requests\page.tsx                        | TypeScript JSX |          1 |          0 |          0 |          1 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\page.tsx                                      | TypeScript JSX |          6 |          0 |          0 |          6 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\partners\assets\page.tsx                      | TypeScript JSX |         80 |          0 |          4 |         84 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\partners\merchandise\page.tsx                 | TypeScript JSX |         84 |          4 |          5 |         93 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\partners\ticketing\page.tsx                   | TypeScript JSX |         78 |          2 |          5 |         85 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\payments\page.tsx                             | TypeScript JSX |        166 |         26 |          5 |        197 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\privacy\page.tsx                              | TypeScript JSX |         17 |          0 |          0 |         17 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\roblox\privacy\page.tsx                       | TypeScript JSX |         14 |          0 |          0 |         14 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\terms\page.tsx                                | TypeScript JSX |         33 |          0 |          0 |         33 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\login\page.tsx                                      | TypeScript JSX |          9 |         24 |          1 |         34 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\page.tsx                                            | TypeScript JSX |         -1 |          0 |          1 |          0 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\access\page.tsx                             | TypeScript JSX |        100 |         37 |         11 |        148 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\accounting\page.tsx                     | TypeScript JSX |          9 |         22 |          4 |         35 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\documents\page.tsx                      | TypeScript JSX |         41 |          4 |          6 |         51 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\layout.tsx                              | TypeScript JSX |         23 |          9 |          4 |         36 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\page.tsx                                | TypeScript JSX |        342 |         29 |         14 |        385 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\invite\[code]\page.tsx                      | TypeScript JSX |        212 |         37 |         20 |        269 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\join\new\page.tsx                           | TypeScript JSX |        122 |         22 |         10 |        154 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\join\thanks\page.tsx                        | TypeScript JSX |         59 |         10 |          6 |         75 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\layout.tsx                                  | TypeScript JSX |         26 |         37 |          3 |         66 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\(flow)\[step]\page.tsx              | TypeScript JSX |        363 |         54 |         40 |        457 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\(flow)\layout.tsx                   | TypeScript JSX |         42 |         31 |          7 |         80 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\(flow)\page.tsx                     | TypeScript JSX |          9 |         11 |          3 |         23 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\site\[token]\page.tsx               | TypeScript JSX |        470 |         55 |         39 |        564 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\page.tsx                                    | TypeScript JSX |        292 |         50 |         23 |        365 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\partners\page.tsx                                   | TypeScript JSX |         11 |         13 |          1 |         25 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\layout.tsx                                | TypeScript JSX |         21 |         10 |          4 |         35 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\make-payment\page.tsx                     | TypeScript JSX |         36 |         16 |          6 |         58 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\page.tsx                                  | TypeScript JSX |        208 |         18 |         15 |        241 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\request-payment\page.tsx                  | TypeScript JSX |         47 |         11 |          6 |         64 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\requests\page.tsx                         | TypeScript JSX |        157 |         22 |         15 |        194 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\statements\page.tsx                       | TypeScript JSX |        266 |         32 |         16 |        314 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\access\page.tsx                                 | TypeScript JSX |         90 |         27 |          9 |        126 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\layout.tsx                                      | TypeScript JSX |          9 |         11 |          3 |         23 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\terms\page.tsx                                  | TypeScript JSX |         28 |         28 |          5 |         61 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\robots.ts                                           | TypeScript     |         21 |         39 |          2 |         62 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\app\sitemap.ts                                          | TypeScript     |          1 |          3 |          0 |          4 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\accounting-shell.tsx              | TypeScript JSX |         59 |         40 |          6 |        105 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\accounts-nav.tsx                  | TypeScript JSX |         56 |         29 |          8 |         93 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\document-builder.tsx              | TypeScript JSX |        419 |         45 |         33 |        497 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\document-paper.tsx                | TypeScript JSX |        250 |         41 |         15 |        306 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\document-status-badge.tsx         | TypeScript JSX |         37 |          4 |          4 |         45 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\refund-form.tsx                   | TypeScript JSX |        144 |         14 |         13 |        171 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\request-status-badge.tsx          | TypeScript JSX |         22 |         11 |          4 |         37 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\share-link.tsx                    | TypeScript JSX |         31 |         14 |          4 |         49 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\terms-block.tsx                   | TypeScript JSX |         46 |         28 |          8 |         82 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\company-nav.tsx                              | TypeScript JSX |         27 |         45 |          3 |         75 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\company-shell.tsx                            | TypeScript JSX |          2 |          3 |          0 |          5 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\copy-field.tsx                               | TypeScript JSX |         31 |         23 |          4 |         58 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\enquiry-form.tsx                             | TypeScript JSX |          3 |         11 |          0 |         14 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\mark-seen.tsx                            | TypeScript JSX |        -10 |        -14 |         -4 |        -28 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\legal-doc.tsx                                | TypeScript JSX |         13 |         14 |          1 |         28 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\brief-uploads.tsx                    | TypeScript JSX |        144 |         27 |         15 |        186 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\join-form.tsx                        | TypeScript JSX |        264 |         37 |         24 |        325 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\ledger-strip.tsx                     | TypeScript JSX |         77 |         14 |          5 |         96 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\onboard-rail.tsx                     | TypeScript JSX |         72 |         17 |          6 |         95 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\partner-nav.tsx                      | TypeScript JSX |         53 |         21 |          6 |         80 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\partner-shell.tsx                    | TypeScript JSX |         64 |         12 |          8 |         84 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\programme-shell.tsx                  | TypeScript JSX |         36 |         30 |          6 |         72 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\timezone-field.tsx                   | TypeScript JSX |         45 |         17 |          5 |         67 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\pay-nav.tsx                              | TypeScript JSX |         45 |          9 |          5 |         59 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\pay-shell.tsx                            | TypeScript JSX |         68 |         25 |          8 |        101 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\request-form.tsx                         | TypeScript JSX |        120 |         26 |         15 |        161 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\terms-gate.tsx                           | TypeScript JSX |        165 |         38 |         17 |        220 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\portal-footer.tsx                            | TypeScript JSX |          2 |          7 |          0 |          9 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\payout-invoice.tsx                    | TypeScript JSX |          3 |          5 |          1 |          9 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\seen-marker.tsx                              | TypeScript JSX |          8 |         17 |          4 |         29 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\components\site-footer.tsx                              | TypeScript JSX |          1 |          3 |          0 |          4 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\documents.ts                             | TypeScript     |        371 |        212 |         52 |        635 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\kinds.ts                                 | TypeScript     |        196 |        144 |         21 |        361 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\lines.ts                                 | TypeScript     |        131 |         75 |         25 |        231 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\pay-terms.ts                             | TypeScript     |         65 |        114 |         12 |        191 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\refunds.ts                               | TypeScript     |        102 |         71 |         14 |        187 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\request-kinds.ts                         | TypeScript     |        106 |         60 |         11 |        177 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\requests.ts                              | TypeScript     |        216 |        141 |         27 |        384 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\terms.ts                                 | TypeScript     |        114 |        108 |         18 |        240 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\urls.ts                                  | TypeScript     |         56 |         93 |         12 |        161 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\announce.ts                                         | TypeScript     |         66 |         56 |         10 |        132 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\env.ts                                              | TypeScript     |          1 |         19 |          1 |         21 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\hub.ts                                              | TypeScript     |          8 |          7 |          2 |         17 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\legal.ts                                            | TypeScript     |         35 |         16 |          2 |         53 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\notify.ts                                           | TypeScript     |         12 |         29 |          3 |         44 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-account.ts                                  | TypeScript     |         52 |         38 |         11 |        101 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-brief.ts                                    | TypeScript     |        302 |         73 |         25 |        400 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-invites.ts                                  | TypeScript     |        130 |         94 |         22 |        246 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-onboarding.ts                               | TypeScript     |        102 |         76 |         15 |        193 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-program.ts                                  | TypeScript     |        107 |         68 |          9 |        184 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-seen.ts                                     | TypeScript     |         28 |         38 |          6 |         72 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-urls.ts                                     | TypeScript     |         16 |         47 |          4 |         67 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\partners\registry.ts                                | TypeScript     |         55 |         29 |          5 |         89 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\pay.ts                                              | TypeScript     |         28 |         66 |          7 |        101 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\site.ts                                             | TypeScript     |          0 |          2 |          0 |          2 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\sso.ts                                              | TypeScript     |          3 |         17 |          0 |         20 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\uploads.ts                                          | TypeScript     |          1 |         16 |          1 |         18 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\lib\zip.ts                                              | TypeScript     |        107 |         59 |         19 |        185 |
+| c:\Users\chris\Desktop\RO-Nation.live\src\middleware.ts                                           | TypeScript     |        198 |        348 |         38 |        584 |
+| c:\Users\chris\Desktop\RO-Nation.live\tests\accounting-lines.test.ts                              | TypeScript     |        179 |         44 |         27 |        250 |
+| c:\Users\chris\Desktop\RO-Nation.live\tests\accounting-refunds.test.ts                            | TypeScript     |        171 |         31 |         32 |        234 |
+| c:\Users\chris\Desktop\RO-Nation.live\tests\partner-host.test.ts                                  | TypeScript     |        110 |         17 |         20 |        147 |
+| c:\Users\chris\Desktop\RO-Nation.live\tests\payments-hosts.test.ts                                | TypeScript     |        301 |         90 |         46 |        437 |
+| Total                                                                                             |                |     14,159 |      4,879 |      1,670 |     20,708 |
++---------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+

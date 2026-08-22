@@ -1,0 +1,625 @@
+"filename", "language", "Shell Script", "YAML", "JSON", "JSON with Comments", "Ignore", "Markdown", "TypeScript", "JavaScript", "Docker", "XML", "PostCSS", "TypeScript JSX", "comment", "blank", "total"
+"c:\Users\chris\Desktop\RO-Nation.live\.claude\settings.json", "JSON with Comments", 0, 0, 0, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 40
+"c:\Users\chris\Desktop\RO-Nation.live\.claude\settings.local.json", "JSON", 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 23
+"c:\Users\chris\Desktop\RO-Nation.live\.dockerignore", "Ignore", 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 23, 8, 50
+"c:\Users\chris\Desktop\RO-Nation.live\.eslintrc.json", "JSON with Comments", 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4
+"c:\Users\chris\Desktop\RO-Nation.live\.github\workflows\ci.yml", "YAML", 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 12, 61
+"c:\Users\chris\Desktop\RO-Nation.live\Dockerfile", "Docker", 0, 0, 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 55, 10, 99
+"c:\Users\chris\Desktop\RO-Nation.live\IMPROVEMENTS.md", "Markdown", 0, 0, 0, 0, 0, 180, 0, 0, 0, 0, 0, 0, 0, 38, 218
+"c:\Users\chris\Desktop\RO-Nation.live\README.md", "Markdown", 0, 0, 0, 0, 0, 289, 0, 0, 0, 0, 0, 0, 0, 89, 378
+"c:\Users\chris\Desktop\RO-Nation.live\SEATING.md", "Markdown", 0, 0, 0, 0, 0, 556, 0, 0, 0, 0, 0, 0, 0, 108, 664
+"c:\Users\chris\Desktop\RO-Nation.live\STARTUP.md", "Markdown", 0, 0, 0, 0, 0, 351, 0, 0, 0, 0, 0, 0, 0, 139, 490
+"c:\Users\chris\Desktop\RO-Nation.live\ad.md", "Markdown", 0, 0, 0, 0, 0, 104, 0, 0, 0, 0, 0, 0, 0, 40, 144
+"c:\Users\chris\Desktop\RO-Nation.live\content\legal\company\documents\merchandise-sales.md", "Markdown", 0, 0, 0, 0, 0, 88, 0, 0, 0, 0, 0, 0, 0, 41, 129
+"c:\Users\chris\Desktop\RO-Nation.live\docker-compose.override.yml", "YAML", 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 1, 15
+"c:\Users\chris\Desktop\RO-Nation.live\docker-compose.yml", "YAML", 0, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 6, 257
+"c:\Users\chris\Desktop\RO-Nation.live\docker-cron.sh", "Shell Script", 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 4, 39
+"c:\Users\chris\Desktop\RO-Nation.live\docker-entrypoint.sh", "Shell Script", 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 5, 71
+"c:\Users\chris\Desktop\RO-Nation.live\next.config.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 0, 13, 2, 32
+"c:\Users\chris\Desktop\RO-Nation.live\package-lock.json", "JSON", 0, 0, 10295, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 10296
+"c:\Users\chris\Desktop\RO-Nation.live\package.json", "JSON", 0, 0, 53, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 54
+"c:\Users\chris\Desktop\RO-Nation.live\postcss.config.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 1, 2, 10
+"c:\Users\chris\Desktop\RO-Nation.live\public\brand\logo.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 1, 11
+"c:\Users\chris\Desktop\RO-Nation.live\public\brand\sleeptokenro\event-placeholder.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 22, 6, 52
+"c:\Users\chris\Desktop\RO-Nation.live\public\placeholders\event-01.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 1, 21
+"c:\Users\chris\Desktop\RO-Nation.live\public\placeholders\event-02.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 1, 21
+"c:\Users\chris\Desktop\RO-Nation.live\public\placeholders\event-03.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 1, 21
+"c:\Users\chris\Desktop\RO-Nation.live\public\placeholders\event-04.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 1, 21
+"c:\Users\chris\Desktop\RO-Nation.live\public\placeholders\event-05.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 1, 21
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\check-plate.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 124, 0, 0, 0, 0, 0, 50, 26, 200
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\cull.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 116, 0, 0, 0, 0, 0, 100, 23, 239
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\deck-backdrop.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 45, 17, 128
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\grant-partner-owner.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 55, 17, 153
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\post.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 74, 0, 0, 0, 0, 0, 46, 18, 138
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\posts\arena-shows-and-festivals.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 18, 5, 146
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\posts\deck-the-dj-rig.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 107, 0, 0, 0, 0, 0, 10, 5, 122
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\posts\index.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 19, 2, 28
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\privatise-textures.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 42, 21, 147
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\purge-demo-content.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 143, 0, 0, 0, 0, 0, 78, 29, 250
+"c:\Users\chris\Desktop\RO-Nation.live\scripts\remind.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 0, 0, 15, 3, 36
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\about\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 388, 44, 24, 456
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\account\link\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 57, 4, 6, 67
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\account\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 112, 2, 10, 124
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 10, 9, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 229, 26, 18, 273
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\books\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 180, 30, 14, 224
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 27, 3, 48
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 8, 9, 71
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 276, 28, 19, 323
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\refund\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 190, 19, 15, 224
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\relatable.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 11, 2, 25
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\accounts\requests\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 269, 32, 23, 324
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\accounting.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 405, 0, 0, 0, 0, 0, 113, 68, 586
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\api-keys.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 78, 0, 0, 0, 0, 0, 48, 18, 144
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\applications.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 65, 0, 0, 0, 0, 0, 7, 10, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\broadcast.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 40, 0, 0, 0, 0, 0, 17, 13, 70
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\comp.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 63, 0, 0, 0, 0, 0, 22, 16, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\company.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 680, 0, 0, 0, 0, 0, 289, 142, 1111
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\data-requests.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 50, 19, 148
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\discord-link.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 6, 6, 28
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\docs.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 246, 0, 0, 0, 0, 0, 70, 47, 363
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\door.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 109, 0, 0, 0, 0, 0, 64, 22, 195
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\enquiries.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 91, 0, 0, 0, 0, 0, 85, 18, 194
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\feedback.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 16, 13, 86
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\follows.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 18, 11, 77
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\invoices.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 23, 14, 85
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\merch.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 58, 0, 0, 0, 0, 0, 50, 15, 123
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\notifications.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 0, 0, 24, 6, 47
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-accounts.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 103, 0, 0, 0, 0, 0, 19, 28, 150
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-applications.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 82, 0, 0, 0, 0, 0, 54, 17, 153
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-brief.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 104, 0, 0, 0, 0, 0, 52, 16, 172
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-content.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 324, 0, 0, 0, 0, 0, 51, 50, 425
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-members.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 190, 0, 0, 0, 0, 0, 84, 33, 307
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partner-onboarding.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 32, 20, 131
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\partnerships.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 140, 0, 0, 0, 0, 0, 82, 46, 268
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\payments.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 281, 0, 0, 0, 0, 0, 175, 46, 502
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\portal.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 178, 0, 0, 0, 0, 0, 49, 32, 259
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\purchase.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 174, 0, 0, 0, 0, 0, 127, 33, 334
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\studio-events.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 214, 0, 0, 0, 0, 0, 116, 35, 365
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\survey.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 150, 0, 0, 0, 0, 0, 54, 28, 232
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\tickets.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 172, 0, 0, 0, 0, 0, 204, 34, 410
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\tiers.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 44, 11, 122
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\venue.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 218, 0, 0, 0, 0, 0, 42, 45, 305
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\actions\waitlist.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 49, 0, 0, 0, 0, 0, 15, 11, 75
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\dev\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 7, 9, 61
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\logout\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 21, 9, 58
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\roblox\callback\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 87, 0, 0, 0, 0, 0, 19, 16, 122
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\roblox\consent\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 62, 0, 0, 0, 0, 0, 50, 15, 127
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\roblox\login\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 49, 0, 0, 0, 0, 0, 13, 10, 72
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\sso\authorize\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 26, 12, 70
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\auth\sso\callback\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 19, 9, 53
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\company\surveys\[id]\export\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 17, 12, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\health\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 1, 3, 15
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\merch\plate\[token]\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 35, 15, 95
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\merch\texture-preview\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 59, 0, 0, 0, 0, 0, 29, 13, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\partner\brief\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 97, 0, 0, 0, 0, 0, 56, 22, 175
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\pay\seen\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 21, 5, 41
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\portal\seen\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 13, 5, 34
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\uploads\brand\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 73, 0, 0, 0, 0, 0, 32, 13, 118
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\uploads\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 72, 0, 0, 0, 0, 0, 25, 14, 111
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\uploads\survey\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 65, 28, 221
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\uploads\texture\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 20, 10, 65
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\discord\link\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 80, 0, 0, 0, 0, 0, 20, 14, 114
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\discord\unlink\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 7, 6, 29
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\events\[id]\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 105, 0, 0, 0, 0, 0, 82, 21, 208
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\events\[id]\seats\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 44, 12, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\events\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 22, 9, 76
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\intents\[token]\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 59, 0, 0, 0, 0, 0, 36, 22, 117
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\intents\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 61, 0, 0, 0, 0, 0, 51, 11, 123
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\players\[robloxId]\tickets\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 75, 0, 0, 0, 0, 0, 33, 10, 118
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\gift\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 27, 10, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\purchase\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 93, 13, 190
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\redeem\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 17, 7, 37
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\reserve\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 58, 0, 0, 0, 0, 0, 41, 10, 109
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\revoke\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 21, 4, 31
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\verify\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 26, 7, 46
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\api\v1\tickets\void\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 16, 4, 26
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\authorise\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 16, 10, 99
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\blog\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 86, 4, 14, 104
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\blog\loading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 2, 13
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\blog\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 83, 2, 10, 95
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\careers\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88, 5, 9, 102
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\careers\loading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 2, 13
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\careers\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 81, 0, 6, 87
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\applications\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 175, 3, 13, 191
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\blog\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 0, 4, 38
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\blog\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 3, 26
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\blog\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 1, 5, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\careers\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 4, 28
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\careers\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 0, 3, 24
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\careers\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 95, 1, 5, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\docs\assets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 108, 0, 9, 117
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\docs\guides\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 6, 42
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\docs\guides\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 4, 33
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\docs\guides\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 104, 0, 6, 110
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\docs\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 57, 2, 9, 68
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\door\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 7, 6, 42
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\enquiries\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 235, 13, 21, 269
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\events\[id]\attendees\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 215, 28, 13, 256
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\events\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 5, 4, 54
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\events\[id]\venue\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 118, 7, 14, 139
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\events\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 3, 33
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\events\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 3, 5, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 11, 4, 33
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\merch\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 203, 14, 24, 241
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 1, 9, 66
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partner-accounts\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 189, 4, 15, 208
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partner-accounts\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 141, 2, 14, 157
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partners\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 8, 11, 95
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partners\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 127, 22, 16, 165
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 226, 14, 19, 259
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\brief\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 23, 22, 338
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\brief\[id]\zip\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 65, 0, 0, 0, 0, 0, 41, 11, 117
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\partnerships\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 383, 26, 22, 431
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\settings\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 327, 18, 21, 366
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\shasha\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 15, 11, 102
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\surveys\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 2, 7, 61
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\surveys\[id]\responses\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 2, 6, 53
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\surveys\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 4, 27
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\surveys\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 133, 3, 12, 148
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\team\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 7, 40
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\team\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 3, 6, 39
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\team\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 4, 11, 124
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\testimonials\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 230, 21, 21, 272
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\tickets\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 410, 36, 31, 477
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\tickets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 257, 25, 18, 300
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\venues\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 2, 6, 46
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\venues\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 2, 8, 59
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\(dash)\venues\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 91, 9, 8, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\access\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 3, 9, 91
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\invoices\[slug]\[invoiceid]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 7, 6, 62
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\invoices\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 148, 7, 15, 170
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\invoices\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 15, 3, 35
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\company\invoices\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 95, 5, 8, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\contact\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150, 20, 15, 185
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\deck\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 349, 59, 24, 432
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\doc\[token]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 30, 6, 56
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\api\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1504, 37, 88, 1629
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\brandassets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0, 6, 55
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\guides\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 59, 8, 10, 77
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\guides\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 2, 6, 40
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 14, 6, 60
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\onboarding\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 3, 7, 44
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 86, 5, 10, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\runbooks\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 2, 7, 43
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\docs\(reader)\templates\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 4, 7, 57
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\document\[kind]\[token]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 44, 8, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\error.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 6, 4, 47
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\[slug]\calendar\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 0, 0, 2, 5, 40
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\[slug]\checkout\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 63, 22, 208
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\[slug]\loading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 3, 3, 31
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 358, 25, 25, 408
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\[slug]\reserve\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88, 26, 11, 125
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\[slug]\seats\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 97, 14, 16, 127
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\loading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 2, 13
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\events\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 85, 3, 7, 95
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\faq\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 172, 2, 7, 181
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\files\[id]\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 0, 0, 24, 6, 47
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\files\survey\[id]\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 0, 0, 18, 6, 42
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\global-error.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 5, 4, 76
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\globals.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1047, 0, 442, 96, 1585
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\hub\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 232, 83, 29, 344
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 34, 9, 117
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\accessibility\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 8, 5, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\code-of-conduct\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 17, 5, 150
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\cookies\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 13, 5, 114
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\data-request\request\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 59, 6, 9, 74
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\data-request\request\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 8, 9, 97
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\data-requests\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88, 8, 5, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\discord\bot\privacy\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 6, 5, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\discord\bot\terms\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 85, 4, 5, 94
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\discord\privacy\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 0, 4, 88
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\discord\terms\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 0, 4, 91
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 19, 10, 105
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\partners\assets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 0, 4, 84
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\partners\merchandise\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 4, 5, 93
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\partners\ticketing\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 78, 2, 5, 85
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\payments\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 166, 26, 5, 197
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\privacy\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 8, 5, 205
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\refunds\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 70, 9, 5, 84
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\roblox\privacy\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 108, 0, 4, 112
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\roblox\terms\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 94, 0, 4, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\terms\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 199, 12, 5, 216
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\legal\tickets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 92, 12, 5, 109
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\login\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 185, 133, 24, 342
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\merch\[collection]\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 185, 34, 23, 242
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\merch\[collection]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 154, 31, 13, 198
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\merch\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 10, 4, 38
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\merch\not-found.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 7, 6, 58
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\merch\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 189, 19, 16, 224
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\not-found.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 2, 24
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\opengraph-image.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 4, 19
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\account\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 133, 11, 13, 157
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\blog\[post]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 14, 13, 87
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\blog\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 3, 7, 86
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\careers\[career]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 90, 3, 14, 107
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\careers\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 78, 1, 7, 86
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\events\[event]\calendar\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 3, 6, 47
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\events\[event]\checkout\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 127, 14, 23, 164
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\events\[event]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 321, 25, 32, 378
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\events\[event]\reserve\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 26, 14, 129
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\events\[event]\seats\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 3, 17, 122
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\events\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 3, 9, 92
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 13, 9, 69
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\not-found.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 8, 5, 34
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 317, 63, 34, 414
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\tickets\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 19, 11, 102
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\p\[slug]\tickets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 13, 6, 56
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 545, 78, 31, 654
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\access\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 37, 11, 148
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\accounting\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 22, 4, 35
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\documents\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 4, 6, 51
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 9, 4, 36
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\hub\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 342, 29, 14, 385
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\invite\[code]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 212, 37, 20, 269
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\join\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 122, 22, 10, 154
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\join\thanks\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 59, 10, 6, 75
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 37, 3, 66
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\(flow)\[step]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 363, 54, 40, 457
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\(flow)\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 31, 7, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\(flow)\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 11, 3, 23
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\onboard\site\[token]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 470, 55, 39, 564
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partner\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 292, 50, 23, 365
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\partners\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 112, 36, 9, 157
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 10, 4, 35
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\make-payment\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 16, 6, 58
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 18, 15, 241
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\request-payment\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 11, 6, 64
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\requests\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 157, 22, 15, 194
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\(app)\statements\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 266, 32, 16, 314
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\access\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 90, 27, 9, 126
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 11, 3, 23
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pay\terms\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 28, 5, 61
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\analytics\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 3, 5, 25
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\announce\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 1, 6, 32
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\audit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 3, 22
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\blacklist\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 3, 25
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\comp\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 6, 42
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\door\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 5, 7, 55
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\feedback\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 1, 6, 43
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\keys\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 7, 6, 55
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 70, 24, 9, 103
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\members\members-client.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 15, 4, 40
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\members\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 16, 11, 100
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 2, 5, 59
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\payouts\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 1, 5, 23
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\shows\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 8, 2, 19
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\applications\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 142, 4, 11, 157
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\blog\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 2, 8, 68
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\blog\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 2, 5, 43
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\blog\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 103, 1, 7, 111
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\careers\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 57, 1, 7, 65
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\careers\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 5, 41
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\careers\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 0, 7, 109
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\content\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 5, 6, 55
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\events\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 4, 9, 85
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\events\[id]\venue\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 138, 9, 14, 161
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\events\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 2, 5, 51
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\events\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 1, 8, 63
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 57, 13, 6, 76
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 164, 8, 15, 187
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\surveys\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 1, 8, 63
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\surveys\[id]\responses\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 4, 7, 57
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\surveys\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 2, 5, 40
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\surveys\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 145, 5, 13, 163
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\venues\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 3, 6, 56
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\venues\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63, 4, 10, 77
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\studio\venues\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 130, 10, 10, 150
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\(portal)\vip\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 3, 25
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\invoice\[invoiceid]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 39, 15, 7, 61
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\pp\[slug]\login\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 94, 19, 13, 126
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\press\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 256, 54, 22, 332
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\robots.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 43, 4, 90
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\services\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 236, 35, 17, 288
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\analytics\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 2, 3, 14
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\announce\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 1, 5, 25
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\audit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 3, 18
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\blacklist\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 3, 23
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\comp\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 2, 5, 37
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\door\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 24, 7, 64
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\feedback\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 2, 5, 34
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\keys\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 13, 7, 72
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 12, 5, 63
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 0, 3, 21
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\payouts\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 3, 12
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\shows\[id]\edit\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 71, 7, 8, 86
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\shows\new\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 5, 5, 46
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\shows\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 11, 8, 65
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\(portal)\vip\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 3, 23
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\invoice\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 4, 5, 39
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\shasha\login\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 83, 26, 12, 121
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\sitemap.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 22, 8, 97
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\survey\[code]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 349, 30, 32, 411
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\team\loading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 2, 13
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\team\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 30, 14, 154
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\tickets\[id]\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 18, 9, 94
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\tickets\page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 5, 5, 37
+"c:\Users\chris\Desktop\RO-Nation.live\src\app\uploads\[...path]\route.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 47, 0, 0, 0, 0, 0, 28, 8, 83
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\account\account-home.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 290, 20, 20, 330
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\account\follow-button.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 10, 6, 62
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\account\waitlist-button.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 5, 6, 66
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\accounting-shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 59, 40, 6, 105
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\accounts-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 29, 8, 93
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\document-builder.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 419, 45, 33, 497
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\document-paper.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 250, 41, 15, 306
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\document-status-badge.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 4, 4, 45
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\refund-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 14, 13, 171
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\request-status-badge.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 11, 4, 37
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\share-link.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 14, 4, 49
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\accounting\terms-block.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 28, 8, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\admin-ui.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 78, 5, 8, 91
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\apply-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 114, 8, 7, 129
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\asset-file-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 97, 14, 14, 125
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\asset-viewer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 141, 37, 10, 188
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\brand-asset-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 133, 10, 14, 157
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\career-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 134, 5, 7, 146
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\company-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 131, 60, 11, 202
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\company-shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 8, 2, 37
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\confirm-button.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 6, 2, 32
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\copy-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 23, 4, 58
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\countdown.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 8, 10, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\data-request-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200, 16, 21, 237
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\docs-empty.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 3, 2, 13
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\docs-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 5, 3, 51
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\docs-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 9, 5, 56
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\enquiry-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 240, 53, 23, 316
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\event-card.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 14, 10, 117
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\event-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 260, 34, 10, 304
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\event-ticker.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 23, 5, 56
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\guide-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 139, 8, 13, 160
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\guide-index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 7, 3, 43
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\header-client.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 239, 10, 14, 263
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\activity-feed.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 21, 6, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\area-row.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 108, 27, 11, 146
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\attention-board.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 14, 7, 57
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\capacity-meter.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 19, 6, 67
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\hub-anchor.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 11, 2, 38
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\hub-button.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 38, 10, 163
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\hub-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 22, 6, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\hub\now-board.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 69, 15, 10, 94
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\invoice-status-badge.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 8, 4, 37
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\json-ld.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 12, 1, 22
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\legal-doc.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 48, 22, 262
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\link-code-panel.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 194, 11, 20, 225
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\local-time.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 22, 10, 75
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\logo.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 1, 2, 28
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\markdown-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 81, 17, 11, 109
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\merch-strip.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 27, 10, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\notifications\member-notifier.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 21, 6, 45
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\notifications\notifier-modal.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 19, 11, 109
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\notifications\upgrade-modal.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105, 27, 15, 147
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\official-mark.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 32, 3, 58
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner-members.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 196, 28, 18, 242
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\backdrop.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 50, 4, 78
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\brief-uploads.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 27, 15, 186
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\content-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 207, 11, 19, 237
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\emblem.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 70, 44, 8, 122
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\join-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 264, 37, 24, 325
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\ledger-strip.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 14, 5, 96
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\onboard-rail.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 17, 6, 95
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\partner-footer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 85, 19, 8, 112
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\partner-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 14, 6, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\partner-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 21, 6, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\partner-shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 12, 8, 84
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\programme-shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 30, 6, 72
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\studio-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 9, 5, 52
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\partner\timezone-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 17, 5, 67
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\pay-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 9, 5, 59
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\pay-shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 25, 8, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\request-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 120, 26, 15, 161
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\pay\terms-gate.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 165, 38, 17, 220
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\pdf-embed.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 16, 10, 86
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal-footer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 10, 4, 52
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 265, 63, 16, 344
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal-switcher.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 154, 21, 17, 192
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\api-keys.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 282, 36, 27, 345
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\payout-invoice.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 186, 38, 12, 236
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\print-button.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 2, 2, 16
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\scope-activity.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 17, 9, 94
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\scope-analytics.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 118, 13, 8, 139
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\scope-broadcast.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 5, 11, 118
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\scope-comp.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 5, 8, 106
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\scope-feedback.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 5, 11, 115
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\portal\scope-settlement.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 213, 20, 14, 247
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\post-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 98, 7, 11, 116
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\prose.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 53, 6, 105
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\quote-marquee.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 6, 7, 63
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\reveal.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 0, 5, 48
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roblox-picker.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 127, 31, 14, 172
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-add-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 178, 17, 16, 211
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-audit.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 4, 5, 77
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-list.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 147, 2, 13, 162
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-overview.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 209, 18, 16, 243
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 120, 23, 13, 156
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-pagination.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 14, 12, 94
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\roster-search.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88, 9, 11, 108
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\seen-marker.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 17, 4, 29
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\avatar-viewer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 454, 223, 100, 777
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\collection-banner.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 12, 8, 104
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\docket.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 16, 5, 62
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\furniture.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 44, 7, 135
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\ink-sweep.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 18, 7, 57
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\plate-spec.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 90, 31, 13, 134
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\product-card.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 68, 12, 199
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\product-stage.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 34, 10, 153
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\rail.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 250, 68, 43, 361
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\shop-footer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 25, 7, 116
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\shop-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 27, 9, 88
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\shop-nav.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 12, 6, 72
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\stock-ticker.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 14, 6, 52
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\shop\venue-wall.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 130, 139, 21, 290
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\site-footer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 175, 67, 14, 256
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\site-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 7, 4, 36
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\skeletons.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 6, 4, 38
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\studio\shows-table.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 94, 16, 5, 115
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\survey-builder.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 521, 28, 37, 586
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\survey-file-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 148, 32, 19, 199
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\survey-link.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 10, 7, 60
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\survey-results.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 246, 9, 16, 271
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\team-member-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 161, 12, 15, 188
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\texture-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 27, 15, 141
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\celebrate.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 24, 14, 138
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\checkout-form.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 250, 54, 26, 330
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\checkout-noscript.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 21, 1, 44
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\checkout-processing.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 104, 31, 369
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\crowd-facepile.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 57, 19, 8, 84
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\door-check.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 247, 39, 22, 308
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\gamepass-checkout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 327, 64, 33, 424
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\share-show.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 25, 8, 67
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-actions.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 28, 10, 117
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-art.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 102, 20, 356
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-barcode.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 17, 6, 77
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-detail.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 594, 199, 40, 833
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-download.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 251, 66, 40, 357
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-pulse.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 53, 14, 118
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-qr.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 41, 17, 186
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-stub.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 125, 54, 11, 190
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\ticket-wallet.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 130, 27, 10, 167
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ticket\tier-summary.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 6, 5, 48
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\tier-editor.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 302, 53, 35, 390
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\ui.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 0, 5, 92
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\upload-field.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 106, 31, 14, 151
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\venue\hold-bar.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 94, 40, 15, 149
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\venue\seat-picker.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 319, 65, 39, 423
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\venue\shape-inspector.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 262, 12, 15, 289
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\venue\venue-designer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1041, 177, 136, 1354
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\venue\venue-map.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 305, 61, 37, 403
+"c:\Users\chris\Desktop\RO-Nation.live\src\components\venue\venue-preset-picker.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 12, 6, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\instrumentation.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 63, 0, 0, 0, 0, 0, 53, 12, 128
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\account.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 0, 0, 21, 7, 105
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\documents.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 371, 0, 0, 0, 0, 0, 212, 52, 635
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\kinds.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 196, 0, 0, 0, 0, 0, 144, 21, 361
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\lines.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 131, 0, 0, 0, 0, 0, 75, 25, 231
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\pay-terms.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 65, 0, 0, 0, 0, 0, 114, 12, 191
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\refunds.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 102, 0, 0, 0, 0, 0, 71, 14, 187
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\request-kinds.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 106, 0, 0, 0, 0, 0, 60, 11, 177
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\requests.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 216, 0, 0, 0, 0, 0, 141, 27, 384
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\terms.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 114, 0, 0, 0, 0, 0, 108, 18, 240
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\accounting\urls.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 0, 0, 93, 12, 161
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\announce.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 56, 10, 132
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\api\guard.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 68, 0, 0, 0, 0, 0, 49, 15, 132
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\api\keys-view.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 0, 0, 45, 16, 138
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\api\lookup.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 39, 0, 0, 0, 0, 0, 32, 9, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\api\messages.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 58, 0, 0, 0, 0, 0, 26, 14, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\api\void.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 47, 0, 0, 0, 0, 0, 16, 9, 72
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\apikey.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 151, 0, 0, 0, 0, 0, 110, 26, 287
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\audit.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 90, 11, 182
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\brand-presets.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 0, 0, 23, 15, 115
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\comp-options.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 4, 3, 19
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\company.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 37, 0, 0, 0, 0, 0, 20, 9, 66
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\content.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 107, 0, 0, 0, 0, 0, 70, 13, 190
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\data-request.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 17, 5, 66
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\db.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 2, 4, 18
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\discord-link.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 132, 0, 0, 0, 0, 0, 67, 21, 220
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\docs-guard.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 0, 0, 101, 16, 173
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\docs.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 132, 0, 0, 0, 0, 0, 70, 16, 218
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\env.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 109, 14, 168
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\format.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 103, 0, 0, 0, 0, 0, 63, 19, 185
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\hub-dashboard.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 278, 0, 0, 0, 0, 0, 99, 41, 418
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\hub-seen.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 37, 4, 56
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\hub.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 151, 0, 0, 0, 0, 0, 74, 23, 248
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\invoice-period.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 4, 6, 33
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\invoices.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 60, 18, 205
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\legal.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 167, 0, 0, 0, 0, 0, 48, 9, 224
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\loyalty.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 34, 7, 76
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\member-notify.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 170, 0, 0, 0, 0, 0, 117, 27, 314
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\collections.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 64, 10, 134
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\hang.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 24, 6, 51
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\plate.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 90, 0, 0, 0, 0, 0, 46, 19, 155
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\price.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 14, 2, 25
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\roblox.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 115, 0, 0, 0, 0, 0, 95, 26, 236
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\scramble.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 47, 0, 0, 0, 0, 0, 63, 12, 122
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\sync.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 45, 16, 127
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\template.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 49, 8, 93
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\tiles.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 71, 21, 159
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\urls.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 37, 7, 63
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\merch\uv.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 0, 39, 9, 82
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\notify.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 61, 0, 0, 0, 0, 0, 65, 12, 138
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\og-fonts.data.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 7, 2, 12
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\og.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 137, 33, 12, 182
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\origin.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 49, 7, 86
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-account.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 52, 0, 0, 0, 0, 0, 38, 11, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-analytics.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 175, 0, 0, 0, 0, 0, 59, 20, 254
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-brief.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 302, 0, 0, 0, 0, 0, 73, 25, 400
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-invites.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 130, 0, 0, 0, 0, 0, 94, 22, 246
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-onboarding.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 102, 0, 0, 0, 0, 0, 76, 15, 193
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-program.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 107, 0, 0, 0, 0, 0, 68, 9, 184
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-seen.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 38, 6, 72
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partner-urls.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 47, 4, 67
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partners\content.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 0, 0, 34, 10, 100
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partners\fonts.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 70, 10, 124
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partners\guard.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 119, 0, 0, 0, 0, 0, 121, 24, 264
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partners\registry.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 195, 0, 0, 0, 0, 0, 245, 17, 457
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\partners\urls.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 30, 7, 58
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\pay.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 66, 7, 101
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\portal-scope.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 105, 0, 0, 0, 0, 0, 94, 21, 220
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\private-file.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 41, 9, 96
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\qr.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 311, 0, 0, 0, 0, 0, 84, 53, 448
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\queries.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 25, 14, 139
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\rate-limit.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 26, 5, 74
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\reminders.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 0, 0, 28, 14, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\roblox-gamepass.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 103, 0, 0, 0, 0, 0, 101, 26, 230
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\roblox-group.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 43, 19, 128
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\roblox-tokens.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 72, 0, 0, 0, 0, 0, 78, 16, 166
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\roblox-users.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 103, 0, 0, 0, 0, 0, 28, 20, 151
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\roblox.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 133, 0, 0, 0, 0, 0, 106, 27, 266
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\roster.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 47, 0, 0, 0, 0, 0, 29, 8, 84
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\session-cookie.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 17, 1, 19
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\session.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 0, 0, 39, 14, 109
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\settlement.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 91, 0, 0, 0, 0, 0, 35, 16, 142
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\shasha.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 63, 0, 0, 0, 0, 0, 63, 16, 142
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\site.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 41, 0, 0, 0, 0, 0, 78, 12, 131
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\sso.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 95, 0, 0, 0, 0, 0, 132, 19, 246
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\stats.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 52, 0, 0, 0, 0, 0, 72, 13, 137
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\survey-files.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 32, 8, 70
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\barcode.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 44, 14, 124
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\brand.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 23, 4, 39
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\crowd.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 52, 8, 98
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\history.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 26, 0, 0, 0, 0, 0, 28, 5, 59
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\ics.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 102, 0, 0, 0, 0, 0, 23, 9, 134
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\intents.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 320, 0, 0, 0, 0, 0, 151, 51, 522
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\issue.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 438, 0, 0, 0, 0, 0, 489, 98, 1025
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\offers.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 13, 5, 60
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\pricing.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 150, 0, 0, 0, 0, 0, 135, 31, 316
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\seal.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 24, 5, 41
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\seating.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 156, 0, 0, 0, 0, 0, 112, 39, 307
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\state.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 0, 67, 12, 127
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\terms.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 54, 8, 90
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\tiers-form.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 56, 17, 169
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\tickets\verify.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 249, 0, 0, 0, 0, 0, 142, 39, 430
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\uploads.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 145, 0, 0, 0, 0, 0, 199, 41, 385
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\url.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 10, 2, 17
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\utils.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 39, 0, 0, 0, 0, 0, 34, 8, 81
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\anchor.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 51, 7, 80
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\colors.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 29, 6, 51
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\form.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 162, 0, 0, 0, 0, 0, 84, 27, 273
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\picker.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 64, 13, 122
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\presets.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 147, 0, 0, 0, 0, 0, 71, 18, 236
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\schema.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 131, 0, 0, 0, 0, 0, 187, 51, 369
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\venue\seats.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 160, 0, 0, 0, 0, 0, 104, 42, 306
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\waitlist.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 29, 7, 81
+"c:\Users\chris\Desktop\RO-Nation.live\src\lib\zip.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 107, 0, 0, 0, 0, 0, 59, 19, 185
+"c:\Users\chris\Desktop\RO-Nation.live\src\middleware.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 523, 0, 0, 0, 0, 0, 695, 107, 1325
+"c:\Users\chris\Desktop\RO-Nation.live\src\styles\brands\index.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 20, 2, 23
+"c:\Users\chris\Desktop\RO-Nation.live\src\styles\brands\sleeptokenro.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 0, 127, 21, 214
+"c:\Users\chris\Desktop\RO-Nation.live\tailwind.config.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 70, 0, 0, 0, 0, 0, 11, 3, 84
+"c:\Users\chris\Desktop\RO-Nation.live\tests\accounting-lines.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 179, 0, 0, 0, 0, 0, 44, 27, 250
+"c:\Users\chris\Desktop\RO-Nation.live\tests\accounting-refunds.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 171, 0, 0, 0, 0, 0, 31, 32, 234
+"c:\Users\chris\Desktop\RO-Nation.live\tests\audit-trail.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 300, 0, 0, 0, 0, 0, 79, 63, 442
+"c:\Users\chris\Desktop\RO-Nation.live\tests\gamepass-rail.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 323, 0, 0, 0, 0, 0, 63, 48, 434
+"c:\Users\chris\Desktop\RO-Nation.live\tests\global-setup.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 39, 0, 0, 0, 0, 0, 17, 7, 63
+"c:\Users\chris\Desktop\RO-Nation.live\tests\helpers.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 62, 0, 0, 0, 0, 0, 30, 9, 101
+"c:\Users\chris\Desktop\RO-Nation.live\tests\hub-split.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 41, 0, 0, 0, 0, 0, 28, 12, 81
+"c:\Users\chris\Desktop\RO-Nation.live\tests\partner-host.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 110, 0, 0, 0, 0, 0, 17, 20, 147
+"c:\Users\chris\Desktop\RO-Nation.live\tests\payments-hosts.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 301, 0, 0, 0, 0, 0, 90, 46, 437
+"c:\Users\chris\Desktop\RO-Nation.live\tests\preflight.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 21, 10, 82
+"c:\Users\chris\Desktop\RO-Nation.live\tests\presale.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 5, 17, 79
+"c:\Users\chris\Desktop\RO-Nation.live\tests\purchase-idempotency.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 74, 0, 0, 0, 0, 0, 22, 15, 111
+"c:\Users\chris\Desktop\RO-Nation.live\tests\reserve-race.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 0, 0, 12, 13, 75
+"c:\Users\chris\Desktop\RO-Nation.live\tests\stubs\server-only.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 1, 5
+"c:\Users\chris\Desktop\RO-Nation.live\tests\ticket-changes.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 366, 0, 0, 0, 0, 0, 51, 64, 481
+"c:\Users\chris\Desktop\RO-Nation.live\tests\ticket-state.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 130, 0, 0, 0, 0, 0, 14, 13, 157
+"c:\Users\chris\Desktop\RO-Nation.live\tests\ticket-terms.test.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 10, 9, 57
+"c:\Users\chris\Desktop\RO-Nation.live\tsconfig.json", "JSON with Comments", 0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 24
+"c:\Users\chris\Desktop\RO-Nation.live\vitest.config.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 15, 2, 40
+"Total", "-", 50, 169, 10370, 65, 19, 1568, 20742, 24, 34, 134, 1114, 42484, 20913, 8770, 106456

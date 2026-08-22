@@ -78,3 +78,7 @@ export function toLines(value: string) {
  */
 export const robloxProfileUrl = (robloxId: string) =>
   `https://www.roblox.com/users/${robloxId}/profile`;
+
+/** A Roblox group's public page. Same "communities" path lib/partners/registry.ts uses. */
+export const robloxGroupUrl = (groupId: string) =>
+  `https://www.roblox.com/communities/${groupId}`;

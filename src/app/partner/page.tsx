@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { getPartnerAccountUser } from "@/lib/partner-account";
 import {
   PROGRAMME_OFFERS,
@@ -9,9 +10,12 @@ import {
 import { PARTNER_AGREEMENTS } from "@/lib/legal";
 import { activePartners } from "@/lib/partners/registry";
 import { partnerOrigin } from "@/lib/partners/urls";
+import { getLiveMemberCount } from "@/lib/partner-groups/roblox";
 import { ProgrammeShell } from "@/components/partner/programme-shell";
+import { RobloxAvatar } from "@/components/roblox-picker";
 import { Kicker } from "@/components/ui";
 import { site } from "@/lib/site";
+import { robloxGroupUrl } from "@/lib/utils";
 import { env } from "@/lib/env";
 
 // partner.ronation.live - what the partner programme is.
@@ -81,6 +85,19 @@ export default async function PartnerProgrammePage() {
   const partner = await getPartnerAccountUser();
   const sites = activePartners();
 
+  // Roblox groups RNL credits with a card - see the note atop PartnerGroup in
+  // schema.prisma for why this is a third thing, distinct from the registry's partner
+  // SITES below. Member counts are read live, per group, and never stored: see
+  // getLiveMemberCount in lib/partner-groups/roblox.ts for why a stale number is worse
+  // than a missing one.
+  const partnerGroups = await prisma.partnerGroup.findMany({
+    where: { visible: true },
+    orderBy: [{ order: "asc" }, { name: "asc" }],
+  });
+  const partnerGroupCounts = await Promise.all(
+    partnerGroups.map((g) => getLiveMemberCount(g.robloxGroupId)),
+  );
+
   return (
     <ProgrammeShell
       cta={
@@ -140,6 +157,49 @@ export default async function PartnerProgrammePage() {
           </dl>
         </div>
       </section>
+
+      {/* ---- Our Partners ----------------------------------------------
+          Roblox groups RNL credits here, each identified by nothing but its group id -
+          see the note atop PartnerGroup in schema.prisma. Deliberately its own section,
+          separate from "Partner sites" further down: that one is white-label sites
+          running on RNL's infrastructure, read from the registry; this one is groups
+          RNL wants to publicly thank, added and described from /company/partner-groups. */}
+      {partnerGroups.length ? (
+        <section className="shell border-t border-line py-16">
+          <Kicker>Our partners</Kicker>
+          <h2 className="display mt-4 text-4xl sm:text-5xl">Who we work with</h2>
+          <p className="mt-4 max-w-2xl text-muted">
+            The groups and communities who help us bring the show to their crowd.
+          </p>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {partnerGroups.map((g, i) => (
+              <a
+                key={g.id}
+                href={robloxGroupUrl(g.robloxGroupId)}
+                target="_blank"
+                rel="noreferrer"
+                className="card card-hover flex flex-col gap-4 p-6"
+              >
+                <div className="flex items-center gap-3">
+                  <RobloxAvatar src={g.iconUrl} size={44} />
+                  <div className="min-w-0">
+                    <h3 className="truncate font-display text-xl">{g.name}</h3>
+                    {/* null means Roblox would not answer - printed as nothing rather
+                        than a fabricated or stale count. See getLiveMemberCount. */}
+                    {partnerGroupCounts[i] != null ? (
+                      <p className="text-xs text-faint">
+                        {partnerGroupCounts[i]!.toLocaleString("en-GB")} members
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <p className="flex-1 text-sm text-muted">{g.description}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* ---- The offer ------------------------------------------------ */}
       <section id="offer" className="shell scroll-mt-8 border-t border-line py-16">

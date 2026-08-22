@@ -78,6 +78,11 @@ const groupsFor = (accountsHref: string): { title: string; links: NavLink[] }[] 
       { label: "Testimonials", href: "/company/testimonials" },
       { label: "Enquiries", href: "/company/enquiries" },
       { label: "Partners", href: "/company/partners" },
+      // "Our Partners" on partner.ronation.live - Roblox groups credited with a card,
+      // name/icon/live member count. Deliberately a separate link from "Partners" above,
+      // which is who has portal access to a white-label partner SITE - a different
+      // question about a different table. See the note atop PartnerGroup in schema.prisma.
+      { label: "Partner groups", href: "/company/partner-groups" },
       // The funnel BEFORE an account exists - who has asked, who has been invited,
       // and the briefs their sites get built from. Sits above "Partner accounts"
       // because that is the order it happens in: a request becomes an invitation,
