@@ -214,6 +214,33 @@ export const PARTNERS: readonly Partner[] = [
     confetti: ["#b09254", "#d8c9a8", "#8e7742", "#ece9e1"],
     active: true,
   },
+  {
+    slug: "dropzone",
+    name: "DROPZONE",
+    shortName: "Dropzone",
+    tagline: "Bass Without Borders",
+    description:
+      "Dropzone is a UK rave experience built around heavy bass, relentless energy and unforgettable nights. From DnB to techno and everything in between, we bring together the sounds, people and atmosphere that make rave culture what it is. No rules. No limits. Just pure energy.",
+    // Some of the acts featured are tribute acts. Supplied by the partner - see
+    // the note on this field for why an ambiguous one is RNL's problem too.
+    disclaimer:
+      "Some of the acts featured at DROPZONE are tribute acts celebrating the music of well-known artists and bands. These performers are independent artists and are not the original artists, and are not affiliated with or endorsed by the artists, bands, or their management, estates, or record labels. Artist and band names are used only to describe the tribute performance and the music being performed. DROPZONE is an independent music event and entertainment brand.",
+    ticketPrefix: "DZUK",
+    logoUrl: "/brand/dropzone/logo.png",
+    crestUrl: "/brand/dropzone/crest.png",
+    backdropUrl: "/brand/dropzone/backdrop.png",
+    features: ["events", "blog", "careers", "surveys"],
+    robloxGroupUrl:
+      "https://www.roblox.com/communities/209336069/DROPZONE-RAVES#!/about",
+    // Duplicates --bg-rgb in styles/brands/dropzone.css by necessity - see the
+    // note on sleeptokenro's entry above for why.
+    themeColor: "#0c0c0c",
+    confetti: ["#f8f8ff", "#c7c7cf", "#3a3a3f", "#0a0a0a"],
+    // DNS resolves and the host is in the Caddyfile (and DROPZONE_HOST in
+    // docker-compose.yml / .env.example) - see the note on PARTNERS above the
+    // array for what "active" actually gates.
+    active: true,
+  },
 ];
 
 /**

@@ -214,6 +214,9 @@ services:
       # The Caddyfile reads this on its address line. It has a default there, so
       # the omission was invisible - but STRO_HOST in .env was being ignored.
       STRO_HOST: ${STRO_HOST:-sleeptokenro.ronation.live}
+      # Same trap, same reason. DNS already resolves; this is what gets Caddy to
+      # actually ask Let's Encrypt for it and terminate TLS on the name.
+      DROPZONE_HOST: ${DROPZONE_HOST:-dropzone.ronation.live}
       ACME_EMAIL: ${ACME_EMAIL:-admin@ronation.live}
     ports:
       - "80:80"

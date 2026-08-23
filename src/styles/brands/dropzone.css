@@ -1,0 +1,59 @@
+/* Dropzone. UK rave, DnB/techno - "no rules, no limits, just pure energy."
+ *
+ * The brief's colours are the whole palette: an accent of near-black (#080808)
+ * with off-white ink on it (#f8f8ff). No hue at all - which reads as deliberate
+ * for this brand rather than unfinished. Where RNL is electric blue and
+ * sleeptokenro is dim gold, this one refuses a colour on purpose: raw black and
+ * white, stencilled rather than branded.
+ *
+ * That leaves --accent-rgb sitting almost on top of a typical near-black --bg-rgb,
+ * so --bg-rgb is pitched a shade lighter than the accent (12 vs 8) rather than
+ * matched to it - the accent then reads as a void cut into the page, not as a
+ * colour that vanished into it. --accent-hi-rgb is the brief's off-white, so the
+ * accent's own gradient runs black → white - a strobe, not a tint - which is the
+ * one place the "strobing light" brief note gets to be literal rather than a mood
+ * board word.
+ *
+ * ---- The contract ----------------------------------------------------------
+ *
+ * Sets ONLY channels and shape/texture tokens; every derived colour is computed
+ * from these in globals.css. Do not declare --accent, --line, --paper etc. here -
+ * that is the one rule that keeps a brand from desyncing a colour from its own
+ * channels.
+ */
+:root[data-brand="dropzone"] {
+  /* ---- Channels ---------------------------------------------------- */
+  --bg-rgb: 12 12 12;
+  --elev-rgb: 18 18 18;
+  --surface-rgb: 24 24 24;
+  --fg-rgb: 244 244 248;
+  --muted-rgb: 150 149 156;
+  --faint-rgb: 92 91 98;
+
+  /* From the brief, exactly: Accent #080808. */
+  --accent-rgb: 8 8 8;
+  /* From the brief, exactly: Type on accent #f8f8ff - reused as the "lifted"
+     variant, so the accent's own gradient is the brand's one deliberate move:
+     black to white, not a tint of either. */
+  --accent-hi-rgb: 248 248 255;
+  --accent-ink-rgb: 248 248 255;
+
+  --paper-rgb: 238 238 242;
+  --paper-ink-rgb: 8 8 8;
+
+  /* Hairlines tinted toward the off-white rather than pure white, so a rule
+     reads as chalk on concrete rather than a UI seam. */
+  --line-rgb: 248 248 255;
+  --line-alpha: 0.12;
+  --line-strong-alpha: 0.26;
+
+  /* ---- Shape + texture --------------------------------------------- */
+  /* Squared off, same call as sleeptokenro and for the same reason: RNL's 3px
+     is a poster corner, and "no rules, no limits" has none either. */
+  --radius: 0px;
+
+  /* Pushed harder than RNL's default - concrete and spray-can grain, not a
+     poster's subtle noise. */
+  --grain-fine-opacity: 0.1;
+  --grain-coarse-opacity: 0.2;
+}
