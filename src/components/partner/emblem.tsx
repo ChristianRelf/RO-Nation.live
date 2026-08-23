@@ -16,27 +16,33 @@ import { cn } from "@/lib/utils";
  * Falls back to nothing (not to a broken image, and not to a placeholder box):
  * a partner with no mark has a wordmark instead, and the header renders that. See
  * PartnerHeader.
+ *
+ * Decorative (aria-hidden, empty alt) by default, because the partner's name is
+ * normally ALSO rendered in text right beside it - announcing the image too would
+ * make a screen reader say it twice. Pass `alt` explicitly for the one case that
+ * isn't true: a `wordmarkLogo` partner, where this image is the only thing on the
+ * page announcing the name at all, so it needs a real one.
  */
 export function PartnerMark({
   partner,
   className,
   size = 32,
+  alt,
 }: {
   partner: Partner;
   className?: string;
   size?: number;
+  alt?: string;
 }) {
   if (!partner.logoUrl) return null;
 
   return (
     <Image
       src={partner.logoUrl}
-      alt=""
+      alt={alt ?? ""}
       width={size}
       height={size}
-      // Decorative. The partner's NAME is always rendered in text beside it, so
-      // announcing the logo as well would just make a screen reader say it twice.
-      aria-hidden
+      aria-hidden={alt ? undefined : true}
       className={cn("h-auto w-auto object-contain", className)}
       priority
     />

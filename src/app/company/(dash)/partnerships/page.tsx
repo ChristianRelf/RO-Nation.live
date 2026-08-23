@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  PartnerAccountStatus,
   PartnerApplicationStatus,
   PartnerInviteStatus,
   PartnerSiteBriefStatus,
@@ -19,6 +20,7 @@ import {
   rerollPartnerInvite,
   setApplicationStatus,
 } from "@/app/actions/partnerships";
+import { setPartnerAccountStatus } from "@/app/actions/partner-accounts";
 import { CopyField } from "@/components/copy-field";
 import { formatDate } from "@/lib/format";
 import { Kicker } from "@/components/ui";
@@ -61,7 +63,9 @@ export default async function PartnershipsPage({
     prisma.partnerInvite.findMany({
       orderBy: { createdAt: "desc" },
       take: 40,
-      include: { partnerAccount: { select: { id: true, name: true } } },
+      include: {
+        partnerAccount: { select: { id: true, name: true, status: true } },
+      },
     }),
     prisma.partnerSiteBrief.findMany({
       orderBy: { createdAt: "desc" },
@@ -241,6 +245,32 @@ export default async function PartnershipsPage({
                         </form>
                       </div>
                     </div>
+                  ) : null}
+
+                  {/* Claimed: this is the funnel's terminal step. The account already exists
+                      (claimInvite created it, always POTENTIAL - see the note there), and this
+                      is the deliberate act that opens their accounting and pay.ronation.live.
+                      Reuses setPartnerAccountStatus rather than a second action - it is the
+                      same write /company/partner-accounts already does, just fired with the
+                      status fixed to PARTNER instead of offered as a choice. */}
+                  {state === "claimed" && i.partnerAccount ? (
+                    i.partnerAccount.status === PartnerAccountStatus.PARTNER ? (
+                      <p className="mt-3 text-xs font-semibold uppercase tracking-kicker text-accent">
+                        Full partner
+                      </p>
+                    ) : (
+                      <form action={setPartnerAccountStatus} className="mt-3">
+                        <input type="hidden" name="id" value={i.partnerAccount.id} />
+                        <input
+                          type="hidden"
+                          name="status"
+                          value={PartnerAccountStatus.PARTNER}
+                        />
+                        <button className="btn btn-accent px-3 py-1.5 text-[10px]">
+                          Make full partner
+                        </button>
+                      </form>
+                    )
                   ) : null}
                 </li>
               );

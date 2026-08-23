@@ -99,17 +99,29 @@ export default async function PartnerHome({
         )}
 
         <div className="shell relative flex min-h-[88vh] flex-col items-center justify-center py-28 text-center">
-          {/* The mark sits above the name, small. It is an emblem, not a banner:
-              blown up it competes with the crest it is standing on. */}
+          {/* wordmarkLogo: the mark IS the name, so it takes the whole lockup - no
+              separate mark-plus-heading, and it is sized like the banner the text
+              used to be rather than the small emblem above it. */}
           <div className="fade-in-1 flex justify-center">
-            <PartnerMark partner={partner} size={72} className="max-h-16 opacity-90" />
+            <PartnerMark
+              partner={partner}
+              size={partner.wordmarkLogo ? 900 : 72}
+              alt={partner.wordmarkLogo ? partner.name : undefined}
+              className={
+                partner.wordmarkLogo
+                  ? "max-h-24 w-auto opacity-95 sm:max-h-36 md:max-h-44"
+                  : "max-h-16 opacity-90"
+              }
+            />
           </div>
 
           <p className="fade-in-1 kicker mt-8 text-accent">{content.heroKicker}</p>
 
-          <h1 className="fade-in-2 display mt-6 text-[clamp(2.5rem,9vw,7.5rem)] leading-[0.95]">
-            {content.heroTitle ?? <Wordmark name={partner.name} />}
-          </h1>
+          {content.heroTitle || !partner.wordmarkLogo ? (
+            <h1 className="fade-in-2 display mt-6 text-[clamp(2.5rem,9vw,7.5rem)] leading-[0.95]">
+              {content.heroTitle ?? <Wordmark name={partner.name} />}
+            </h1>
+          ) : null}
 
           {/* A hairline under the name - the inlay, closing the lockup. */}
           <div

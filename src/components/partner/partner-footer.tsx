@@ -31,10 +31,19 @@ export function PartnerFooter({ partner }: { partner: Partner }) {
       <div className="shell relative py-14">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
           <div className="max-w-sm">
-            <div className="flex items-center gap-3">
-              <PartnerMark partner={partner} size={30} className="max-h-7 opacity-70" />
-              <p className="display text-2xl">{partner.name}</p>
-            </div>
+            {partner.wordmarkLogo ? (
+              <PartnerMark
+                partner={partner}
+                size={220}
+                alt={partner.name}
+                className="max-h-9 opacity-80"
+              />
+            ) : (
+              <div className="flex items-center gap-3">
+                <PartnerMark partner={partner} size={30} className="max-h-7 opacity-70" />
+                <p className="display text-2xl">{partner.name}</p>
+              </div>
+            )}
             <p className="mt-4 text-sm leading-relaxed text-muted">
               {partner.description}
             </p>

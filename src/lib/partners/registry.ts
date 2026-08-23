@@ -46,6 +46,21 @@ export type Partner = {
    */
   logoUrl?: string;
   /**
+   * True when `logoUrl` already spells the name out - a full wordmark, not a
+   * mark or symbol - so the header, hero and footer show ONLY the image,
+   * larger, instead of pairing a small mark with a separate text heading.
+   *
+   * Off by default, and the default is the careful one: PartnerHeader's own
+   * note explains why a bare mark with no name in type beside it is normally
+   * wrong - it's how a fan site starts looking like the official one. That
+   * risk is specific to a partner whose artwork IS a real-world act's own
+   * marks (Sleep Token's crest and wings). It does not apply to a partner
+   * whose logo is original artwork for an original brand - there is no
+   * "official" site it could be mistaken for - which is the only case this
+   * should be turned on for.
+   */
+  wordmarkLogo?: boolean;
+  /**
    * The big emblem the homepage hero is built around. Optional, and the page is
    * designed to be right without it.
    *
@@ -227,6 +242,11 @@ export const PARTNERS: readonly Partner[] = [
       "Some of the acts featured at DROPZONE are tribute acts celebrating the music of well-known artists and bands. These performers are independent artists and are not the original artists, and are not affiliated with or endorsed by the artists, bands, or their management, estates, or record labels. Artist and band names are used only to describe the tribute performance and the music being performed. DROPZONE is an independent music event and entertainment brand.",
     ticketPrefix: "DZUK",
     logoUrl: "/brand/dropzone/logo.png",
+    // The logo IS the wordmark - "DROPZONE" is already set in it - so the header,
+    // hero and footer show only the image, larger, rather than the image plus a
+    // second, separate "Dropzone" heading beside it. See the field's own note for
+    // why this is safe here and isn't the general-purpose answer.
+    wordmarkLogo: true,
     crestUrl: "/brand/dropzone/crest.png",
     backdropUrl: "/brand/dropzone/backdrop.png",
     features: ["events", "blog", "careers", "surveys"],
