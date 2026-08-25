@@ -197,6 +197,28 @@
 	}
 }
 
+# CNĒCT. Its own Compose project joins the shared `edge` network and advertises
+# the stable service alias `cnect`; no app port is exposed to the public internet.
+{$CNECT_HOST:cnect.ronation.live} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+		Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'none'"
+	}
+
+	reverse_proxy cnect:3000 {
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output stdout
+	}
+}
+
 # The DJ deck. A separate compose project (rnl-dj-bot) that joins the shared
 # `edge` network, same arrangement as the support dashboard - so this container
 # resolves it by service name, and nothing about it is published to the host.
