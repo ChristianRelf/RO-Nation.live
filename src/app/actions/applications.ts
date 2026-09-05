@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
+import { getDiscordLinkByUser } from "@/lib/discord-link";
 import { notify } from "@/lib/notify";
 import { partnerPortalUrl } from "@/lib/partners/urls";
 
@@ -11,7 +12,6 @@ const schema = z.object({
   careerId: z.string().min(1),
   slug: z.string().min(1),
   robloxUsername: z.string().trim().min(2).max(40),
-  discord: z.string().trim().max(60).optional(),
   timezone: z.string().trim().max(40).optional(),
   portfolio: z.string().trim().max(200).optional(),
   message: z.string().trim().min(20).max(4000),
@@ -22,7 +22,6 @@ export async function submitApplication(formData: FormData) {
     careerId: formData.get("careerId"),
     slug: formData.get("slug"),
     robloxUsername: formData.get("robloxUsername"),
-    discord: formData.get("discord") || undefined,
     timezone: formData.get("timezone") || undefined,
     portfolio: formData.get("portfolio") || undefined,
     message: formData.get("message"),
@@ -40,7 +39,21 @@ export async function submitApplication(formData: FormData) {
     redirect(`/careers/${data.slug}?error=closed#apply`);
   }
 
+  // Discord is mandatory and VERIFIED - read from the applicant's own linked
+  // account (OAuth or the bot-redeemed code both write DiscordLink; either
+  // satisfies this), never from text they typed. That means a Roblox sign-in
+  // too, since a DiscordLink always hangs off a signed-in User row - the apply
+  // form's "Connect Discord" button chains through Roblox sign-in first for
+  // anyone not already signed in, so this is one click, not two separate asks.
   const session = await getUserSession();
+  if (!session) {
+    redirect(`/careers/${data.slug}?error=discord#apply`);
+  }
+  const discordLink = await getDiscordLinkByUser(session.uid);
+  if (!discordLink) {
+    redirect(`/careers/${data.slug}?error=discord#apply`);
+  }
+  const discordName = discordLink.discordUsername ?? discordLink.discordId;
 
   await prisma.application.create({
     data: {
@@ -48,9 +61,9 @@ export async function submitApplication(formData: FormData) {
       // Read from the career row, never from the form. It decides whose inbox
       // this lands in, so it is not something the applicant gets to choose.
       partnerId: career.partnerId,
-      userId: session?.uid ?? null,
+      userId: session.uid,
       robloxUsername: data.robloxUsername,
-      discord: data.discord ?? null,
+      discord: discordName,
       timezone: data.timezone ?? null,
       portfolio: data.portfolio ?? null,
       message: data.message,
@@ -71,7 +84,7 @@ export async function submitApplication(formData: FormData) {
       : "/company/applications",
     fields: [
       { name: "Roblox", value: data.robloxUsername, inline: true },
-      ...(data.discord ? [{ name: "Discord", value: data.discord, inline: true }] : []),
+      { name: "Discord", value: discordName, inline: true },
       ...(data.timezone ? [{ name: "Timezone", value: data.timezone, inline: true }] : []),
       ...(data.portfolio ? [{ name: "Portfolio", value: data.portfolio }] : []),
     ],

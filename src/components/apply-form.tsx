@@ -11,6 +11,8 @@ import { submitApplication } from "@/app/actions/applications";
 export function ApplyForm({
   career,
   session,
+  discordUsername,
+  returnTo,
   applied,
   error,
   closed,
@@ -19,6 +21,11 @@ export function ApplyForm({
 }: {
   career: { id: string; slug: string };
   session: { username: string } | null;
+  /** The verified name on the signed-in member's linked Discord, or null if
+   *  they have none yet - never text typed into this form. */
+  discordUsername: string | null;
+  /** Where to land back on after the Discord OAuth round trip - this page. */
+  returnTo: string;
   applied?: boolean;
   error?: string;
   closed?: boolean;
@@ -55,6 +62,26 @@ export function ApplyForm({
               This role closed while you were writing. Sorry.
             </p>
           ) : null}
+          {error === "discord" ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              Connect and verify your Discord below before applying.
+            </p>
+          ) : null}
+          {error === "discord-taken" ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              That Discord account is already linked to a different member.
+              Unlink it there first, or use another account.
+            </p>
+          ) : null}
+          {error === "discord-not-configured" ||
+          error === "discord-denied" ||
+          error === "discord-exchange" ||
+          error === "discord-state" ||
+          error === "discord-signin" ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              Couldn&apos;t connect Discord just then - please try again.
+            </p>
+          ) : null}
 
           <Field
             name="robloxUsername"
@@ -63,11 +90,25 @@ export function ApplyForm({
             defaultValue={session?.username ?? ""}
             placeholder="YourRobloxName"
           />
-          <Field
-            name="discord"
-            label="Discord (optional)"
-            placeholder="username#0000 or @username"
-          />
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
+              Discord <span className="text-accent">*</span>
+            </label>
+            {discordUsername ? (
+              <div className="flex items-center gap-2 rounded-xl border border-line bg-bg px-4 py-2.5 text-sm">
+                <span className="text-emerald-400">✓</span>
+                <span>{discordUsername}</span>
+                <span className="text-faint">verified</span>
+              </div>
+            ) : (
+              <a
+                href={`/api/auth/discord/login?returnTo=${encodeURIComponent(returnTo)}`}
+                className="flex items-center justify-center gap-2 rounded-xl border border-line bg-bg px-4 py-2.5 text-sm text-fg transition-colors hover:border-accent"
+              >
+                Connect Discord to verify
+              </a>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Field name="timezone" label="Timezone" placeholder="GMT / EST" />
             <Field
@@ -88,7 +129,13 @@ export function ApplyForm({
               className="w-full resize-none rounded-xl border border-line bg-bg px-4 py-3 text-sm outline-none transition-colors focus:border-accent"
             />
           </div>
-          <button className="btn btn-accent w-full">Submit application</button>
+          <button
+            className="btn btn-accent w-full disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!discordUsername}
+            title={discordUsername ? undefined : "Connect Discord to verify first"}
+          >
+            Submit application
+          </button>
           <p className="text-center text-xs text-faint">
             By applying you agree to be contacted about this role.
           </p>

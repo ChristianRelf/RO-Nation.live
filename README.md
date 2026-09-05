@@ -180,8 +180,9 @@ event's **Attendees** page.
 
 ## SHASHA staff portal (`portal.ronation.live/shasha`)
 
-A separate, Discord-gated area holding the **VIP list** and the **blacklist**.
-Both are keyed on a Roblox player, searchable, and every change is logged.
+A separate area, gated by Roblox group rank (not Discord), holding the **VIP
+list** and the **blacklist**. Both are keyed on a Roblox player, searchable,
+and every change is logged.
 
 ### 1. DNS
 
@@ -201,28 +202,30 @@ redirects to the portal. On `localhost` both are served, so `npm run dev` works.
 
 ### 2. Discord app
 
+**Note:** SHASHA access is no longer gated by Discord - it's a rank in RNL's
+Roblox group (see the rank ladder below), re-read on every request. The
+`DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET` pair below is for a different
+thing now: verifying a member's real Discord account (e.g. the mandatory
+Discord field on career applications), via `lib/discord-oauth.ts`.
+`DISCORD_MANAGER_IDS`/`DISCORD_STAFF_IDS` described an older Discord-ID
+allowlist for SHASHA and are no longer read by anything - safe to leave unset.
+
 1. Create an app at <https://discord.com/developers/applications>.
-2. Under **OAuth2 → Redirects**, add exactly:
-   `https://portal.ronation.live/api/auth/discord/callback`
-   (add `http://localhost:3000/api/auth/discord/callback` too, for local dev).
-3. Copy the client id/secret into `.env`.
-
-### 3. Who gets in
-
-Access is **allowlist-only** - a valid Discord login is not enough. Turn on
-Developer Mode in Discord, right-click a user → **Copy User ID**:
+2. Under **OAuth2 → Redirects**, add one entry per host that serves a career
+   apply form - Discord allows multiple redirect URIs on one app, unlike
+   Roblox above:
+   `https://ronation.live/api/auth/discord/callback`
+   `https://<partner-host>/api/auth/discord/callback` (one per partner site)
+   `http://localhost:3000/api/auth/discord/callback` (local dev)
+3. Scope requested: `identify` only. Copy the client id/secret into `.env`:
 
 ```env
 DISCORD_CLIENT_ID="..."
 DISCORD_CLIENT_SECRET="..."
-DISCORD_MANAGER_IDS="1103...,2204..."   # can add / edit / remove people
-DISCORD_STAFF_IDS="3305..."             # can sign in and search only
 ```
 
-Then `docker compose up -d`. Set at least one manager or nobody can get in.
-
-Access level is re-read from these variables on **every request**, so removing
-an ID revokes that person immediately - no waiting for a session to expire.
+Then `docker compose up -d`. Leave both blank and "Connect Discord" fails
+closed with an explanatory error instead of a broken redirect.
 
 ### Using it
 

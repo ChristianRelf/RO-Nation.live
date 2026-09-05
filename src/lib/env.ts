@@ -31,6 +31,21 @@ export const env = {
   gameApiKey: process.env.GAME_API_KEY || "",
   allowDevLogin: process.env.ALLOW_DEV_LOGIN === "true",
 
+  // ---- Discord OAuth 2.0 ---------------------------------------------
+  // Verifies a member's Discord identity in-browser (career applications, and
+  // anywhere else that needs "this really is their Discord", not typed text).
+  // Separate from the bot-redeemed rotating code in lib/discord-link.ts, which
+  // both write to the same DiscordLink row - this is the flow for a member
+  // sitting at a keyboard on the site; the code is for one sitting in Discord.
+  //
+  // Unlike the Roblox app above, Discord lets one application carry several
+  // registered redirect URIs, so this runs per-host (see redirectUriFor in
+  // lib/discord-oauth.ts) rather than needing the authorise.ronation.live hop.
+  discordOAuth: {
+    clientId: process.env.DISCORD_CLIENT_ID || "",
+    clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
+  },
+
   // ---- Notifications -----------------------------------------------
   // The Discord channel new applications, enquiries and ticket reservations are
   // pushed to. A webhook URL is a secret, so it lives in the environment, never in
@@ -165,3 +180,8 @@ export const robloxConfigured = Boolean(
 
 /** Dev mock login is only available when Roblox isn't configured and it's allowed. */
 export const devLoginEnabled = env.allowDevLogin && !robloxConfigured;
+
+/** True when real Discord OAuth credentials are configured. */
+export const discordOAuthConfigured = Boolean(
+  env.discordOAuth.clientId && env.discordOAuth.clientSecret,
+);

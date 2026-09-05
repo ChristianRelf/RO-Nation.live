@@ -5,6 +5,7 @@ import { partnerBySlug } from "@/lib/partners/registry";
 import { assertPartnerFeature } from "@/lib/partners/guard";
 import { getCareerBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
+import { getDiscordLinkByUser } from "@/lib/discord-link";
 import { toLines } from "@/lib/utils";
 import { ApplyForm } from "@/components/apply-form";
 
@@ -45,6 +46,7 @@ export default async function PartnerCareerPage({
   if (!career) notFound();
 
   const session = await getUserSession();
+  const discordLink = session ? await getDiscordLinkByUser(session.uid) : null;
   const requirements = toLines(career.requirements);
   const closed = career.status === "CLOSED";
 
@@ -94,6 +96,8 @@ export default async function PartnerCareerPage({
           <ApplyForm
             career={career}
             session={session}
+            discordUsername={discordLink?.discordUsername ?? null}
+            returnTo={`/careers/${career.slug}#apply`}
             applied={Boolean(searchParams.applied)}
             error={searchParams.error}
             closed={closed}

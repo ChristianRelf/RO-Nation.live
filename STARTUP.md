@@ -49,7 +49,7 @@ cp .env.example .env
 ```
 
 Nothing needs filling in yet - the defaults are enough to boot. You'll add the
-Discord keys in Part 2.
+Discord keys in Part 2 if you want Discord verification working locally.
 
 ### 3. Start the database
 
@@ -83,7 +83,7 @@ from the same address, so:
 
 - Site → <http://localhost:3000>
 - Company → <http://localhost:3000/company> (needs a real Roblox sign-in and rank 245+ - see Part 3b)
-- Portal → <http://localhost:3000/shasha> (needs Part 2 first)
+- Portal → <http://localhost:3000/shasha> (same Roblox sign-in, rank 200+ - see Part 3b; no separate setup)
 - Health → <http://localhost:3000/api/health> → `{"ok":true,"db":"up"}`
 
 Stop the server with `Ctrl+C`. Stop the database with `docker compose stop db`.
@@ -94,60 +94,43 @@ Stop the server with `Ctrl+C`. Stop the database with `docker compose stop db`.
 
 ---
 
-## Part 2 - Turn on the SHASHA portal
+## Part 2 - Discord verification (optional, for career applications)
 
-The portal is Discord-gated and **allowlist-only**: a valid Discord login is not
-enough on its own. You have to do this once, even for local development.
+**SHASHA needs nothing here.** It's gated by Roblox group rank, same as
+Company - see Part 3b. This part is only for `lib/discord-oauth.ts`: proving a
+member's Discord account is real (e.g. the mandatory, verified Discord field
+on career applications), not an access-control gate.
 
 ### 1. Create a Discord app
 
 1. Go to <https://discord.com/developers/applications> → **New Application**.
 2. Open **OAuth2** in the sidebar.
-3. Under **Redirects**, click *Add Redirect* and paste - exactly, no trailing slash:
+3. Under **Redirects**, add one entry per host that will serve a career apply
+   form - exactly, no trailing slash. Discord allows several redirect URIs on
+   one app, unlike Roblox above:
 
    ```text
-   https://portal.ronation.live/api/auth/discord/callback
-   ```
-
-   Add a second one for local development:
-
-   ```text
+   https://ronation.live/api/auth/discord/callback
    http://localhost:3000/api/auth/discord/callback
    ```
 
+   Add one per partner host too once you know them (`https://<partner
+   host>/api/auth/discord/callback`).
+
 4. **Save Changes.**
 5. Copy the **Client ID**, and hit *Reset Secret* to get the **Client Secret**.
+6. Scope requested at sign-in time is `identify` only - no email, no guilds.
 
-### 2. Find your Discord user ID
-
-In Discord: **Settings → Advanced → Developer Mode: on**. Then right-click your
-own name anywhere → **Copy User ID**. It's a long number like `196374471...`.
-
-Do this for everyone who needs access.
-
-### 3. Fill in `.env`
+### 2. Fill in `.env`
 
 ```env
 DISCORD_CLIENT_ID="your-client-id"
 DISCORD_CLIENT_SECRET="your-client-secret"
-
-# Can add / edit / remove people. Comma-separated.
-DISCORD_MANAGER_IDS="your-discord-id,another-managers-id"
-
-# Can sign in and search, but change nothing. Optional.
-DISCORD_STAFF_IDS="someone-elses-id"
 ```
 
-**Put your own ID in `DISCORD_MANAGER_IDS` or you will not be able to get in.**
-
-Restart the dev server (`Ctrl+C`, then `npm run dev`) and open
-<http://localhost:3000/shasha>.
-
-### 4. Managing access later
-
-Access is re-checked from these variables on **every single request**. Delete
-someone's ID and they lose access immediately - no waiting for a session to
-expire. Edit `.env`, then `docker compose up -d` on the server to apply it.
+Restart the dev server (`Ctrl+C`, then `npm run dev`). Leave both blank and
+"Connect Discord" fails closed with an explanatory error instead of a broken
+redirect.
 
 ---
 
@@ -284,9 +267,8 @@ ROBLOX_CLIENT_ID="..."          # from create.roblox.com/dashboard/credentials
 ROBLOX_CLIENT_SECRET="..."
 GAME_API_KEY="<the hex string>"
 
-DISCORD_CLIENT_ID="..."         # from Part 2
+DISCORD_CLIENT_ID="..."         # from Part 2 - optional, for Discord verification
 DISCORD_CLIENT_SECRET="..."
-DISCORD_MANAGER_IDS="..."
 
 ALLOW_DEV_LOGIN="false"         # important
 ```
@@ -378,7 +360,8 @@ and it'll pick itself up.
 ### 7. Register the real redirect URLs
 
 Go back to the Discord app (Part 2) and make sure
-`https://portal.ronation.live/api/auth/discord/callback` is in the Redirects list.
+`https://ronation.live/api/auth/discord/callback` - and one per partner host -
+is in the Redirects list.
 
 For Roblox, register **both** of these - sign-in has to work on the main site and
 on the survey subdomain, and the session cookie a sign-in creates is scoped to
@@ -465,17 +448,16 @@ Renewal is automatic at ~30 days remaining. If you see "too many certificates
 already issued", you've re-issued more than 5 times in a week - most often by
 deleting the `caddy-data` volume. Wait it out; the existing cert keeps working.
 
-**Portal says "That Discord account isn't on the SHASHA access list"**
-The Discord ID you signed in with isn't in `DISCORD_MANAGER_IDS` or
-`DISCORD_STAFF_IDS`. Copy the ID again (Developer Mode → right-click → Copy User
-ID) - it's a long number, not your username. Then `docker compose up -d` to apply.
-
-**Portal login page warns "No managers are configured yet"**
-`DISCORD_MANAGER_IDS` is empty. Nobody can get in until you set it.
+**Portal (`/shasha`) says "No access"**
+SHASHA is gated by Roblox group rank, not Discord - see Part 3b. Promote the
+account to rank 200+ (or 245+ for write access) in RNL's Roblox group; it takes
+effect on its own within a few minutes, no config change or redeploy.
 
 **Discord says "Invalid OAuth2 redirect_uri"**
 The URL in the Discord dashboard doesn't match byte-for-byte. Check for `http`
-vs `https`, a trailing slash, or `www.`.
+vs `https`, a trailing slash, or `www.` - and that you registered the host the
+request actually arrived on (`ronation.live`, or the partner host), not
+`portal.ronation.live`.
 
 **`portal.ronation.live` shows the public site**
 DNS hasn't propagated, or your reverse proxy isn't routing the subdomain to port

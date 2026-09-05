@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCareerBySlug } from "@/lib/queries";
 import { getUserSession } from "@/lib/session";
+import { getDiscordLinkByUser } from "@/lib/discord-link";
 import { Kicker } from "@/components/ui";
 import { toLines } from "@/lib/utils";
 import { ApplyForm } from "@/components/apply-form";
@@ -32,6 +33,7 @@ export default async function CareerPage({
   if (!career) notFound();
 
   const session = await getUserSession();
+  const discordLink = session ? await getDiscordLinkByUser(session.uid) : null;
   const requirements = toLines(career.requirements);
   const closed = career.status === "CLOSED";
 
@@ -89,6 +91,8 @@ export default async function CareerPage({
           <ApplyForm
             career={career}
             session={session}
+            discordUsername={discordLink?.discordUsername ?? null}
+            returnTo={`/careers/${career.slug}#apply`}
             applied={Boolean(searchParams.applied)}
             error={searchParams.error}
             closed={closed}
