@@ -281,6 +281,7 @@ export async function reserveTicket(
   if (email && !outcome.existing) {
     void sendTicketReservationEmail({
       to: email,
+      holderName: session.displayName,
       eventTitle: event.title,
       eventStartsAt: event.startsAt,
       venue: event.venue,
