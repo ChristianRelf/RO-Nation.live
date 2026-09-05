@@ -635,6 +635,13 @@ model Ticket {
   /// is a second payment against the same row.
   purchases TicketPurchase[]
 
+  /// OPTIONAL, and volunteered at checkout - never required to hold a ticket. The
+  /// account itself is Roblox-only (see User above), so this is the only email
+  /// address anywhere near a reservation, and it exists for exactly one reason:
+  /// somewhere to send the "you're going" confirmation and later reminders. Never
+  /// shown at the door and never used to look anyone up.
+  email String?
+
   @@unique([eventId, userId]) // one ticket per person per event
   @@unique([eventId, seatKey]) // and one person per seat. See the note above.
   @@index([eventId])

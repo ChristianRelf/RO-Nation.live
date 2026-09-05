@@ -4,11 +4,17 @@ import { revalidatePath } from "next/cache";
 import type { TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/session";
-import { partnerSiteRoute, partnerPortalUrl } from "@/lib/partners/urls";
+import {
+  partnerSiteRoute,
+  partnerPortalUrl,
+  partnerOrigin,
+} from "@/lib/partners/urls";
 import { issueTicket } from "@/lib/tickets/issue";
 import { notify } from "@/lib/notify";
 import { notifyNextWaiter } from "@/lib/waitlist";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendTicketReservationEmail } from "@/lib/email";
+import { env } from "@/lib/env";
 
 // Ticketing, for RNL's events and every partner's - the WEBSITE's half of it.
 //
@@ -77,6 +83,15 @@ export type ReserveState =
 const fail = (error: Extract<ReserveState, { ok: false }>["error"]) =>
   ({ ok: false, error }) as const;
 
+/**
+ * A shape check, nothing more - the same one HTML's own `type="email"` uses.
+ * There is no verification step and none is worth adding: this address is
+ * volunteered for a courtesy email, not an account, so the cost of a typo is a
+ * bounce, not a locked-out holder. An invalid shape is simply dropped rather
+ * than failing the checkout over a field nothing else in this system requires.
+ */
+const isValidEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
 /** Refresh the event page and the ticket wallet, on whichever site they live. */
 function refreshTicketViews(partnerId: string | null, slug: string) {
   if (partnerId) {
@@ -143,6 +158,12 @@ export async function reserveTicket(
   // anything, exactly like the tier id sitting next to it.
   const intentToken = String(formData.get("intent") || "");
 
+  // Optional, and never trusted for anything but where to send a courtesy
+  // email - it plays no part in who the ticket belongs to or whether they get
+  // one. A bad shape is dropped rather than refusing a checkout over it.
+  const emailInput = String(formData.get("email") || "").trim();
+  const email = emailInput && isValidEmail(emailInput) ? emailInput : null;
+
   const session = await getUserSession();
   if (!session) return fail("auth");
 
@@ -165,9 +186,16 @@ export async function reserveTicket(
   // before we bother it.
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    // title + partnerId are for the reservation notification below; issueTicket
-    // still does all the deciding from the id alone.
-    select: { id: true, title: true, partnerId: true },
+    // title + partnerId are for the reservation notification below; startsAt +
+    // venue are for the confirmation email; issueTicket still does all the
+    // deciding from the id alone.
+    select: {
+      id: true,
+      title: true,
+      partnerId: true,
+      startsAt: true,
+      venue: true,
+    },
   });
   if (!event) return fail("unavailable");
 
@@ -183,6 +211,7 @@ export async function reserveTicket(
     // they clicked it on the map, and spending it here is what turns it into a seat.
     // Empty on an unseated show, where there is nothing to hold.
     mode: { kind: "reserve", intentToken: intentToken || null },
+    email,
   });
 
   if (!outcome.ok) {
@@ -242,6 +271,22 @@ export async function reserveTicket(
       },
     ],
   });
+
+  // The "you're going" confirmation - only when they typed one in, and only on a
+  // genuinely NEW reservation. `existing` covers the double-submit case (see
+  // issueTicket): re-sending on every retry of an already-reserved ticket would
+  // mail somebody once per refresh. Fire-and-forget and swallows every failure
+  // itself - see lib/email.ts - so a bounce or a missing Resend key can never
+  // turn a successful reservation into an error the buyer sees.
+  if (email && !outcome.existing) {
+    void sendTicketReservationEmail({
+      to: email,
+      eventTitle: event.title,
+      eventStartsAt: event.startsAt,
+      venue: event.venue,
+      ticketUrl: `${event.partnerId ? partnerOrigin(event.partnerId) : env.siteUrl}/tickets/${outcome.ticketId}`,
+    });
+  }
 
   // NO refreshTicketViews() HERE. See the long note above the function - revalidating from
   // this action re-renders the checkout page the buyer is standing on, which redirects to

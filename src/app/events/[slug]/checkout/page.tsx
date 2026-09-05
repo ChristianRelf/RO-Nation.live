@@ -41,7 +41,7 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { tier?: string; agreed?: string; intent?: string };
+  searchParams: { tier?: string; agreed?: string; intent?: string; email?: string };
 }) {
   const event = await getEventBySlug(null, params.slug);
   if (!event) notFound();
@@ -199,6 +199,9 @@ export default async function CheckoutPage({
         // if it is not this event's, this tier's and this person's.
         intentToken={intentToken}
         seatsHref={seats.state === "pick" ? seatsHref : undefined}
+        // Carried, not trusted - the action re-validates the shape itself before
+        // it goes anywhere near issueTicket or an outbound email.
+        email={searchParams.email ?? ""}
       />
 
       <CheckoutNoScript reserveHref={reserveHref} />

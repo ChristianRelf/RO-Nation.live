@@ -279,6 +279,24 @@ export function CheckoutForm({
             </div>
           </dl>
 
+          <div className="mt-5">
+            <label htmlFor="email" className="block text-sm text-muted">
+              Email <span className="text-faint">(optional)</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              className="mt-1.5 w-full rounded-brand border border-line bg-bg/40 px-3.5 py-2.5 text-sm text-fg placeholder:text-faint focus:border-accent focus:outline-none"
+            />
+            <p className="mt-1.5 text-xs text-faint">
+              Get a confirmation and updates about this show. Your ticket works
+              without it - this is just somewhere to reach you.
+            </p>
+          </div>
+
           <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-brand border border-line bg-bg/40 p-4 text-sm">
             {/* `required` blocks the submit in the browser, and the checkout page
                 refuses without it as well - because a required attribute is a

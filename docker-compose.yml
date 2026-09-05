@@ -101,6 +101,13 @@ services:
       # line to this block as well as to .env.
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
       DISCORD_ANNOUNCE_WEBHOOK_URL: ${DISCORD_ANNOUNCE_WEBHOOK_URL:-}
+      # Reservation confirmation emails (Resend). Same silent-ignore trap as
+      # DISCORD_WEBHOOK_URL above if this line is missing: the key sits in .env,
+      # the container never sees it, sendTicketReservationEmail() finds nothing
+      # configured and no-ops - indistinguishable from deliberately leaving it
+      # blank. See .env.example.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-RO. Nation LIVE <tickets@ronation.live>}
       # DEPRECATED - no longer read by anything. These fed prisma/seed.ts, which
       # created the first PartnerMember row on every boot. That seed is gone; seat a
       # partner's first owner with `npm run partner:member` instead (see .env.example

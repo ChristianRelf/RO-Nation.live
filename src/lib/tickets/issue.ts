@@ -228,6 +228,13 @@ export type IssueInput = {
    */
   scope?: string | null;
   mode: IssueMode;
+  /**
+   * Volunteered at checkout, never required. Stamped onto the ticket ONLY when a
+   * fresh row is created below - never onto an idempotent replay or an existing
+   * ticket handed back unchanged, so a retry with no email cannot blank out one
+   * that was already recorded.
+   */
+  email?: string | null;
 };
 
 const isCodeCollision = (err: any) =>
@@ -621,6 +628,7 @@ export async function issueTicket(input: IssueInput): Promise<IssueOutcome> {
     ...(mode.kind === "gift"
       ? { issuedByRobloxId: mode.byRobloxId, issuedByName: mode.byName }
       : {}),
+    ...(input.email ? { email: input.email } : {}),
   };
 
   // The code is minted outside the transaction, and a collision retries the whole

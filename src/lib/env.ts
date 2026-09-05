@@ -77,6 +77,16 @@ export const env = {
   // partner's line-up. See webhookFor() there.
   discordAnnounceWebhookUrl: process.env.DISCORD_ANNOUNCE_WEBHOOK_URL || "",
 
+  // ---- Reservation emails (Resend) -----------------------------------
+  // The holder's email is always optional - the account itself is Roblox-only,
+  // this is only ever volunteered at checkout for the "you're going"
+  // confirmation. Absent key → sendTicketEmail() silently no-ops, same
+  // fail-open shape as the Discord webhooks above: a missing key must never
+  // turn a successful reservation into an error the buyer sees.
+  resendApiKey: process.env.RESEND_API_KEY || "",
+  // Must be a verified sender on the Resend account/domain (ronation.live).
+  emailFrom: process.env.EMAIL_FROM || "RO. Nation LIVE <tickets@ronation.live>",
+
   // ---- Paid ticketing (Robux) --------------------------------------
   //
   // THE MASTER SWITCH. May this site sell a ticket for Robux at all? Off by default.

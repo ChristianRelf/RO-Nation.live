@@ -103,6 +103,12 @@ export function CheckoutProcessing({
   intentToken = "",
   /** Back to the seat map, when the show has one. The right retry for a seat failure. */
   seatsHref,
+  /**
+   * Volunteered on the reserve step, for the "you're going" confirmation email.
+   * Carried exactly like intentToken - never trusted here, and re-validated by
+   * the action before it is stored or mailed anywhere.
+   */
+  email = "",
 }: {
   eventId: string;
   tierId: string;
@@ -114,6 +120,7 @@ export function CheckoutProcessing({
   reserveHref: string;
   intentToken?: string;
   seatsHref?: string;
+  email?: string;
 }) {
   const [stage, setStage] = useState(0);
   const [issued, setIssued] = useState(false);
@@ -149,6 +156,7 @@ export function CheckoutProcessing({
       // is what turns a hold into a chair. Empty on an unseated show - the action reads
       // that as "no hold", which is what every show that exists today is.
       form.set("intent", intentToken);
+      if (email) form.set("email", email);
 
       reservation.current = reserveTicket(null, form);
     }
@@ -190,7 +198,7 @@ export function CheckoutProcessing({
     return () => {
       alive = false;
     };
-  }, [eventId, tierId, ticketBase, intentToken]);
+  }, [eventId, tierId, ticketBase, intentToken, email]);
 
   // Take the reader with us. Without this a screen-reader user is left wherever they were
   // on the page underneath, listening to a dialog they were never moved into.

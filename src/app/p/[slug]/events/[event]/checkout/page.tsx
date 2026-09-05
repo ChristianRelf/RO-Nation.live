@@ -32,7 +32,7 @@ export default async function PartnerCheckoutPage({
   searchParams,
 }: {
   params: { slug: string; event: string };
-  searchParams: { tier?: string; agreed?: string; intent?: string };
+  searchParams: { tier?: string; agreed?: string; intent?: string; email?: string };
 }) {
   const partner = partnerBySlug(params.slug);
   if (!partner) notFound();
@@ -155,6 +155,7 @@ export default async function PartnerCheckoutPage({
         reserveHref={reserveHref}
         intentToken={intentToken}
         seatsHref={seats.state === "pick" ? seatsHref : undefined}
+        email={searchParams.email ?? ""}
       />
 
       <CheckoutNoScript reserveHref={reserveHref} />
